@@ -6,24 +6,24 @@ import {
   heroImageURLForGameId,
   nexusGameIdForGame,
 } from "@/extensions/nexus_integration/util/gameImageURLs";
+import { showsGameArt } from "@/extensions/settings_interface/selectors";
 import type { IState } from "@/types/IState";
 
 import { useSpineContext } from "../Spine/SpineContext";
-import { useGameArt } from "./GameArt.context";
 
 /**
  * The open game's hero art, faded into the window's bottom left, behind the whole layout. The
  * spine and menu sit straight on it; a page shows it only where its own background lets it
- * through. Nothing while it's turned off, outside a game, or for a game with no Nexus art.
+ * through. Nothing while the user has it turned off, outside a game, or for a game with no Nexus art.
  */
 export const GameArt = () => {
   const { selection } = useSpineContext();
-  const { isEnabled } = useGameArt();
+  const showGameArt = useSelector(showsGameArt);
   const game = useSelector((state: IState) =>
     selection.type === "game" ? gameById(state, selection.gameId) : undefined,
   );
 
-  if (!isEnabled || selection.type !== "game") {
+  if (!showGameArt || selection.type !== "game") {
     return null;
   }
 

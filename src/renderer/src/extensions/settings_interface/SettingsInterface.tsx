@@ -35,6 +35,7 @@ import {
 } from "./actions/automation";
 import {
   setAlwaysCompactHeaders,
+  setShowGameArt,
   setDesktopNotifications,
   setForegroundDL,
   setHideTopLevelCategory,
@@ -44,6 +45,7 @@ import {
   setRelativeTimes,
 } from "./actions/interface";
 import { buildLanguageOptions, type ILanguage, type ILanguageOption } from "./languageOptions";
+import { showsGameArt } from "./selectors";
 import getText from "./texts";
 import { MAX_ZOOM, MIN_ZOOM, normalizeZoom, ZOOM_STEP, zoomFromState } from "./utils/zoom";
 
@@ -84,6 +86,7 @@ export function SettingsInterfaceForm(props: IFormProps) {
   const alwaysCompactHeaders = useSelector(
     (state: IState) => state.settings.interface.alwaysCompactHeaders === true,
   );
+  const showGameArt = useSelector(showsGameArt);
   const foregroundDL = useSelector((state: IState) => state.settings.interface.foregroundDL);
   const autoDeployment = useSelector((state: IState) => state.settings.automation.deploy);
   const autoInstall = useSelector((state: IState) => state.settings.automation.install);
@@ -298,6 +301,16 @@ export function SettingsInterfaceForm(props: IFormProps) {
 
               <Typography appearance="subdued" typographyType="body-sm">
                 {t("Keep page headers compact for less motion and more vertical space.")}
+              </Typography>
+            </Toggle>
+          </div>
+
+          <div>
+            <Toggle checked={showGameArt} onToggle={(enabled) => dispatch(setShowGameArt(enabled))}>
+              {t("Show game artwork")}
+
+              <Typography appearance="subdued" typographyType="body-sm">
+                {t("Show the open game's artwork behind Vortex.")}
               </Typography>
             </Toggle>
           </div>
