@@ -271,6 +271,28 @@ describe("Listing", () => {
       expect(screen.queryByTestId("listing-load-more-summary")).toBeNull();
     });
 
+    it("shows what's given under the Load more button", () => {
+      renderComponent({
+        entityCount: 1,
+        loadMoreFooter: <div data-testid="footer" />,
+        onLoadMore: vi.fn(),
+        status: "paused",
+      });
+
+      expect(screen.getByTestId("footer")).toBeInTheDocument();
+    });
+
+    it("shows nothing under the Load more button while it isn't paused", () => {
+      renderComponent({
+        entityCount: 1,
+        loadMoreFooter: <div data-testid="footer" />,
+        onLoadMore: vi.fn(),
+        status: "idle",
+      });
+
+      expect(screen.queryByTestId("footer")).toBeNull();
+    });
+
     it("offers nothing to load more with nowhere to ask for it", () => {
       renderComponent({ children: items, entityCount: 2, status: "paused" });
 

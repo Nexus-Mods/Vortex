@@ -1,4 +1,4 @@
-import type { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import type { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 
 import type { IToolStored } from "./IToolStored";
 
@@ -24,7 +24,7 @@ export interface IGameStored {
   environment?: { [key: string]: string };
   details?: { [key: string]: any };
   /** The Nexus Mods game this game is for, when it is known which one that is */
-  nexus?: { gameId: GameId; gameDomain: GameDomain };
+  nexus?: { gameId: NexusGameId; gameDomain: NexusGameDomain };
   shell?: boolean;
   contributed?: string;
   final?: boolean;

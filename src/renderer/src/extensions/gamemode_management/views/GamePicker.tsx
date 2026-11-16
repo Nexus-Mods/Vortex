@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useMemo, useRef, useState } from "react";
@@ -44,6 +44,7 @@ import {
   tierZeroCandidateId,
 } from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
+import { byRecentlyUsed } from "../util/recentlyUsed";
 
 /**
  * A tile on the page. One for a game nothing is registered for carries the extension the
@@ -182,16 +183,6 @@ const GamePicker = ({
   const applyGameFilter = (game: IGameStored): boolean =>
     !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase());
 
-  const lastUsed = (game: IGameStored): number =>
-    Math.max(
-      ...Object.values(profiles)
-        .filter((prof) => prof.gameId === game.id)
-        .map((prof) => prof.lastActivated),
-    );
-
-  const byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number =>
-    lastUsed(rhs) - lastUsed(lhs);
-
   const lookupName = (input: string): string => {
     if (nameLookupRef.current[input] === undefined) {
       const exactMatch = nexusGames.find((i) => i.name === input);
@@ -226,7 +217,7 @@ const GamePicker = ({
 
   const sortBy = (sortMode: string) =>
     ({
-      recentlyused: byRecentlyUsed,
+      recentlyused: byRecentlyUsed(profiles),
       recent: byRecent,
       popular: byPopular,
     })[sortMode] ?? byGameName;
@@ -326,7 +317,7 @@ const GamePicker = ({
       }
       // profiles and actions know games by their internal id, which is usually the
       // nexus domain but not always, and is the installed one where games share a domain
-      const domain = GameDomain(nexusGame.domain_name);
+      const domain = NexusGameDomain(nexusGame.domain_name);
       const internalId =
         detectedInternalId(knownGames, discoveredGames, domain) ??
         tierZeroCandidateId(game, detectedListOptions) ??

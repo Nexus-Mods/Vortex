@@ -4,7 +4,7 @@ import type { VortexGameId } from "@vortex/shared";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
-  type GameId,
+  type NexusGameId,
   unknownToError,
 } from "@vortex/shared";
 import PromiseBB from "bluebird";
@@ -114,7 +114,7 @@ declare module "@/types/IExtensionContext" {
     "discover-game": (gameId: VortexGameId, store?: string) => string[];
     "discover-tools": (gameId: string) => void;
     "register-tier-zero-game": (entry: ITierZeroGame) => void;
-    "remove-tier-zero-game": (gameId: GameId) => void;
+    "remove-tier-zero-game": (gameId: NexusGameId) => void;
   }
 }
 

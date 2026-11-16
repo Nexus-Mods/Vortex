@@ -1,5 +1,5 @@
 import { useIsMutating, useMutation } from "@tanstack/react-query";
-import { GameDomain, VortexGameId, VortexModId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId, VortexModId } from "@vortex/shared";
 import { VortexError, type VortexErrorKind } from "@vortex/shared/errors";
 import type { TFunction } from "i18next";
 import React, { useState } from "react";
@@ -120,7 +120,7 @@ export const ModInstallButton = ({
   const [isUpsellOpen, setIsUpsellOpen] = useState(false);
   const installKey = oneClickInstallKey(mod.id);
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
-  const domain = GameDomain(mod.game.domain_name);
+  const domain = NexusGameDomain(mod.game.domain_name);
   const action = shouldInstall ? "install" : "download";
   const hasUpdate = installState.kind === "installed" && !!installState.update;
   const unavailable = unavailableReason(t, mainFile, isError, hasUpdate);

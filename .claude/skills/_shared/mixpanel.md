@@ -35,7 +35,7 @@ Active-user baselines for [`/triage-issues`](../triage-issues/SKILL.md) and [`/t
     ```json
     "dateRange": { "type": "absolute", "from": "<release date>", "to": "<today>" }
     ```
-- **Per-game DAU (for game-specific bugs):** Query event `app_game_launched` with the `app_version` filter, `math: "dau"`, broken down by `game_id` (numeric Nexus `GameId`):
+- **Per-game DAU (for game-specific bugs):** Query event `app_game_launched` with the `app_version` filter, `math: "dau"`, broken down by `game_id` (numeric Nexus `NexusGameId`):
 
     | `game_id` | Game              | `game_id` | Game      |
     | --------- | ----------------- | --------- | --------- |

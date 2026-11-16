@@ -1,4 +1,4 @@
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { makeAvailableExtension } from "../../test-utils/builders";
@@ -123,11 +123,11 @@ describe("mapAvailableExtensions", () => {
 });
 
 describe("dedupeGameExtensions", () => {
-  const soloGame = GameId(7);
-  const contestedGame = GameId(8);
-  const anotherSoloGame = GameId(9);
+  const soloGame = NexusGameId(7);
+  const contestedGame = NexusGameId(8);
+  const anotherSoloGame = NexusGameId(9);
 
-  const contender = (modId: number, gameId: GameId, timestamp = 0) =>
+  const contender = (modId: number, gameId: NexusGameId, timestamp = 0) =>
     makeAvailableExtension({ name: `ext-${modId}`, modId, type: "game", gameId, timestamp });
 
   it("keeps uncontested games and preserves order", () => {

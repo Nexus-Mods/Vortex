@@ -1,4 +1,4 @@
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
 
 import type { IExtensionContext, IReducerSpec } from "./IExtensionContext";
 import type { IExtensionLoadFailure, IExtensionState } from "./IState";
@@ -89,9 +89,9 @@ export interface IAvailableExtension {
   /** undefined for extensions that don't target a game (tools, site extensions) */
   type?: ExtensionType;
   /** numeric Nexus Mods game ID, game extensions only */
-  gameId?: GameId;
+  gameId?: NexusGameId;
   /** game domain name, resolved from the local Nexus games list */
-  gameDomain?: GameDomain;
+  gameDomain?: NexusGameDomain;
   /** game display name, resolved from the local Nexus games list */
   gameName?: string;
   /** BCP 47 locale code, translations only */

@@ -1,6 +1,6 @@
 import { inspect } from "util";
 
-import { GameDomain, getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 
 import { log } from "@/logging";
 
@@ -20,7 +20,7 @@ import type { IGameStored, IGameStoredExt } from "../../gamemode_management/type
 export function nexusGameId(
   game: IGameStored | IGame,
   fallbackGameId?: string,
-): GameDomain | undefined {
+): NexusGameDomain | undefined {
   if (game === undefined && fallbackGameId === undefined) {
     return undefined;
   }
@@ -31,13 +31,13 @@ export function nexusGameId(
     "nexusPageId" in game.details &&
     typeof game.details.nexusPageId === "string"
   ) {
-    return GameDomain(game.details.nexusPageId);
+    return NexusGameDomain(game.details.nexusPageId);
   }
 
   const gameId = game?.id ?? fallbackGameId;
 
   try {
-    return GameDomain(
+    return NexusGameDomain(
       {
         skyrimse: "skyrimspecialedition",
         skyrimvr: "skyrimspecialedition",
@@ -98,7 +98,7 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
  * the nexus page id (domain) for the game an nxm url names, mapping the link's game id through
  * the games Vortex knows about
  */
-export function nxmPageId(state: IState, nxmGameId: string): GameDomain {
+export function nxmPageId(state: IState, nxmGameId: string): NexusGameDomain {
   const gameId = convertNXMIdReverse(knownGames(state), nxmGameId);
   return nexusGameId(gameById(state, gameId), nxmGameId);
 }

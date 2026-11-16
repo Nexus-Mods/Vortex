@@ -5,7 +5,7 @@
  * exit; the id resolution is mock-fixed here and supportTier reads real state (the function
  * itself is covered by supportTier.test.ts).
  */
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import type {
@@ -85,15 +85,15 @@ describe("game launch analytics", () => {
     const h = harness();
     h.base.setState((draft) => {
       draft.persistent.gameMode ??= { gameInfo: {}, tier0: {} };
-      draft.persistent.gameMode.tier0[GameId(1704)] = {
-        gameId: GameId(1704),
-        domain: GameDomain("skyrimspecialedition"),
+      draft.persistent.gameMode.tier0[NexusGameId(1704)] = {
+        gameId: NexusGameId(1704),
+        domain: NexusGameDomain("skyrimspecialedition"),
         name: "Skyrim Special Edition",
         storeIDs: { steam: [], gog: [], epic: [] },
       };
     });
     const info = makeStarterInfo({ exePath: "C:/g/tier.exe" });
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1704));
     emitGameLaunched(h.api, info);
     const launched = h.events.find((e) => e.eventName === "app_game_launched");
     expect(launched?.properties.support_tier).toBe("Tier 0");
@@ -156,7 +156,7 @@ describe("game launch analytics", () => {
             author: "tester",
             version: "1.0.0",
             timestamp: 0,
-            gameId: GameId(1704),
+            gameId: NexusGameId(1704),
           },
         ],
         optional: {},
@@ -165,7 +165,7 @@ describe("game launch analytics", () => {
       };
     });
     const info = makeStarterInfo({ exePath: "C:/g/extension.exe" });
-    vi.mocked(numericNexusGameId).mockReturnValueOnce(GameId(1704));
+    vi.mocked(numericNexusGameId).mockReturnValueOnce(NexusGameId(1704));
     emitGameLaunched(h.api, info);
     expect(h.events.find((e) => e.eventName === "app_game_launched")?.properties.support_tier).toBe(
       "Tier 2",

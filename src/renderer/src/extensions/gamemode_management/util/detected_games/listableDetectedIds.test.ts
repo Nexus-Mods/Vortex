@@ -6,7 +6,7 @@ vi.mock("../../../nexus_integration/util", () => ({
     ({ 1704: "skyrimspecialedition", 102: "shadowrunreturns" })[id],
 }));
 
-import { GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameId, VortexGameId } from "@vortex/shared";
 
 import type { IGameStored } from "@/types/IState";
 
@@ -15,7 +15,7 @@ import { isListableDetectedGame, listableDetectedIds } from "./listableDetectedI
 
 const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
   gameUid: `uid-${gameId}`,
-  gameId: GameId(gameId),
+  gameId: NexusGameId(gameId),
   storeIDs: { steam: [], gog: [], epic: [] },
   extension: withExtension
     ? ({ name: "ext", modId: 1, fileId: 1 } as IDetectedGame["extension"])
@@ -65,7 +65,7 @@ describe("isListableDetectedGame with the Tier 0 flag on", () => {
   });
 
   it("keeps a game the extension catalog provides support for out of the section", () => {
-    const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([GameId(5)]) };
+    const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([NexusGameId(5)]) };
 
     expect(
       isListableDetectedGame(
@@ -110,7 +110,7 @@ describe("listableDetectedIds", () => {
   });
 
   it("leaves Tier 0 candidates the extension catalog covers out", () => {
-    const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([GameId(5)]) };
+    const coveredByCatalog = { allowTierZero: true, extensionGameIds: new Set([NexusGameId(5)]) };
 
     expect(
       listableDetectedIds([detected(5, false)], known, {}, new Set(), coveredByCatalog),

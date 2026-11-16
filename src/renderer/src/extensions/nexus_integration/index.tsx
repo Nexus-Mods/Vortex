@@ -14,7 +14,7 @@ import type {
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { TimeoutError } from "@nexusmods/nexus-api";
-import { GameDomain, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { NexusGameDomain, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
@@ -823,7 +823,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
             author: modFileInfo.mod.author,
             category: modFileInfo.mod.modCategory.id.toString().split(",")[0],
             description: modFileInfo.description,
-            homepage: nexusModPageUrl(GameDomain(modFileInfo.game.domainName), modId),
+            homepage: nexusModPageUrl(NexusGameDomain(modFileInfo.game.domainName), modId),
           },
         },
       };

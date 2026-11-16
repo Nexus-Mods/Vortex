@@ -27,6 +27,7 @@ export const Listing = ({
   errorMessage,
   errorTitle,
   loadMoreErrorMessage = "More couldn't be loaded. Try again.",
+  loadMoreFooter,
   loadMoreLabel = "Load more",
   loadMoreNote,
   loadMoreRef,
@@ -63,6 +64,8 @@ export const Listing = ({
   errorTitle?: string;
   /** What to say when loading more failed. */
   loadMoreErrorMessage?: string;
+  /** Shown under the Load more button, while paused. */
+  loadMoreFooter?: ReactNode;
   /** The Load more button's label, while paused. */
   loadMoreLabel?: string;
   /** A line over the summary, while paused, such as a nudge after a long time loading. */
@@ -170,6 +173,8 @@ export const Listing = ({
             >
               {loadMoreLabel}
             </Button>
+
+            {loadMoreFooter}
           </div>
         )}
 

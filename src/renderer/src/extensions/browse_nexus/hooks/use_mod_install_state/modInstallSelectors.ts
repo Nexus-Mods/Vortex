@@ -1,4 +1,4 @@
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 import { VortexGameId } from "@vortex/shared";
 import { shallowEqual } from "react-redux";
 import { createSelector } from "reselect";
@@ -20,7 +20,7 @@ const NO_MODS: { [modId: string]: IMod } = {};
 
 /** Looks games' Nexus Mods domains up by id, each once, from the known games. */
 const domainLookup = (games: IGameStored[]): IModInstallSources["domainOf"] => {
-  const domains = new Map<VortexGameId, GameDomain | undefined>();
+  const domains = new Map<VortexGameId, NexusGameDomain | undefined>();
 
   return (id) => {
     if (!domains.has(id)) {

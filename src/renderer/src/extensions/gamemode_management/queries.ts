@@ -1,6 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import type { VortexGameId } from "@vortex/shared";
-import { GameDomain, GameId, VortexError } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexError, VortexGameId } from "@vortex/shared";
 
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
@@ -16,9 +15,9 @@ export interface IGameData {
   known: readonly IGameStored[];
 
   /** `persistent.gameMode.tier0` */
-  tier0: Readonly<Record<GameId, ITierZeroGame>>;
+  tier0: Readonly<Record<NexusGameId, ITierZeroGame>>;
 
-  /** The Nexus Mods games list, which links every `GameId` to its domain */
+  /** The Nexus Mods games list, which links every `NexusGameId` to its domain */
   nexusGames: readonly IGameListEntry[];
 }
 
@@ -31,13 +30,13 @@ type Discovered = { discovered?: Readonly<Record<VortexGameId, IDiscoveryResult>
 /** What to look a game up by. Every kind is its own brand, none stands in for another. */
 export type GameQuery =
   | { vortexGameId: VortexGameId }
-  | ({ gameDomain: GameDomain } & Discovered)
-  | ({ gameId: GameId } & Discovered);
+  | ({ gameDomain: NexusGameDomain } & Discovered)
+  | ({ gameId: NexusGameId } & Discovered);
 
 /**
  * Find the game for an id. `undefined` means nothing known matches.
  *
- * A domain and a `GameId` are the Nexus Mods game a game is for, which is stored on the game
+ * A domain and a `NexusGameId` are the Nexus Mods game a game is for, which is stored on the game
  * as `nexus`. A game without one is never found by either.
  */
 export function findGame(
@@ -86,8 +85,8 @@ function preferInstalled(
 export function nexusGameData(
   data: Pick<IGameData, "nexusGames" | "tier0">,
   vortexGameId: VortexGameId,
-  declared?: GameDomain,
-): { gameId: GameId; gameDomain: GameDomain } | undefined {
+  declared?: NexusGameDomain,
+): { gameId: NexusGameId; gameDomain: NexusGameDomain } | undefined {
   const tierZero = Object.values(data.tier0).find(
     (entry) => tierZeroGameId(entry.gameId) === vortexGameId,
   );
@@ -101,7 +100,9 @@ export function nexusGameData(
   }
 
   const listed = data.nexusGames.find((entry) => entry.domain_name === declared);
-  return listed === undefined ? undefined : { gameId: GameId(listed.id), gameDomain: declared };
+  return listed === undefined
+    ? undefined
+    : { gameId: NexusGameId(listed.id), gameDomain: declared };
 }
 
 function unsupportedQuery(query: unknown): never {
@@ -117,7 +118,7 @@ function unsupportedQuery(query: unknown): never {
  *
  * - `vortexGameId` is the id of a registered game, so it is `findGame`'s game.
  * - `gameDomain` and `gameId` are the Nexus Mods game, which a registered game stores as
- *   `nexus`. Between the two, and from a `GameId` to a domain, the data answers without a
+ *   `nexus`. Between the two, and from a `NexusGameId` to a domain, the data answers without a
  *   registered game: the Tier 0 entry managed under it, else the Nexus Mods games list.
  *
  * Converting an id to its own kind is a type error, there is nothing to look up.
@@ -129,19 +130,19 @@ export function convertId(
 ): VortexGameId | undefined;
 export function convertId(
   data: IGameData,
-  query: Exclude<GameQuery, { gameDomain: GameDomain }>,
+  query: Exclude<GameQuery, { gameDomain: NexusGameDomain }>,
   to: "gameDomain",
-): GameDomain | undefined;
+): NexusGameDomain | undefined;
 export function convertId(
   data: IGameData,
-  query: Exclude<GameQuery, { gameId: GameId }>,
+  query: Exclude<GameQuery, { gameId: NexusGameId }>,
   to: "gameId",
-): GameId | undefined;
+): NexusGameId | undefined;
 export function convertId(
   data: IGameData,
   query: GameQuery,
   to: "vortexGameId" | "gameDomain" | "gameId",
-): VortexGameId | GameDomain | GameId | undefined {
+): VortexGameId | NexusGameDomain | NexusGameId | undefined {
   if (to === "vortexGameId") {
     const game = findGame(data, query);
     return game === undefined ? undefined : game.id;
@@ -159,7 +160,7 @@ export function convertId(
       }
 
       const listed = data.nexusGames.find((entry) => entry.domain_name === gameDomain);
-      return listed === undefined ? undefined : GameId(listed.id);
+      return listed === undefined ? undefined : NexusGameId(listed.id);
     } else {
       return unsupportedQuery(query);
     }
@@ -174,7 +175,7 @@ export function convertId(
     }
 
     const listed = data.nexusGames.find((entry) => entry.id === query.gameId);
-    return listed === undefined ? undefined : GameDomain(listed.domain_name);
+    return listed === undefined ? undefined : NexusGameDomain(listed.domain_name);
   } else {
     return unsupportedQuery(query);
   }

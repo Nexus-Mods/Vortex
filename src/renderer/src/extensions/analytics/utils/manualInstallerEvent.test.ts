@@ -1,5 +1,5 @@
 import type { EventManualInstaller } from "@vortex/nexus-api-v3";
-import { GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameId, VortexGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -45,7 +45,7 @@ const eventOf = (): EventManualInstaller =>
 beforeEach(() => {
   vi.mocked(isTelemetryEnabled).mockReturnValue(true);
   vi.mocked(isLoggedIn).mockReturnValue(true);
-  vi.mocked(numericNexusGameId).mockReturnValue(GameId(1704));
+  vi.mocked(numericNexusGameId).mockReturnValue(NexusGameId(1704));
   telemetryEvent.mockReset().mockResolvedValue({ accepted: 1, rejected: [] });
   vi.mocked(createVortexNexusV3InternalClient).mockReturnValue({
     telemetryEvent,
