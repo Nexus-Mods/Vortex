@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React, { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -106,7 +106,7 @@ describe("ViewPicker", () => {
 
   it("leaves the picker on Tab from wherever Home took focus", async () => {
     render(<Bar initial="mine" onAddView={vi.fn<() => void>()} />);
-    view("Mine").focus();
+    act(() => view("Mine").focus());
 
     await userEvent.keyboard("{Home}");
     await userEvent.tab();
@@ -124,7 +124,7 @@ describe("ViewPicker", () => {
   it("moves focus with the arrow keys, wrapping, without opening a view", async () => {
     const onSelect = vi.fn<(id: string) => void>();
     render(<Bar onSelect={onSelect} />);
-    view("One").focus();
+    act(() => view("One").focus());
 
     await userEvent.keyboard("{ArrowRight}");
     expect(view("Two")).toHaveFocus();
@@ -139,7 +139,7 @@ describe("ViewPicker", () => {
 
   it("goes to either end with Home and End", async () => {
     render(<Bar initial="two" />);
-    view("Two").focus();
+    act(() => view("Two").focus());
 
     await userEvent.keyboard("{End}");
     expect(view("Mine")).toHaveFocus();
@@ -150,7 +150,7 @@ describe("ViewPicker", () => {
 
   it("leaves the arrow keys, Home and End alone with a modifier held", async () => {
     render(<Bar initial="two" />);
-    view("Two").focus();
+    act(() => view("Two").focus());
 
     await userEvent.keyboard(
       "{Alt>}{ArrowLeft}{/Alt}{Control>}{Home}{/Control}{Shift>}{End}{/Shift}",
@@ -161,7 +161,7 @@ describe("ViewPicker", () => {
   it("opens the focused view with Space or Enter", async () => {
     const onSelect = vi.fn<(id: string) => void>();
     render(<Bar onSelect={onSelect} />);
-    view("One").focus();
+    act(() => view("One").focus());
 
     await userEvent.keyboard("{ArrowRight} ");
     expect(onSelect).toHaveBeenLastCalledWith("two");
@@ -181,7 +181,7 @@ describe("ViewPicker", () => {
 
   it('moves on with the arrow keys from a view\'s "…"', async () => {
     render(<Bar />);
-    screen.getByRole("button", { name: /view actions/ }).focus();
+    act(() => screen.getByRole("button", { name: /view actions/ }).focus());
 
     await userEvent.keyboard("{ArrowRight}");
     expect(view("One")).toHaveFocus();
@@ -189,7 +189,7 @@ describe("ViewPicker", () => {
 
   it('leaves the arrow keys alone on the "+"', async () => {
     render(<Bar onAddView={vi.fn<() => void>()} />);
-    screen.getByRole("button", { name: "Add view" }).focus();
+    act(() => screen.getByRole("button", { name: "Add view" }).focus());
 
     await userEvent.keyboard("{ArrowRight}");
     expect(screen.getByRole("button", { name: "Add view" })).toHaveFocus();

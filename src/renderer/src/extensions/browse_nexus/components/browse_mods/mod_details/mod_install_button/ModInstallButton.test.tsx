@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { VortexError } from "@vortex/shared/errors";
 import React from "react";
@@ -337,8 +337,12 @@ describe("ModInstallButton", () => {
       await userEvent.click(button());
       expect(screen.getByText("Skip the website and update instantly.")).toBeInTheDocument();
 
+      // Closing the upsell queues headless-ui's leave as a microtask, which would run outside act()
+      // once this returns; an async act() lets it land inside.
       mocks.isPremium = true;
-      rerender();
+      await act(async () => {
+        rerender();
+      });
     };
 
     it("offers a free user 1-click update for an update", () => {
