@@ -69,6 +69,7 @@ const PROFILE_EDGE_CASES = "fake-edge-cases";
 const PROFILE_OTHER = "fake-other";
 const PROFILE_TAKEN_BACKUP = "fake-taken-backup";
 const WRITES_AT_ONCE = 64;
+const VORTEX_WINDOW_TITLE = "Vortex (fake Skyrim SE)";
 
 const argv = process.argv.slice(2);
 const command = argv[0] !== undefined && !argv[0].startsWith("--") ? argv[0] : "setup";
@@ -259,13 +260,13 @@ function launchVortex() {
   };
   // set by editor-hosted shells
   delete env.ELECTRON_RUN_AS_NODE;
-  const child = spawn("pnpm", ["electron", ".", `--remote-debugging-port=${port}`], {
-    cwd: mainPath,
-    env,
-    shell: true,
-    detached: true,
-    stdio: "ignore",
-  });
+  const electron = `pnpm electron . --remote-debugging-port=${port}`;
+  // on Windows Vortex gets a console window of its own, which shows its output; cmd /k keeps
+  // that window open once Vortex ends, so what it printed last can still be read
+  const child = spawn(
+    process.platform === "win32" ? `start "${VORTEX_WINDOW_TITLE}" cmd /k ${electron}` : electron,
+    { cwd: mainPath, env, shell: true, detached: process.platform !== "win32", stdio: "ignore" },
+  );
   child.unref();
 }
 
