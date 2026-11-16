@@ -28,13 +28,18 @@ vi.mock("react-i18next", async (importOriginal) => {
   };
 });
 
+import { VortexGameId } from "@vortex/shared";
+
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { ITableAttribute } from "@/types/ITableAttribute";
 
 import type { IModWithState } from "../../types/IModProps";
 import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
-import { useRegisteredModsColumns } from "./useRegisteredModsColumns.hook";
+import {
+  RegisteredModsInputsProvider,
+  useRegisteredModsColumns,
+} from "./useRegisteredModsColumns.hook";
 
 // --- Helpers ---
 
@@ -58,13 +63,13 @@ type Mods = { [id: string]: IModWithState };
 
 const NO_MODS: Mods = {};
 
-const renderRegistered = (ownIds: ReadonlySet<string> = new Set()) => {
-  const store = makeModsTableStore();
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <Provider store={store}>{children}</Provider>
-  );
-  return renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS), { wrapper }).result.current;
-};
+const storeWrapper =
+  (store = makeModsTableStore()) =>
+  ({ children }: { children: ReactNode }) => <Provider store={store}>{children}</Provider>;
+
+const renderRegistered = (ownIds: ReadonlySet<string> = new Set()) =>
+  renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS, true), { wrapper: storeWrapper() })
+    .result.current;
 
 const cellText = (column: IModsTableColumn, modRow: IModRow = row()) =>
   render(<>{column.cell(modRow)}</>).container.textContent;
@@ -73,8 +78,12 @@ const NO_IDS = new Set<string>();
 
 /** The first registered column's cell for a row, as the table draws it while the mods change. */
 const CellHarness = ({ modRow, mods }: { modRow: IModRow; mods: Mods }) => {
-  const { columns } = useRegisteredModsColumns(NO_IDS, mods);
-  return <div data-testid="cell">{columns[0].cell(modRow)}</div>;
+  const { columns, inputs } = useRegisteredModsColumns(NO_IDS, mods, true);
+  return (
+    <RegisteredModsInputsProvider value={inputs}>
+      <div data-testid="cell">{columns[0].cell(modRow)}</div>
+    </RegisteredModsInputsProvider>
+  );
 };
 
 /** Renders a registered column's cell, and draws it again as the table would. */
@@ -88,10 +97,10 @@ const renderCell = (modRow: IModRow = row()) => {
   return {
     cell: () => screen.getByTestId("cell"),
     /** Draws it again, for these mods, as the table does when any of them changes. */
-    redraw: (mods: Mods = NO_MODS) =>
+    redraw: (mods: Mods = NO_MODS, drawn: IModRow = modRow) =>
       view.rerender(
         <Provider store={store}>
-          <CellHarness modRow={modRow} mods={mods} />
+          <CellHarness modRow={drawn} mods={mods} />
         </Provider>,
       ),
   };
@@ -141,18 +150,18 @@ describe("useRegisteredModsColumns", () => {
     let game = "stardewvalley";
     registered.attributes = [attribute({ id: "sdv", condition: () => game === "stardewvalley" })];
 
-    let store = makeModsTableStore({ gameId: "skyrimse" });
+    let store = makeModsTableStore({ gameId: VortexGameId("skyrimse") });
     const wrapper = ({ children }: { children: ReactNode }) => (
       <Provider store={store}>{children}</Provider>
     );
     const ownIds = new Set<string>();
-    const { result, rerender } = renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS), {
+    const { result, rerender } = renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS, true), {
       wrapper,
     });
     expect(result.current.columns.map(({ id }) => id)).toEqual(["sdv"]);
 
     game = "skyrimse";
-    store = makeModsTableStore({ gameId: "skyrimse2" });
+    store = makeModsTableStore({ gameId: VortexGameId("skyrimse2") });
     rerender();
 
     expect(result.current.columns).toEqual([]);
@@ -185,7 +194,7 @@ describe("useRegisteredModsColumns", () => {
     expect(defaultShown).toEqual([]);
   });
 
-  // As the script extender's Extender Error, which its extension shows itself (LAZ-1579).
+  // As the script extender's Extender Error, which its extension shows itself.
   it("leaves out a column the user can't toggle that's hidden by default", () => {
     registered.attributes = [
       attribute({
@@ -266,6 +275,69 @@ describe("useRegisteredModsColumns", () => {
     registered.attributes = [attribute({ id: "plain" })];
 
     expect(renderRegistered().rowClassName(row(), () => true)).toBeUndefined();
+  });
+
+  // So a download's progress or a mod being enabled doesn't rebuild the view's columns.
+  it("keeps its columns, and the ones to show, when the mods change", () => {
+    registered.attributes = [attribute({ id: "endorsed", isVolatile: true })];
+    let mods = NO_MODS;
+    const ownIds = new Set<string>();
+    const { result, rerender } = renderHook(() => useRegisteredModsColumns(ownIds, mods, true), {
+      wrapper: storeWrapper(),
+    });
+    const before = result.current;
+
+    mods = { b: row({ id: "b" }).mod };
+    rerender();
+
+    expect(result.current.columns).toBe(before.columns);
+    expect(result.current.defaultShown).toBe(before.defaultShown);
+    expect(result.current.inputs).not.toBe(before.inputs);
+  });
+
+  // Some extensions keep only the last listener, so one for no column would take theirs.
+  it("listens for changes only to the data of the columns it offers", () => {
+    const externalData = vi.fn();
+    registered.attributes = [
+      attribute({ id: "shown", externalData }),
+      attribute({ id: "detail", placement: "detail", externalData }),
+      attribute({ id: "otherGame", condition: () => false, externalData }),
+      attribute({ id: "category", externalData }),
+    ];
+    const ownIds = new Set(["category"]);
+
+    renderHook(() => useRegisteredModsColumns(ownIds, NO_MODS, true), {
+      wrapper: storeWrapper(),
+    });
+
+    expect(externalData).toHaveBeenCalledTimes(1);
+  });
+
+  describe("search", () => {
+    const searchText = (attr: Partial<ITableAttribute<IModWithState>>, modRow = row()) => {
+      registered.attributes = [attribute(attr)];
+      return renderRegistered().columns[0].searchText?.(modRow);
+    };
+
+    it("finds a row by its value's text, as the cell shows it", () => {
+      expect(searchText({ calc: () => ["Textures", "Meshes"] })).toBe("Textures, Meshes");
+    });
+
+    // Such as Endorsed, whose icon the legacy table's filter matched by its value.
+    it("finds a row by its value where the extension draws the cell itself", () => {
+      expect(searchText({ calc: () => "Endorsed", customRenderer: () => <span /> })).toBe(
+        "Endorsed",
+      );
+    });
+
+    it("finds nothing by a value that has no text, or isn't worked out yet", () => {
+      expect(searchText({ calc: () => true })).toBe("");
+      expect(searchText({ calc: () => Promise.resolve("Compatible") })).toBe("");
+    });
+
+    it("passes over a column with no value to search", () => {
+      expect(searchText({ customRenderer: () => <span /> })).toBeUndefined();
+    });
   });
 
   describe("a cell of the extension's own", () => {
@@ -355,6 +427,20 @@ describe("useRegisteredModsColumns", () => {
       expect(cell()).toHaveTextContent("1 rule");
     });
 
+    // As in the legacy table, as some renderers start work as they're called, such as Content's
+    // scan of the mod's files.
+    it("is drawn again only when its own mod changes", () => {
+      const customRenderer = vi.fn(() => <span>Content</span>);
+      registered.attributes = [attribute({ customRenderer })];
+      const { redraw } = renderCell();
+
+      redraw({ b: row({ id: "b" }).mod });
+      expect(customRenderer).toHaveBeenCalledTimes(1);
+
+      redraw(NO_MODS, row({ attributes: { content: ["Textures"] } }));
+      expect(customRenderer).toHaveBeenCalledTimes(2);
+    });
+
     it("draws nothing, in no gate, when its renderer draws nothing", () => {
       registered.attributes = [attribute({ customRenderer: () => null })];
 
@@ -401,6 +487,31 @@ describe("useRegisteredModsColumns", () => {
       const { cell } = renderCell();
 
       await waitFor(() => expect(cell()).toHaveTextContent("Compatible"));
+    });
+
+    // As the table draws only the rows in sight, a row scrolled back in shows it at once.
+    it("isn't worked out again for a row drawn again after leaving the page", async () => {
+      const calc = vi.fn(() => Promise.resolve("Compatible"));
+      registered.attributes = [attribute({ calc })];
+      const store = makeModsTableStore();
+      const modRow = row();
+      const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+        wrapper: storeWrapper(store),
+      });
+      const drawCell = () =>
+        render(
+          <RegisteredModsInputsProvider value={result.current.inputs}>
+            <div data-testid="cell">{result.current.columns[0].cell(modRow)}</div>
+          </RegisteredModsInputsProvider>,
+        );
+
+      const first = drawCell();
+      await waitFor(() => expect(screen.getByTestId("cell")).toHaveTextContent("Compatible"));
+      first.unmount();
+      drawCell();
+
+      expect(screen.getByTestId("cell")).toHaveTextContent("Compatible");
+      expect(calc).toHaveBeenCalledTimes(1);
     });
 
     it("ignores one worked out asynchronously that a later one has replaced", async () => {
@@ -469,12 +580,10 @@ describe("useRegisteredModsColumns", () => {
     it("isn't listened for while the new table isn't the one shown", () => {
       const externalData = vi.fn();
       registered.attributes = [attribute({ externalData })];
-      const store = makeModsTableStore({ betaTable: false });
-      const wrapper = ({ children }: { children: ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
 
-      renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS), { wrapper });
+      renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, false), {
+        wrapper: storeWrapper(),
+      });
 
       expect(externalData).not.toHaveBeenCalled();
     });

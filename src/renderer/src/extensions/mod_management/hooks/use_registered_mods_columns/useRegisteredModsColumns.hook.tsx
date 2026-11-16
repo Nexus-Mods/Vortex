@@ -1,21 +1,33 @@
-import { getErrorMessageOrDefault } from "@vortex/shared";
-import React, { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  memo,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import ExtensionGate from "@/controls/ExtensionGate";
 import { registerTableAttribute } from "@/controls/table/registerTableAttribute";
 import { useExtensionObjects } from "@/ExtensionProvider";
-import type { IState } from "@/types/IState";
 import type { ICustomProps, ITableAttribute } from "@/types/ITableAttribute";
 import { Icon } from "@/ui/components/icon/Icon";
 import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { getCurrentLanguage, preT, type TFunction } from "@/util/i18n";
-import { log } from "@/util/log";
 import { activeGameId } from "@/util/selectors";
 
 import type { IModWithState } from "../../types/IModProps";
 import type { IModRow } from "../../util/mods_table_views/modsTableViews";
+import {
+  logAttributeFailure,
+  type ModsById,
+  RegisteredValues,
+} from "../../util/registered_values/registeredValues";
 import {
   DEFAULT_POSITION,
   type IModsTableColumn,
@@ -44,99 +56,84 @@ const valueCell = (value: unknown, header: string): ReactNode => {
   return text ? <span className="truncate">{text}</span> : null;
 };
 
-const isThenable = (value: unknown): value is PromiseLike<unknown> =>
-  typeof (value as PromiseLike<unknown> | undefined)?.then === "function";
+/** What registered cells are drawn from outside their own mod. */
+export interface IRegisteredModsInputs {
+  /** All the mods, whose changes a volatile column's value is worked out again for. */
+  mods: ModsById;
+  /** How many times each attribute's `externalData` has said its data changed, by id. */
+  versions: { [attributeId: string]: number };
+}
 
-const CALC_FAILED = "failed to calculate attribute value";
+const NO_INPUTS: IRegisteredModsInputs = { mods: {}, versions: {} };
 
-const logFailure = (
-  message: string,
-  attribute: ITableAttribute,
-  mod: IModWithState,
-  err: unknown,
-) =>
-  log("error", message, {
-    attribute: attribute.id,
-    row: mod.id,
-    error: getErrorMessageOrDefault(err),
-  });
+const RegisteredModsInputs = createContext<IRegisteredModsInputs>(NO_INPUTS);
+
+/**
+ * Gives the registered columns' cells what they're drawn from outside their own mod, as the
+ * columns themselves don't change with it; wraps the table that shows them.
+ */
+export const RegisteredModsInputsProvider = RegisteredModsInputs.Provider;
 
 interface IRegisteredValueProps {
   attribute: ITableAttribute;
   mod: IModWithState;
   header: string;
-  t: TFunction;
-  /** Changes when the data its value is from outside the mod does. */
-  version: number;
-  /** For a volatile column, all the mods: a change to any works its value out again. */
-  volatileMods?: { [id: string]: IModWithState };
+  values: RegisteredValues;
 }
 
 /**
- * A cell's `calc` value, worked out again only when its mod, `version` or `volatileMods`
- * change. One worked out asynchronously shows once it's ready, the last one staying until then.
+ * A cell's `calc` value, as last worked out. One worked out asynchronously shows once it's
+ * ready, the last one staying until then.
  */
-const RegisteredValue = ({
-  attribute,
-  mod,
-  header,
-  t,
-  version,
-  volatileMods,
-}: IRegisteredValueProps) => {
-  const result = useMemo(() => {
-    try {
-      return attribute.calc?.(mod, t);
-    } catch (err) {
-      logFailure(CALC_FAILED, attribute, mod, err);
-      return undefined;
-    }
-  }, [attribute, mod, t, version, volatileMods]);
-  const [settled, setSettled] = useState<unknown>();
+const RegisteredValue = ({ attribute, mod, header, values }: IRegisteredValueProps) => {
+  const { mods } = useContext(RegisteredModsInputs);
+  const entry = values.get(attribute, mod, mods);
+  const [, settled] = useReducer((count: number) => count + 1, 0);
 
   useEffect(() => {
-    if (!isThenable(result)) {
+    if (entry.pending === undefined) {
       return undefined;
     }
     let current = true;
-    result.then(
-      (value) => {
-        if (current) {
-          setSettled(value);
-        }
-      },
-      (err: unknown) => logFailure(CALC_FAILED, attribute, mod, err),
-    );
+    void entry.pending.then(() => {
+      if (current) {
+        settled();
+      }
+    });
     return () => {
       current = false;
     };
-  }, [attribute, mod, result]);
+  }, [entry]);
 
-  return valueCell(isThenable(result) ? settled : result, header);
+  return valueCell(entry.value, header);
 };
 
 // Only the Dependencies column highlights its row, while its icon is dragged over it, which
-// comes with dragging to make rules (LAZ-1589).
+// comes once the table lets you drag one mod onto another to add a rule.
 const NO_HIGHLIGHT: ICustomProps = { onHighlight: () => undefined };
 
 interface ICustomCellProps {
   attribute: ITableAttribute;
   mod: IModWithState;
   t: TFunction;
+  /** Changes when the data it's drawn from outside the mod does, which draws it again. */
+  version: number;
 }
 
 /**
  * A cell an extension draws itself, with its `customRenderer`, called and gated as the legacy
  * table does: the gate keeps the control's reactive props current, by the legacy cell's id.
+ * Drawn again only when its mod or its data outside the mods change, as in the legacy table,
+ * as some renderers start work as they're called, such as Content's scan of the mod's files.
  */
-const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
+const CustomCell = memo(({ attribute, mod, t }: ICustomCellProps) => {
   let control: ReactNode = null;
   try {
     // `||` as the legacy table has it: `shown && <Control />` gives false, which the gate
     // would take for a broken control.
     control = attribute.customRenderer?.(mod, false, t, NO_HIGHLIGHT) || null;
   } catch (err) {
-    logFailure("failed to render attribute", attribute, mod, err);
+    logAttributeFailure("failed to render attribute", attribute, mod, err);
   }
   // Legacy controls name themselves with a title, shown here in the table's own tooltip.
   return control === null ? null : (
@@ -144,6 +141,12 @@ const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
       <ExtensionGate id={`extension-${mod.id}-${attribute.id}`}>{control}</ExtensionGate>
     </LegacyTitleTooltips>
   );
+});
+
+/** A {@link CustomCell}, given its attribute's version of the data outside the mods. */
+const VersionedCustomCell = (props: Omit<ICustomCellProps, "version">) => {
+  const { versions } = useContext(RegisteredModsInputs);
+  return <CustomCell {...props} version={versions[props.attribute.id] ?? 0} />;
 };
 
 /**
@@ -152,8 +155,6 @@ const CustomCell = ({ attribute, mod, t }: ICustomCellProps) => {
  */
 const REGISTERED_COLUMN_WIDTH = "96px";
 
-const isNewTableShown = (state: IState) => state.settings.mods?.betaTable === true;
-
 const isInTable = ({ placement }: ITableAttribute) => placement === "table" || placement === "both";
 
 /** Whether the legacy table shows an attribute's column before the user, or the extension, says. */
@@ -161,18 +162,24 @@ const isDefaultVisible = (attribute: ITableAttribute) => attribute.isDefaultVisi
 
 /**
  * Whether it's a column here: one the user can't toggle shows only if it does by default, as
- * the legacy table leaves one that doesn't for its extension to show (LAZ-1579).
+ * the legacy table leaves one that doesn't for its extension to show, such as the script
+ * extender's error column.
  */
 const isOffered = (attribute: ITableAttribute) =>
   isInTable(attribute) && (attribute.isToggleable === true || isDefaultVisible(attribute));
 
 /**
- * How many times each attribute's `externalData` has said the data it's from changed, by id:
- * the legacy table's way to hear of changes to data outside the mods. Extensions give no way to
- * stop listening, so once unmounted, their calls are ignored, and some keep only the last
- * listener, so it listens only while the new table is shown, leaving them to the legacy one.
+ * How many times each offered attribute's `externalData` has said the data it's from changed,
+ * by id: the legacy table's way to hear of changes to data outside the mods. Each change has its
+ * values worked out again. Extensions give no way to stop listening, so once unmounted, their
+ * calls are ignored, and some keep only the last listener, so it listens only while the new
+ * table is shown, leaving them to the legacy one.
  */
-const useExternalDataVersions = (attributes: ITableAttribute[], isNewTable: boolean) => {
+const useExternalDataVersions = (
+  attributes: ITableAttribute[],
+  isNewTable: boolean,
+  values: RegisteredValues,
+) => {
   const [versions, setVersions] = useState<{ [attributeId: string]: number }>({});
 
   useEffect(() => {
@@ -183,6 +190,7 @@ const useExternalDataVersions = (attributes: ITableAttribute[], isNewTable: bool
     for (const { id, externalData } of attributes) {
       externalData?.(() => {
         if (mounted) {
+          values.invalidate(id);
           setVersions((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
         }
       });
@@ -190,71 +198,84 @@ const useExternalDataVersions = (attributes: ITableAttribute[], isNewTable: bool
     return () => {
       mounted = false;
     };
-  }, [attributes, isNewTable]);
+  }, [attributes, isNewTable, values]);
 
   return versions;
 };
 
 /**
  * The columns extensions register on the legacy Mods table, with `registerTableAttribute("mods", …)`,
- * for the new one.
+ * for the new one. They change only with the extensions, the game and the table's own columns;
+ * what their cells show from outside their own mod comes in `inputs`, for
+ * {@link RegisteredModsInputsProvider}.
  *
  * @param ownIds The table's own columns, which a registered one with the same id gives way to.
  * @param mods All the mods, whose changes a volatile column is worked out again for.
+ * @param isNewTable Whether the new table is the one shown, which alone listens for changes.
  */
 export const useRegisteredModsColumns = (
   ownIds: ReadonlySet<string>,
-  mods: { [id: string]: IModWithState },
+  mods: ModsById,
+  isNewTable: boolean,
 ) => {
   const { t } = useTranslation("common");
   const gameId = useSelector(activeGameId);
-  const isNewTable = useSelector(isNewTableShown);
   const attributes = useExtensionObjects<ITableAttribute>(
     registerTableAttribute as (...args: unknown[]) => ITableAttribute | undefined,
     undefined,
     "mods",
   );
-  const versions = useExternalDataVersions(attributes, isNewTable);
 
-  const registered = useMemo(() => {
-    const offered = attributes.filter(
-      (attribute) =>
-        isOffered(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
-    );
-    const toggleable = offered.filter((attribute) => attribute.isToggleable === true);
-    const columns = offered.map((attribute): IModsTableColumn => {
-      const header = preT(t, attribute.name);
-      return {
-        id: attribute.id,
-        header,
-        width: REGISTERED_COLUMN_WIDTH,
-        isToggleable: attribute.isToggleable === true,
-        // Always one, so a column the user can't toggle takes its place too, not the front.
-        position: attribute.position ?? DEFAULT_POSITION,
-        cell: ({ mod }) =>
-          attribute.customRenderer !== undefined ? (
-            <CustomCell attribute={attribute} mod={mod} t={t} />
-          ) : (
-            <RegisteredValue
-              attribute={attribute}
-              header={header}
-              mod={mod}
-              t={t}
-              version={versions[attribute.id] ?? 0}
-              volatileMods={attribute.isVolatile ? mods : undefined}
-            />
-          ),
-      };
-    });
-
-    const defaultShown = toggleable.filter(isDefaultVisible).map(({ id }) => id);
-    const toggleableIds = new Set(toggleable.map(({ id }) => id));
-
-    return { columns, defaultShown, toggleableIds };
+  const offered = useMemo(
+    () =>
+      attributes.filter(
+        (attribute) =>
+          isOffered(attribute) && !ownIds.has(attribute.id) && (attribute.condition?.() ?? true),
+      ),
     // A condition is mostly which game is active, so it's asked again when that changes.
-  }, [attributes, gameId, mods, ownIds, t, versions]);
+    [attributes, gameId, ownIds],
+  );
 
-  const { columns, defaultShown, toggleableIds } = registered;
+  // Kept apart from the columns, which a mod changing doesn't change; anew for a new language.
+  const values = useMemo(() => new RegisteredValues(t), [attributes, t]);
+  const versions = useExternalDataVersions(offered, isNewTable, values);
+
+  const columns = useMemo(
+    () =>
+      offered.map((attribute): IModsTableColumn => {
+        const header = preT(t, attribute.name);
+        return {
+          id: attribute.id,
+          header,
+          width: REGISTERED_COLUMN_WIDTH,
+          isToggleable: attribute.isToggleable === true,
+          // Always one, so a column the user can't toggle takes its place too, not the front.
+          position: attribute.position ?? DEFAULT_POSITION,
+          // The value as text, as the legacy table's filter matches it; drawn or not.
+          searchText:
+            attribute.calc === undefined
+              ? undefined
+              : ({ mod }) => valueText(values.forSearch(attribute, mod).value) ?? "",
+          cell: ({ mod }) =>
+            attribute.customRenderer !== undefined ? (
+              <VersionedCustomCell attribute={attribute} mod={mod} t={t} />
+            ) : (
+              <RegisteredValue attribute={attribute} header={header} mod={mod} values={values} />
+            ),
+        };
+      }),
+    [offered, t, values],
+  );
+
+  const { defaultShown, toggleableIds } = useMemo(() => {
+    const toggleable = offered.filter((attribute) => attribute.isToggleable === true);
+    return {
+      defaultShown: toggleable.filter(isDefaultVisible).map(({ id }) => id),
+      toggleableIds: new Set(toggleable.map(({ id }) => id)),
+    };
+  }, [offered]);
+
+  const inputs = useMemo<IRegisteredModsInputs>(() => ({ mods, versions }), [mods, versions]);
 
   /**
    * The classes extensions add to a row: from every attribute, as the legacy table asks them,
@@ -277,5 +298,5 @@ export const useRegisteredModsColumns = (
     [attributes, ownIds, toggleableIds],
   );
 
-  return { columns, defaultShown, rowClassName };
+  return { columns, defaultShown, rowClassName, inputs };
 };

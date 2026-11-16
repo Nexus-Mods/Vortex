@@ -47,7 +47,10 @@ import {
 import { useModsTableNameFilter } from "../../hooks/use_mods_table_name_filter/useModsTableNameFilter.hook";
 import { useModsTableSearch } from "../../hooks/use_mods_table_search/useModsTableSearch.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
-import { useRegisteredModsColumns } from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
+import {
+  RegisteredModsInputsProvider,
+  useRegisteredModsColumns,
+} from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -318,8 +321,10 @@ export const ModsTableSwitch = ({
     ],
   );
 
-  const ownIds = useMemo(() => new Set(columns.map(({ id }) => id)), [columns]);
-  const registered = useRegisteredModsColumns(ownIds, tableMods);
+  // By the ids alone, as the columns change with the mods, so the registered ones needn't.
+  const ownIdList = columns.map(({ id }) => id).join("\n");
+  const ownIds = useMemo(() => new Set(ownIdList.split("\n")), [ownIdList]);
+  const registered = useRegisteredModsColumns(ownIds, tableMods, newTable);
   const allColumns = useMemo(
     () => [...columns, ...registered.columns],
     [columns, registered.columns],
@@ -490,7 +495,9 @@ export const ModsTableSwitch = ({
 
   return (
     <>
-      <Table {...tableProps} {...data} />
+      <RegisteredModsInputsProvider value={registered.inputs}>
+        <Table {...tableProps} {...data} />
+      </RegisteredModsInputsProvider>
 
       <DisableSharedModsModal
         collections={pendingDisable?.shared.collections ?? []}
