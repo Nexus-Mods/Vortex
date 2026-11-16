@@ -1,6 +1,6 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
-import type { ModDetailsTab } from "@/extensions/browse_nexus/components/browse_mods/mod_details/modDetailsTabs";
 import type { EmptyStateKind } from "@/extensions/browse_nexus/util/empty_state_kind/emptyStateKind";
+import type { ModDetailsTab } from "@/extensions/browse_nexus/util/mod_details_tab/modDetailsTab";
 import type {
   TrackedView,
   ModAdultContent,

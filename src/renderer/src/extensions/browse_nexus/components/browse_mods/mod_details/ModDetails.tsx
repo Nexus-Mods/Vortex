@@ -4,6 +4,10 @@ import numeral from "numeral";
 import React, { forwardRef, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import {
+  isModDetailsTab,
+  type ModDetailsTab,
+} from "@/extensions/browse_nexus/util/mod_details_tab/modDetailsTab";
 import { modQuery } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import {
@@ -34,7 +38,6 @@ import { ModInstallButton } from "./mod_install_button/ModInstallButton";
 import { ModMenu } from "./mod_menu/ModMenu";
 import { ModTags } from "./mod_tags/ModTags";
 import { ModDetailsDescriptionSkeleton } from "./ModDetailsDescription.skeleton";
-import { isModDetailsTab, type ModDetailsTab } from "./modDetailsTabs";
 
 // const placeholderClass =
 //   "flex items-center justify-center rounded-sm border border-dashed border-stroke-moderate p-4 text-center";
@@ -55,10 +58,11 @@ interface IModDetailsProps {
 const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tablist"]';
 
 /**
- * The picked mod's details: gallery, stats, author, what the user has of it, pills and description. Shows the
- * search's result at once, and the tags and description once the mod's own query has them, with
- * 1-click install of its main file beside the mod page link. Counts opening the mod page, and
- * the gallery's picks and paging.
+ * The picked mod's details: gallery, stats, author, what the user has of it, pills and description,
+ * with a Comments tab that sends the user to the website for now. Shows the search's result at
+ * once, and the tags and description once the mod's own query has them, with 1-click install of
+ * its main file beside the mod page link. Counts switching tabs, opening the mod page and its
+ * comments, and the gallery's picks and paging.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
   ({ api, mod, gallery, onPick, onFocusList }, ref) => {
@@ -129,11 +133,19 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
         >
           <div className="flex scrollbar-gutter-stable items-start gap-x-4 overflow-hidden px-6 pt-6 pb-3">
             <TabBar className="min-w-0 flex-1">
-              <TabButton name={t("Details")} panelId="details" />
+              <TabButton
+                data-testid="mod-details-tab-details"
+                name={t("Details")}
+                panelId="details"
+              />
 
               {/* <TabButton name={t("Files")} panelId="files" /> */}
 
-              <TabButton name={t("Comments")} panelId="comments" />
+              <TabButton
+                data-testid="mod-details-tab-comments"
+                name={t("Comments")}
+                panelId="comments"
+              />
             </TabBar>
 
             <div className="flex items-center gap-x-2">

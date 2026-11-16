@@ -31,6 +31,7 @@ export const ModCommentsComingSoon = ({ commentsUrl, modUid }: IModCommentsComin
         <Button
           appearance="moderate"
           brand="neutral"
+          data-testid="mod-comments-website"
           rightIcon="open_in_new"
           onClick={() => {
             window.api.shell.openUrl(commentsUrl);
