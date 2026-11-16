@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
 import * as semver from "semver";
 
 import type { IAvailableExtension, IRegisteredExtension } from "@/types/extensions";
@@ -209,8 +209,11 @@ export function findUpdatableExtensions(
 export function findNexusBackfill(
   installedExtensions: Record<string, IExtensionState>,
   catalog: IAvailableExtension[],
-): Array<{ key: string; nexus: { gameId: GameId; gameDomain: GameDomain } }> {
-  const result: Array<{ key: string; nexus: { gameId: GameId; gameDomain: GameDomain } }> = [];
+): Array<{ key: string; nexus: { gameId: NexusGameId; gameDomain: NexusGameDomain } }> {
+  const result: Array<{
+    key: string;
+    nexus: { gameId: NexusGameId; gameDomain: NexusGameDomain };
+  }> = [];
 
   for (const [key, installed] of Object.entries(installedExtensions)) {
     if (installed.modId === undefined || installed.remove) continue;

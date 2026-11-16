@@ -1,4 +1,4 @@
-import { type GameId } from "@vortex/shared";
+import { type NexusGameId } from "@vortex/shared";
 
 import type { IState } from "@/types/IState";
 
@@ -13,7 +13,7 @@ import { Tiers, type Tier } from "./types";
  * extension-less detected game no catalog extension covers, where Manage means the
  * opt-in.
  */
-export function supportTier(state: IState, gameId: GameId): Tier {
+export function supportTier(state: IState, gameId: NexusGameId): Tier {
   if (state.persistent.gameMode?.tier0[gameId] !== undefined) {
     return Tiers.tier0;
   }

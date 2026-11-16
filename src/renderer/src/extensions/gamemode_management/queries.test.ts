@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
@@ -16,16 +16,16 @@ const tierZeroGame = VortexGameId("tier-0-1001");
 const sharedA = VortexGameId("shared-a");
 const sharedB = VortexGameId("shared-b");
 
-const domainA = GameDomain("domain-a");
-const domainB = GameDomain("domain-b");
-const tierZeroDomain = GameDomain("tier-zero-domain");
-const sharedDomain = GameDomain("shared-domain");
+const domainA = NexusGameDomain("domain-a");
+const domainB = NexusGameDomain("domain-b");
+const tierZeroDomain = NexusGameDomain("tier-zero-domain");
+const sharedDomain = NexusGameDomain("shared-domain");
 
 // The numeric Nexus Mods ids of the dummy games, in the same order.
-const numericA = GameId(1);
-const numericB = GameId(2);
-const numericTierZero = GameId(1001);
-const numericShared = GameId(3);
+const numericA = NexusGameId(1);
+const numericB = NexusGameId(2);
+const numericTierZero = NexusGameId(1001);
+const numericShared = NexusGameId(3);
 
 const gameData = (overrides: Partial<IGameData> = {}): IGameData => ({
   known: [],
@@ -52,7 +52,7 @@ const knownGames = (...ids: VortexGameId[]): IGameData =>
 const installed = (...ids: VortexGameId[]): Record<VortexGameId, IDiscoveryResult> =>
   Object.fromEntries(ids.map((id) => [id, { path: `C:/Games/${id}` }]));
 
-const listed = (id: GameId, domain: GameDomain): IGameListEntry => ({
+const listed = (id: NexusGameId, domain: NexusGameDomain): IGameListEntry => ({
   id,
   domain_name: domain,
   name: domain,
@@ -67,7 +67,7 @@ const listed = (id: GameId, domain: GameDomain): IGameListEntry => ({
   collections: 0,
 });
 
-const tierZeroEntry = (gameId: GameId, domain: GameDomain): ITierZeroGame => ({
+const tierZeroEntry = (gameId: NexusGameId, domain: NexusGameDomain): ITierZeroGame => ({
   gameId,
   domain,
   name: domain,
@@ -133,7 +133,9 @@ describe("findGame", () => {
     it("does not match on the domain's case", () => {
       const known = [game(gameA, nexusA)];
 
-      expect(findGame(gameData({ known }), { gameDomain: GameDomain("DOMAIN-A") })).toBeUndefined();
+      expect(
+        findGame(gameData({ known }), { gameDomain: NexusGameDomain("DOMAIN-A") }),
+      ).toBeUndefined();
     });
 
     describe("when games share the domain", () => {
@@ -270,11 +272,11 @@ describe("convertId", () => {
       expect(convertId(data, { vortexGameId: tierZeroGame }, "gameDomain")).toBeUndefined();
     });
 
-    it("converts a GameId through the games list", () => {
+    it("converts a NexusGameId through the games list", () => {
       expect(convertId(data, { gameId: numericB }, "gameDomain")).toBe(domainB);
     });
 
-    it("converts the GameId of a Tier 0 entry without the games list", () => {
+    it("converts the NexusGameId of a Tier 0 entry without the games list", () => {
       const tierZero = gameData({
         tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
       });
@@ -291,7 +293,7 @@ describe("convertId", () => {
       expect(convertId(renamed, { gameId: numericA }, "gameDomain")).toBe(domainB);
     });
 
-    it("is undefined for a GameId neither a Tier 0 entry nor the games list has", () => {
+    it("is undefined for a NexusGameId neither a Tier 0 entry nor the games list has", () => {
       expect(convertId(data, { gameId: numericTierZero }, "gameDomain")).toBeUndefined();
     });
   });
@@ -309,7 +311,7 @@ describe("convertId", () => {
       expect(convertId(tierZero, { gameDomain: tierZeroDomain }, "gameId")).toBe(numericTierZero);
     });
 
-    it("prefers the GameId a Tier 0 entry is managed under to the games list's", () => {
+    it("prefers the NexusGameId a Tier 0 entry is managed under to the games list's", () => {
       const renumbered = gameData({
         tier0: { [numericB]: tierZeroEntry(numericB, domainA) },
         nexusGames: [listed(numericA, domainA)],

@@ -1511,6 +1511,7 @@ describe("Table's focused group", () => {
     expect(onGroupFocused).toHaveBeenCalledTimes(1);
     await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
     expect(scrollIntoView.mock.contexts[0]).toBe(groupRow("Second"));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", container: "nearest" });
   });
 
   it("waits for a group it doesn't have yet", () => {

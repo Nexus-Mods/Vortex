@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { focusModsTableMod } from "../../actions/session";
-import { showModOnModsPage } from "./showModOnModsPage";
+import { showDownloadOnModsPage, showModOnModsPage } from "./showModOnModsPage";
 
 const SKYUI = VortexModId("skyui");
 
@@ -52,5 +52,16 @@ describe("showModOnModsPage", () => {
 
     expect(api.events.emit).toHaveBeenCalledWith("mods-scroll-to", SKYUI);
     expect(api.highlightControl).toHaveBeenCalledWith(".skyui", 5000);
+  });
+});
+
+describe("showDownloadOnModsPage", () => {
+  it("asks the new table to show the download's row, by its id", () => {
+    const { api } = apiWith(true);
+
+    showDownloadOnModsPage(api as unknown as IExtensionApi, "dl-1");
+
+    expect(api.store.dispatch).toHaveBeenCalledWith(focusModsTableMod(VortexModId("dl-1")));
+    expect(api.events.emit).toHaveBeenCalledWith("show-main-page", "Mods");
   });
 });

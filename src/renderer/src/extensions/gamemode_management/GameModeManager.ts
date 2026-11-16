@@ -1,7 +1,7 @@
 import * as path from "path";
 
-import type { GameId } from "@vortex/shared";
-import { GameDomain, type VortexGameId } from "@vortex/shared";
+import type { NexusGameId } from "@vortex/shared";
+import { NexusGameDomain, type VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import type * as Redux from "redux";
@@ -636,7 +636,9 @@ export class GameModeManager {
    * The Nexus Mods game a game is for. The one the extension catalog named for the game's
    * installed extension wins over what the game declares itself.
    */
-  private nexusGameOf(game: IGame): { gameId: GameId; gameDomain: GameDomain } | undefined {
+  private nexusGameOf(
+    game: IGame,
+  ): { gameId: NexusGameId; gameDomain: NexusGameDomain } | undefined {
     const state = this.mStore.getState();
 
     const extension =
@@ -651,7 +653,7 @@ export class GameModeManager {
     return nexusGameData(
       gameData(state),
       game.id,
-      typeof declared === "string" && declared !== "" ? GameDomain(declared) : undefined,
+      typeof declared === "string" && declared !== "" ? NexusGameDomain(declared) : undefined,
     );
   }
 

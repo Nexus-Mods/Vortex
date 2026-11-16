@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { nexusGames } = vi.hoisted(() => ({ nexusGames: vi.fn(() => [] as IGameListEntry[]) }));
@@ -11,17 +11,19 @@ import { makeGameStored } from "../../test-utils/builders";
 import { gameData } from "./gameData";
 
 const known: IGameStored[] = [makeGameStored({ id: VortexGameId("game-a"), name: "game-a" })];
-const tier0: Record<GameId, ITierZeroGame> = {
-  [GameId(1001)]: {
-    gameId: GameId(1001),
-    domain: GameDomain("tier-zero-domain"),
+const tier0: Record<NexusGameId, ITierZeroGame> = {
+  [NexusGameId(1001)]: {
+    gameId: NexusGameId(1001),
+    domain: NexusGameDomain("tier-zero-domain"),
     name: "tier-zero-game",
     storeIDs: { steam: [], gog: [], epic: [] },
   },
 };
 const games = [{ id: 1, domain_name: "domain-a" }] as IGameListEntry[];
 
-const state = (overrides: { known?: IGameStored[]; tier0?: Record<GameId, ITierZeroGame> } = {}) =>
+const state = (
+  overrides: { known?: IGameStored[]; tier0?: Record<NexusGameId, ITierZeroGame> } = {},
+) =>
   ({
     session: { gameMode: { known: overrides.known ?? known } },
     persistent: { gameMode: { tier0: overrides.tier0 ?? tier0 } },

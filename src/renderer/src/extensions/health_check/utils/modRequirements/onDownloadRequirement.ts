@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
@@ -86,7 +86,7 @@ export async function onDownloadRequirement(
       },
       async () => {
         await downloadAndInstallNexusFile(api, {
-          gameDomain: GameDomain(nexusDomainName),
+          gameDomain: NexusGameDomain(nexusDomainName),
           gameId: VortexGameId(internalGameId),
           modId: String(modId),
           fileId: String(targetFile.fileId),

@@ -2,7 +2,7 @@ import React, { type FC, useEffect } from "react";
 
 import { useSwitchingProfile } from "../../hooks";
 import { watchScrollActivity } from "../../ui/utils/scroll_activity/scrollActivity";
-import { ModernContentPane } from "../components/ContentPane";
+import { ModernContentPane } from "../components/content_pane/ContentPane";
 import { GameArt } from "../components/game_art/GameArt";
 import { Header } from "../components/Header/Header";
 import { Spine } from "../components/Spine/Spine";

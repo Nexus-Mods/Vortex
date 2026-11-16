@@ -65,7 +65,7 @@ vi.mock("../../components/mods_coming_soon/ModsComingSoon", () => ({
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { setBrowseSection } from "../../actions/session";
-import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
+import { type IBrowseSessionState, sessionReducer } from "../../reducers/session/session";
 import { BrowsePage } from "./BrowsePage";
 
 const emit = vi.fn();

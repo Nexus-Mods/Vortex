@@ -1,4 +1,4 @@
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
@@ -6,7 +6,7 @@ import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
 import { type IModFilters, type ModSortField, NO_FILTERS } from "../mod_views/modViews";
 import { type IWebsiteModSearch, websiteModSearchUrl } from "./websiteModSearchUrl";
 
-const DOMAIN = GameDomain("skyrimspecialedition");
+const DOMAIN = NexusGameDomain("skyrimspecialedition");
 
 /** A search sorted by most endorsed, with no filters, with these changes. */
 const searchWith = (

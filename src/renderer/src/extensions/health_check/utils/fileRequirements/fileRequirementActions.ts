@@ -1,4 +1,4 @@
-import { type GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { type NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 
 import { knownGames } from "@/extensions/gamemode_management/selectors";
 import renderModName from "@/extensions/mod_management/util/modName";
@@ -34,10 +34,10 @@ interface INexusFileRef {
 }
 
 /** A ref's mod on Nexus, or undefined when the mod id or domain can't be resolved. */
-function nexusMod(ref: INexusFileRef): { domain: GameDomain; modId: number } | undefined {
+function nexusMod(ref: INexusFileRef): { domain: NexusGameDomain; modId: number } | undefined {
   // modUID is empty when the source data lacked a mod id; decode only when present.
   const mod = ref.modUID ? decodeUID(ref.modUID) : undefined;
-  const domain = mod ? numericGameIdToDomainName(GameId(mod.gameId)) : undefined;
+  const domain = mod ? numericGameIdToDomainName(NexusGameId(mod.gameId)) : undefined;
   return mod && domain ? { domain, modId: mod.id } : undefined;
 }
 
@@ -61,7 +61,7 @@ export async function downloadFileRequirement(
   const mod = decodeUID(candidate.modUID);
   const file = decodeUID(candidate.fileUID);
 
-  const domain = mod ? numericGameIdToDomainName(GameId(mod.gameId)) : undefined;
+  const domain = mod ? numericGameIdToDomainName(NexusGameId(mod.gameId)) : undefined;
   if (!mod || !file || !domain) {
     log("warn", "cannot download file requirement: unresolved ids", {
       fileUID: candidate.fileUID,

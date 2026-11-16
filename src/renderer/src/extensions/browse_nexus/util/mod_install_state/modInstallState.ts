@@ -1,4 +1,4 @@
-import { GameDomain, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "@/extensions/collections/constants";
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
@@ -22,12 +22,18 @@ export type ModInstallState =
       mod: IMod;
       /** The update the Mods page offers for it: a known file, or one to pick on the site. */
       update?: "update" | "update-site";
+      /** How many of its Main files are installed; a file of unknown category counts. */
+      installedCount: number;
     }
   | {
       /** Downloaded, but not installed. */
       kind: "downloaded";
       /** One of its downloads, none of them installed. */
       downloadId: string;
+      /** Its downloaded Main files; one of unknown category counts, one with no file id doesn't. */
+      downloadCount: number;
+      /** When that download finished, in ms; none if it wasn't recorded. */
+      downloadedAt?: number;
     }
   | {
       /** Neither downloaded nor installed. */
@@ -37,9 +43,11 @@ export type ModInstallState =
 /** The mod to look for: its Nexus Mods id, and the domain that id belongs to. */
 export interface INexusModRef {
   /** The game's Nexus Mods domain, which the mod's id is scoped to. */
-  domain: GameDomain;
+  domain: NexusGameDomain;
   /** The mod's game-scoped id on Nexus Mods. */
   modId: number;
+  /** The file's game-scoped id; with it, only that file's downloads and installs count. */
+  fileId?: number;
 }
 
 /** What `modInstallState` looks through. */
@@ -53,14 +61,17 @@ export interface IModInstallSources {
   /** The active game, which downloads must be for. */
   gameId: VortexGameId;
   /** The Nexus Mods domain of a Vortex game, as the update check resolves a mod's. */
-  domainOf: (gameId: VortexGameId) => GameDomain | undefined;
+  domainOf: (gameId: VortexGameId) => NexusGameDomain | undefined;
 }
 
 /** Whether the Mods page offers an update in this state, as `offersUpdate` says. */
 const isOffered = (state: UpdateState): state is "update" | "update-site" => offersUpdate(state);
 
+/** Whether a file is a Main file, by its category's name; one of unknown category counts as one. */
+const isMainFile = (category: string | undefined) => !category || category === "MAIN";
+
 /** The key a Nexus Mods mod is known by: its domain and id. */
-export const modKey = (domain: GameDomain, modId: number) => `${domain}/${modId}`;
+export const modKey = (domain: NexusGameDomain, modId: number) => `${domain}/${modId}`;
 
 /**
  * The Nexus Mods mod a download is of, by its Nexus ids; none for one without them. A download
@@ -78,7 +89,7 @@ export const downloadKey = (
   }
 
   const [game] = download.game ?? [];
-  const domain = ids.gameId ? GameDomain(ids.gameId) : game && domainOf(VortexGameId(game));
+  const domain = ids.gameId ? NexusGameDomain(ids.gameId) : game && domainOf(VortexGameId(game));
 
   return domain ? modKey(domain, Number(ids.modId)) : undefined;
 };
@@ -112,7 +123,9 @@ export const modInstallState = (
   ref: INexusModRef,
 ): ModInstallState => {
   const key = modKey(ref.domain, ref.modId);
-  const isOf = (download: IDownload | undefined) => downloadKey(download, domainOf) === key;
+  const isFile = (fileId: unknown) => !ref.fileId || Number(fileId) === ref.fileId;
+  const isOf = (download: IDownload | undefined) =>
+    downloadKey(download, domainOf) === key && isFile(download?.modInfo?.nexus?.ids?.fileId);
   const all = Object.values(mods).filter((mod) => mod.type !== COLLECTION_TYPE);
 
   const isInstalling = all.some(
@@ -125,29 +138,48 @@ export const modInstallState = (
 
   const installed: IModWithState[] = all
     .filter((mod) => nexusModKey(mod, gameId, domainOf) === key)
+    .filter((mod) => isFile(mod.attributes?.fileId))
     .map((mod) => ({ ...mod, ...modState[mod.id] }));
 
   const shown = groupMods(installed, { groupBy: "file", multipleEnabled: false }).map(
     ([primary]) => mods[primary.id],
   );
 
+  const installedCount = shown.filter((mod) => isMainFile(mod.attributes?.fileType)).length;
+
   for (const mod of shown) {
     const update = updateState(mod.attributes ?? {});
     if (isOffered(update)) {
-      return { kind: "installed", mod, update };
+      return { kind: "installed", mod, update, installedCount };
     }
   }
 
   if (shown.length) {
-    return { kind: "installed", mod: shown[0] };
+    return { kind: "installed", mod: shown[0], installedCount };
   }
 
-  const downloadId = Object.keys(downloads).find(
+  const finished = Object.keys(downloads).filter(
     (id) =>
       downloads[id].state === "finished" &&
       !!downloads[id].game?.includes(gameId) &&
       isOf(downloads[id]),
   );
 
-  return downloadId ? { kind: "downloaded", downloadId } : { kind: "none" };
+  if (!finished.length) {
+    return { kind: "none" };
+  }
+
+  const files = new Set(
+    finished
+      .filter((id) => isMainFile(downloads[id].modInfo?.nexus?.fileInfo?.category_name))
+      .map((id) => downloads[id].modInfo?.nexus?.ids?.fileId)
+      .filter((fileId) => !!fileId),
+  );
+
+  return {
+    kind: "downloaded",
+    downloadId: finished[0],
+    downloadCount: files.size,
+    downloadedAt: downloads[finished[0]].fileTime || undefined,
+  };
 };

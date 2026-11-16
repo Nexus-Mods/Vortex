@@ -1,7 +1,7 @@
 import * as path from "node:path";
 
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, getErrorMessageOrDefault } from "@vortex/shared";
+import { NexusGameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 
 import { log } from "@/logging";
 
@@ -66,7 +66,7 @@ function resolveGameInfo(
     const game = ext.gameId !== undefined ? gameById.get(ext.gameId) : undefined;
     return game === undefined
       ? ext
-      : { ...ext, gameDomain: GameDomain(game.domain_name), gameName: game.name };
+      : { ...ext, gameDomain: NexusGameDomain(game.domain_name), gameName: game.name };
   });
 }
 

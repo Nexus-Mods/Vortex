@@ -5,7 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { V3ApiError } from "@vortex/nexus-api-v3";
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 import { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -67,7 +67,7 @@ export const searchQueryFor = (text: string | undefined) => {
 
 interface IModsSearch {
   /** The game whose mods to search; none searches nothing. */
-  gameDomainName: GameDomain | undefined;
+  gameDomainName: NexusGameDomain | undefined;
   /** How they're sorted. */
   sort: IModSort;
   /** Which of them to show. */
@@ -99,6 +99,7 @@ const searchFor = ({
       games: [gameDomainName],
       ...filtersToSearch(filters, { sortField: sort.field, rangeFrom }),
       supports_mod_managers: true,
+      exclude_requirements: ["mod", "external"],
     },
     sort: { field: sort.field, direction: sort.direction },
   };

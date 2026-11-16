@@ -1,6 +1,6 @@
 import * as path from "node:path";
 
-import type { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import type { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 
 import type { IGame } from "@/types/IGame";
@@ -16,9 +16,9 @@ const TIER_ZERO_STORES: string[] = ["steam", "gog", "epic"];
 
 /** game ids of games managed without a game extension. Provenance is kept here
  * and not on IGame so nothing about the synthesized object gives it away. */
-const tierZeroGameIds = new Set<GameId>();
+const tierZeroGameIds = new Set<NexusGameId>();
 
-export function isTierZeroGame(gameId: GameId): boolean {
+export function isTierZeroGame(gameId: NexusGameId): boolean {
   return tierZeroGameIds.has(gameId);
 }
 
@@ -38,7 +38,7 @@ export function tierZeroGameFor(state: IState, gameId: VortexGameId): ITierZeroG
 }
 
 /** the game object was dropped from the registry again (un-manage) */
-export function unregisterTierZeroGame(gameId: GameId): void {
+export function unregisterTierZeroGame(gameId: NexusGameId): void {
   tierZeroGameIds.delete(gameId);
 }
 
@@ -170,13 +170,13 @@ export function makeTierZeroGame(entry: ITierZeroGame): IGame {
  * removed entry simply no longer synthesizes.
  */
 export function synthesizePersistedTierZeroGames(
-  tier0: Record<GameId, ITierZeroGame>,
+  tier0: Record<NexusGameId, ITierZeroGame>,
   knownGames: IGame[],
   addGames: (games: IGame[]) => void,
 ): void {
   // the domain query rather than a comparison with the id: extension games name their
   // domain in details or, without it, by their id, and Tier 0 games by details
-  const ownsDomain = (domain: GameDomain, games: IGame[]) =>
+  const ownsDomain = (domain: NexusGameDomain, games: IGame[]) =>
     games.some((game) => nexusGameId(game) === domain);
 
   const synthesized: IGame[] = [];

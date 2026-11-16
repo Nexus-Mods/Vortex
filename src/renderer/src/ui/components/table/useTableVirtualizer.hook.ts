@@ -81,7 +81,8 @@ interface ITableVirtualizerOptions {
  * scrolls out of view, so focus and Tab order survive, and the heading of the group in view,
  * which sticks over its rows. With no scroller, every row renders.
  * `scrollToIndex` brings a row to the top: the virtualiser renders it, then the row scrolls
- * into view, a group's row's scroll margin clearing the sticky head.
+ * into view, a group's row's scroll margin clearing the sticky head. Only the scroller moves, not
+ * the layout around it, which can have content cut off past its edges.
  */
 export const useTableVirtualizer = ({
   count,
@@ -170,7 +171,7 @@ export const useTableVirtualizer = ({
       requestAnimationFrame(() =>
         tableRef.current
           ?.querySelector<HTMLElement>(`[data-index="${index}"]`)
-          ?.scrollIntoView({ block: "start" }),
+          ?.scrollIntoView({ block: "start", container: "nearest" }),
       );
     },
     [scroller, virtualizer],

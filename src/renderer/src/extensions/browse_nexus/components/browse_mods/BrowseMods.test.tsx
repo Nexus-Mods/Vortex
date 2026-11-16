@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -566,7 +566,10 @@ describe("BrowseMods", () => {
       await userEvent.click(screen.getByRole("button", { name: "Search on website" }));
 
       expect(openUrl).toHaveBeenCalledWith(
-        websiteModSearchUrl(GameDomain("skyrimspecialedition"), { sort: SORT, filters: FILTERS }),
+        websiteModSearchUrl(NexusGameDomain("skyrimspecialedition"), {
+          sort: SORT,
+          filters: FILTERS,
+        }),
       );
       expect(propertiesOf("browse_mods_empty_state_website_search_opened")).toEqual([
         { view: "trending", state: "filters_only" },
@@ -622,7 +625,7 @@ describe("BrowseMods", () => {
       await userEvent.click(screen.getByRole("button", { name: "Search on website" }));
 
       expect(openUrl).toHaveBeenCalledWith(
-        websiteModSearchUrl(GameDomain("skyrimspecialedition"), {
+        websiteModSearchUrl(NexusGameDomain("skyrimspecialedition"), {
           text: "sky",
           sort: SORT,
           filters: FILTERS,

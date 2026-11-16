@@ -5,7 +5,7 @@ vi.mock("../../../nexus_integration/util", () => ({
   nexusGames: () => [{ id: 4242, domain_name: "emberville", name: "Emberville" }],
 }));
 
-import { GameDomain, GameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId } from "@vortex/shared";
 
 import type { IState } from "@/types/IState";
 
@@ -15,7 +15,7 @@ import { tierZeroEntry } from "./tierZeroEntry";
 
 const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
   gameUid: `uid-${gameId}`,
-  gameId: GameId(gameId),
+  gameId: NexusGameId(gameId),
   storeIDs: { steam: ["42420"], gog: [], epic: [] },
   extension: withExtension
     ? ({ name: "ext", modId: 1, fileId: 1 } as IDetectedGame["extension"])
@@ -38,12 +38,12 @@ describe("tierZeroEntry", () => {
   it("builds the entry from the store listings the endpoint matched", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, false)] }),
-      tierZeroGameId(GameId(4242)),
+      tierZeroGameId(NexusGameId(4242)),
     );
 
     expect(entry).toEqual({
-      gameId: GameId(4242),
-      domain: GameDomain("emberville"),
+      gameId: NexusGameId(4242),
+      domain: NexusGameDomain("emberville"),
       name: "Emberville",
       storeIDs: { steam: ["42420"], gog: [], epic: [] },
     });
@@ -52,7 +52,7 @@ describe("tierZeroEntry", () => {
   it("is undefined when Vortex knows the game", () => {
     const entry = tierZeroEntry(
       state({ known: [{ id: "tier-0-4242" }], detected: [detected(4242, false)] }),
-      tierZeroGameId(GameId(4242)),
+      tierZeroGameId(NexusGameId(4242)),
     );
 
     expect(entry).toBeUndefined();
@@ -61,7 +61,7 @@ describe("tierZeroEntry", () => {
   it("is undefined when the endpoint returned an extension for the game", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, true)] }),
-      tierZeroGameId(GameId(4242)),
+      tierZeroGameId(NexusGameId(4242)),
     );
 
     expect(entry).toBeUndefined();
@@ -70,7 +70,7 @@ describe("tierZeroEntry", () => {
   it("is undefined when an extension in the catalog provides support", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, false)], catalog: [{ gameId: 4242 }] }),
-      tierZeroGameId(GameId(4242)),
+      tierZeroGameId(NexusGameId(4242)),
     );
 
     expect(entry).toBeUndefined();
@@ -79,7 +79,7 @@ describe("tierZeroEntry", () => {
   it("is undefined for the id of a game the endpoint didn't detect", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(4242, false)] }),
-      tierZeroGameId(GameId(100)),
+      tierZeroGameId(NexusGameId(100)),
     );
 
     expect(entry).toBeUndefined();
@@ -88,10 +88,10 @@ describe("tierZeroEntry", () => {
   it("degrades the name to the domain for a game missing from the nexus games list", () => {
     const entry = tierZeroEntry(
       state({ detected: [detected(100, false)] }),
-      tierZeroGameId(GameId(100)),
+      tierZeroGameId(NexusGameId(100)),
     );
 
     expect(entry?.name).toBe("moddable");
-    expect(entry?.domain).toBe(GameDomain("moddable"));
+    expect(entry?.domain).toBe(NexusGameDomain("moddable"));
   });
 });

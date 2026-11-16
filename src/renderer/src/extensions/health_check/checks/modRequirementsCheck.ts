@@ -3,7 +3,12 @@ import type { IModRequirements } from "@nexusmods/nexus-api";
  * Mod Requirements Health Check
  * Validates that all Nexus mod requirements are satisfied
  */
-import { type GameDomain, GameId, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import {
+  type NexusGameDomain,
+  NexusGameId,
+  getErrorMessageOrDefault,
+  unknownToError,
+} from "@vortex/shared";
 
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
 import { getModFilesWithCache } from "@/extensions/health_check/utils/modRequirements/modFiles";
@@ -144,7 +149,7 @@ export function resolveRequirementTarget(
   fallbackGameId: string,
 ): {
   requiredModId: number;
-  domainName: GameDomain | undefined;
+  domainName: NexusGameDomain | undefined;
   gameIdForStorage: string;
   uid: string | undefined;
 } | null {
@@ -154,7 +159,7 @@ export function resolveRequirementTarget(
   }
   const requiredGameId = req.gameId ? parseInt(req.gameId, 10) : undefined;
   const requiredDomain =
-    requiredGameId != null ? numericGameIdToDomainName(GameId(requiredGameId)) : undefined;
+    requiredGameId != null ? numericGameIdToDomainName(NexusGameId(requiredGameId)) : undefined;
   // a requirement with no game is on the requiring mod's game, whose id here is Vortex's
   const domainName =
     requiredGameId != null ? requiredDomain : nexusGameId(getGame(fallbackGameId), fallbackGameId);
