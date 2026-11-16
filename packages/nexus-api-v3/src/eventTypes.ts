@@ -126,11 +126,19 @@ export type GameFolderStatePayload = {
   unknown_in_vortex_folder: GameFolderFileCount;
   vortex: GameFolderFileCount;
   vortex_changed_since_deploy: GameFolderFileCount;
-  /** every modified and missing file, and up to the cap of unknown files */
+  /**
+   * every modified and missing file, and up to the cap of unknown files, as many as fit in the
+   * 64 KB payload limit
+   */
   files: GameFolderFile[];
+  /** some modified or missing files were left out of `files` to fit the payload limit */
+  files_truncated: boolean;
+  /** some unknown files were left out of `files`, past the cap or to fit the payload limit */
   unknown_truncated: boolean;
-  /** every unknown file, totalled by its first two folders */
+  /** every unknown file, totalled by its first two folders; largest first when trimmed */
   unknown_by_folder: GameFolderFolderCount[];
+  /** some folders were left out of `unknown_by_folder` to fit the payload limit */
+  unknown_by_folder_truncated: boolean;
   cost: {
     duration_ms: number;
     files_walked: number;

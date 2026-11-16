@@ -269,6 +269,13 @@ The event payload includes:
     - `unknown_by_folder`: Total count of unknown files grouped by their top two
       directory levels.
 
+The API rejects an event whose payload is over 64 KB, so the file lists are
+trimmed until the payload fits in 60 KiB. The counts are never trimmed. The
+lists are filled in this order: modified and missing files, then
+`unknown_by_folder` (largest folders first), then a fresh random sample of the
+unknown files. `files_truncated`, `unknown_by_folder_truncated` and
+`unknown_truncated` say which lists were cut.
+
 All file paths in the payload are relative to the game folder using `/`
 separators. Absolute local paths (such as the Steam library path or OS username)
 never leave the machine.

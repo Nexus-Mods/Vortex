@@ -5,6 +5,9 @@ import type { GameFolderCheckCounts, GameFolderCheckResult } from "@vortex/share
 const iso = (ms: number | null | undefined): string | null =>
   ms === null || ms === undefined || !Number.isFinite(ms) ? null : new Date(ms).toISOString();
 
+type GameFolderFile = GameFolderStatePayload["files"][number];
+type GameFolderFolderCount = GameFolderStatePayload["unknown_by_folder"][number];
+
 const zero = (): GameFolderFileCount => ({ files: 0, bytes: 0 });
 
 const NO_COUNTS: GameFolderCheckCounts = {
@@ -34,7 +37,21 @@ export interface IPayloadContext {
   steamLastUpdated: number | null;
 }
 
+/**
+ * The API rejects an event whose payload is over 64 KiB; this leaves room under it. Only the file
+ * lists are trimmed to fit, never the counts.
+ */
+export const MAX_PAYLOAD_BYTES = 60 * 1024;
+
 export function toGameFolderStatePayload(
+  result: GameFolderCheckResult,
+  context: IPayloadContext,
+  random: () => number = Math.random,
+): GameFolderStatePayload {
+  return fitPayload(buildPayload(result, context), MAX_PAYLOAD_BYTES, random);
+}
+
+function buildPayload(
   result: GameFolderCheckResult,
   context: IPayloadContext,
 ): GameFolderStatePayload {
@@ -84,8 +101,10 @@ export function toGameFolderStatePayload(
       ...(file.fromBackup === true && { from_backup: true as const }),
       ...(file.inVortexFolder === true && { in_vortex_folder: true as const }),
     })),
+    files_truncated: false,
     unknown_truncated: checked?.unknownTruncated ?? false,
     unknown_by_folder: checked?.unknownByFolder ?? [],
+    unknown_by_folder_truncated: false,
     cost: {
       duration_ms: result.cost.durationMs,
       files_walked: result.cost.filesWalked,
@@ -93,3 +112,69 @@ export function toGameFolderStatePayload(
     },
   };
 }
+
+const encoder = new TextEncoder();
+const jsonBytes = (value: unknown): number => encoder.encode(JSON.stringify(value)).length;
+
+/**
+ * Trims the file lists until the payload fits in `maxBytes`, filling them in order of value:
+ * modified and missing files, then the unknown-file folder totals (largest first), then a random
+ * sample of the unknown files.
+ */
+export function fitPayload(
+  payload: GameFolderStatePayload,
+  maxBytes: number,
+  random: () => number,
+): GameFolderStatePayload {
+  if (jsonBytes(payload) <= maxBytes) return payload;
+
+  const empty = { ...payload, files: [], unknown_by_folder: [] };
+  // "true" is one byte shorter than "false", so the flags the trim may set can't push it over
+  let budget = maxBytes - jsonBytes(empty);
+  // an entry costs its own JSON plus the comma before it; counting the comma on the first entry too
+  // keeps the total on the safe side
+  const take = <T>(entries: readonly T[]): T[] => {
+    const kept: T[] = [];
+    for (const entry of entries) {
+      const cost = jsonBytes(entry) + 1;
+      if (cost > budget) break;
+      budget -= cost;
+      kept.push(entry);
+    }
+    return kept;
+  };
+
+  const steamFiles = payload.files.filter((file) => file.status !== "unknown");
+  const unknownFiles = payload.files.filter((file) => file.status === "unknown");
+
+  const keptSteamFiles = take(steamFiles);
+  const keptFolders = take(
+    payload.unknown_by_folder.toSorted(
+      (lhs: GameFolderFolderCount, rhs: GameFolderFolderCount) => rhs.files - lhs.files,
+    ),
+  );
+  // the unknown files arrive sorted, so cutting the list short would keep only the first folders
+  // alphabetically; take a fresh random sample instead and sort it again
+  const keptUnknown = take(shuffled(unknownFiles, random)).toSorted(byPath);
+
+  return {
+    ...payload,
+    files: [...keptSteamFiles, ...keptUnknown],
+    files_truncated: keptSteamFiles.length < steamFiles.length,
+    unknown_truncated: payload.unknown_truncated || keptUnknown.length < unknownFiles.length,
+    unknown_by_folder: keptFolders,
+    unknown_by_folder_truncated: keptFolders.length < payload.unknown_by_folder.length,
+  };
+}
+
+function shuffled<T>(entries: readonly T[], random: () => number): T[] {
+  const copy = [...entries];
+  for (let index = copy.length - 1; index > 0; index--) {
+    const pick = Math.floor(random() * (index + 1));
+    [copy[index], copy[pick]] = [copy[pick]!, copy[index]!];
+  }
+  return copy;
+}
+
+const byPath = (lhs: GameFolderFile, rhs: GameFolderFile): number =>
+  lhs.path < rhs.path ? -1 : lhs.path > rhs.path ? 1 : 0;

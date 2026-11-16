@@ -2,7 +2,7 @@ import { NexusGameId, VortexGameId } from "@vortex/shared";
 import type { GameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
-import { toGameFolderStatePayload } from "./payload";
+import { MAX_PAYLOAD_BYTES, toGameFolderStatePayload } from "./payload";
 
 const INPUT: GameFolderCheckInput = {
   gameId: VortexGameId("skyrimse"),
@@ -93,9 +93,11 @@ describe("toGameFolderStatePayload", () => {
       unknown: count(130),
       vortex_changed_since_deploy: count(1),
       cost: { duration_ms: 400, files_walked: 182, bytes_read: 1024 },
+      files_truncated: false,
       unknown_truncated: true,
       unknown_in_vortex_folder: count(129),
       unknown_by_folder: [{ folder: "SKSE", files: 130, bytes: 1300 }],
+      unknown_by_folder_truncated: false,
     });
     expect(payload.files).toEqual([
       { path: "Data/Skyrim.esm", status: "modified", detected_by: "full_hash", from_backup: true },
@@ -123,6 +125,129 @@ describe("toGameFolderStatePayload", () => {
       verification: null,
       unknown: count(0),
       steam: { depots: [{ manifest_created_at: null }] },
+    });
+  });
+
+  describe("payload size", () => {
+    const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+    const COUNTS = {
+      steamFiles: {
+        verified: count(0),
+        sizeMatched: count(0),
+        modified: count(0),
+        missing: count(0),
+        unreadable: count(0),
+        notCompared: count(0),
+        unchecked: count(0),
+      },
+      modifiedBy: { size: 0, sampled_chunk: 0, full_hash: 0 },
+      sampleMissed: null,
+      fileSampleMissed: null,
+      hashSample: { files: 0, capped: false },
+      unknown: count(0),
+      unknownInVortexFolder: count(0),
+      vortex: count(0),
+      vortexChangedSinceDeploy: count(0),
+    };
+    const checked = (
+      files: Extract<GameFolderCheckResult, { status: "checked" }>["files"],
+      unknownByFolder: Array<{ folder: string; files: number; bytes: number }> = [],
+    ): GameFolderCheckResult => ({
+      status: "checked",
+      verification: { status: "checked", reason: null },
+      deployedBeforeCheck: true,
+      files,
+      unknownTruncated: false,
+      unknownByFolder,
+      counts: COUNTS,
+      input: INPUT,
+      folderCreatedAt: null,
+      manifestCreatedAt: {},
+      cost: { durationMs: 1, filesWalked: 0, bytesRead: 0 },
+    });
+    const path = (index: number) =>
+      `Data/meshes/actors/character/facegendata/facegeom/Skyrim.esm/${String(index).padStart(8, "0")}.nif`;
+    const unknown = (n: number) =>
+      Array.from({ length: n }, (_, index) => ({ path: path(index), status: "unknown" as const }));
+
+    it("leaves a payload under the limit untouched", () => {
+      const result = checked(unknown(10), [{ folder: "Data/meshes", files: 10, bytes: 100 }]);
+      const payload = toGameFolderStatePayload(result, CONTEXT);
+      expect(payload.files).toHaveLength(10);
+      expect(payload).toMatchObject({
+        files_truncated: false,
+        unknown_truncated: false,
+        unknown_by_folder_truncated: false,
+      });
+    });
+
+    it("trims a dirty folder's unknown files to fit, keeping a sorted random sample", () => {
+      const payload = toGameFolderStatePayload(checked(unknown(2000)), CONTEXT);
+      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
+      expect(payload.files.length).toBeGreaterThan(0);
+      expect(payload.files.length).toBeLessThan(2000);
+      expect(payload.unknown_truncated).toBe(true);
+      expect(payload.files_truncated).toBe(false);
+      const paths = payload.files.map((file) => file.path);
+      expect(paths).toEqual(paths.toSorted());
+      // a random sample, not the alphabetical start of the list
+      expect(paths.at(-1)! > path(1500)).toBe(true);
+    });
+
+    it("keeps modified and missing files and folder totals ahead of unknown files", () => {
+      const steam = Array.from({ length: 100 }, (_, index) => ({
+        path: `Data/${index}.bsa`,
+        status: index % 2 === 0 ? ("modified" as const) : ("missing" as const),
+      }));
+      const folders = Array.from({ length: 50 }, (_, index) => ({
+        folder: `Data/folder${index}`,
+        files: index,
+        bytes: index * 10,
+      }));
+      const payload = toGameFolderStatePayload(
+        checked([...steam, ...unknown(2000)], folders),
+        CONTEXT,
+      );
+      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
+      expect(payload.files.filter((file) => file.status !== "unknown")).toHaveLength(100);
+      expect(payload.unknown_by_folder).toHaveLength(50);
+      expect(payload.unknown_by_folder[0]!.files).toBe(49);
+      expect(payload).toMatchObject({
+        files_truncated: false,
+        unknown_truncated: true,
+        unknown_by_folder_truncated: false,
+      });
+    });
+
+    it("cuts modified and missing files too when they alone are over the limit", () => {
+      const steam = Array.from({ length: 2000 }, (_, index) => ({
+        path: path(index),
+        status: "modified" as const,
+        detectedBy: "size" as const,
+      }));
+      const folders = [{ folder: "Data/meshes", files: 5, bytes: 50 }];
+      const payload = toGameFolderStatePayload(
+        checked([...steam, ...unknown(5)], folders),
+        CONTEXT,
+      );
+      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
+      expect(payload.files.every((file) => file.status === "modified")).toBe(true);
+      expect(payload).toMatchObject({
+        files_truncated: true,
+        unknown_truncated: true,
+        // a small entry still fills the room the cut list left
+        unknown_by_folder: folders,
+        unknown_by_folder_truncated: false,
+      });
+    });
+
+    it("counts bytes, not characters, for non-ASCII paths", () => {
+      const files = Array.from({ length: 2000 }, (_, index) => ({
+        path: `Data/テクスチャ/模型/${String(index).padStart(8, "0")}.dds`,
+        status: "unknown" as const,
+      }));
+      const payload = toGameFolderStatePayload(checked(files), CONTEXT);
+      expect(bytes(payload)).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
     });
   });
 });
