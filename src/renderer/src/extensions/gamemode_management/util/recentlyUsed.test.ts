@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import type { IProfile } from "../../profile_management/types/IProfile";
@@ -5,7 +6,7 @@ import { byRecentlyUsed } from "./recentlyUsed";
 
 const profile = (id: string, gameId: string, lastActivated: number | undefined): IProfile => ({
   id,
-  gameId,
+  gameId: VortexGameId(gameId),
   name: "Default",
   modState: {},
   lastActivated: lastActivated as number,

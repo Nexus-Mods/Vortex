@@ -1,5 +1,6 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { NexusGameDomain, NexusGameId, VortexError, VortexGameId } from "@vortex/shared";
+import type { VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexError } from "@vortex/shared";
 
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
