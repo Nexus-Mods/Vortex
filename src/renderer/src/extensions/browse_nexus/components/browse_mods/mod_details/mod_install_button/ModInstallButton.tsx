@@ -53,7 +53,7 @@ interface IPickerFiles {
 const NO_PICKER_FILES: IPickerFiles = { main: [], all: [] };
 
 /** The file 1-click installs: its UID, for tracking, and its id within the mod. */
-type IInstallFile = Pick<ModMainFileVersion, "id" | "game_scoped_id">;
+type InstallFile = Pick<ModMainFileVersion, "id" | "game_scoped_id">;
 
 /**
  * Why the mod can't be installed, said in the tooltip; none while it can, or is loading. An update
@@ -180,11 +180,11 @@ export const ModInstallButton = ({
 
   const install = useMutation({
     mutationKey: installKey,
-    mutationFn: ({ file, game }: { file: IInstallFile; game: string }) =>
+    mutationFn: ({ file, gameId }: { file: InstallFile; gameId: VortexGameId }) =>
       installNexusFile(api, {
         mod,
         fileId: file.game_scoped_id,
-        gameId: VortexGameId(game),
+        gameId,
         shouldInstall,
       }),
     onMutate: ({ file }) =>
@@ -241,7 +241,7 @@ export const ModInstallButton = ({
               id: fileUidOf(mod, only.file_id),
               game_scoped_id: String(only.file_id),
             },
-            game: gameId,
+            gameId,
           });
           return;
         }
@@ -286,6 +286,7 @@ export const ModInstallButton = ({
       <Button
         aria-disabled={!!unavailable}
         brand={isPremiumUser ? "primary" : "neutral"}
+        data-testid="mod-install-one-click"
         disabled={isLoadingFile}
         isLoading={isInstalling || loadModFiles.isPending}
         leftIcon="install_desktop"
@@ -307,7 +308,7 @@ export const ModInstallButton = ({
           }
 
           if (mainFile && gameId) {
-            install.mutate({ file: mainFile, game: gameId });
+            install.mutate({ file: mainFile, gameId });
           }
         }}
       >
@@ -386,7 +387,13 @@ export const ModInstallButton = ({
 
     if (installState.kind === "installing") {
       return (
-        <Button disabled isLoading leftIcon="add" ref={mainButtonRef}>
+        <Button
+          data-testid="mod-install-install"
+          disabled
+          isLoading
+          leftIcon="add"
+          ref={mainButtonRef}
+        >
           {t("Install")}
         </Button>
       );
@@ -408,7 +415,12 @@ export const ModInstallButton = ({
       }
 
       return (
-        <Button brand="neutral" leftIcon={{ path: nxmModOutline }} onClick={viewInstalled}>
+        <Button
+          brand="neutral"
+          data-testid="mod-install-view-installed"
+          leftIcon={{ path: nxmModOutline }}
+          onClick={viewInstalled}
+        >
           {t("View installed mod")}
         </Button>
       );
@@ -418,6 +430,7 @@ export const ModInstallButton = ({
       return (
         <Button
           brand="info"
+          data-testid="mod-install-update"
           leftIcon="download"
           onClick={() => {
             tracker.trackUpdateClicked({ mod_uid: mod.id });
@@ -445,7 +458,7 @@ export const ModInstallButton = ({
       }
 
       return (
-        <Button leftIcon="add" onClick={installDownload}>
+        <Button data-testid="mod-install-install" leftIcon="add" onClick={installDownload}>
           {t("Install")}
         </Button>
       );
@@ -504,7 +517,7 @@ export const ModInstallButton = ({
           }
 
           if (mainFile && gameId) {
-            install.mutate({ file: mainFile, game: gameId });
+            install.mutate({ file: mainFile, gameId });
           }
         }}
         onShown={() => tracker.trackPremiumModalShown({ mod_uid: mod.id, action: upsellAction })}

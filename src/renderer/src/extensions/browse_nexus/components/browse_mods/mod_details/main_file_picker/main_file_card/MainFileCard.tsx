@@ -1,6 +1,6 @@
 import type { IFileInfo } from "@nexusmods/nexus-api";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
-import { NexusGameDomain, VortexGameId, VortexModId } from "@vortex/shared";
+import { NexusGameDomain, type VortexGameId, VortexModId } from "@vortex/shared";
 import numeral from "numeral";
 import React, { useId } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,7 +20,6 @@ import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { nexusFilePageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import type { IState } from "@/types/IState";
 import { Button } from "@/ui/components/button/Button";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Pill } from "@/ui/components/pill/Pill";
@@ -47,7 +46,7 @@ interface IMainFileCardProps {
  * acts on this file only. Its progress is its own, so other cards stay usable.
  */
 export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const tracker = useBrowseModsTracker();
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
@@ -56,8 +55,7 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
   const installKey = oneClickFileInstallKey({ modId: mod.id, fileId: file.file_id });
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const uploaded = useRelativeTime(file.uploaded_timestamp * 1000, t);
-  const language = useSelector((state: IState) => state.settings.interface.language);
-  const uploadedAt = new Intl.DateTimeFormat(language, {
+  const uploadedAt = new Intl.DateTimeFormat(i18n.language, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(file.uploaded_timestamp * 1000);
@@ -69,11 +67,11 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
 
   const install = useMutation({
     mutationKey: installKey,
-    mutationFn: (game: string) =>
+    mutationFn: (gameId: VortexGameId) =>
       installNexusFile(api, {
         mod,
         fileId: String(file.file_id),
-        gameId: VortexGameId(game),
+        gameId,
         shouldInstall,
       }),
     onMutate: () =>
@@ -178,13 +176,21 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
         {(file.is_primary || !!statusDisplay) && (
           <div className="flex flex-wrap items-center gap-2">
             {file.is_primary && (
-              <Pill brand="primary" icon={{ name: "star", filled: true }}>
+              <Pill
+                brand="primary"
+                data-testid={`main-file-card-primary-${file.file_id}`}
+                icon={{ name: "star", filled: true }}
+              >
                 {t("Primary file")}
               </Pill>
             )}
 
             {!!statusDisplay && (
-              <Pill brand={statusDisplay.brand} icon={statusDisplay.icon}>
+              <Pill
+                brand={statusDisplay.brand}
+                data-testid={`main-file-card-status-${state.kind}-${file.file_id}`}
+                icon={statusDisplay.icon}
+              >
                 {statusDisplay.label}
               </Pill>
             )}

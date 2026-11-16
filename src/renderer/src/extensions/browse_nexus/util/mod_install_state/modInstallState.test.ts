@@ -1,3 +1,4 @@
+import type { IFileInfo } from "@nexusmods/nexus-api";
 import { NexusGameDomain, VortexGameId } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
@@ -233,6 +234,34 @@ describe("modInstallState for one file", () => {
 
   it("counts each download without a file id as its own", () => {
     expect(stateOf({}, { a: download(), b: download() })).toMatchObject({ downloadCount: 2 });
+  });
+
+  it("counts only Main files' downloads, and files of unknown category", () => {
+    const categorised = (fileId: number, category_name?: string) =>
+      download({
+        modInfo: {
+          nexus: {
+            ids: { gameId: DOMAIN, modId: SKYUI, fileId },
+            fileInfo: { category_name } as IFileInfo,
+          },
+        },
+      });
+
+    expect(
+      stateOf({}, { main: categorised(1, "MAIN"), optional: categorised(2, "OPTIONAL") }),
+    ).toMatchObject({ kind: "downloaded", downloadCount: 1 });
+    expect(stateOf({}, { main: categorised(1, "MAIN"), unknown: categorised(2) })).toMatchObject({
+      downloadCount: 2,
+    });
+  });
+
+  it("counts only Main files installed, and files of unknown category", () => {
+    const main = mod("main", { fileId: 1, logicalFileName: "Main", fileType: "MAIN" });
+    const optional = mod("optional", { fileId: 2, logicalFileName: "Patch", fileType: "OPTIONAL" });
+    const unknown = mod("unknown", { fileId: 3, logicalFileName: "Other" });
+
+    expect(stateOf({ main, optional })).toMatchObject({ kind: "installed", installedCount: 1 });
+    expect(stateOf({ main, unknown })).toMatchObject({ installedCount: 2 });
   });
 
   it("counts only the file's own installed versions", () => {

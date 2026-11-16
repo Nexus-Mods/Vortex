@@ -91,6 +91,10 @@ export const SplitButtonDemo = () => (
         <SplitButton isDisabled action={remove} onClick={() => undefined}>
           Disabled
         </SplitButton>
+
+        <SplitButton isLoading action={menu} onClick={() => undefined}>
+          Loading
+        </SplitButton>
       </div>
     </div>
 

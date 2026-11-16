@@ -22,7 +22,7 @@ export type ModInstallState =
       mod: IMod;
       /** The update the Mods page offers for it: a known file, or one to pick on the site. */
       update?: "update" | "update-site";
-      /** How many versions of it the Mods page shows; more than one when several files are. */
+      /** How many of its Main files are installed; a file of unknown category counts. */
       installedCount: number;
     }
   | {
@@ -30,7 +30,7 @@ export type ModInstallState =
       kind: "downloaded";
       /** One of its downloads, none of them installed. */
       downloadId: string;
-      /** How many of its files have finished downloads; each without a file id counts alone. */
+      /** How many of its Main files are downloaded; one of unknown category or file id counts. */
       downloadCount: number;
     }
   | {
@@ -64,6 +64,9 @@ export interface IModInstallSources {
 
 /** Whether the Mods page offers an update in this state, as `offersUpdate` says. */
 const isOffered = (state: UpdateState): state is "update" | "update-site" => offersUpdate(state);
+
+/** Whether a file is a Main file, by its category's name; one of unknown category counts as one. */
+const isMainFile = (category: string | undefined) => !category || category === "MAIN";
 
 /** The key a Nexus Mods mod is known by: its domain and id. */
 export const modKey = (domain: NexusGameDomain, modId: number) => `${domain}/${modId}`;
@@ -140,15 +143,17 @@ export const modInstallState = (
     ([primary]) => mods[primary.id],
   );
 
+  const installedCount = shown.filter((mod) => isMainFile(mod.attributes?.fileType)).length;
+
   for (const mod of shown) {
     const update = updateState(mod.attributes ?? {});
     if (isOffered(update)) {
-      return { kind: "installed", mod, update, installedCount: shown.length };
+      return { kind: "installed", mod, update, installedCount };
     }
   }
 
   if (shown.length) {
-    return { kind: "installed", mod: shown[0], installedCount: shown.length };
+    return { kind: "installed", mod: shown[0], installedCount };
   }
 
   const finished = Object.keys(downloads).filter(
@@ -163,10 +168,12 @@ export const modInstallState = (
   }
 
   const files = new Set(
-    finished.map((id) => {
-      const fileId = downloads[id].modInfo?.nexus?.ids?.fileId;
-      return fileId ? `file:${fileId}` : `download:${id}`;
-    }),
+    finished
+      .filter((id) => isMainFile(downloads[id].modInfo?.nexus?.fileInfo?.category_name))
+      .map((id) => {
+        const fileId = downloads[id].modInfo?.nexus?.ids?.fileId;
+        return fileId ? `file:${fileId}` : `download:${id}`;
+      }),
   );
 
   return { kind: "downloaded", downloadId: finished[0], downloadCount: files.size };

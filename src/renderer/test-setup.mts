@@ -26,7 +26,7 @@ vi.mock("react-i18next", async (importOriginal) => ({
   // uses both, so the stub keeps that shape.
   useTranslation: () => {
     const t = (key: string) => key;
-    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
+    return Object.assign([t, undefined, true], { t, i18n: { language: "en" }, ready: true });
   },
 }));
 

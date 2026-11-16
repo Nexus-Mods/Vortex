@@ -11,7 +11,12 @@ import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
 import { SplitButton, SplitButtonAction } from "./SplitButton";
 
 const remove = (onClick = vi.fn()) => (
-  <SplitButtonAction icon="close" label="Remove filter" onClick={onClick} />
+  <SplitButtonAction
+    data-testid="split-remove"
+    icon="close"
+    label="Remove filter"
+    onClick={onClick}
+  />
 );
 
 describe("SplitButton", () => {
@@ -22,8 +27,7 @@ describe("SplitButton", () => {
       </SplitButton>,
     );
 
-    expect(screen.getByTestId("split-main")).toHaveTextContent("+2 more filter");
-    expect(screen.queryByRole("button", { name: "+2 more filter" })).toBeNull();
+    expect(screen.getAllByRole("button")).toEqual([screen.getByTestId("split-remove")]);
     expect(screen.getByTestId("split-main").closest(".nxm-button")).not.toHaveClass(
       "nxm-button-disabled",
     );
@@ -32,12 +36,12 @@ describe("SplitButton", () => {
   it("makes the main part a button with a click handler", async () => {
     const onClick = vi.fn();
     render(
-      <SplitButton action={remove()} onClick={onClick}>
+      <SplitButton action={remove()} data-testid="split-main" onClick={onClick}>
         Date added
       </SplitButton>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Date added" }));
+    await userEvent.click(screen.getByTestId("split-main"));
 
     expect(onClick).toHaveBeenCalled();
   });
@@ -51,7 +55,7 @@ describe("SplitButton", () => {
       </SplitButton>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Remove filter" }));
+    await userEvent.click(screen.getByTestId("split-remove"));
 
     expect(onRemove).toHaveBeenCalled();
     expect(onMain).not.toHaveBeenCalled();
@@ -65,6 +69,7 @@ describe("SplitButton", () => {
           <Popover className="flex">
             <HeadlessPopoverButton
               as={SplitButtonAction}
+              data-testid="split-options"
               icon="keyboard_arrow_down"
               label="More options"
             />
@@ -72,7 +77,7 @@ describe("SplitButton", () => {
             <PopoverPanel>
               {({ close }) => (
                 <PopoverMenu
-                  actions={[[{ label: "Rename", onClick: onRename }]]}
+                  actions={[[{ label: "Rename", testId: "split-rename", onClick: onRename }]]}
                   label="More options"
                   onSelect={close}
                 />
@@ -86,8 +91,8 @@ describe("SplitButton", () => {
       </SplitButton>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "More options" }));
-    await userEvent.click(await screen.findByRole("menuitem", { name: "Rename" }));
+    await userEvent.click(screen.getByTestId("split-options"));
+    await userEvent.click(await screen.findByTestId("split-rename"));
 
     expect(onRename).toHaveBeenCalled();
   });
@@ -100,27 +105,28 @@ describe("SplitButton", () => {
         action={remove(onRemove)}
         panel={({ close }) => (
           <PopoverMenu
-            actions={[[{ label: "7 days", onClick: onPick }]]}
+            actions={[[{ label: "7 days", testId: "split-seven-days", onClick: onPick }]]}
             label="Dates"
             onSelect={close}
           />
         )}
+        data-testid="split-main"
         panelRole="menu"
       >
         Date added
       </SplitButton>,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Remove filter" }));
+    await userEvent.click(screen.getByTestId("split-remove"));
 
     expect(onRemove).toHaveBeenCalled();
     expect(screen.queryByRole("menu")).toBeNull();
 
-    const main = screen.getByRole("button", { name: "Date added" });
+    const main = screen.getByTestId("split-main");
     expect(main).toHaveAttribute("aria-haspopup", "menu");
 
     await userEvent.click(main);
-    await userEvent.click(await screen.findByRole("menuitem", { name: "7 days" }));
+    await userEvent.click(await screen.findByTestId("split-seven-days"));
 
     expect(onPick).toHaveBeenCalled();
     expect(screen.queryByRole("menu")).toBeNull();
@@ -148,24 +154,24 @@ describe("SplitButton", () => {
 
   it("turns both parts off when disabled", () => {
     render(
-      <SplitButton isDisabled action={remove()} onClick={vi.fn()}>
+      <SplitButton isDisabled action={remove()} data-testid="split-main" onClick={vi.fn()}>
         Date added
       </SplitButton>,
     );
 
-    expect(screen.getByRole("button", { name: "Date added" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Remove filter" })).toBeDisabled();
+    expect(screen.getByTestId("split-main")).toBeDisabled();
+    expect(screen.getByTestId("split-remove")).toBeDisabled();
   });
 
   it("turns both parts off while loading", () => {
     render(
-      <SplitButton isLoading action={remove()} onClick={vi.fn()}>
+      <SplitButton isLoading action={remove()} data-testid="split-main" onClick={vi.fn()}>
         Date added
       </SplitButton>,
     );
 
-    expect(screen.getByRole("button", { name: "Date added" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Remove filter" })).toBeDisabled();
+    expect(screen.getByTestId("split-main")).toBeDisabled();
+    expect(screen.getByTestId("split-remove")).toBeDisabled();
   });
 
   it("dims a static main part when disabled", () => {
