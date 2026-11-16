@@ -68,7 +68,7 @@ export const PRESET_SORTS: Record<ModPreset, IModSort> = {
 /** Each preset's filters as they come. */
 export const PRESET_FILTERS: Record<ModPreset, IModFilters> = {
   trending: { timeRange: "7", adult: "include" },
-  popular: { timeRange: "7", adult: "include" },
+  popular: { timeRange: "all", adult: "include" },
   new: { timeRange: "all", adult: "include" },
 };
 

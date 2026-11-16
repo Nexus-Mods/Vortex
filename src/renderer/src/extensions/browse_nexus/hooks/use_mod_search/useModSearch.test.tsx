@@ -426,7 +426,7 @@ describe("useModSearch", () => {
     await respond("downloads", 12);
     vi.setSystemTime(NOW + 5 * MINUTE_MS);
 
-    act(() => result.current.selectView("popular"));
+    act(() => result.current.selectView("trending"));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.filters).toMatchObject({
