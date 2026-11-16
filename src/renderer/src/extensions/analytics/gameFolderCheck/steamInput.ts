@@ -4,12 +4,12 @@ import type { VortexGameId } from "@vortex/shared";
 import type { GameFolderCheckInput, GameFolderCheckLimits } from "@vortex/shared/ipc";
 
 import type { IState } from "../../../types/IState";
+import { normPath } from "../../../util/normPath";
 import type { ISteamEntry } from "../../../util/Steam";
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { detectedInternalId } from "../../gamemode_management/util/detected_games/detectedInternalId";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { numericGameIdToDomainName } from "../../nexus_integration/util";
-import { normPath } from "../utils/normPath";
 
 export function isSteamGame(state: IState, gameId: VortexGameId): boolean {
   const discovery = discoveryByGame(state, gameId);

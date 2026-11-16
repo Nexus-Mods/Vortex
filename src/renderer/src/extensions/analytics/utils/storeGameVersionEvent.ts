@@ -10,6 +10,7 @@ import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import { log } from "../../../util/log";
+import { normPath } from "../../../util/normPath";
 import type { ISteamEntry } from "../../../util/Steam";
 import { normalizeStoreQuery } from "../../../util/storeQuery";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
@@ -19,7 +20,6 @@ import { readGameVersions } from "../../gamemode_management/util/getGameVersion"
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
 import { isLoggedIn } from "../../nexus_integration/selectors";
 import { numericNexusGameId } from "../mixpanel/numericGameId";
-import { normPath } from "./normPath";
 
 /**
  * The gog install block from the raw goggame-<productId>.info content. The fields
