@@ -6,6 +6,8 @@ export interface IParameters {
   restore?: string;
   startMinimized?: boolean;
   game?: string;
+  /** The store the user picked `game` from, which discovery of that game is held to. */
+  gameStore?: string;
   profile?: string;
   get?: string[];
   set?: ISetItem[];

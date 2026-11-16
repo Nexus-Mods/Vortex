@@ -14,6 +14,11 @@ describe("id brands", () => {
     expect(() => VortexProfileId("")).toThrow(VortexError);
   });
 
+  it("reject a value that is not a string", () => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    expect(() => VortexModId(undefined as unknown as string)).toThrow(VortexError);
+  });
+
   it("are not made from a plain string or from another kind of id", () => {
     expectTypeOf<string>().not.toExtend<VortexModId>();
     expectTypeOf<VortexProfileId>().not.toExtend<VortexModId>();

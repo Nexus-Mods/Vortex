@@ -1,5 +1,5 @@
 import { keepPreviousData, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 import { useState } from "react";
 
 import {
@@ -69,7 +69,7 @@ export const MAX_PAGES = 100;
 
 interface IModsSearch {
   /** The game whose mods to search; none searches nothing. */
-  gameDomainName: GameDomain | undefined;
+  gameDomainName: NexusGameDomain | undefined;
   /** How they're sorted. */
   sort: IModSort;
   /** Which of them to show. */

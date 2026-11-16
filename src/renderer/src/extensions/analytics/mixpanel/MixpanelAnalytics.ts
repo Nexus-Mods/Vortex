@@ -11,18 +11,37 @@ import { analyticsServiceLog } from "../utils/analyticsLog";
 import type { MixpanelEvent } from "./MixpanelEvents";
 
 /**
- * Events emitted before analytics has started (consent given, user known) are
- * held here and sent once it does. Early startup work such as the auto-updater
- * runs before login restores, so without this its events would be lost, not
- * merely late. Bounded; oldest dropped first. Cleared on stop(), so nothing
- * captured before a "No" ever leaves the machine.
+ * Events fired with consent but before login has restored are held here and
+ * sent when start() runs. The auto-updater runs that early, so without this
+ * its events would be lost, not merely late. The queue only covers that
+ * startup window: it closes on the first start() or stop(), so events after a
+ * logout are dropped rather than sent under the next account. Events fired
+ * without consent are never queued. Bounded; oldest dropped first.
  */
 const MAX_PENDING_EVENTS = 50;
 
-class MixpanelAnalytics {
+export class MixpanelAnalytics {
   private user: number;
   private isInitialized: boolean = false;
   private pending: MixpanelEvent[] = [];
+  private queueOpen: boolean = true;
+  private getConsent: (() => boolean | undefined) | undefined;
+
+  /**
+   * Sets where the tracker reads analytics consent from. Until this is set,
+   * every event is dropped.
+   */
+  public setConsentGetter(getConsent: () => boolean | undefined) {
+    this.getConsent = getConsent;
+  }
+
+  private hasConsent(): boolean {
+    try {
+      return this.getConsent?.() === true;
+    } catch {
+      return false;
+    }
+  }
 
   /**
    * isUserSet returns if the user is set
@@ -44,6 +63,7 @@ class MixpanelAnalytics {
       return;
     }
 
+    this.queueOpen = false;
     this.user = userInfo.userId;
     const token = isProduction ? MIXPANEL_PROD_TOKEN : MIXPANEL_DEV_TOKEN;
     const environment = isProduction ? "production" : "development";
@@ -200,21 +220,38 @@ class MixpanelAnalytics {
     this.user = null;
     this.isInitialized = false;
     this.pending = [];
+    this.queueOpen = false;
   }
 
   /**
    * Track an event using event instance
    */
   public trackEvent(event: MixpanelEvent) {
+    if (!this.hasConsent()) {
+      // Opted out, not asked yet, or consent not readable yet: never queued, so
+      // a later Yes can't send it.
+      analyticsServiceLog("mixpanel", "debug", "Event dropped (no analytics consent)", {
+        eventName: event.eventName,
+      });
+      return;
+    }
+
     if (!this.isUserSet()) {
-      // Not started yet: either analytics is off (opted out, or not asked yet)
-      // or login has not restored. Queue it; start() sends the queue, stop()
-      // drops it.
+      if (!this.queueOpen) {
+        // Logged out after the startup window; holding it would send it under
+        // whichever account logs in next.
+        analyticsServiceLog("mixpanel", "debug", "Event dropped (analytics not started)", {
+          eventName: event.eventName,
+        });
+        return;
+      }
+      // Consent given but login has not restored yet. start() sends the queue,
+      // stop() drops it.
       this.pending.push(event);
       if (this.pending.length > MAX_PENDING_EVENTS) {
         this.pending.shift();
       }
-      analyticsServiceLog("mixpanel", "debug", "Event queued (analytics not started)", {
+      analyticsServiceLog("mixpanel", "debug", "Event queued (waiting for login)", {
         eventName: event.eventName,
         queued: this.pending.length,
       });

@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
 import type { GameSource } from "../types/GameSource";
@@ -51,3 +52,15 @@ export const setGameAddOrigin = createAction(
   "SET_GAME_ADD_ORIGIN",
   (gameId: string, source: GameSource) => ({ gameId, source }),
 );
+
+/**
+ * records the store the user picked a game from, by clicking the tile that named it, so
+ * the add manages that store's install rather than whichever one discovery ranks first
+ */
+export const setGameAddStore = createAction(
+  "SET_GAME_ADD_STORE",
+  (gameId: VortexGameId, store: string) => ({ gameId, store }),
+);
+
+/** forgets the store picked for an add, once the add has finished or failed */
+export const clearGameAddStore = createAction("CLEAR_GAME_ADD_STORE");

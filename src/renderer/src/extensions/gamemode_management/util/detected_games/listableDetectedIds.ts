@@ -1,4 +1,4 @@
-import type { GameId, VortexGameId } from "@vortex/shared";
+import type { NexusGameId, VortexGameId } from "@vortex/shared";
 
 import type { IGameStored } from "@/types/IState";
 
@@ -12,7 +12,7 @@ export interface IListableOptions {
   /** Tier 0 flag on: entries without an extension may be managed without one */
   allowTierZero?: boolean;
   /** numeric Nexus ids of the games an extension in the catalog provides support for */
-  extensionGameIds?: ReadonlySet<GameId>;
+  extensionGameIds?: ReadonlySet<NexusGameId>;
 }
 
 /**
@@ -22,7 +22,7 @@ export interface IListableOptions {
  */
 export function isTierZeroCandidate(
   entry: IDetectedGame,
-  extensionGameIds: ReadonlySet<GameId>,
+  extensionGameIds: ReadonlySet<NexusGameId>,
 ): boolean {
   return entry.extension === undefined && !extensionGameIds.has(entry.gameId);
 }

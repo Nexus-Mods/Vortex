@@ -1,4 +1,4 @@
-import { GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameId, VortexGameId } from "@vortex/shared";
 import type { GameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
@@ -26,7 +26,7 @@ const INPUT: GameFolderCheckInput = {
 const count = (files: number, bytes = files * 10) => ({ files, bytes });
 
 const CONTEXT = {
-  nexusGameId: GameId(1704),
+  nexusGameId: NexusGameId(1704),
   managedAt: Date.UTC(2026, 9, 29),
   steamLastUpdated: null,
 };

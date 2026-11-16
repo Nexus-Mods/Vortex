@@ -72,8 +72,9 @@ function init(context: IExtensionContext): boolean {
     const channelNow = () => toUpdateChannel(context.api.store.getState().settings.update.channel);
 
     // Mixpanel funnel (see updaterAnalytics.ts): transitions from render(),
-    // decisions from the buttons below. The tracker queues anything emitted
-    // before analytics has started, so early launch events are not lost.
+    // decisions from the buttons below. The tracker holds consented events
+    // until login restores, so early launch events are not lost for users who
+    // have already opted in.
     const analytics = createUpdaterAnalytics({
       api: context.api,
       currentVersion: () => getApplication().version,

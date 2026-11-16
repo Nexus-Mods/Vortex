@@ -94,14 +94,20 @@ export function planOverrideUpdate(
   conflicts: Record<VortexModId, IConflict[]>,
   edits: FileOverridesByMod,
 ): IOverridePlan {
-  const edited = Object.keys(edits).length === 0 ? mods : { ...mods };
-  for (const [modId, files] of Object.entries(edits)) {
-    edited[modId] = { ...mods[modId], fileOverrides: files };
-  }
+  // an edit can name a mod that was removed since; there is nothing to override on it
+  const knownEdits: FileOverridesByMod = _.pickBy(edits, (_files, modId) => modId in mods);
+  // the record key is the mod id; the id leaf can be lost to a partial write
+  const edited = _.mapValues(mods, (mod, modId) => {
+    const files = knownEdits[modId];
+    return mod.id === modId && files === undefined
+      ? mod
+      : { ...mod, id: modId, fileOverrides: files ?? mod.fileOverrides };
+  });
   const changes: FileOverridesByMod = Object.fromEntries(
-    Object.entries({ ...edits, ...resolveFileOverrides(edited, enabledModIds, conflicts) }).filter(
-      ([modId, files]) => _.xor(files, mods[modId]?.fileOverrides ?? []).length > 0,
-    ),
+    Object.entries({
+      ...knownEdits,
+      ...resolveFileOverrides(edited, enabledModIds, conflicts),
+    }).filter(([modId, files]) => _.xor(files, mods[modId]?.fileOverrides ?? []).length > 0),
   );
   const purgeFirst = Object.keys(changes).some(
     (modId) => crossTypeConflicts(VortexModId(modId), mods, enabledModIds, conflicts).length > 0,

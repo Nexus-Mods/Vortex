@@ -62,6 +62,7 @@ import type {
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type PluginPersistor from "../extensions/gamebryo_plugin_management/util/PluginPersistor";
 import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId";
+import type { IGameStub } from "../extensions/gamemode_management/GameModeManager";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
@@ -124,6 +125,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -634,6 +636,34 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
   };
 }
 
+// A game extension as GameModeManager and the getGame() registry hold it.
+export function makeGame(overrides: Partial<IGame> = {}): IGame {
+  const id = overrides.id ?? "skyrimse";
+  return {
+    id,
+    name: id,
+    requiredFiles: [],
+    queryModPath: () => "mods",
+    executable: () => `${id}.exe`,
+    supportedTools: [],
+    ...overrides,
+  };
+}
+
+// A tool as discovery reports it and settings.gameMode.discovered stores it.
+export function makeDiscoveredTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
+  return {
+    id: "toolId1",
+    name: "Tool",
+    executable: () => "tool.exe",
+    requiredFiles: [],
+    path: "",
+    hidden: false,
+    custom: false,
+    ...overrides,
+  };
+}
+
 export function makeLookup(overrides: Partial<IModLookupInfo> = {}): IModLookupInfo {
   return { fileMD5: "", fileSizeBytes: 0, fileName: "", version: "", ...overrides };
 }
@@ -912,6 +942,18 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   } as unknown as IState;
 }
 
+// the process-`local` game registry getGame() and isGameRegistered() read
+const harnessGameRegistry = () =>
+  local<{
+    gameModeManager: unknown;
+    extensionGames: IGame[];
+    extensionStubs: IGameStub[];
+  }>("gamemode-management", {
+    gameModeManager: undefined,
+    extensionGames: [],
+    extensionStubs: [],
+  });
+
 /**
  * Register a fake game in the process-`local` registries getGame() reads, so the driver's
  * startImpl can resolve the installed game version (a global singleton, not redux, and not
@@ -920,28 +962,29 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  */
 const harnessGames = new Set<string>();
 
-export function registerHarnessGame(gameId: string): void {
+export function registerHarnessGame(gameId: string, opts: { stub?: boolean } = {}): void {
+  const gameReg = harnessGameRegistry();
+  // a stub is only the extension Vortex offers to download, so discovery never records it
+  if (opts.stub === true) {
+    if (!gameReg.extensionStubs.some((stub) => stub.game.id === gameId)) {
+      gameReg.extensionStubs.push({
+        game: makeGame({ id: gameId }),
+        ext: { name: `Game: ${gameId}`, modId: 1 },
+      });
+    }
+    return;
+  }
   harnessGames.add(gameId);
-  const gameReg = local<{
-    gameModeManager: unknown;
-    extensionGames: IGame[];
-    extensionStubs: unknown[];
-  }>("gamemode-management", {
-    gameModeManager: undefined,
-    extensionGames: [],
-    extensionStubs: [],
-  });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
-    gameReg.extensionGames.push({
-      id: gameId,
-      name: gameId,
-      queryModPath: () => "mods",
-      // resolveGameVersion validates the game (executable) and tries
-      // game.getGameVersion first; provide both so tests don't fall through to
-      // exe-version probing of a nonexistent binary
-      executable: () => `${gameId}.exe`,
-      getGameVersion: () => Promise.resolve("1.0.0"),
-    } as unknown as IGame);
+    gameReg.extensionGames.push(
+      makeGame({
+        id: gameId,
+        // resolveGameVersion validates the game (executable) and tries game.getGameVersion
+        // first; answer it so tests don't fall through to exe-version probing of a nonexistent
+        // binary
+        getGameVersion: () => Promise.resolve("1.0.0"),
+      }),
+    );
   }
 }
 
@@ -951,16 +994,9 @@ export function registerHarnessGame(gameId: string): void {
  * would persist and could mask a different test's expectation. Call from afterEach.
  */
 export function resetHarnessRegistries(): void {
-  const gameReg = local<{
-    gameModeManager: unknown;
-    extensionGames: IGame[];
-    extensionStubs: unknown[];
-  }>("gamemode-management", {
-    gameModeManager: undefined,
-    extensionGames: [],
-    extensionStubs: [],
-  });
+  const gameReg = harnessGameRegistry();
   gameReg.extensionGames.length = 0;
+  gameReg.extensionStubs.length = 0;
 }
 
 /**
@@ -1032,7 +1068,7 @@ export function makeApiHarness(
     initialState.settings.gameMode.discovered[gameId] ??= {
       path: `C:/games/${gameId}`,
       name: gameId,
-    } as IDiscoveryResult;
+    };
   }
 
   const dispatched: ITrackedAction[] = [];
@@ -1150,6 +1186,13 @@ export function makeApiHarness(
     emitAndAwait: () => Promise.resolve([]),
   } as unknown as IExtensionApi;
 
+  const setState = (mutate: (draft: IState) => void) => {
+    // copy-on-write
+    const draft = structuredClone(store.getState());
+    mutate(draft);
+    store.dispatch({ type: REPLACE_TYPE, payload: draft });
+  };
+
   return {
     api,
     dispatched,
@@ -1161,14 +1204,29 @@ export function makeApiHarness(
       await Promise.all(listeners.map((listener) => listener(...args)));
     },
     getState: () => store.getState(),
-    setState: (mutate: (draft: IState) => void) => {
-      // copy-on-write
-      const draft = structuredClone(store.getState());
-      mutate(draft);
-      store.dispatch({ type: REPLACE_TYPE, payload: draft });
-    },
+    setState,
     setNextDialog: (result: IDialogResult) => {
       nextDialog = result;
+    },
+    openModalDialog: (id: string = "harness-dialog") => {
+      setState((draft) => {
+        draft.session.notifications = {
+          notifications: [],
+          global_notifications: [],
+          ...draft.session.notifications,
+          dialogs: [
+            ...(draft.session.notifications?.dialogs ?? []),
+            { id, type: "question", title: "", content: {}, defaultAction: "", actions: [] },
+          ],
+        };
+      });
+    },
+    setFomodDialog: (activeInstanceId: string | null) => {
+      setState((draft) => {
+        Object.assign(draft.session, {
+          fomod: { installer: { dialog: { activeInstanceId, instances: {} } } },
+        });
+      });
     },
     dialogCalls,
     errorNotifications,
@@ -1203,7 +1261,7 @@ export function makeGameHarness(
   const profileId = opts.profileId ?? "profile-1";
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const gamePath = opts.gamePath;
-  registerHarnessGame(gameId);
+  registerHarnessGame(gameId, { stub: opts.stub });
   const base = makeApiHarness(
     {
       profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
@@ -1238,7 +1296,7 @@ export async function makeProfileSwitchHarness(
   opts: IProfileSwitchOpts,
 ): Promise<IProfileSwitchHarness> {
   const gameIds = [...new Set(opts.profiles.map((profile) => profile.gameId))];
-  gameIds.forEach(registerHarnessGame);
+  gameIds.forEach((gameId) => registerHarnessGame(gameId));
 
   const gameRoot = await mkdtemp(path.join(os.tmpdir(), "vortex-profile-switch-"));
   const gameSettingsPath = (gameId: string) => path.join(gameRoot, gameId, "settings.ini");

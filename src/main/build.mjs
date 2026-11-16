@@ -1,5 +1,4 @@
 import * as fs from "node:fs/promises";
-import { createRequire } from "node:module";
 import * as path from "node:path";
 
 import { rolldown } from "rolldown";
@@ -39,7 +38,7 @@ async function bundleWorker(inputRelPath, outputName) {
   await bundle.write(config.output);
 }
 
-// bsdiff patch worker (src/main/src/bsdiff/host.ts). hdiff.wasm is copied
+// bsdiff patch worker (src/main/src/bsdiff/host.ts). hdiffz.wasm is copied
 // alongside below so the worker reads it by a path relative to itself.
 await bundleWorker("./src/bsdiff/worker.ts", "bsdiff-worker.cjs");
 
@@ -47,9 +46,12 @@ await bundleWorker("./src/bsdiff/worker.ts", "bsdiff-worker.cjs");
 // nothing extra to copy alongside it.
 await bundleWorker("./src/hash/worker.ts", "hash-worker.cjs");
 
-const require = createRequire(import.meta.url);
-const wasmPackageDir = path.resolve(require.resolve("@hot-updater/bsdiff"), "..", "..");
-await fs.copyFile(
-  path.join(wasmPackageDir, "assets", "hdiff.wasm"),
-  path.join(mainOutputDirectory, "hdiff.wasm"),
+// hdiffz.wasm ships with the licences of the code it is built from
+await Promise.all(
+  ["hdiffz.wasm", "LICENSE-HDiffPatch.txt", "LICENSE-bzip2.txt"].map((fileName) =>
+    fs.copyFile(
+      path.join("src", "bsdiff", "hdiffpatch", fileName),
+      path.join(mainOutputDirectory, fileName),
+    ),
+  ),
 );

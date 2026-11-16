@@ -78,7 +78,7 @@ import { checkMissingMasters } from "./util/missingMasters";
 import { handleModEnabled } from "./util/onModEnabled";
 import { handleModInstalled } from "./util/onModInstalled";
 import { handleSetPluginList } from "./util/onSetPluginList";
-import { makePluginConflictPrompt } from "./util/pluginFileConflict";
+import { makeEmptyListNotice, makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
 import { makeSetPluginLight } from "./util/pluginLight";
 import PluginPersistor from "./util/PluginPersistor";
@@ -466,6 +466,7 @@ function initPersistor(context: IExtensionContextExt) {
       () => context.api.store.getState().settings.plugins.autoSort,
     );
     pluginPersistor.setExternalChangeCallback(makePluginConflictPrompt(context.api));
+    pluginPersistor.setEmptyListCallback(makeEmptyListNotice(context.api));
   }
   if (userlistPersistor === undefined) {
     userlistPersistor = new UserlistPersistor("userlist", onError);

@@ -54,20 +54,22 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   const source: GameSource | undefined =
     section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
 
-  // Registered actions still know games as managed or unmanaged, the older split of this.
-  const { menu, primary } = useGameCardActions(
-    game.id,
-    section === "added" ? "managed" : "unmanaged",
-    showDetails,
-    source,
-  );
-  const name = game.name.replace(/\t/g, " ");
   const discoveredStore = useSelector(
     (state: IState) => state.settings.gameMode.discovered[game.id]?.store,
   );
   // Discovery's store is the copy Vortex will manage, so it wins. A game whose extension
   // isn't installed hasn't been through discovery, which leaves the detected store.
   const store = discoveredStore ?? detectedStore;
+
+  // Registered actions still know games as managed or unmanaged, the older split of this.
+  const { menu, primary } = useGameCardActions(
+    game.id,
+    section === "added" ? "managed" : "unmanaged",
+    showDetails,
+    source,
+    store,
+  );
+  const name = game.name.replace(/\t/g, " ");
 
   const actions: Record<
     IGameSection,

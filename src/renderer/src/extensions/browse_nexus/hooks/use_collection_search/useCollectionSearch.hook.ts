@@ -4,7 +4,7 @@ import type {
   SortDirection,
 } from "@nexusmods/nexus-api";
 import { keepPreviousData, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 import { useEffect, useState } from "react";
 
 import {
@@ -36,7 +36,7 @@ export const COLLECTIONS_PER_PAGE = 20;
 
 interface ICollectionsSearch {
   /** The game whose collections to search; none searches nothing. */
-  gameDomainName: GameDomain | undefined;
+  gameDomainName: NexusGameDomain | undefined;
   /** The sort they're in. */
   sortBy: ISortOption;
   /** What to search for; empty for every collection. */

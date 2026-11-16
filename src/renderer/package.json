@@ -64,7 +64,6 @@
     "@electron/remote": "catalog:",
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
-    "@hot-updater/bsdiff": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",

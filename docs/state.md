@@ -62,6 +62,24 @@ consistent choice. Don't just mimic it: new code always uses the new style, and
 while you are in an old reducer, converting the helpers in the parts you touch
 (and fixing up related old issues) is welcome and moves the codebase forward.
 
+## Default game launcher
+
+`settings.interface.primaryTool[gameId]` records a launcher choice. An unset
+value (`undefined`) permits automatic selection; `null` means the user cleared
+the launcher and wants the game itself. A tool ID is an explicit selection.
+Keep all three states distinct when reading this setting.
+
+`src/renderer/src/extensions/gamemode_management/GameModeManager.ts` chooses
+a discovered, non-hidden `defaultPrimary` tool during activation and when
+late discovery reports a default for the active game, such as a script extender
+installed by a collection. Both paths preserve an existing launcher choice.
+Custom tool records retain their configured paths; hidden tools are not selected.
+Selection follows discovery-record order when several defaults are available.
+
+The Play button resolves this setting in
+`src/renderer/src/views/layout/menu/hooks/useTools.ts`, using the game starter
+when no selected tool has an executable. Selecting a launcher does not launch it.
+
 ## Key Files
 
 | Path                                              | Purpose                                              |

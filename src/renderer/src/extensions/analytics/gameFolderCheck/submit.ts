@@ -1,4 +1,3 @@
-import { GameId } from "@vortex/shared";
 import type { GameFolderCheckResult } from "@vortex/shared/ipc";
 import { v4 as uuid } from "uuid";
 
@@ -26,8 +25,7 @@ export async function submitGameFolderCheck(
   if (marker?.state !== "pending" || nexusGameId === null) return;
 
   const payload = toGameFolderStatePayload(result, {
-    // the numeric id from the Nexus games list
-    nexusGameId: GameId(nexusGameId),
+    nexusGameId,
     managedAt: marker.managedAt,
     steamLastUpdated: steamEntryFor(state, gameId)?.lastUpdated?.getTime() ?? null,
   });

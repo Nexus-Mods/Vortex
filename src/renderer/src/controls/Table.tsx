@@ -1021,7 +1021,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         const lastIdx = sortedRows.indexOf(lastSelected.rowId);
         if (lastIdx !== -1) {
           const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected.rowId]) as Element;
-          visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
+          visibleLineCount = this.rowScroller().clientHeight / selectedNode.clientHeight;
           // account for the header. quite inaccurate.
           visibleLineCount -= 2;
         }
@@ -1257,28 +1257,45 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.updateState(setSafe(this.mNextState, ["rowState", rowId, "highlighted"], highlighted));
   };
 
+  // What moves the rows when its scrollTop changes: the main pane, or the page around a
+  // sticky-header table, whose own pane has visible overflow and can't scroll.
+  private rowScroller(): HTMLElement {
+    return this.mScrollContainer ?? (document.scrollingElement as HTMLElement);
+  }
+
   private scrollToItem = (item: HTMLElement, smooth: boolean, iterations: number = 3) => {
-    const height = this.mScrollRef.offsetHeight;
-    const offset = height / 5;
-    const topLimit = this.mScrollRef.scrollTop + offset;
-    const bottomLimit = this.mScrollRef.scrollTop + this.mScrollRef.clientHeight - offset;
-    const itemBottom = item.offsetTop + item.offsetHeight;
+    const scroller = this.rowScroller();
+    // Measured against the scroller rather than the item's offsetParent: the page around a
+    // sticky-header table holds more than the table, so the two don't share an origin.
+    const viewTop =
+      scroller === document.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
+    const itemRect = item.getBoundingClientRect();
+    const itemTop = itemRect.top - viewTop + scroller.scrollTop;
+    const itemBottom = itemTop + itemRect.height;
+
+    // a sticky header covers the top of the scroller, so a row under it isn't in view
+    const covered = this.props.stickyHeader
+      ? ((this.mScrollRef.querySelector(".xthead") as HTMLElement)?.offsetHeight ?? 0)
+      : 0;
+    const offset = scroller.clientHeight / 5;
+    const topLimit = scroller.scrollTop + covered + offset;
+    const bottomLimit = scroller.scrollTop + scroller.clientHeight - offset;
 
     let targetPos: number;
-    if (item.offsetTop < topLimit) {
-      targetPos = Math.max(item.offsetTop - offset, 0);
+    if (itemTop < topLimit) {
+      targetPos = Math.max(itemTop - covered - offset, 0);
     } else if (itemBottom > bottomLimit) {
-      targetPos = itemBottom - this.mScrollRef.clientHeight + offset;
+      targetPos = itemBottom - scroller.clientHeight + offset;
     }
-    if (targetPos !== undefined && targetPos !== this.mScrollRef.scrollTop) {
+    if (targetPos !== undefined && targetPos !== scroller.scrollTop) {
       if (smooth) {
-        smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION).then((cont: boolean) =>
+        smoothScroll(scroller, targetPos, SuperTable.SCROLL_DURATION).then((cont: boolean) =>
           cont && iterations > 0
             ? this.scrollToItem(item, false, iterations - 1)
             : PromiseBB.resolve(),
         );
       } else {
-        this.mScrollRef.scrollTop = targetPos;
+        scroller.scrollTop = targetPos;
 
         if (iterations > 0) {
           // workaround: since we're not rendering off-screen rows it's possible for row heights to

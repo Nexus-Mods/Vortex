@@ -25,3 +25,11 @@ export type {
   FileSystemErrorData,
   OsErrorData,
 } from "@vortex/shared";
+
+export {
+  VortexGameId,
+  VortexProfileId,
+  NexusGameId,
+  NexusGameDomain,
+  GameUid,
+} from "@vortex/shared";

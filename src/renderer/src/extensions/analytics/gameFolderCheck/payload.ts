@@ -1,5 +1,5 @@
 import type { GameFolderFileCount, GameFolderStatePayload } from "@vortex/nexus-api-v3";
-import type { GameId } from "@vortex/shared";
+import type { NexusGameId } from "@vortex/shared";
 import type { GameFolderCheckCounts, GameFolderCheckResult } from "@vortex/shared/ipc";
 
 const iso = (ms: number | null | undefined): string | null =>
@@ -28,7 +28,7 @@ const NO_COUNTS: GameFolderCheckCounts = {
 };
 
 export interface IPayloadContext {
-  nexusGameId: GameId;
+  nexusGameId: NexusGameId;
   managedAt: number;
   /** Steam's LastUpdated from the ACF */
   steamLastUpdated: number | null;

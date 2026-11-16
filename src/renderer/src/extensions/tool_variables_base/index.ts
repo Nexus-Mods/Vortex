@@ -15,7 +15,7 @@ function init(context: IExtensionContext): boolean {
 
     if (profile === undefined) {
       log("warn", "starting a tool with no active profile? How?", {
-        parameters,
+        executable: parameters.executable,
       });
       // not really the job of this extension to report this to the use
     }

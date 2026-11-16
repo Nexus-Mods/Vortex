@@ -18,7 +18,7 @@ vi.mock("@/extensions/nexus_integration/util/UIDs", () => ({
   ),
 }));
 
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 import { numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
@@ -34,20 +34,20 @@ describe("resolveRequirementTarget", () => {
   });
 
   it("treats a requirement resolving to the Vortex mod page (site/1) as having no target", () => {
-    mockDomainName.mockReturnValue(GameDomain("site"));
+    mockDomainName.mockReturnValue(NexusGameDomain("site"));
     const target = resolveRequirementTarget({ modId: "1", gameId: "2295" }, "skyrimse");
     expect(target).toBeNull();
   });
 
   it("does not special-case other mods on the site domain", () => {
-    mockDomainName.mockReturnValue(GameDomain("site"));
+    mockDomainName.mockReturnValue(NexusGameDomain("site"));
     const target = resolveRequirementTarget({ modId: "2", gameId: "2295" }, "skyrimse");
     expect(target).not.toBeNull();
     expect(target?.requiredModId).toBe(2);
   });
 
   it("does not special-case mod id 1 on a non-site domain", () => {
-    mockDomainName.mockReturnValue(GameDomain("skyrimse"));
+    mockDomainName.mockReturnValue(NexusGameDomain("skyrimse"));
     const target = resolveRequirementTarget({ modId: "1", gameId: "1704" }, "skyrimse");
     expect(target).not.toBeNull();
     expect(target?.domainName).toBe("skyrimse");

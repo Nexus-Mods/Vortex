@@ -379,6 +379,7 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
     // record preserved (not culled) and installationPath healed to the modId
     expect(mod).toBeDefined();
     expect(mod.installationPath).toBe("Fences of Skyrim-123-1-0-17000");
+    expect(mod.id).toBe("Fences of Skyrim-123-1-0-17000");
     expect(mod.archiveId).toBe("arch1");
     expect(mod.attributes).toEqual({ endorsed: "Undecided", allowRating: true, version: "1.0" });
   });
@@ -411,6 +412,21 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
     // corrupt phantom culled, healthy sibling untouched
     expect(result.skyrimse).not.toHaveProperty(corruptKey);
     expect(result.skyrimse["Good Mod-1-0-0"].installationPath).toBe("Good Mod-1-0-0");
+  });
+
+  it("recovers a lost id from the record key, keeping the rest of the mod", () => {
+    const { id: _lostId, ...withoutId } = makeMod({ id: "modA", installationPath: "modA-folder" });
+    const state = { skyrimse: { modA: withoutId } };
+
+    const result = verify(
+      "persistent.mods",
+      modsReducer.verifiers,
+      state,
+      modsReducer.defaults,
+      noEmit,
+    );
+
+    expect(result.skyrimse.modA).toEqual({ ...withoutId, id: "modA" });
   });
 
   it("leaves a valid mod untouched", () => {

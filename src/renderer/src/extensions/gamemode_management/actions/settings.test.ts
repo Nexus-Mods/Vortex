@@ -1,21 +1,8 @@
 import { describe, it, expect } from "vitest";
 
-import type { IDiscoveredTool } from "../../../types/IDiscoveredTool";
+import { makeDiscoveredTool } from "../../../test-utils/builders";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import * as actions from "./settings";
-
-function makeTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
-  return {
-    id: "toolId1",
-    name: "Tool",
-    executable: () => "tool.exe",
-    requiredFiles: [],
-    path: "",
-    hidden: false,
-    custom: false,
-    ...overrides,
-  };
-}
 
 describe("setToolVisible", () => {
   it("creates the correct action", () => {
@@ -73,7 +60,7 @@ describe("addDiscoveredGame", () => {
 
 describe("addDiscoveredTool", () => {
   it("creates the correct action", () => {
-    const result = makeTool({
+    const result = makeDiscoveredTool({
       path: "tool2 path",
       hidden: false,
       custom: true,

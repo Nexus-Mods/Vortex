@@ -19,8 +19,26 @@ import {
   getMissingOptionalExtensions,
   isAlreadyInstalled,
   isExtensionDownload,
+  isSupersededBundledExtension,
   matchesQuery,
 } from "./queries";
+
+// an update can leave the folder of an extension that moved into core behind in bundledPlugins
+describe("isSupersededBundledExtension", () => {
+  const core = new Set(["gamebryo-plugin-management", "mod_management"]);
+
+  it("recognises a leftover folder named like a core extension", () => {
+    expect(isSupersededBundledExtension("gamebryo-plugin-management", core)).toBe(true);
+  });
+
+  it("recognises a leftover folder of an extension folded into another one", () => {
+    expect(isSupersededBundledExtension("gamebryo-plugin-indexlock", core)).toBe(true);
+  });
+
+  it("leaves an extension that still ships bundled alone", () => {
+    expect(isSupersededBundledExtension("gamebryo-savegame-management", core)).toBe(false);
+  });
+});
 
 /** Helper to create extension info */
 function makeExtensionInfo(overrides: Partial<ExtensionInfo> = {}): ExtensionInfo {

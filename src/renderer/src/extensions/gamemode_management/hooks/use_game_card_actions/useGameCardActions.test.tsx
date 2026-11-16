@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import { VortexGameId } from "@vortex/shared";
 import type * as ReactReduxTypes from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
@@ -30,6 +31,8 @@ vi.mock("react-redux", async () => {
   };
 });
 
+import { setGameAddOrigin, setGameAddStore } from "../../actions/session";
+import type { GameSource } from "../../types/GameSource";
 import { useGameCardActions } from "./useGameCardActions.hook";
 
 const definition = (over: Partial<IActionDefinition>): IActionDefinition =>
@@ -130,5 +133,49 @@ describe("useGameCardActions", () => {
     expect(labels([])[0]).toBe("Show");
 
     hidden.current = false;
+  });
+
+  describe("the store a tile names", () => {
+    const leadWith = (source: GameSource | undefined, store: string | undefined) => {
+      const manage = vi.fn();
+      objects.current = [
+        definition({ title: "Manage", position: 50, icon: "activate", action: manage }),
+      ];
+      dispatch.mockClear();
+      const { result } = renderHook(() =>
+        useGameCardActions("skyrimse", "managed", () => {}, source, store),
+      );
+
+      return { manage, primary: result.current.primary };
+    };
+
+    it("is recorded before a detected game's add runs, so discovery can be held to it", () => {
+      const { manage, primary } = leadWith("detected_list", "steam");
+
+      primary?.onClick();
+
+      expect(dispatch).toHaveBeenCalledWith(setGameAddStore(VortexGameId("skyrimse"), "steam"));
+      expect(dispatch.mock.invocationCallOrder.at(-1)).toBeLessThan(
+        manage.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("is not recorded when the tile names none", () => {
+      const { primary } = leadWith("detected_list", undefined);
+
+      primary?.onClick();
+
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(dispatch).toHaveBeenCalledWith(setGameAddOrigin("skyrimse", "detected_list"));
+    });
+
+    it("is not recorded for a game added from the list of every supported game", () => {
+      const { primary } = leadWith("all_games", "steam");
+
+      primary?.onClick();
+
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(dispatch).toHaveBeenCalledWith(setGameAddOrigin("skyrimse", "all_games"));
+    });
   });
 });
