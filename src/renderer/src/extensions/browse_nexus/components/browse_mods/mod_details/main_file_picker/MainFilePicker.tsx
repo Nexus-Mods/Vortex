@@ -47,12 +47,10 @@ export const MainFilePicker = ({
           data-testid="main-file-picker-summary"
           typographyType="body-sm"
         >
-          {files.length === 1
-            ? t("{{mod}} has 1 main file. Choose which you'd like to install.", { mod: mod.name })
-            : t("{{mod}} has {{count}} main files. Choose which you'd like to install.", {
-                mod: mod.name,
-                count: files.length,
-              })}
+          {t("{{mod}} has {{count}} main file. Choose which you'd like to install.", {
+            mod: mod.name,
+            count: files.length,
+          })}
         </Typography>
 
         <div className="max-h-[60vh] space-y-3 overflow-y-auto">
