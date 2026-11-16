@@ -1,4 +1,14 @@
 @layer components {
+    /* Holds the game art to the layout, which it covers: clipped, not hidden, so the art past the
+       window's edges adds nothing to scroll, even for scrollIntoView. */
+    .nxm-game-art-clip {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        overflow: clip;
+        pointer-events: none;
+    }
+
     /* The open game's hero art, behind the layout: held in the bottom left, past the window's
        left and bottom edges, and faded out by a mask of soft overlapping blobs, a dome over the
        spine and menu and a lobe along the bottom into the page, so its edge reads organic. Each
@@ -7,11 +17,9 @@
         position: absolute;
         bottom: calc(var(--spacing) * -15);
         left: calc(var(--spacing) * -175);
-        z-index: -1;
         width: calc(var(--spacing) * 392);
         aspect-ratio: 1920 / 620;
         opacity: 0.14;
-        pointer-events: none;
         mask-image:
             radial-gradient(ellipse 30% 95% at 50% 100%, #000 35%, transparent),
             radial-gradient(ellipse 42% 50% at 58% 100%, #000 30%, transparent),
