@@ -1,9 +1,9 @@
 import type { IFileInfo } from "@nexusmods/nexus-api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -89,17 +89,6 @@ const renderCards = (...files: IFileInfo[]) => {
 
 const action = (id: number) => screen.getByTestId(`main-file-card-action-${id}`);
 
-const stubOverflow = (scrollHeight: number, clientHeight: number) => {
-  Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
-    configurable: true,
-    get: () => scrollHeight,
-  });
-  Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-    configurable: true,
-    get: () => clientHeight,
-  });
-};
-
 describe("MainFileCard", () => {
   beforeEach(() => {
     mocks.installs = true;
@@ -109,11 +98,6 @@ describe("MainFileCard", () => {
     mocks.show.mockReset();
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
-  });
-
-  afterEach(() => {
-    delete (HTMLElement.prototype as unknown as Record<string, unknown>).scrollHeight;
-    delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight;
   });
 
   it("installs its own file with 1-click, counting it by the file's uid", async () => {
@@ -195,7 +179,7 @@ describe("MainFileCard", () => {
 
     const group = screen.getByRole("group", { name: "File 43" });
 
-    expect(within(group).getByRole("button")).toBe(action(43));
+    expect(group).toContainElement(action(43));
   });
 
   it("shows a file that's installing from its download as Install, loading", () => {
@@ -206,22 +190,14 @@ describe("MainFileCard", () => {
     expect(action(42)).toHaveAccessibleName("Install");
   });
 
-  it("offers the full description on the site when it's cut off", async () => {
-    stubOverflow(80, 40);
+  it("offers the file's details on the site", async () => {
     renderCards(file(42));
 
-    await userEvent.click(await screen.findByTestId("main-file-card-description-link-42"));
+    await userEvent.click(screen.getByTestId("main-file-card-details-link-42"));
 
     expect(openUrl).toHaveBeenCalledWith(
       "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files&file_id=42&nmm=1",
     );
-  });
-
-  it("has no link to the full description when it fits", () => {
-    stubOverflow(40, 40);
-    renderCards(file(42));
-
-    expect(screen.queryByTestId("main-file-card-description-link-42")).toBeNull();
   });
 
   it("says the file's exact size, on hover", async () => {

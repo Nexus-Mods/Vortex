@@ -65,6 +65,15 @@ vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallStat
   useModInstallState: () => ({ kind: "none" }),
 }));
 
+vi.mock(
+  "@/extensions/browse_nexus/components/browse_mods/mod_details/main_file_picker/other_files/OtherFiles",
+  () => ({
+    OtherFiles: ({ files }: { files: unknown[] }) => (
+      <div data-count={files.length} data-testid="other-files" />
+    ),
+  }),
+);
+
 import { ModInstallButton } from "./ModInstallButton";
 
 const mod = {
@@ -541,6 +550,20 @@ describe("ModInstallButton", () => {
         { mod_uid: "7340033", file_count: 3, source: "one_click" },
       ]);
       expect(mocks.install).not.toHaveBeenCalled();
+    });
+
+    it("counts and shows only its Main files, handing all of its files to the rest", async () => {
+      const optional = { ...mainFiles(13)[0], category_id: 4 };
+      mocks.fetchFiles.mockResolvedValue([...mainFiles(11, 12), optional]);
+      renderButton(newestFile);
+
+      await userEvent.click(button());
+
+      expect(await screen.findAllByTestId(/^main-file-card-\d+$/)).toHaveLength(2);
+      expect(screen.getByTestId("other-files")).toHaveAttribute("data-count", "3");
+      expect(tracking.tracked("browse_mods_file_picker_opened").map((e) => e.properties)).toEqual([
+        { mod_uid: "7340033", file_count: 2, source: "one_click" },
+      ]);
     });
 
     it("installs its one Main file without asking", async () => {

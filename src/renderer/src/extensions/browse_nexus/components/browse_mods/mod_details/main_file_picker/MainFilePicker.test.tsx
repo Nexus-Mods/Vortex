@@ -28,6 +28,12 @@ vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallStat
   useModInstallState: () => ({ kind: "none" }),
 }));
 
+vi.mock("./other_files/OtherFiles", () => ({
+  OtherFiles: ({ files }: { files: unknown[] }) => (
+    <div data-count={files.length} data-testid="other-files" />
+  ),
+}));
+
 import { MainFilePicker } from "./MainFilePicker";
 
 const mod = {
@@ -59,7 +65,14 @@ const renderPicker = (files = [file(3), file(1), file(2)]) => {
 
   render(
     <QueryClientProvider client={client}>
-      <MainFilePicker api={api} files={files} isOpen mod={mod} onClose={onClose} />
+      <MainFilePicker
+        isOpen
+        api={api}
+        files={files}
+        mod={mod}
+        modFiles={[...files, file(9)]}
+        onClose={onClose}
+      />
     </QueryClientProvider>,
     { wrapper: tracking.wrapper },
   );
@@ -102,6 +115,14 @@ describe("MainFilePicker", () => {
     expect(screen.getByTestId("main-file-picker-summary")).toHaveTextContent(
       "{{mod}} has 1 main file. Choose which you'd like to install.",
     );
+
+    await settleTransitions();
+  });
+
+  it("lists the user's other files from all of the mod's files", async () => {
+    renderPicker();
+
+    expect(screen.getByTestId("other-files")).toHaveAttribute("data-count", "4");
 
     await settleTransitions();
   });

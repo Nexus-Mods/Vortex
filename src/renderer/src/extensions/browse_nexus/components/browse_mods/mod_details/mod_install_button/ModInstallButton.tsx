@@ -10,13 +10,14 @@ import { useSelector } from "react-redux";
 import { MainFilePicker } from "@/extensions/browse_nexus/components/browse_mods/mod_details/main_file_picker/MainFilePicker";
 import type { FilePickerSource } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
-import { mainFilesQuery } from "@/extensions/browse_nexus/queries/main_files/mainFiles.query";
+import { modFilesQuery } from "@/extensions/browse_nexus/queries/mod_files/modFiles.query";
 import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
 import {
   installNexusFile,
   installsWhenDownloaded,
   reportInstallFailure,
 } from "@/extensions/browse_nexus/util/install_nexus_file/installNexusFile";
+import { mainFilesOf } from "@/extensions/browse_nexus/util/main_files/mainFiles";
 import type { ModInstallState } from "@/extensions/browse_nexus/util/mod_install_state/modInstallState";
 import {
   oneClickFileInstallsKey,
@@ -40,6 +41,16 @@ import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { nxmModOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { Content } from "@/util/util";
+
+/** The files the picker opens on: the mod's Main files, and all of its files. */
+interface IPickerFiles {
+  /** Its Main files, which get cards. */
+  main: IFileInfo[];
+  /** All of its files, for which the user's other files are. */
+  all: IFileInfo[];
+}
+
+const NO_PICKER_FILES: IPickerFiles = { main: [], all: [] };
 
 /** The file 1-click installs: its UID, for tracking, and its id within the mod. */
 type IInstallFile = Pick<ModMainFileVersion, "id" | "game_scoped_id">;
@@ -149,7 +160,7 @@ export const ModInstallButton = ({
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const [upsellFor, setUpsellFor] = useState<"one-click" | "menu">();
   const queryClient = useQueryClient();
-  const [pickerFiles, setPickerFiles] = useState<IFileInfo[]>([]);
+  const [pickerFiles, setPickerFiles] = useState<IPickerFiles>(NO_PICKER_FILES);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const mainButtonRef = useRef<HTMLButtonElement>(null);
   const installKey = oneClickInstallKey(mod.id);
@@ -181,12 +192,14 @@ export const ModInstallButton = ({
     onError: (error) => reportInstallFailure(api, { t, mod, shouldInstall, error }),
   });
 
-  const mainFiles = useMutation({
-    mutationFn: () => queryClient.fetchQuery(mainFilesQuery(api, { mod })),
+  /** A read, but a mutation so it runs only on click and its pending and error state show. */
+  const loadModFiles = useMutation({
+    mutationFn: () => queryClient.fetchQuery(modFilesQuery(api, { mod })),
   });
-  const hasNoFiles = mainFile === null || mainFiles.data?.length === 0;
+  const hasNoFiles =
+    mainFile === null || (!!loadModFiles.data && mainFilesOf(loadModFiles.data).length === 0);
   const unavailable = unavailableReason(t, isError, hasNoFiles, hasUpdate);
-  const filesError = mainFiles.isError ? t("Couldn't load this mod's files") : undefined;
+  const filesError = loadModFiles.isError ? t("Couldn't load this mod's files") : undefined;
 
   /**
    * Fetches the mod's Main files, then installs the only one, or opens the picker on several. From
@@ -200,7 +213,7 @@ export const ModInstallButton = ({
       return;
     }
 
-    mainFiles.mutate(undefined, {
+    loadModFiles.mutate(undefined, {
       onError: (error) => {
         if (fromSplit) {
           api.showErrorNotification(t("Couldn't load this mod's files"), error, {
@@ -208,7 +221,8 @@ export const ModInstallButton = ({
           });
         }
       },
-      onSuccess: (files) => {
+      onSuccess: (all) => {
+        const files = mainFilesOf(all);
         const [only] = files;
 
         if (files.length === 0 && fromSplit) {
@@ -233,7 +247,7 @@ export const ModInstallButton = ({
         }
 
         if (files.length > 0) {
-          setPickerFiles(files);
+          setPickerFiles({ main: files, all });
           setIsPickerOpen(true);
           tracker.trackFilePickerOpened({ mod_uid: mod.id, file_count: files.length, source });
         }
@@ -273,7 +287,7 @@ export const ModInstallButton = ({
         aria-disabled={!!unavailable}
         brand={isPremiumUser ? "primary" : "neutral"}
         disabled={isLoadingFile}
-        isLoading={isInstalling || mainFiles.isPending}
+        isLoading={isInstalling || loadModFiles.isPending}
         leftIcon="install_desktop"
         ref={mainButtonRef}
         rightIcon={isPremiumUser ? undefined : <PremiumBadge />}
@@ -350,7 +364,7 @@ export const ModInstallButton = ({
       }
       brand={look === "installed" ? "neutral" : undefined}
       data-testid="mod-install-main"
-      isLoading={mainFiles.isPending}
+      isLoading={loadModFiles.isPending}
       leftIcon={look === "installed" ? { path: nxmModOutline } : "add"}
       ref={mainButtonRef}
       onClick={onClick}
@@ -446,7 +460,8 @@ export const ModInstallButton = ({
 
       <MainFilePicker
         api={api}
-        files={pickerFiles}
+        files={pickerFiles.main}
+        modFiles={pickerFiles.all}
         isOpen={isPickerOpen}
         mod={mod}
         onClose={() => {

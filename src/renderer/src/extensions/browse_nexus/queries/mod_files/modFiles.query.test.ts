@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { mainFilesQuery } from "./mainFiles.query";
+import { modFilesQuery } from "./modFiles.query";
 
 const mod = {
   id: "mod-uid",
@@ -20,12 +20,12 @@ const setup = (nexusFetchModFiles: () => Promise<IFileInfo[]>) => ({
   client: new QueryClient({ defaultOptions: { queries: { retry: false } } }),
 });
 
-describe("mainFilesQuery", () => {
-  it("resolves to the sorted Main files of the mod", async () => {
+describe("modFilesQuery", () => {
+  it("resolves to all of the mod's files", async () => {
     const fetchFiles = vi.fn().mockResolvedValue([file(1, 1, 10), file(2, 2, 50), file(3, 1, 20)]);
     const { api, client } = setup(fetchFiles);
-    const files = await client.fetchQuery(mainFilesQuery(api, { mod }));
-    expect(files.map((f) => f.file_id)).toEqual([3, 1]);
+    const files = await client.fetchQuery(modFilesQuery(api, { mod }));
+    expect(files.map((f) => f.file_id)).toEqual([1, 2, 3]);
     expect(fetchFiles).toHaveBeenCalledWith("skyrimspecialedition", 42);
   });
 
@@ -35,8 +35,8 @@ describe("mainFilesQuery", () => {
       .mockRejectedValueOnce(new Error("offline"))
       .mockResolvedValueOnce([file(1, 1, 10)]);
     const { api, client } = setup(fetchFiles);
-    await expect(client.fetchQuery(mainFilesQuery(api, { mod }))).rejects.toThrow("offline");
-    const files = await client.fetchQuery(mainFilesQuery(api, { mod }));
+    await expect(client.fetchQuery(modFilesQuery(api, { mod }))).rejects.toThrow("offline");
+    const files = await client.fetchQuery(modFilesQuery(api, { mod }));
     expect(files).toHaveLength(1);
     expect(fetchFiles).toHaveBeenCalledTimes(2);
   });
@@ -44,7 +44,7 @@ describe("mainFilesQuery", () => {
   it("rejects clearly when Nexus integration isn't available", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const api = { ext: {} } as unknown as IExtensionApi;
-    await expect(client.fetchQuery(mainFilesQuery(api, { mod }))).rejects.toThrow(
+    await expect(client.fetchQuery(modFilesQuery(api, { mod }))).rejects.toThrow(
       "Nexus Mods integration isn't available",
     );
   });

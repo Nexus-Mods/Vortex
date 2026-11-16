@@ -9,6 +9,7 @@ import { Modal } from "@/ui/components/modal/Modal";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { MainFileCard } from "./main_file_card/MainFileCard";
+import { OtherFiles } from "./other_files/OtherFiles";
 
 interface IMainFilePickerProps {
   api: IExtensionApi;
@@ -16,14 +17,26 @@ interface IMainFilePickerProps {
   mod: ModSummary;
   /** Its Main files, in the order to list them. */
   files: IFileInfo[];
+  /** All of its files, for the ones the user has that aren't Main files. */
+  modFiles: IFileInfo[];
   /** Whether the dialog is showing. */
   isOpen: boolean;
   /** Called when the user closes it; a card's action doesn't. */
   onClose: () => void;
 }
 
-/** A dialog listing a mod's Main files as cards, each with its own install, to choose from. */
-export const MainFilePicker = ({ api, mod, files, isOpen, onClose }: IMainFilePickerProps) => {
+/**
+ * A dialog listing a mod's Main files as cards, each with its own install, to choose from, and
+ * below them any other files of the mod the user has.
+ */
+export const MainFilePicker = ({
+  api,
+  mod,
+  files,
+  modFiles,
+  isOpen,
+  onClose,
+}: IMainFilePickerProps) => {
   const { t } = useTranslation();
 
   return (
@@ -46,6 +59,8 @@ export const MainFilePicker = ({ api, mod, files, isOpen, onClose }: IMainFilePi
           {files.map((file) => (
             <MainFileCard key={file.file_id} api={api} file={file} mod={mod} onLeave={onClose} />
           ))}
+
+          <OtherFiles api={api} files={modFiles} mod={mod} onLeave={onClose} />
         </div>
 
         <div className="flex justify-end">

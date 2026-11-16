@@ -2,7 +2,7 @@ import type { IFileInfo } from "@nexusmods/nexus-api";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { NexusGameDomain, VortexGameId, VortexModId } from "@vortex/shared";
 import numeral from "numeral";
-import React, { useId, useLayoutEffect, useRef, useState } from "react";
+import React, { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -27,6 +27,7 @@ import { Pill } from "@/ui/components/pill/Pill";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
+import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { nxmModOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { useRelativeTime } from "@/util/useRelativeTime";
@@ -51,8 +52,6 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const nameId = useId();
-  const descriptionRef = useRef<HTMLDivElement>(null);
-  const [isCut, setIsCut] = useState(false);
   const domain = NexusGameDomain(mod.game.domain_name);
   const installKey = oneClickFileInstallKey({ modId: mod.id, fileId: file.file_id });
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
@@ -67,12 +66,6 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
     modId: Number(mod.game_scoped_id),
     fileId: file.file_id,
   });
-
-  useLayoutEffect(() => {
-    const element = descriptionRef.current;
-
-    setIsCut(!!element && element.scrollHeight > element.clientHeight);
-  }, [file.description]);
 
   const install = useMutation({
     mutationKey: installKey,
@@ -210,28 +203,25 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
 
         {!!file.description && (
           <Typography appearance="subdued" as="div" typographyType="body-sm">
-            <div ref={descriptionRef} className="line-clamp-2">
+            <div className="line-clamp-2">
               <BBCode bbcode={file.description} size="sm" />
             </div>
           </Typography>
         )}
 
-        {isCut && (
-          <button
-            className="flex cursor-pointer items-center gap-1 self-start text-neutral-subdued underline"
-            data-testid={`main-file-card-description-link-${file.file_id}`}
-            type="button"
-            onClick={() =>
-              window.api.shell.openUrl(nexusFilePageUrl(domain, mod.game_scoped_id, file.file_id))
-            }
-          >
-            <Typography as="span" brand="none" typographyType="body-sm">
-              {t("View full description")}
-            </Typography>
-
-            <Icon name="open_in_new" size="xs" />
-          </button>
-        )}
+        <TypographyLink
+          appearance="subdued"
+          className="self-start"
+          data-testid={`main-file-card-details-link-${file.file_id}`}
+          iconSize="xs"
+          rightIcon="open_in_new"
+          typographyType="body-sm"
+          onClick={() =>
+            window.api.shell.openUrl(nexusFilePageUrl(domain, mod.game_scoped_id, file.file_id))
+          }
+        >
+          {t("View more details")}
+        </TypographyLink>
       </div>
 
       <div className="h-px bg-stroke-weak" />
