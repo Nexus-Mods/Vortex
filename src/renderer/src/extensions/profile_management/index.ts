@@ -25,7 +25,6 @@ import {
   VortexGameId,
   VortexProfileId,
 } from "@vortex/shared";
-import { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
