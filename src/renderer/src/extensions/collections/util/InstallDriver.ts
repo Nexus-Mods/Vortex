@@ -550,7 +550,8 @@ class InstallDriver {
     }
     const gameId = this.mGameId;
     const collectionId = this.mCollection.id;
-    const recommendedRules = (this.mCollection.rules ?? []).filter((r) => r.type === "recommends");
+    const liveRules = this.mApi.getState().persistent.mods[gameId]?.[collectionId]?.rules ?? [];
+    const recommendedRules = liveRules.filter((r) => r.type === "recommends");
 
     // Optionals default to skipped (ignored). Selecting them all means clearing the skip: the
     // dependency gather (filterDependencyRules) drops ignored rules, so without this the pass would
@@ -922,8 +923,6 @@ class InstallDriver {
 
     this.updateProgress(collection);
 
-    this.augmentRules(gameId, collection);
-
     this.mApi.dismissNotification(getUnfulfilledNotificationId(collection.id));
     this.mApi.store.dispatch(setModEnabled(profile.id, collection.id, true));
 
@@ -1022,6 +1021,9 @@ class InstallDriver {
       }
     }
 
+    // after the skips: a large collection's updates are dispatched later and replace whole rules
+    this.augmentRules(gameId, collection);
+
     // Emit started (genuine first start) or resumed (durable installStartedAt marker present),
     // now that the session exists and optionals are defaulted, so the event carries the full
     // count snapshot. Start vs resume is decided by the marker, not member-install counts.
@@ -1053,9 +1055,10 @@ class InstallDriver {
   }
 
   private augmentRules(gameId: string, collection: IMod) {
+    const liveRules = this.mApi.getState().persistent.mods[gameId]?.[collection.id]?.rules ?? [];
     batchDispatch(
       this.mApi.store,
-      (collection.rules ?? [])
+      liveRules
         .map((rule) => {
           if (rule.reference.repo === undefined) {
             return undefined;
@@ -1073,7 +1076,7 @@ class InstallDriver {
             return undefined;
           }
           const revMod = modFiles.find((iter) => this.matchRepo(rule, iter.file));
-          if (revMod?.file !== undefined) {
+          if (revMod?.file !== undefined && rule.extra?.fileName !== revMod.file.uri) {
             const newRule = setSafe(rule, ["extra", "fileName"], revMod.file.uri);
             return addModRule(gameId, collection.id, newRule);
           }
