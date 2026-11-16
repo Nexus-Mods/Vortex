@@ -141,10 +141,11 @@ interface IModInstallButtonProps {
  * once downloaded. Non-Premium users get the 1-click upsell for an update as for an install, its
  * events saying which. Progress survives switching mods.
  *
- * A mod with no primary file has its Main files fetched on click: one is installed, more open the
- * picker; v3 giving it no file at all means it isn't available through Vortex. Once the user has
- * the mod, its button splits, its menu reaching the picker again; with several of its files
- * downloaded or installed, a Premium user's main action opens the picker too.
+ * A mod with several Main files and no primary has them fetched on click, for the picker; with
+ * one, it's installed as a primary is. v3 giving it no file at all means it isn't available
+ * through Vortex. Once the user has a mod with several, its button splits, its menu reaching the
+ * picker again; with several of its files downloaded or installed, a Premium user's main action
+ * opens the picker too.
  */
 export const ModInstallButton = ({
   api,
@@ -171,8 +172,8 @@ export const ModInstallButton = ({
   const action = shouldInstall ? "install" : "download";
   const hasUpdate = installState.kind === "installed" && !!installState.update;
   const isLoadingFile = !hasUpdate && mainFile === undefined && !isError;
-  /** v3 gives a mod with no primary its newest Main file, not primary, to choose from. */
-  const choosesFile = mainFile?.is_primary === false;
+  /** v3 gives a mod with no primary its newest Main file; `count` says if there are others. */
+  const choosesFile = mainFile?.is_primary === false && mainFile.count > 1;
   const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
   const isMenuUpsell = upsellFor === "menu";
   const upsellAction = upsellActionOf(isMenuUpsell, hasUpdate, action);
@@ -202,7 +203,8 @@ export const ModInstallButton = ({
   const filesError = loadModFiles.isError ? t("Couldn't load this mod's files") : undefined;
 
   /**
-   * Fetches the mod's Main files, then installs the only one, or opens the picker on several. From
+   * Fetches the mod's Main files, then opens the picker on them, or installs the only one if v3's
+   * count was out of date. From
    * the split button the picker opens on any, and a failure or no files is said in a notification.
    * `source` is what the picker's opening is tracked as.
    */
