@@ -43,6 +43,7 @@ import {
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
 import HeaderCell from "./table/HeaderCell";
 import { Table, TBody, TD, TH, THead, TR } from "./table/MyTable";
+import { registerTableAttribute } from "./table/registerTableAttribute";
 import { scrollContainerOf } from "./table/scrollContainer";
 import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
@@ -2138,14 +2139,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
     onSetCollapsedGroups: (tableId: string, collapsed: string[]) =>
       dispatch(setCollapsedGroups(tableId, collapsed)),
   };
-}
-
-function registerTableAttribute(instanceGroup: string, group: string, attribute: ITableAttribute) {
-  if (instanceGroup === group) {
-    return attribute;
-  } else {
-    return undefined;
-  }
 }
 
 function getTableState(state: IState, tableId: string) {

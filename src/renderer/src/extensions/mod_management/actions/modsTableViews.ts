@@ -24,8 +24,15 @@ export const setModsTableViewColumnWidths = createAction(
   (viewId: string, widths: { [columnId: string]: number | undefined }) => ({ viewId, widths }),
 );
 
-/** Forgets what the user changed about a view, back to its defaults, but keeps its widths. */
-export const resetModsTableView = createAction("RESET_MODS_TABLE_VIEW", (viewId: string) => viewId);
+/**
+ * Forgets what the user changed about a view, back to its defaults: its grouping and its choice
+ * of the given columns, the ones the table has. Its widths stay, as do its choices of columns
+ * another game offers.
+ */
+export const resetModsTableView = createAction(
+  "RESET_MODS_TABLE_VIEW",
+  (viewId: string, columnIds: readonly string[]) => ({ viewId, columnIds }),
+);
 
 /** Adds a view of the user's own, by a new id and its name, and opens it. */
 export const addModsTableView = createAction(

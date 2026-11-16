@@ -352,7 +352,9 @@
     }
 
     /* A sortable column's header: its label, in line with the column's content, and an arrow
-       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox. */
+       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox.
+       The grey of the headers that don't sort, brighter only for the column the rows are
+       sorted by. */
     .nxm-table-sort-button {
         display: flex;
         align-items: center;
@@ -362,12 +364,16 @@
         margin-left: calc(var(--spacing) * -2);
         padding-inline: calc(var(--spacing) * 2);
         border-radius: var(--radius-sm);
-        color: var(--color-translucent-moderate);
+        color: var(--color-translucent-subdued);
         white-space: nowrap;
         cursor: pointer;
         transition-property: color, background-color;
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+
+        :is([aria-sort="ascending"], [aria-sort="descending"]) > & {
+            color: var(--color-translucent-moderate);
+        }
 
         &:hover,
         &:focus-visible {

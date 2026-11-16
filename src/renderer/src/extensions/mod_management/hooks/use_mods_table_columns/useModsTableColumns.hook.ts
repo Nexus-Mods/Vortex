@@ -11,7 +11,10 @@ import type {
 export interface IModsTableColumn extends ITableColumn<IModRow, IModGroup> {
   /** Whether the view options can hide it; which show is the view's to say. */
   isToggleable?: boolean;
-  /** Its legacy attribute's `position`, lowest first; default 100, ties keeping their order. */
+  /**
+   * Its legacy attribute's `position`, lowest first; default 100, ties keeping their order.
+   * A column the user can't toggle takes its place only with one; without, it comes first.
+   */
   position?: number;
   /** The value a row is grouped under when the table groups by it; without one, it can't. */
   groupBy?: (row: IModRow) => string;
@@ -34,13 +37,23 @@ export interface IModsTableColumnToggle {
   visible: boolean;
 }
 
-const byPosition = (a: IModsTableColumn, b: IModsTableColumn) =>
-  (a.position ?? 100) - (b.position ?? 100);
+/** The `position` of a column that has none, as in the legacy table. */
+export const DEFAULT_POSITION = 100;
 
-/** The fixed columns, then the toggleable ones in the legacy table's order, then any sticky one. */
+const byPosition = (a: IModsTableColumn, b: IModsTableColumn) =>
+  (a.position ?? DEFAULT_POSITION) - (b.position ?? DEFAULT_POSITION);
+
+/** Whether it takes its place by position, as the legacy table places every attribute. */
+const isPlaced = (column: IModsTableColumn) =>
+  !column.sticky && (column.isToggleable === true || column.position !== undefined);
+
+/**
+ * The fixed columns without a position, then the others in the legacy table's order, as an
+ * extension's column the user can't toggle has one, then any sticky one.
+ */
 const ordered = (columns: IModsTableColumn[]) => [
-  ...columns.filter((column) => !column.isToggleable && !column.sticky),
-  ...columns.filter((column) => column.isToggleable).sort(byPosition),
+  ...columns.filter((column) => !column.sticky && !isPlaced(column)),
+  ...columns.filter(isPlaced).sort(byPosition),
   ...columns.filter((column) => column.sticky),
 ];
 

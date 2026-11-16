@@ -66,6 +66,20 @@ describe("useModsTableDataColumns", () => {
     expect(columns.every(({ isToggleable }) => isToggleable)).toBe(true);
   });
 
+  // The Version column's grey, so none stands out beside it; brighter while sorted by, as Name is.
+  it("shows each value in the same grey as the Version column", () => {
+    const columns = renderColumns();
+    const modRow = row({ attributes: { author: "Ada", category: "95" } });
+
+    for (const column of columns) {
+      const { container } = render(<>{column.cell(modRow)}</>);
+      expect(container.firstElementChild, column.id).toHaveClass(
+        "text-translucent-subdued",
+        "in-data-sorted:text-neutral-moderate",
+      );
+    }
+  });
+
   it("shows the mod's own values", () => {
     const columns = renderColumns();
     const modRow = row({ type: "dinput", attributes: { author: "Ada", source: "nexus" } });
