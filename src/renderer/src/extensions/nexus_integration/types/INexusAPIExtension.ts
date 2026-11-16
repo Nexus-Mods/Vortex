@@ -18,7 +18,7 @@ import type {
   IModInfo,
   RatingOptions,
 } from "@nexusmods/nexus-api";
-import type { GameDomain } from "@vortex/shared";
+import type { NexusGameDomain } from "@vortex/shared";
 
 import type { IMod } from "@/extensions/mod_management/types/IMod";
 
@@ -88,7 +88,7 @@ export interface INexusAPIExtension {
   nexusRequestOwnIssues?: (cb: (err: Error, issues?: IIssue[]) => void) => void;
   nexusRetrieveCategoryList?: (isUpdate: boolean) => void;
   nexusGetModFiles?: (gameId: string, modId: number) => PromiseLike<IFileInfo[]>;
-  nexusFetchModFiles?: (domain: GameDomain, modId: number) => Promise<IFileInfo[]>;
+  nexusFetchModFiles?: (domain: NexusGameDomain, modId: number) => Promise<IFileInfo[]>;
   nexusDownloadUpdate?: (
     source: string,
     gameId: string,

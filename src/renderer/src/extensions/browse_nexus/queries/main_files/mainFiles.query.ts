@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 
 import { mainFilesOf } from "@/extensions/browse_nexus/util/main_files/mainFiles";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -20,7 +20,7 @@ export const mainFilesQuery = (api: IExtensionApi, { mod }: IMainFilesQueryArgs)
       if (!fetchModFiles) {
         throw new Error("Nexus Mods integration isn't available");
       }
-      const domain = GameDomain(mod.game.domain_name);
+      const domain = NexusGameDomain(mod.game.domain_name);
       return mainFilesOf(await fetchModFiles(domain, Number(mod.game_scoped_id)));
     },
   });

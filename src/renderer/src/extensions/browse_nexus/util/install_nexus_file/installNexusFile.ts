@@ -1,4 +1,4 @@
-import { GameDomain, type VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, type VortexGameId } from "@vortex/shared";
 import { VortexError, type VortexErrorKind } from "@vortex/shared/errors";
 import type { TFunction } from "i18next";
 
@@ -34,7 +34,7 @@ export const installNexusFile = (
   { mod, fileId, gameId, shouldInstall }: IInstallNexusFileArgs,
 ) => {
   const nexusFile = {
-    gameDomain: GameDomain(mod.game.domain_name),
+    gameDomain: NexusGameDomain(mod.game.domain_name),
     gameId,
     modId: mod.game_scoped_id,
     fileId,

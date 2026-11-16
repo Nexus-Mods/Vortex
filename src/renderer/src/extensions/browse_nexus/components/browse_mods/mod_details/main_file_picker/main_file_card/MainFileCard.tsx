@@ -1,6 +1,6 @@
 import type { IFileInfo } from "@nexusmods/nexus-api";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
-import { GameDomain, VortexGameId, VortexModId } from "@vortex/shared";
+import { NexusGameDomain, VortexGameId, VortexModId } from "@vortex/shared";
 import numeral from "numeral";
 import React, { useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -53,7 +53,7 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
   const nameId = useId();
   const descriptionRef = useRef<HTMLDivElement>(null);
   const [isCut, setIsCut] = useState(false);
-  const domain = GameDomain(mod.game.domain_name);
+  const domain = NexusGameDomain(mod.game.domain_name);
   const installKey = oneClickFileInstallKey({ modId: mod.id, fileId: file.file_id });
   const isInstalling = useIsMutating({ mutationKey: installKey }) > 0;
   const uploaded = useRelativeTime(file.uploaded_timestamp * 1000, t);
