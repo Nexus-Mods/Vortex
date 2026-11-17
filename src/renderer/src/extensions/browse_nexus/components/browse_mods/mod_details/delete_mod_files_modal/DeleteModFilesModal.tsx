@@ -122,7 +122,7 @@ const DeleteModFilesBody = ({ modName, files, onDelete, onClose }: IDeleteModFil
         typographyType="body-sm"
       >
         {isSingle
-          ? t("Remove {{mod}} from your game", { mod: modName })
+          ? t("Remove {{file}} from your game", { file: files[0].name })
           : t("Choose which files to remove from {{mod}}", { mod: modName })}
       </Typography>
 
@@ -220,7 +220,8 @@ const DeleteModFilesBody = ({ modName, files, onDelete, onClose }: IDeleteModFil
  * Asks which of the files the user has of a mod to remove, each with pills saying whether it's
  * installed, its download is missing, or it's only downloaded. Removing uninstalls by default,
  * keeping downloads to reinstall from; "Also delete downloaded files" deletes them too, and is
- * what lets downloads be chosen. One file is just confirmed, with no list.
+ * what lets downloads be chosen. One file is just confirmed, by its name and version, with no list,
+ * so an optional file doesn't read as the whole mod.
  */
 export const DeleteModFilesModal = ({ files, ...props }: IDeleteModFilesModalProps) => {
   const { t } = useTranslation();
