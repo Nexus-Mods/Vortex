@@ -1406,13 +1406,19 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
       return prev;
     }, {});
     const state: IState = store.getState();
+    // Collected and sent as one batch, skipping values that haven't changed: every change to
+    // app.extensions or a mod re-renders the pages that select them (the Games page among
+    // them), so one dispatch per extension froze the app for as many renders.
+    const actions: Redux.Action[] = [];
     const extState = state.app.extensions ?? {};
     Object.keys(extState).forEach((extId) => {
       const modId = extState[extId].modId;
 
       if (modId !== undefined) {
         const endorsed = getSafe(endorseMap, [SITE_ID, modId], "Undecided");
-        store.dispatch(setExtensionEndorsed(extId, endorsed));
+        if (endorsed !== extState[extId].endorsed) {
+          actions.push(setExtensionEndorsed(extId, endorsed));
+        }
       }
     });
     const allMods = state.persistent.mods;
@@ -1427,10 +1433,11 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
         );
         const endorsed = getSafe(endorseMap, [dlGame, nexModId], "Undecided");
         if (endorsed !== oldEndorsed) {
-          store.dispatch(setModAttribute(gameId, modId, "endorsed", endorsed));
+          actions.push(setModAttribute(gameId, modId, "endorsed", endorsed));
         }
       });
     });
+    batchDispatch(store, actions);
   });
 }
 
