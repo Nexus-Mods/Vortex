@@ -12,12 +12,26 @@ export {
   type NexusV3Client,
   type NexusV3ClientOptions,
   type NexusV3InternalClient,
+  type TelemetryEventEntry,
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
+<<<<<<< HEAD
   EventManualInstaller,
   EventPlannerPlan,
+=======
+  EventGameFolderState,
+  EventGameFolderStateFiles,
+>>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
   EventStoreGameVersion,
+  GameFolderDepot,
+  GameFolderFile,
+  GameFolderFileCount,
+  GameFolderFolderCount,
+  GameFolderPartStatus,
+  GameFolderStateFilesPayload,
+  GameFolderStatePayload,
+  TelemetryEvent,
   GogInstall,
   ManifestDiff,
   ManifestDiffReason,

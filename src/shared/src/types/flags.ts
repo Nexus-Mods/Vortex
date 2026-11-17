@@ -17,9 +17,46 @@ export const flagVariantSchemas = {
   "vortex-tier-0-game-support": {},
   // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
   "laz-vortex-browse-mods": {},
+<<<<<<< HEAD
   // On/off gate for the planner_plan telemetry event.
   "vortex-planner-telemetry": {},
+=======
+  // Gate for the Steam game folder check (MOD-80). The optional "config" variant
+  // overrides its defaults, so limits can change without a release.
+  "vortex-game-folder-check": {
+    config: z
+      .string()
+      .transform((s: string) => JSON.parse(s) as unknown)
+      .pipe(
+        z.object({
+          settleMs: z.number().nonnegative().optional(),
+          maxDurationMs: z.number().positive().optional(),
+          maxBytes: z.number().positive().optional(),
+          hashConcurrency: z.number().int().positive().optional(),
+          hashSampleExecutables: z.number().int().nonnegative().optional(),
+          hashSampleFiles: z.number().int().nonnegative().optional(),
+          maxUnknownPaths: z.number().int().nonnegative().optional(),
+          maxFileParts: z.number().int().nonnegative().optional(),
+          maxEventBytes: z.number().int().positive().optional(),
+          fullVerifyPercent: z.number().min(0).max(100).optional(),
+        }),
+      ) as z.ZodType<GameFolderCheckFlagConfig>,
+  },
+>>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 };
+
+export interface GameFolderCheckFlagConfig {
+  settleMs?: number;
+  maxDurationMs?: number;
+  maxBytes?: number;
+  hashConcurrency?: number;
+  hashSampleExecutables?: number;
+  hashSampleFiles?: number;
+  maxUnknownPaths?: number;
+  maxFileParts?: number;
+  maxEventBytes?: number;
+  fullVerifyPercent?: number;
+}
 
 type FlagVariantSchemas = typeof flagVariantSchemas;
 export type KnownFlagName = keyof FlagVariantSchemas;

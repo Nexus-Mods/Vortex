@@ -8,6 +8,14 @@ import { log } from "@/logging";
 
 import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+<<<<<<< HEAD
+=======
+import type { IGame } from "../../../types/IGame";
+import { log } from "../../../util/log";
+import { normPath } from "../../../util/normPath";
+import type { ISteamEntry } from "../../../util/Steam";
+import { normalizeStoreQuery } from "../../../util/storeQuery";
+>>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { readGameVersions, type ExeVersion } from "../../gamemode_management/util/getGameVersion";
@@ -63,6 +71,17 @@ function refreshCache(
   api.store.dispatch(setStoreGameVersionCache({ gameId, cache: entry }));
 }
 
+<<<<<<< HEAD
+=======
+/** Everything a game's store install contributes except the two game versions,
+    the only expensive fields: failures carry their reason and `install` is null. */
+interface InstallRecord {
+  storeId: StoreId;
+  install: InstallBlock | null;
+  failureReason: string | null;
+}
+
+>>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 const asPayload = (
   base: {
     game_id: string;
