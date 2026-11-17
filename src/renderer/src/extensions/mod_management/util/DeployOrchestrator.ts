@@ -7,7 +7,6 @@ import {
 } from "@vortex/shared";
 
 import { log } from "../../../logging";
-import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
 import { fileMD5 } from "../../../util/checksum";
@@ -31,37 +30,12 @@ import {
 } from "./deploymentPlan";
 import { addGeneratedFiles } from "./generatedFiles";
 import { keepLastPlan } from "./lastPlans";
-import {
-  LockfileContributions,
-  type LockfileContribution,
-  type LockfileContributionCondition,
-} from "./lockfileContributions";
+import { type LockfileContributions } from "./lockfileContributions";
 import { gatherResolverInput } from "./resolverInput";
 import { compareWithManifests } from "./shadowComparison";
 
 /** The games whose deployments are planned. */
 const RESOLVED_GAMES: ReadonlySet<VortexGameId> = new Set([VortexGameId("skyrimse")]);
-
-// extensions register at init, before an orchestrator exists
-const registeredContributions = new LockfileContributions();
-
-/** The name a contribution is reported under: its extension's name, else its path. */
-export function contributorOf(
-  extensionPath?: string,
-  extInfo?: Partial<IRegisteredExtension>,
-): string {
-  return extInfo?.name ?? extensionPath ?? "unknown";
-}
-
-/** Registers a contribution; the extension manager appends the caller's path and info. */
-export function registerLockfileContribution(
-  condition: LockfileContributionCondition,
-  generate: LockfileContribution,
-  extensionPath?: string,
-  extInfo?: Partial<IRegisteredExtension>,
-): void {
-  registeredContributions.register(contributorOf(extensionPath, extInfo), condition, generate);
-}
 
 /** Adds the files contributions declare for the state the lockfile was resolved from. */
 async function withGeneratedFiles(
@@ -97,7 +71,7 @@ export class DeployOrchestrator {
   public constructor(
     api: IExtensionApi,
     hashFile: (filePath: string) => Promise<string> = fileMD5,
-    contributions: LockfileContributions = registeredContributions,
+    contributions: LockfileContributions,
   ) {
     this.#api = api;
     this.#hashFile = hashFile;
@@ -242,12 +216,15 @@ export class DeployOrchestrator {
   }
 }
 
-/** An orchestrator that follows the api's deployment, purge and removal events. */
+/** Instantiates the the DeployOrchestrator and wires up all of the listeners caller */
+/** called from mod_management/index.ts, curently called only in dev mode */
 export function registerDeployOrchestrator(
   api: IExtensionApi,
+  lockfileContributions: LockfileContributions,
   hashFile?: (filePath: string) => Promise<string>,
 ): DeployOrchestrator {
-  const orchestrator = new DeployOrchestrator(api, hashFile);
+  const orchestrator = new DeployOrchestrator(api, hashFile, lockfileContributions);
+
   const forgetGame = (gameId: string) => {
     orchestrator.forget(VortexGameId(gameId));
     return Promise.resolve();
@@ -259,7 +236,6 @@ export function registerDeployOrchestrator(
     }
     return Promise.resolve();
   };
-
   api.onAsync<"did-deploy">("did-deploy", (profileId) =>
     orchestrator.deployed(VortexProfileId(profileId)),
   );
@@ -271,5 +247,6 @@ export function registerDeployOrchestrator(
   // only will-purge, a purge of one mod type only did-purge
   api.onAsync<"will-purge">("will-purge", forgetProfileGame);
   api.onAsync<"did-purge">("did-purge", forgetProfileGame);
+
   return orchestrator;
 }

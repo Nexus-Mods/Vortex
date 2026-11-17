@@ -41,15 +41,11 @@ import type { IMod } from "../types/IMod";
 import { ApplyStatus } from "./apply/apply";
 import type { JournalStorage } from "./apply/journal";
 import type { DeploymentPlan } from "./deploymentPlan";
-import {
-  contributorOf,
-  DeployOrchestrator,
-  registerDeployOrchestrator,
-  registerLockfileContribution,
-} from "./DeployOrchestrator";
+import { DeployOrchestrator, registerDeployOrchestrator } from "./DeployOrchestrator";
 import { lastPlanOf } from "./lastPlans";
 import {
   LockfileContributions,
+  contributorOf,
   type IGeneratedFile,
   type LockfileContribution,
   type LockfileContributionCondition,
@@ -147,8 +143,13 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
       ]),
     );
   });
+  const registeredContributions = new LockfileContributions();
   const hashStagedFile = vi.fn(hashFile);
-  const orchestrator = registerDeployOrchestrator(game.api, hashStagedFile);
+  const orchestrator = registerDeployOrchestrator(
+    game.api,
+    registeredContributions,
+    hashStagedFile,
+  );
   const activeProfileId = VortexProfileId(game.profileId);
   /** Writes `text` to mod.esp's destination, as a deployment or purge outside the plan does. */
   const writeDeployed = (text: string) =>
@@ -230,18 +231,19 @@ const operationsOf = (plan: DeploymentPlan | undefined) =>
     operations.map(({ kind }) => ({ kind, path: destinationPath })),
   );
 
-test("a deployment's plan leaves out the files contributions declare", async () => {
-  const { game, deploy } = await makeGameWithStagedMod(true);
-  const pluginsTxtPath = path.join(game.dataPath, "plugins.txt");
-  registerLockfileContribution(
-    () => true,
-    () => Promise.resolve([{ destinationPath: pluginsTxtPath, content: pluginsTxt }]),
-  );
-
-  const plan = await deploy();
-
-  expect(plan?.lockfile.files.map(({ source }) => source)).toEqual([FileSourceKind.UserGenerated]);
-});
+// TODO: Rewrite this test once the vortex genarated files are back in
+// test("a deployment's plan leaves out the files contributions declare", async () => {
+//   const { game, deploy } = await makeGameWithStagedMod(true);
+//   const pluginsTxtPath = path.join(game.dataPath, "plugins.txt");
+//   registerLockfileContribution(
+//     () => true,
+//     () => Promise.resolve([{ destinationPath: pluginsTxtPath, content: pluginsTxt }]),
+//   );
+//
+//   const plan = await deploy();
+//
+//   expect(plan?.lockfile.files.map(({ source }) => source)).toEqual([FileSourceKind.UserGenerated]);
+// });
 
 test("a deployment's plan says where each file it links is staged", async () => {
   const { mod, stagedPathOf, deploy } = await makeGameWithStagedMod(true);

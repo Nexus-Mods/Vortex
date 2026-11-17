@@ -2,6 +2,7 @@ import { FileSourceKind, HashType, type GeneratedFileSource } from "@nexusmods/m
 import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import { log } from "../../../logging";
+import type { IRegisteredExtension } from "../../../types/extensions";
 import type { IState } from "../../../types/IState";
 import { checksum } from "../../../util/checksum";
 import { toPortablePath } from "./resolverInput";
@@ -29,6 +30,14 @@ interface IRegisteredContribution {
   contributor: string;
   condition: LockfileContributionCondition;
   generate: LockfileContribution;
+}
+
+/** The name a contribution is reported under: its extension's name, else its path. */
+export function contributorOf(
+  extensionPath?: string,
+  extInfo?: Partial<IRegisteredExtension>,
+): string {
+  return extInfo?.name ?? extensionPath ?? "unknown";
 }
 
 /** The registered contributions and the generated files they declare. */

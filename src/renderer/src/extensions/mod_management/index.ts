@@ -39,6 +39,7 @@ import { waitForCondition } from "@/util/waitForCondition";
 
 import LazyComponent from "../../controls/LazyComponent";
 import ReduxProp from "../../ReduxProp";
+import type { IRegisteredExtension } from "../../types/extensions";
 import type { IDiscoveryResult, IState } from "../../types/IState";
 import { opn } from "../../util/api";
 import { ProcessCanceled, TemporaryError, UserCanceled } from "../../util/CustomErrors";
@@ -153,17 +154,19 @@ import {
   getSupportedActivators,
   registerDeploymentMethod,
 } from "./util/deploymentMethods";
-import {
-  registerDeployOrchestrator,
-  registerLockfileContribution,
-  type DeployOrchestrator,
-} from "./util/DeployOrchestrator";
+import { registerDeployOrchestrator, type DeployOrchestrator } from "./util/DeployOrchestrator";
 import { NoDeployment } from "./util/exceptions";
 import extendApi from "./util/extendAPI";
 import { dealWithExternalChanges } from "./util/externalChanges";
 import { attributeExtractor, upgradeExtractor } from "./util/extractors";
 import { registerAttributeExtractor } from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
+import {
+  LockfileContributions,
+  contributorOf,
+  type LockfileContribution,
+  type LockfileContributionCondition,
+} from "./util/lockfileContributions";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
@@ -235,6 +238,8 @@ interface IInstaller {
 const installers: IInstaller[] = [];
 
 const mergers: IFileMerge[] = [];
+
+const registeredContributions = new LockfileContributions();
 
 function registerInstaller(
   id: string,
@@ -1406,7 +1411,9 @@ function onNeedToDeploy(api: IExtensionApi, current: any) {
               api.store.dispatch,
               "You need to select a deployment method in settings",
               undefined,
-              { allowReport: false },
+              {
+                allowReport: false,
+              },
             );
           } else {
             showError(api.store.dispatch, "Failed to activate mods", err);
@@ -1562,7 +1569,9 @@ function once(api: IExtensionApi) {
         api.showErrorNotification(
           "Failed to purge mods",
           "No deployment method currently available",
-          { allowReport: false },
+          {
+            allowReport: false,
+          },
         );
         return;
       }
@@ -1767,7 +1776,7 @@ function once(api: IExtensionApi) {
 
   // hashes every staged file, so only dev builds resolve the lockfile for now
   if (process.env.NODE_ENV === "development") {
-    deployOrchestrator = registerDeployOrchestrator(api);
+    deployOrchestrator = registerDeployOrchestrator(api, registeredContributions);
     exposeApplyDevHandle(deployOrchestrator);
   }
 
@@ -2070,6 +2079,16 @@ function checkStagingFolder(api: IExtensionApi): Promise<ITestResult> {
     };
   }
   return Promise.resolve(result);
+}
+
+/** Registers a contribution to the lockfile. The extension manager appends the caller's path and info. */
+export function registerLockfileContribution(
+  condition: LockfileContributionCondition,
+  generate: LockfileContribution,
+  extensionPath?: string,
+  extInfo?: Partial<IRegisteredExtension>,
+): void {
+  registeredContributions.register(contributorOf(extensionPath, extInfo), condition, generate);
 }
 
 function init(context: IExtensionContext): boolean {
