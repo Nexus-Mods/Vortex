@@ -30,8 +30,7 @@ describe("useUninstallMods", () => {
   it("removes the mods from the active game, keeping their archives", async () => {
     removeMods.mockResolvedValue(undefined);
 
-    await uninstall(["a", "b"]);
-
+    expect(await uninstall(["a", "b"])).toBe(true);
     expect(removeMods).toHaveBeenCalledWith(api, "game", ["a", "b"]);
     expect(api.showErrorNotification).not.toHaveBeenCalled();
   });
@@ -56,7 +55,7 @@ describe("useUninstallMods", () => {
   it("says nothing when the user cancels", async () => {
     removeMods.mockRejectedValue(new UserCanceled());
 
-    await uninstall(["a"]);
+    expect(await uninstall(["a"])).toBe(false);
 
     expect(api.sendNotification).not.toHaveBeenCalled();
     expect(api.showErrorNotification).not.toHaveBeenCalled();
