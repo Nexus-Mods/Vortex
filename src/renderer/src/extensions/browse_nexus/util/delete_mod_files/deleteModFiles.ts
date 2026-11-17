@@ -51,12 +51,12 @@ export type OwnedModFile =
 /** What `ownedModFiles` looks through, and the mod's key, from `modKey`, to look for. */
 export type IOwnedModFileSources = IUserModFileSources & {
   key: string;
-  /** Each download's mods, by id in this game and `game/id` in others; this game's when absent. */
-  archiveUsers?: Map<string, string[]>;
+  /** Each download's mods across every game, from `archiveUsersOf`. */
+  archiveUsers: Map<string, string[]>;
 };
 
 /** Each download's mods across these games, by id in `gameId` and `game/id` in the others. */
-const archiveUsersOf = (
+export const archiveUsersOf = (
   modsByGame: { [gameId: string]: { [modId: string]: IMod } | undefined },
   gameId: VortexGameId,
 ) => {
@@ -87,37 +87,38 @@ const versioned = (name: string, version?: string, variant?: string) =>
 /**
  * Every file the user has of a mod, from `userModFilesOf`, as the Delete modal lists them: named
  * as `storedNameOf` names them, with version and variant, and each installed one with whether its
- * download is still there and which other mods were installed from it.
+ * download is still there and which other mods were installed from it. A download a mod in any
+ * game is installed from is left out, as `deleteModFiles` would keep it.
  */
 export const ownedModFiles = ({
   key,
   archiveUsers,
   ...sources
 }: IOwnedModFileSources): OwnedModFile[] => {
-  const users = archiveUsers ?? archiveUsersOf({ [sources.gameId]: sources.mods }, sources.gameId);
+  return userModFilesOf(sources, key)
+    .filter((owned) => owned.kind === "installed" || !archiveUsers.has(owned.downloadId))
+    .map((owned): OwnedModFile => {
+      if (owned.kind === "downloaded") {
+        return {
+          kind: "downloaded",
+          downloadId: owned.downloadId,
+          name: versioned(storedNameOf(owned), owned.download.modInfo?.nexus?.fileInfo?.version),
+        };
+      }
 
-  return userModFilesOf(sources, key).map((owned): OwnedModFile => {
-    if (owned.kind === "downloaded") {
+      const { mod } = owned;
+
       return {
-        kind: "downloaded",
-        downloadId: owned.downloadId,
-        name: versioned(storedNameOf(owned), owned.download.modInfo?.nexus?.fileInfo?.version),
+        kind: "installed",
+        modId: mod.id,
+        archiveId: mod.archiveId,
+        hasDownload: !!mod.archiveId && !!sources.downloads[mod.archiveId],
+        otherArchiveUsers: mod.archiveId
+          ? (archiveUsers.get(mod.archiveId) ?? []).filter((user) => user !== mod.id)
+          : [],
+        name: versioned(storedNameOf(owned), mod.attributes?.version, mod.attributes?.variant),
       };
-    }
-
-    const { mod } = owned;
-
-    return {
-      kind: "installed",
-      modId: mod.id,
-      archiveId: mod.archiveId,
-      hasDownload: !!mod.archiveId && !!sources.downloads[mod.archiveId],
-      otherArchiveUsers: mod.archiveId
-        ? (users.get(mod.archiveId) ?? []).filter((user) => user !== mod.id)
-        : [],
-      name: versioned(storedNameOf(owned), mod.attributes?.version, mod.attributes?.variant),
-    };
-  });
+    });
 };
 
 /** Every file the user has of a mod in the active game, read from the store. */

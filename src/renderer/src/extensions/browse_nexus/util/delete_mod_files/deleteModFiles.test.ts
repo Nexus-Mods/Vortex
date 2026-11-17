@@ -7,6 +7,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 
 import {
+  archiveUsersOf,
   deleteModFiles,
   isUninstallingIn,
   removalCounts,
@@ -94,11 +95,15 @@ const deletedDownloads = () =>
   emit.mock.calls.filter(([event]) => event === "remove-download").map(([, id]) => id);
 
 /** SkyUI's files among these sources, matched by its key as the button matches them. */
-const ownedOf = (sources: Omit<IOwnedModFileSources, "key" | "domainOf">) =>
+const ownedOf = (
+  sources: Omit<IOwnedModFileSources, "key" | "domainOf" | "archiveUsers">,
+  otherGames: Record<string, Record<string, IMod>> = {},
+) =>
   ownedModFiles({
     ...sources,
     key: "skyrimspecialedition/1",
     domainOf: () => NexusGameDomain("skyrimspecialedition"),
+    archiveUsers: archiveUsersOf({ ...otherGames, [sources.gameId]: sources.mods }, sources.gameId),
   });
 
 describe("ownedModFiles", () => {
@@ -164,6 +169,19 @@ describe("ownedModFiles", () => {
       false,
       false,
     ]);
+  });
+
+  it("leaves out a download a mod in another game is installed from", () => {
+    const files = ownedOf(
+      {
+        mods: {},
+        downloads: { "dl-shared": download({ game: ["skyrimse", "skyrimvr"] }) },
+        gameId,
+      },
+      { skyrimvr: { vr: mod("vr", { archiveId: "dl-shared" }) } },
+    );
+
+    expect(files).toEqual([]);
   });
 
   it("counts only finished installs and downloads in this game", () => {
