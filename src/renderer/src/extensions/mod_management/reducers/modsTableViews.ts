@@ -69,13 +69,21 @@ export const modsTableViewsReducer = actionsToReducerSpec(defaultState, actions,
       }
       return { ...changes, widths: next };
     }),
-  resetModsTableView: (state, viewId) => {
+  resetModsTableView: (state, { viewId, columnIds }) => {
     const { [viewId]: reset, ...changes } = state.changes;
-    const widths = reset?.widths;
-    if (!widths || !Object.keys(widths).length) {
-      return { ...state, changes };
+    const kept: IModsTableViewChanges = {};
+    if (reset?.widths && Object.keys(reset.widths).length) {
+      kept.widths = reset.widths;
     }
-    return { ...state, changes: { ...changes, [viewId]: { widths } } };
+    const otherColumns = Object.entries(reset?.columns ?? {}).filter(
+      ([columnId]) => !columnIds.includes(columnId),
+    );
+    if (otherColumns.length) {
+      kept.columns = Object.fromEntries(otherColumns);
+    }
+    return Object.keys(kept).length
+      ? { ...state, changes: { ...changes, [viewId]: kept } }
+      : { ...state, changes };
   },
   addModsTableView: (state, { viewId, name }) => ({
     ...state,

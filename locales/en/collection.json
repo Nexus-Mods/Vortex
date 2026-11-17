@@ -8,7 +8,8 @@
     },
     "searchPlaceholder": "Search collections...",
     "searchTooShort": "Search requires at least 2 characters. Please enter more text or clear the search.",
-    "resultsCount": "{{total}} results",
+    "resultsCount": "{{total}} result",
+    "resultsCount_plural": "{{total}} results",
     "sortBy": "Sort by",
     "refresh": "Refresh",
     "tabs": {

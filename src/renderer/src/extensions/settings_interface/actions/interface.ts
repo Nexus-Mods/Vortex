@@ -49,6 +49,11 @@ export const setAlwaysCompactHeaders = safeCreateAction(
 );
 
 /**
+ * show the open game's artwork behind the layout
+ */
+export const setShowGameArt = safeCreateAction("SET_SHOW_GAME_ART", (enabled: boolean) => enabled);
+
+/**
  * turn non-essential animation down. Dispatching this records an explicit choice; until
  * then the setting is absent and the operating system's preference is followed.
  */

@@ -99,6 +99,7 @@ const searchFor = ({
       games: [gameDomainName],
       ...filtersToSearch(filters, { sortField: sort.field, rangeFrom }),
       supports_mod_managers: true,
+      exclude_requirements: ["mod", "external"],
     },
     sort: { field: sort.field, direction: sort.direction },
   };

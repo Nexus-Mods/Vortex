@@ -27,3 +27,7 @@ export const nexusFilePageUrl = (
 /** A mod's Files tab, where a free user picks a file to download. */
 export const nexusModFilesUrl = (domain: NexusGameDomain, modId: number | string) =>
   `${nexusModPageUrl(domain, modId)}?tab=files`;
+
+/** A mod's Posts tab, where its comments are. */
+export const nexusModCommentsUrl = (domain: NexusGameDomain, modId: number | string) =>
+  `${nexusModPageUrl(domain, modId)}?tab=posts`;

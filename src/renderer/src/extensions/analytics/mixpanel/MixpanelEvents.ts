@@ -74,6 +74,30 @@ export class AppLaunchedEvent implements MixpanelEvent {
   }
 }
 
+export interface AppClosedProps {
+  is_relaunch: boolean;
+  session_duration_ms: number;
+}
+
+/**
+ * Sent when the window closes normally, the pair to app_launched. It goes out from the
+ * renderer's beforeunload, so a crash or a killed process sends nothing, and neither do
+ * exits through app.exit() (File > Close, error dialog Quit buttons) or a quit after
+ * logging out. See docs/analytics.md, "Events at quit".
+ * @param is_relaunch True when the close is an in-app restart (Settings, extension
+ *   changes and so on). An auto-update install restarts from main and reports false.
+ * @param session_duration_ms How long the window was open, in whole milliseconds. It's
+ *   the renderer's performance.now(), so an in-app restart starts it again from zero, and
+ *   on macOS and Linux it may not count time the machine was asleep.
+ */
+export class AppClosedEvent implements MixpanelEvent {
+  readonly eventName = "app_closed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: AppClosedProps) {
+    this.properties = { ...props };
+  }
+}
+
 /**
  * AUTO-UPDATER EVENTS
  *

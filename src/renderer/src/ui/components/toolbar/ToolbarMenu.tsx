@@ -83,17 +83,21 @@ export const ToolbarMenuContent = ({
       : t("Pin {{name}} to the toolbar", replace);
   };
 
-  const rows = actions.map((offAction) => {
-    const action = offAction.disabledReason ? { ...offAction, disabled: true } : offAction;
+  const rows = actions.map((action) => {
+    const row = {
+      ...action,
+      testId: undefined,
+      disabled: action.disabled || !!action.disabledReason,
+    };
 
     if (pinning === undefined || action.id === undefined) {
-      return action;
+      return row;
     }
 
     const pinned = pinning.isPinned(action);
 
     return {
-      ...action,
+      ...row,
       pin: {
         pinned,
         label: pinLabel(action.label, pinned),

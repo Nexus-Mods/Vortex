@@ -24,6 +24,12 @@
     @extend .btn-embed;
 }
 
+// On the new Mods table it's dragged as well as clicked, so the pointer it shows as a button
+// gives way while it's held. One step more specific than that pointer, wherever it loads.
+.nxm-table-cell .btn-dependency:not([disabled]):active {
+    cursor: default;
+}
+
 .btn-dependency-hasrules svg {
     fill: $link-color;
 }

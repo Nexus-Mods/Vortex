@@ -17,6 +17,7 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
+import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { useCollectionGroupActions } from "../../hooks/use_collection_group_actions/useCollectionGroupActions.hook";
@@ -47,6 +48,10 @@ import {
 import { useModsTableNameFilter } from "../../hooks/use_mods_table_name_filter/useModsTableNameFilter.hook";
 import { useModsTableSearch } from "../../hooks/use_mods_table_search/useModsTableSearch.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
+import {
+  RegisteredModsInputsProvider,
+  useRegisteredModsColumns,
+} from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
 import {
   allModRows,
@@ -135,23 +140,6 @@ export const ModsTableSwitch = ({
   const { t } = useTranslation("mod_management");
   const newTable = useSelector(betaTable);
 
-  const {
-    views,
-    view,
-    grouping,
-    groupingLocked,
-    isColumnShown,
-    columnWidths,
-    canReset,
-    select: selectView,
-    setGrouping,
-    setColumnVisible,
-    setColumnWidths,
-    reset: resetView,
-    addView,
-    renameView,
-    removeView,
-  } = useModsTableView(mods);
   // The legacy table builds its own rows and groups, so build none for it.
   const tableMods = newTable ? mods : NO_MODS;
   const rows = useMemo(() => allModRows(tableMods), [tableMods]);
@@ -175,7 +163,6 @@ export const ModsTableSwitch = ({
   const analytics = useModsTableAnalytics();
   const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
   const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
-  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
 
   const collectionActions = useCollectionGroupActions(actionsFor);
 
@@ -335,7 +322,40 @@ export const ModsTableSwitch = ({
     ],
   );
 
-  const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
+  // By the ids alone, as the columns change with the mods, so the registered ones needn't.
+  const ownIdList = columns.map(({ id }) => id).join("\n");
+  const ownIds = useMemo(() => new Set(ownIdList.split("\n")), [ownIdList]);
+  const registered = useRegisteredModsColumns(ownIds, tableMods, newTable);
+  const allColumns = useMemo(
+    () => [...columns, ...registered.columns],
+    [columns, registered.columns],
+  );
+  const columnIds = useMemo(
+    () => new Set([...ownIds, ...registered.columns.map(({ id }) => id)]),
+    [ownIds, registered.columns],
+  );
+
+  const {
+    views,
+    view,
+    grouping,
+    groupingLocked,
+    isColumnShown,
+    columnWidths,
+    canReset,
+    select: selectView,
+    setGrouping,
+    setColumnVisible,
+    setColumnWidths,
+    reset: resetView,
+    addView,
+    renameView,
+    removeView,
+  } = useModsTableView(mods, registered.defaultShown, columnIds);
+
+  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
+
+  const { visibleColumns, toggles, groupable } = useModsTableColumns(allColumns, isColumnShown);
 
   const groups = useModsTableGroups(tableMods, grouping, groupable, memberships, t);
 
@@ -347,6 +367,7 @@ export const ModsTableSwitch = ({
       selected,
       setSelected,
       onSearchStarted: analytics.onSearchStarted,
+      textChanges: registered.textChanges,
     });
 
   const { focusGroupId, onGroupFocused, focusModId, onModFocused } = useModsTableFocusRequest({
@@ -426,6 +447,7 @@ export const ModsTableSwitch = ({
     columnWidths,
     onColumnWidthsChange: setColumnWidths,
     getRowId: ({ mod }: IModRow) => mod.id,
+    getRowClassName: (row: IModRow) => registered.rowClassName(row, isColumnShown),
     label: t("modsTable::label"),
     selectable: true,
     getRowLabel: ({ name }: IModRow) => name,
@@ -479,7 +501,12 @@ export const ModsTableSwitch = ({
 
   return (
     <>
-      <Table {...tableProps} {...data} />
+      <RegisteredModsInputsProvider value={registered.inputs}>
+        {/* One for every extension cell's titles, as only one shows at a time. */}
+        <LegacyTitleTooltips>
+          <Table {...tableProps} {...data} />
+        </LegacyTitleTooltips>
+      </RegisteredModsInputsProvider>
 
       <DisableSharedModsModal
         collections={pendingDisable?.shared.collections ?? []}

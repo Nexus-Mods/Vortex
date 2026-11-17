@@ -1,15 +1,15 @@
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
-import type { IExtensionApi } from "@/types/IExtensionContext";
-import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
-
-import type { EmptyStateKind } from "../../util/empty_state_kind/emptyStateKind";
+import type { EmptyStateKind } from "@/extensions/browse_nexus/util/empty_state_kind/emptyStateKind";
+import type { ModDetailsTab } from "@/extensions/browse_nexus/util/mod_details_tab/modDetailsTab";
 import type {
   TrackedView,
   ModAdultContent,
   ModSortDirection,
   ModSortField,
   ModTimeRange,
-} from "../../util/mod_views/modViews";
+} from "@/extensions/browse_nexus/util/mod_views/modViews";
+import type { IExtensionApi } from "@/types/IExtensionContext";
+import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
 
 /**
  * Where a filter was changed from: its submenu or its reset there, the chip the bar shows while
@@ -42,14 +42,26 @@ export type ISearchEventProps = {
   has_search: boolean;
 } & IFilterEventProps;
 
+/**
+ * What opened the main file picker: 1-click install on a mod with no primary file, the split
+ * button's main part with several files downloaded or installed, or its View all main files.
+ */
+export type FilePickerSource = "one_click" | "split_button" | "split_menu";
+
 /** Where a search was cleared from: the search box, or an empty state's Clear search. */
 export type SearchClearSource = "box" | "empty_state";
 
 /** Where Browse's feedback was opened from: the toolbar's button, or under Load more. */
 export type FeedbackSource = "toolbar" | "load_more";
 
-/** The mod a 1-click upsell is for, and what the click would have done: install, download or update. */
-type OneClickUpsellProps = { mod_uid: string; action: "install" | "download" | "update" };
+/**
+ * The mod a Premium upsell is for, and what the click would have done: install, download or
+ * update with 1-click, or open the picker from View all main files.
+ */
+type OneClickUpsellProps = {
+  mod_uid: string;
+  action: "install" | "download" | "update" | "view_files";
+};
 
 /** Builds a Browse mods event, leaving out `undefined` properties rather than sending null. */
 const browseModsEvent = (
@@ -139,7 +151,8 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     }) => track("browse_mods_one_click_clicked", props),
 
     // The upsell raised for a free user who clicked 1-click, and what they did with it; `action` as
-    // on browse_mods_one_click_clicked, or `update` for a mod they have an update for.
+    // on browse_mods_one_click_clicked, `update` for a mod they have an update for, or
+    // `view_files` for the split button's View all main files.
     trackPremiumModalShown: (props: OneClickUpsellProps) =>
       track("browse_mods_premium_modal_shown", props),
 
@@ -163,7 +176,26 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
     trackViewInstalledClicked: (props: { mod_uid: string }) =>
       track("browse_mods_view_installed_clicked", props),
 
+    // The main file picker opened on a mod's Main files; `file_count` is how many, and `source`
+    // the control that opened it.
+    trackFilePickerOpened: (props: {
+      mod_uid: string;
+      file_count: number;
+      source: FilePickerSource;
+    }) => track("browse_mods_file_picker_opened", props),
+
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
+
+    // Another of the details' tabs picked, by click or the keys; not sent for the one already open.
+    trackDetailsTabSelected: (props: {
+      mod_uid: string;
+      tab: ModDetailsTab;
+      previous_tab: ModDetailsTab;
+    }) => track("browse_mods_details_tab_selected", props),
+
+    // The Comments tab's View comments, opening the mod's comments on the website.
+    trackCommentsOpened: (props: { mod_uid: string }) =>
+      track("browse_mods_comments_opened", props),
 
     // From the details' … menu: the mod's page link copied, and its page opened to report it.
     trackModLinkCopied: (props: { mod_uid: string }) => track("browse_mods_mod_link_copied", props),

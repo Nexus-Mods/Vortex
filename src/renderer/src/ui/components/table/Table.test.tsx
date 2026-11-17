@@ -45,6 +45,23 @@ describe("Table", () => {
     expect(within(grid).getAllByRole("columnheader")).toHaveLength(COLUMNS.length);
   });
 
+  it("adds an item's own classes to its row", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowClassName={(row) => (row.size > 1 ? "large" : undefined)}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const [, alpha, beta] = screen.getAllByRole("row");
+    expect(alpha).toHaveClass("nxm-table-row");
+    expect(alpha).not.toHaveClass("large");
+    expect(beta).toHaveClass("nxm-table-row", "large");
+  });
+
   it("makes its tracks from the column widths, between the gutters", () => {
     renderTable();
 
@@ -1494,6 +1511,7 @@ describe("Table's focused group", () => {
     expect(onGroupFocused).toHaveBeenCalledTimes(1);
     await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
     expect(scrollIntoView.mock.contexts[0]).toBe(groupRow("Second"));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", container: "nearest" });
   });
 
   it("waits for a group it doesn't have yet", () => {

@@ -7,12 +7,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
   installMods: vi.fn(),
+  registeredColumns: [] as unknown[],
 }));
 
 // The table's analytics send through the api's events; the tests read them off this spy.
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useMainContext: () => ({ api: { events: { emit: mocks.emit } } }),
+}));
+
+// The columns extensions register on the legacy table, which the new one shows too.
+vi.mock("@/ExtensionProvider", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useExtensionObjects: () => mocks.registeredColumns,
 }));
 
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
@@ -812,6 +819,88 @@ describe("ModsTableSwitch", () => {
       expect(headers()).toContain("modsTable::columns::author");
     });
 
+    describe("an extension's column", () => {
+      afterEach(() => {
+        mocks.registeredColumns = [];
+      });
+
+      it("is shown in its place when it asks to be, unless the table has its own", () => {
+        mocks.registeredColumns = [
+          {
+            id: "endorsed",
+            name: "Endorsed",
+            placement: "table",
+            isToggleable: true,
+            position: 45,
+            calc: () => "Undecided",
+            edit: {},
+          },
+          { id: "category", name: "Category", placement: "table", edit: {} },
+          {
+            id: "tracked",
+            name: "Tracked",
+            placement: "table",
+            isToggleable: true,
+            isDefaultVisible: false,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true) });
+
+        expect(headers()).toEqual([
+          "modsTable::columns::name",
+          "modsTable::columns::version",
+          "Endorsed",
+          "modsTable::columns::installTime",
+          "modsTable::columns::actions",
+        ]);
+        expect(screen.getByRole("gridcell", { name: "Undecided" })).toBeInTheDocument();
+      });
+
+      // Extensions' legacy controls name themselves with a title, which the browser would show.
+      it("shows its controls' titles in the table's own tooltip", async () => {
+        mocks.registeredColumns = [
+          {
+            id: "endorsed",
+            name: "Endorsed",
+            placement: "table",
+            isToggleable: true,
+            customRenderer: () => (
+              <button title="Undecided" type="button">
+                <svg />
+              </button>
+            ),
+            edit: {},
+          },
+        ];
+        renderSwitch({ a: mod("a", "Alpha", true) });
+        const endorse = screen.getByRole("button", { name: "Undecided" });
+
+        await userEvent.hover(endorse);
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+        expect(endorse).not.toHaveAttribute("title");
+      });
+
+      it("adds its classes to a mod's row, told whether it's shown", () => {
+        mocks.registeredColumns = [
+          {
+            id: "modType",
+            placement: "both",
+            cssClass: (row: IModWithState, shown: boolean) =>
+              `mod-modtype-${row.type}${shown ? "-shown" : ""}`,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true, { type: "dinput" }) });
+
+        const [row] = bodyRows(screen.getByRole("grid"));
+        expect(row).toHaveClass("mod-modtype-dinput");
+      });
+    });
+
     it("adds a column chosen from the display options", async () => {
       renderSwitch({
         a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
@@ -1242,6 +1331,10 @@ describe("ModsTableSwitch", () => {
 
     const names = () => bodyRows(screen.getByRole("grid")).map(cellText);
 
+    afterEach(() => {
+      mocks.registeredColumns = [];
+    });
+
     it("lists only the mods whose cells show the text, whatever its case", async () => {
       renderSwitch({
         a: mod("a", "Alpha", true),
@@ -1286,6 +1379,35 @@ describe("ModsTableSwitch", () => {
           .filter((row) => row.getAttribute("aria-level") === "2")
           .map(cellText),
       ).toEqual(["Alpha"]);
+    });
+
+    // As a value worked out asynchronously settles with none of the hidden rows drawn.
+    it("finds a mod by an extension's value once it's worked out", async () => {
+      const resolvers: { [modId: string]: (value: string) => void } = {};
+      mocks.registeredColumns = [
+        {
+          id: "compatibility",
+          name: "Compatibility",
+          placement: "table",
+          isToggleable: true,
+          calc: (row: IModWithState) =>
+            new Promise<string>((resolve) => {
+              resolvers[row.id] = resolve;
+            }),
+          edit: {},
+        },
+      ];
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      await searchFor("broken");
+      expect(screen.getByText("modsTable::noResults")).toBeInTheDocument();
+
+      await act(async () => {
+        resolvers.a("Works");
+        resolvers.b("Broken");
+      });
+
+      expect(names()).toEqual(["Beta"]);
     });
 
     it("deselects a selected mod the search hides", async () => {
