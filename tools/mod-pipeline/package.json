@@ -1,0 +1,10 @@
+{
+  "name": "fake-skyrimse",
+  "private": true,
+  "type": "module",
+  "description": "The fake Skyrim SE tool's own dependencies; install with `pnpm install --ignore-workspace` in this folder",
+  "dependencies": {
+    "ink": "5.2.1",
+    "react": "18.3.1"
+  }
+}
