@@ -387,8 +387,12 @@ describe("ModInstallButton", () => {
       await userEvent.click(button());
       expect(screen.getByRole("dialog")).toBeInTheDocument();
 
+      // Closing the upsell queues headless-ui's leave as a microtask, which would run outside act()
+      // once this returns; an async act() lets it land inside.
       mocks.isPremium = true;
-      rerender();
+      await act(async () => {
+        rerender();
+      });
     };
 
     it("upsells a free user 1-click for an update without needing its main file", async () => {

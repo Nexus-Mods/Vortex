@@ -614,7 +614,9 @@ describe("useRegisteredModsColumns", () => {
       registered.attributes = [attribute({ calc: () => Promise.reject(new Error("broken")) })];
 
       const { cell } = renderCell();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
 
       expect(cell()).toBeEmptyDOMElement();
     });

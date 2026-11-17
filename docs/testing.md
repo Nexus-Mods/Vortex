@@ -47,6 +47,79 @@ Existing tests are mixed on this: you'll find `getByRole`, `getByTestId` and
 `getByText` in roughly equal measure. The rule above is where we're heading, not
 a description of every test in the tree.
 
+## React warnings
+
+A new or changed component test must run without React logging an `act()`
+warning ("An update to X inside a test was not wrapped in act(...)"). The
+renderer's test setup, `src/renderer/test-setup.mts`, enforces this: when React
+logs one, the test that logged it fails with
+`React updated X outside act()`.
+
+The check is there because nothing else surfaces these warnings. Vitest's
+default reporter hides a test's console output, so a run that logs dozens of
+warnings still looks clean, and a passing CI log doesn't get read. The suite was
+cleared of them once, in September 2026, and they were back within two months.
+
+### Seeing them
+
+Run the file with its console output shown, from `src/renderer`:
+
+```sh
+pnpm exec vitest run <file> --reporter=verbose --silent=false
+```
+
+The warning's component stack says where the update came from. Short minified
+names (`Ie`, `pe`, `bt`) are Headless UI components, and the stack's first line
+names the file, e.g. `@headlessui/react/dist/components/transition/transition.js`.
+Most are `Transition`, from a dialog or popover opening or closing; the rest are
+usually a focus change in a `Checkbox`, `RadioGroup`, `Input` or `Popover`. The
+minified names change between Headless UI versions, so go by the file.
+
+### Causes and fixes
+
+Each warning is a state update that landed while nothing wrapped it in `act()`.
+The usual sources:
+
+- **Work the test didn't wait for.** A component that loads, reads or fetches
+  after its first render updates once that finishes, which can be after the test
+  has returned. Wait for what the user would see once it's done, with a
+  `findBy…` query or `waitFor`.
+- **Headless UI transitions.** Dialogs, popovers and menus run their enter and
+  leave over the next few frames. A test that opens or closes one and then
+  returns without awaiting anything ends with `await settleTransitions()`, from
+  `src/renderer/src/test-utils/transitions.ts`. Tests that already await
+  `userEvent` or a `findBy…` don't need it.
+- **Direct calls that update state.** `element.focus()`, a hook's callback
+  called from the test, or a timer or observer callback fired by hand. Wrap the
+  call in `act(() => …)`. Waiting for something nothing on screen reflects is a
+  last resort, since a fixed wait can be too short on a slow machine; when
+  there's no other way, wait inside `act()` so the update lands in it:
+  `await act(() => new Promise((resolve) => setTimeout(resolve, 20)))`.
+- **An update queued as a microtask.** Closing a Headless UI dialog with a
+  `rerender` queues its leave as a microtask, which runs as soon as the test's
+  synchronous code finishes. If the test then awaits something that isn't
+  testing-library's, that microtask lands outside `act()`. Re-render inside an
+  async `act()`: `await act(async () => { rerender(…); })`.
+
+### What the check can't see
+
+- `waitFor`, the `findBy…` queries and `userEvent` turn React's `act()` checks
+  off while they wait, so an update during one of them logs nothing. Waiting
+  until the work has finished, as `settleTransitions` does, is the fix. What
+  hides a problem is an update that happens to land during a wait for something
+  else: it warns again once the test stops awaiting there.
+- A test that silences `console.error` itself, with
+  `vi.spyOn(console, "error").mockImplementation(…)`, hides warnings while the
+  spy is in place. Restore it straight after the call that's expected to error.
+- An update that lands after testing-library's cleanup fails the next test in
+  the file, or the file's `afterAll` after its last test, rather than the test
+  that caused it.
+- Only `act()` warnings fail a test. The deprecation warnings still in the log
+  (`findDOMNode`, `defaultProps`, legacy `contextTypes`) come from older code:
+  class components built on `ComponentEx` in `src/renderer/src/controls/`, and
+  old dependencies such as `react-bootstrap` 0.33. Clearing them means changing
+  that code, not the tests.
+
 ## Extension tests
 
 If an extension test imports `vortex-api`, add a local `vitest.config.ts` alias

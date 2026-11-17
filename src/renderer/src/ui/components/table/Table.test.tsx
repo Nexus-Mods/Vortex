@@ -1367,7 +1367,7 @@ describe("Table's context menus", () => {
     it("opens from the keyboard under the focused control, handing focus back to it", async () => {
       renderWithMenu();
       const control = checkbox("Alpha");
-      control.focus();
+      act(() => control.focus());
 
       fireEvent.contextMenu(control, { button: -1 });
       expect(

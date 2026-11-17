@@ -7,6 +7,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { installInMemoryFS } from "@/test-utils/fsApi";
+import { settleTransitions } from "@/test-utils/transitions";
 import type { FileTreeEntry } from "@/ui/components/file_tree/buildTree";
 
 import { normalizeDestination } from "../manualInstaller";
@@ -84,6 +85,21 @@ const gameItem = async (path: string): Promise<HTMLElement> =>
 const toggle = (item: HTMLElement) => within(item).getByTestId("file-tree-toggle");
 
 const install = () => screen.getByTestId("manual-installer-install");
+
+// Opening the dialog reads the game folder, loads what is deployed and runs the enter transition,
+// all after the first render. A test that asserts without awaiting any of that calls this last, so
+// those updates land inside act() rather than after the test has finished.
+const settle = async () => {
+  await gameItem("game.exe");
+  await waitFor(() => {
+    for (const row of within(screen.getByTestId("manual-installer-result")).getAllByRole(
+      "listitem",
+    )) {
+      expect(row).toHaveAttribute("data-status");
+    }
+  });
+  await settleTransitions();
+};
 
 describe("ManualInstallerDialog", () => {
   let restore: () => void;
@@ -582,16 +598,20 @@ describe("ManualInstallerDialog", () => {
     });
   });
 
-  it("offers to use the answer for the rest of the batch only when there is a rest", () => {
+  it("offers to use the answer for the rest of the batch only when there is a rest", async () => {
     renderDialog({ remaining: 0 });
 
     expect(screen.queryByTestId("manual-installer-use-for-all")).not.toBeInTheDocument();
+
+    await settle();
   });
 
-  it("offers to skip the top folder only when the archive has one", () => {
+  it("offers to skip the top folder only when the archive has one", async () => {
     renderDialog({ topFolder: undefined });
 
     expect(screen.queryByTestId("manual-installer-skip-top-folder")).not.toBeInTheDocument();
+
+    await settle();
   });
 
   it("answers undefined when cancelled", async () => {
@@ -663,5 +683,7 @@ describe("ManualInstallerDialog", () => {
 
     expect(screen.getByRole("dialog")).toBe(dialog);
     expect(screen.getByTestId("manual-installer-skip-top-folder")).not.toBeChecked();
+
+    await settle();
   });
 });
