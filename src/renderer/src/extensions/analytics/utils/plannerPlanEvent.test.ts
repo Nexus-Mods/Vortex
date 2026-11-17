@@ -1,8 +1,9 @@
 import { GameId, VortexGameId } from "@vortex/shared";
-import { beforeEach, describe, expect, onTestFinished, vi } from "vitest";
+import { beforeEach, describe, expect, vi } from "vitest";
 
 import { FlagService } from "../../../FlagService";
 import type { IHarnessReducerBinding } from "../../../test-utils/builders";
+import { enableModPipelineFlag } from "../../../test-utils/flags";
 import { test, type IHarnessFixtures } from "../../../test-utils/harnessTest";
 import { clearOAuthCredentials } from "../../nexus_integration/actions/account";
 import { createVortexNexusV3InternalClient } from "../../nexus_integration/nexusV3Client";
@@ -30,14 +31,6 @@ function makeConsentingApi(makeApi: IHarnessFixtures["makeApi"]) {
   const harness = makeApi(undefined, [ANALYTICS_BINDING]);
   harness.api.store.dispatch(setAnalytics(true));
   return harness;
-}
-
-/** Turns the planner telemetry flag on for the rest of the test. */
-function enablePlannerTelemetry() {
-  const flags = vi.spyOn(FlagService, "instance", "get").mockReturnValue({
-    getFlag: (name: string) => (name === "vortex-planner-telemetry" ? { name } : undefined),
-  } as unknown as FlagService);
-  onTestFinished(() => flags.mockRestore());
 }
 
 const loggedWarnings = () =>
@@ -82,7 +75,7 @@ describe("emitPlannerPlanEvent", () => {
     vi.mocked(numericNexusGameId).mockReturnValue(SKYRIM_SE_NEXUS_ID);
     figuresOf.mockClear();
     vi.mocked(window.api).log.mockClear();
-    enablePlannerTelemetry();
+    enableModPipelineFlag();
   });
 
   test("sends a game's first plan run of the session as a planner_plan event", async ({
