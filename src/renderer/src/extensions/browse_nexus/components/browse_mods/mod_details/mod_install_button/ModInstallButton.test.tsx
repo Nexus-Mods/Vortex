@@ -88,6 +88,7 @@ const mainFile: ModMainFileVersion = {
   game_scoped_id: "42",
   is_primary: true,
   supports_mod_managers: true,
+  count: 1,
 };
 
 let tracking: ReturnType<typeof browseModsTracking>;
@@ -481,7 +482,10 @@ describe("ModInstallButton", () => {
 
   describe("for a mod without a primary file", () => {
     /** The newest Main file, which v3 gives a mod with several and no primary. */
-    const newestFile: ModMainFileVersion = { ...mainFile, is_primary: false };
+    const newestFile: ModMainFileVersion = { ...mainFile, is_primary: false, count: 3 };
+
+    /** A mod's only Main file, which its author didn't mark primary. */
+    const onlyFile: ModMainFileVersion = { ...mainFile, is_primary: false, count: 1 };
 
     /** A Main file of the mod, newer as its id grows. */
     const mainFiles = (...ids: number[]) =>
@@ -529,7 +533,23 @@ describe("ModInstallButton", () => {
       ]);
     });
 
-    it("installs its one Main file without asking", async () => {
+    it("installs its only Main file without asking, or loading its files", async () => {
+      mocks.install.mockReturnValue(new Promise(() => undefined));
+      renderButton(onlyFile);
+
+      await userEvent.click(button());
+
+      await waitFor(() =>
+        expect(mocks.install).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ fileId: "42" }),
+        ),
+      );
+      expect(mocks.fetchFiles).not.toHaveBeenCalled();
+      expect(tracking.tracked("browse_mods_file_picker_opened")).toEqual([]);
+    });
+
+    it("installs the one Main file it finds when v3 counted more", async () => {
       mocks.fetchFiles.mockResolvedValue(mainFiles(11));
       mocks.install.mockReturnValue(new Promise(() => undefined));
       renderButton(newestFile);
@@ -816,8 +836,11 @@ describe("ModInstallButton", () => {
         await waitFor(() => expect(screen.getByTestId("mod-install-main")).toHaveFocus());
       });
 
-      it("keeps a mod with a primary file to its one button", () => {
-        renderButton(mainFile);
+      it.each([
+        ["a primary file", mainFile],
+        ["only one Main file", onlyFile],
+      ])("keeps a mod with %s to its one button", (_, file) => {
+        renderButton(file);
 
         expect(screen.queryByTestId("mod-install-options")).not.toBeInTheDocument();
       });

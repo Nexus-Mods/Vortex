@@ -69,7 +69,7 @@ export const NoResultsDemo = () => (
       title="Footnote"
     >
       <NoResults
-        footnote="Mods that don't support mod managers or use legacy requirements are hidden."
+        footnote="Mods without mod manager support or using legacy requirements aren’t included."
         message="That's every mod Vortex can show for this view."
         title="You've reached the end"
       />
@@ -97,7 +97,7 @@ export const NoResultsDemo = () => (
     >
       <NoResults
         className="rounded-sm bg-translucent-dark-200 p-8"
-        footnote="Mods that don't support mod managers or use legacy requirements are hidden."
+        footnote="Mods without mod manager support or using legacy requirements aren’t included."
         message="Try a different search or remove filters."
         title={'No mods match "SkyUI"'}
       >
