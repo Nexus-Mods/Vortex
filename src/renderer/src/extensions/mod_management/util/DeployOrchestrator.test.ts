@@ -1,6 +1,12 @@
+import { mkdir, rm } from "node:fs/promises";
 import * as path from "node:path";
 
-import { DestinationState, FileSourceKind, OperationKind } from "@nexusmods/mod-pipeline";
+import {
+  DestinationState,
+  FileSourceKind,
+  OperationKind,
+  type PlannedDestination,
+} from "@nexusmods/mod-pipeline";
 import { VortexGameId, VortexModId, VortexProfileId } from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { expect, onTestFinished, vi } from "vitest";
@@ -32,7 +38,7 @@ import { installInMemoryFS } from "../../../test-utils/fsApi";
 import { test } from "../../../test-utils/harnessTest";
 import type { IDeployedGameHarness } from "../../../test-utils/harnessTypes";
 import { newJournal, unreadableJournal } from "../../../test-utils/journal";
-import { makeGeneratedFileSource } from "../../../test-utils/lockfileBuilders";
+import { makeGeneratedFileSource, makeNexusFileSource } from "../../../test-utils/lockfileBuilders";
 import { writeInto } from "../../../test-utils/tempDir";
 import { checksum } from "../../../util/checksum";
 import { emitPlannerPlanEvent } from "../../analytics/utils/plannerPlanEvent";
@@ -40,7 +46,7 @@ import { addDeploymentFailures } from "../actions/session";
 import type { IMod } from "../types/IMod";
 import { ApplyStatus } from "./apply/apply";
 import type { JournalStorage } from "./apply/journal";
-import type { DeploymentPlan } from "./deploymentPlan";
+import { clearedDestinationsOf, type DeploymentPlan } from "./deploymentPlan";
 import { DeployOrchestrator, registerDeployOrchestrator } from "./DeployOrchestrator";
 import { lastPlanOf } from "./lastPlans";
 import {
@@ -119,6 +125,8 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
   for (const stagedMod of stagedMods) {
     await writeInto(game.stagingPath, path.join(stagedMod.installationPath, "mod.esp"));
   }
+  // a deployment writes its manifests into the game's folders on the disk
+  await mkdir(game.dataPath, { recursive: true });
   const disk = installInMemoryFS((builder) => {
     for (const stagedMod of stagedMods) {
       builder.file(QualifiedPath.fromNative(stagedPathOf(stagedMod)), {
@@ -168,12 +176,16 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
     if (planned === undefined) {
       throw new Error("the deployment has no plan");
     }
-    const result = await orchestrator.apply(planned, {
-      fs: disk.fs,
-      journal,
-      keptPathOf: (_destinationPath, runId, entryIndex) =>
-        toPortablePath(path.join(game.stagingPath, "kept", runId, String(entryIndex))),
-    });
+    const result = await orchestrator.apply(
+      planned,
+      {
+        fs: disk.fs,
+        journal,
+        keptPathOf: (_destinationPath, runId, entryIndex) =>
+          toPortablePath(path.join(game.stagingPath, "kept", runId, String(entryIndex))),
+      },
+      "hardlink_activator",
+    );
     await game.emitAndAwait("did-deploy", activeProfileId, {});
     return result;
   };
@@ -409,10 +421,11 @@ test("a plan run reports its figures for its game, without paths", async () => {
   expect(sent).not.toContain(QualifiedPath.fromNative(deployedPath).basename);
 });
 
-const shadowComparisons = () => loggedCalls("shadow comparison").map((call) => String(call[2]));
+/** The logged results of a comparison with a deployment's manifests, as text. */
+const comparisonsLogged = (message: string) => loggedCalls(message).map((call) => String(call[2]));
 
-/** The manifest comparison the hook's first report would send. */
-const sentManifestDiff = () => vi.mocked(emitPlannerPlanEvent).mock.calls[0][2]().manifest_diff;
+/** The figures the hook's first report would send. */
+const sentFigures = () => vi.mocked(emitPlannerPlanEvent).mock.calls[0][2]();
 
 test("a plan run finds no mismatch with a deployment that wrote the lockfile's files", async () => {
   const { game, mod, deploy } = await makeGameWithStagedMod(true);
@@ -421,7 +434,7 @@ test("a plan run finds no mismatch with a deployment that wrote the lockfile's f
 
   await deploy();
 
-  expect(sentManifestDiff()).toMatchObject({ verdict: "pass" });
+  expect(sentFigures().manifest_diff).toMatchObject({ verdict: "pass" });
 });
 
 test("a plan run logs its mismatches with a deployment as counts, without paths", async () => {
@@ -429,14 +442,18 @@ test("a plan run logs its mismatches with a deployment as counts, without paths"
   vi.mocked(emitPlannerPlanEvent).mockClear();
   vi.mocked(window.api).log.mockClear();
 
+  // the deployment saved no manifest, so its manifests lack the lockfile's one file
   await deploy();
 
-  expect(sentManifestDiff()).toMatchObject({
-    verdict: "fail",
-    counts: { [ReasonCode.MissingFromDeploy]: 1 },
+  const lackingOne = { verdict: "fail", counts: { [ReasonCode.MissingFromDeploy]: 1 } };
+  expect(sentFigures()).toMatchObject({
+    manifest_diff: lackingOne,
+    manifest_entry_diff: lackingOne,
   });
-  expect(shadowComparisons()).toHaveLength(1);
-  expect(shadowComparisons()[0]).not.toMatch(/[\\/]/);
+  for (const message of ["shadow comparison", "manifest comparison"]) {
+    expect(comparisonsLogged(message)).toHaveLength(1);
+    expect(comparisonsLogged(message)[0]).not.toMatch(/[\\/]/);
+  }
 });
 
 test("a plan run is kept as its game's last plan, with the destinations that need nothing", async () => {
@@ -481,6 +498,25 @@ test("a deployment after one Apply ran plans nothing", async () => {
   expect(operationsOf(await deploy())).toEqual([]);
 });
 
+test("a deployment Apply ran saves the manifest of the files it deployed", async () => {
+  const { game, applyDeploy } = await makeGameWithStagedMod(true);
+
+  await applyDeploy(await newJournal());
+
+  expect(await game.recordedFiles()).toEqual(["mod.esp"]);
+});
+
+test("a later session plans nothing after a deployment Apply ran", async () => {
+  const { game, applyDeploy } = await makeGameWithStagedMod(true);
+  await applyDeploy(await newJournal());
+
+  // a new orchestrator knows no deployed lockfile, as after a restart
+  const laterSession = new DeployOrchestrator(game.api, hashFile, new LockfileContributions());
+  const plan = await laterSession.plan(VortexProfileId(game.profileId));
+
+  expect(operationsOf(plan)).toEqual([]);
+});
+
 test("a deployment after one Apply refused plans from the lockfile deployed before it", async () => {
   const { applyDeploy, deploy } = await makeGameWithStagedMod(true);
   await deploy();
@@ -493,6 +529,35 @@ test("a deployment after one Apply refused plans from the lockfile deployed befo
   expect(loggedCalls("seeded previous lockfile from manifest")).toHaveLength(0);
 });
 
+test("a deployment after one Apply left unfinished plans nothing", async () => {
+  const { game, applyDeploy, deploy } = await makeGameWithStagedMod(true);
+  // with no game folder on the disk, the run's manifests can't be saved
+  await rm(game.dataPath, { recursive: true });
+
+  const result = await applyDeploy(await newJournal());
+
+  expect(result?.status).toBe(ApplyStatus.Unfinished);
+  expect(operationsOf(await deploy())).toEqual([]);
+});
+
+test("only a removed destination already gone from the disk counts as cleared", () => {
+  const removed = (state: DestinationState, destinationPath: string): PlannedDestination => ({
+    current: undefined,
+    previous: makeNexusFileSource({ destinationPath }),
+    destinationPath,
+    state,
+    disk: undefined,
+    operations: [],
+  });
+
+  expect(
+    clearedDestinationsOf([
+      removed(DestinationState.RemovedMissing, "/game/Data/gone.esp"),
+      removed(DestinationState.Removed, "/game/Data/still-there.esp"),
+    ]),
+  ).toEqual(["/game/Data/gone.esp"]);
+});
+
 test("a deployment Apply ran reports its plan run once, with no comparison with the manifests", async () => {
   const { applyDeploy } = await makeGameWithStagedMod(true);
   vi.mocked(emitPlannerPlanEvent).mockClear();
@@ -500,5 +565,5 @@ test("a deployment Apply ran reports its plan run once, with no comparison with 
   await applyDeploy(await newJournal());
 
   expect(emitPlannerPlanEvent).toHaveBeenCalledTimes(1);
-  expect(sentManifestDiff()).toBeNull();
+  expect(sentFigures().manifest_diff).toBeNull();
 });

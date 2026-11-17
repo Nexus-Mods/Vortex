@@ -125,10 +125,10 @@ import type { IRemoveModOptions } from "./types/IRemoveModOptions";
 import type { IResolvedMerger } from "./types/IResolvedMerger";
 import type { TestSupported } from "./types/TestSupported";
 import {
+  doSaveActivation,
   fallbackPurge,
   getManifest,
   loadActivation,
-  saveActivation,
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
@@ -1021,55 +1021,6 @@ function genUpdateModDeployment(installManager: InstallManager) {
   };
 }
 
-function doSaveActivation(
-  api: IExtensionApi,
-  gameId: string,
-  typeId: string,
-  deployPath: string,
-  stagingPath: string,
-  files: IDeployedFile[],
-  activatorId: string,
-) {
-  const state: IState = api.store.getState();
-  return Promise.resolve(
-    saveActivation(
-      gameId,
-      typeId,
-      state.app.instanceId,
-      deployPath,
-      stagingPath,
-      files,
-      activatorId,
-    ),
-  ).catch((err) => {
-    const canceled = err instanceof UserCanceled;
-    let text = canceled
-      ? "You canceled the writing of the manifest file."
-      : "Saving the manifest failed (see error below).";
-
-    text +=
-      "This could lead to errors " +
-      "(e.g. orphaned files in the game directory, external changes not being detected) " +
-      'later on. Please either retry or immediately "purge" after this and try ' +
-      "deploying again.";
-    return api
-      .showDialog(
-        "error",
-        "Saving manifest failed",
-        {
-          text,
-          message: canceled ? undefined : unknownToError(err).stack,
-        },
-        [{ label: "Retry" }, { label: "Ignore" }],
-      )
-      .then((result) =>
-        result.action === "Retry"
-          ? doSaveActivation(api, gameId, typeId, deployPath, stagingPath, files, activatorId)
-          : Promise.resolve(),
-      );
-  });
-}
-
 function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
   return {
     id: "modSource",
@@ -1777,7 +1728,7 @@ function once(api: IExtensionApi) {
   // hashes every staged file, so only dev builds resolve the lockfile for now
   if (process.env.NODE_ENV === "development") {
     deployOrchestrator = registerDeployOrchestrator(api, registeredContributions);
-    exposeApplyDevHandle(deployOrchestrator);
+    exposeApplyDevHandle(api, deployOrchestrator);
   }
 
   api.events.on("profile-will-change", () => {

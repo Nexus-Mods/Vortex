@@ -4,7 +4,10 @@ import type { Operation } from "@nexusmods/mod-pipeline";
 import { getErrorMessageOrDefault, VortexProfileId } from "@vortex/shared";
 import { ChaosFS, QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
 
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { gameIdOfProfile } from "../../profile_management/selectors";
 import { ApplyStatus, type ApplyResult, type FailedStep } from "./apply/apply";
+import { getCurrentActivator } from "./deploymentMethods";
 import { operationsInApplyOrder, type DeploymentPlan } from "./deploymentPlan";
 import type { DeployOrchestrator } from "./DeployOrchestrator";
 import { journalStorageAt } from "./journalStorage";
@@ -122,25 +125,37 @@ function devOutcomeOf(operations: DevOperation[], result: ApplyResult): DevApply
 
 /**
  * Lets a tool on the debug port run a profile's plan through Apply, outside a deployment: no
- * activation lock, no manifests, no deployment events. Dev builds only.
+ * activation lock and no deployment events. Dev builds only.
  */
-export function exposeApplyDevHandle(orchestrator: DeployOrchestrator): void {
+export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrchestrator): void {
   window.__vortexApplyDevHandle = {
     plan: async (profileId) => {
       const plan = await orchestrator.plan(VortexProfileId(profileId));
       return plan === undefined ? undefined : devOperationsOf(plan);
     },
-    apply: async ({ profileId, journalFile, keptFolder, fault }) => {
-      const plan = await orchestrator.plan(VortexProfileId(profileId));
+    apply: async ({ profileId: rawProfileId, journalFile, keptFolder, fault }) => {
+      const profileId = VortexProfileId(rawProfileId);
+      const state = api.getState();
+      const gameId = gameIdOfProfile(state, profileId);
+      const activatorId =
+        gameId === undefined ? undefined : getCurrentActivator(state, gameId, false)?.id;
+      if (activatorId === undefined) {
+        throw new Error(`profile ${profileId}'s game has no deployment method`);
+      }
+      const plan = await orchestrator.plan(profileId);
       if (plan === undefined) {
         return undefined;
       }
-      const result = await orchestrator.apply(plan, {
-        fs: diskWith(fault),
-        journal: journalStorageAt(journalFile),
-        keptPathOf: (_destinationPath, runId, entryIndex) =>
-          toPortablePath(path.join(keptFolder, runId, String(entryIndex))),
-      });
+      const result = await orchestrator.apply(
+        plan,
+        {
+          fs: diskWith(fault),
+          journal: journalStorageAt(journalFile),
+          keptPathOf: (_destinationPath, runId, entryIndex) =>
+            toPortablePath(path.join(keptFolder, runId, String(entryIndex))),
+        },
+        activatorId,
+      );
       return result === undefined ? undefined : devOutcomeOf(devOperationsOf(plan), result);
     },
   };

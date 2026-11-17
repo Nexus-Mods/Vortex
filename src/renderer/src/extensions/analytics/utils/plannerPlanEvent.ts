@@ -31,6 +31,7 @@ export function plannerPlanPayload(
     operations: null,
     case_mismatches: null,
     manifest_diff: null,
+    manifest_entry_diff: null,
     error_kind: null,
     ...figures,
   };

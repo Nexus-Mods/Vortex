@@ -24,9 +24,10 @@ export {
   parentFolders,
   plan,
   planDestinations,
+  sameFile,
   sameOrigin,
 } from "./plan";
 export type { Operation, PlannedDestination, PlanOptions, SetAsideReason } from "./plan";
-export { resolve } from "./resolve";
+export { deployingFiles, resolve } from "./resolve";
 export { ResolverInputSchema } from "./resolverInput";
 export type { ResolverInput, ResolverMod } from "./resolverInput";

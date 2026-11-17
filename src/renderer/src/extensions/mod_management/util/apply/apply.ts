@@ -31,6 +31,11 @@ export interface StagedFiles {
 export interface RunOptions {
   fs: FileSystem;
   journal: JournalStorage;
+  /**
+   * records what the run deployed, once every step ran and before its journal ends; a resumed run
+   * calls it again, so it is safe to repeat
+   */
+  recordDeployment?: (entries: readonly JournalEntry[]) => Promise<void>;
 }
 
 export interface ApplyOptions extends RunOptions {
@@ -84,7 +89,7 @@ export interface AppliedResult {
   status: typeof ApplyStatus.Applied;
   kept: KeptFile[];
 }
-/** Every step ran, but the journal couldn't be ended; {@link resumeApply} ends it. */
+/** Every step ran, but the deployment couldn't be recorded or the journal ended; {@link resumeApply} does both. */
 export interface UnfinishedResult {
   status: typeof ApplyStatus.Unfinished;
   cause: unknown;
@@ -185,7 +190,7 @@ async function removeEmptyFolder(fs: FileSystem, path: string): Promise<void> {
   }
 }
 
-const destinationOf = (operation: Operation) =>
+export const destinationOf = (operation: Operation) =>
   "file" in operation ? operation.file.destinationPath : operation.destinationPath;
 
 const refused = (reason: RefusalReason, details: Partial<RefusedResult> = {}): RefusedResult => ({
@@ -197,6 +202,7 @@ const refused = (reason: RefusalReason, details: Partial<RefusedResult> = {}): R
 /** A run's state, kept as its journal records it. */
 interface Run {
   fs: FileSystem;
+  recordDeployment: RunOptions["recordDeployment"];
   writer: JournalWriter;
   entries: readonly JournalEntry[];
   phase: JournalPhase;
@@ -572,6 +578,7 @@ async function runForward(run: Run): Promise<ApplyResult> {
     }
   }
   try {
+    await run.recordDeployment?.(run.entries);
     await run.writer.finish();
     return { status: ApplyStatus.Applied, kept: keptFiles(run) };
   } catch (cause) {
@@ -579,8 +586,13 @@ async function runForward(run: Run): Promise<ApplyResult> {
   }
 }
 
-const runOf = (fs: FileSystem, writer: JournalWriter, journal: Omit<Journal, "runId">): Run => ({
+const runOf = (
+  { fs, recordDeployment }: RunOptions,
+  writer: JournalWriter,
+  journal: Omit<Journal, "runId">,
+): Run => ({
   fs,
+  recordDeployment,
   writer,
   entries: journal.entries,
   phase: journal.phase,
@@ -635,7 +647,7 @@ export async function apply(
   if (writer === undefined) {
     return refused(RefusalReason.JournalExists);
   }
-  const run = runOf(options.fs, writer, {
+  const run = runOf(options, writer, {
     entries,
     phase: JournalPhase.Applying,
     changing: new Set(),
@@ -650,19 +662,19 @@ export async function apply(
 
 /** Runs `work` on the run a journal left. */
 async function settle<R>(
-  { fs, journal }: RunOptions,
+  options: RunOptions,
   work: (run: Run) => Promise<R>,
 ): Promise<R | RefusedResult | NothingToDoResult> {
   let run: Run;
   try {
-    const read = await readJournal(journal);
+    const read = await readJournal(options.journal);
     if (read.status === JournalReadStatus.None) {
       return { status: ApplyStatus.NothingToDo };
     }
     if (read.status === JournalReadStatus.Invalid) {
       return refused(RefusalReason.JournalUnavailable);
     }
-    run = runOf(fs, await continueJournal(journal, read), read.journal);
+    run = runOf(options, await continueJournal(options.journal, read), read.journal);
   } catch (cause) {
     return refused(RefusalReason.JournalUnavailable, { cause });
   }

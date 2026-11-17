@@ -114,6 +114,11 @@ export type PlannerPlanPayload = {
   operations: PlannerOperationCounts | null;
   case_mismatches: number | null;
   manifest_diff: ManifestDiff | null;
+  /**
+   * the manifest entries the plan's operations leave against the ones the deployment saved, by mod
+   * type; an entry with another time counts as missing on both sides
+   */
+  manifest_entry_diff: ManifestDiff | null;
   error_kind: string | null;
 };
 

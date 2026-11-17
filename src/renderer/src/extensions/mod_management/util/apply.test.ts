@@ -139,6 +139,75 @@ describe("apply", () => {
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
   });
 
+  test("records its deployment from its operations once they ran, before its journal ends", async () => {
+    const fs = seed({ staged: ["a.dll"] });
+    const journal = await newJournal();
+    const recorded: unknown[] = [];
+
+    const result = await apply([link("a.dll")], {
+      ...optionsOn(fs, journal),
+      backupPathOf,
+      keptPathOf,
+      stagedFiles,
+      recordDeployment: async (entries) => {
+        recorded.push({
+          entries,
+          linked: (await snapshot(fs))[inGame("a.dll")] !== undefined,
+          journal: await journalStatusOf(journal),
+        });
+      },
+    });
+
+    expectStatus(result, ApplyStatus.Applied);
+    expect(recorded).toEqual([
+      {
+        entries: [{ operation: link("a.dll"), stagedPath: inStaging("a.dll") }],
+        linked: true,
+        journal: JournalReadStatus.Found,
+      },
+    ]);
+  });
+
+  test("keeps a run whose deployment can't be recorded, for a resume to record", async () => {
+    const fs = seed({ staged: ["a.dll"] });
+    const journal = await newJournal();
+    const recorded: unknown[] = [];
+
+    const result = await apply([link("a.dll")], {
+      ...optionsOn(fs, journal),
+      backupPathOf,
+      keptPathOf,
+      stagedFiles,
+      recordDeployment: () => Promise.reject(new Error("the manifest is held open")),
+    });
+
+    expectStatus(result, ApplyStatus.Unfinished);
+    expect(await journalStatusOf(journal)).toBe(JournalReadStatus.Found);
+    const resumed = await resumeApply({
+      ...optionsOn(fs, journal),
+      recordDeployment: (entries) => Promise.resolve(void recorded.push(entries)),
+    });
+    expectStatus(resumed, ApplyStatus.Applied);
+    expect(recorded).toEqual([[{ operation: link("a.dll"), stagedPath: inStaging("a.dll") }]]);
+    expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
+  });
+
+  test("records no deployment for a run it rolls back", async () => {
+    const fs = seed({ staged: ["a.dll"] });
+    const recorded: unknown[] = [];
+
+    const result = await apply([link("a.dll"), link("missing.dll")], {
+      ...optionsOn(fs, await newJournal()),
+      backupPathOf,
+      keptPathOf,
+      stagedFiles,
+      recordDeployment: (entries) => Promise.resolve(void recorded.push(entries)),
+    });
+
+    expectStatus(result, ApplyStatus.RolledBack);
+    expect(recorded).toEqual([]);
+  });
+
   test.each([
     ["a folder there", `${OTHER_DRIVE}/a.dll`],
     ["a folder not made yet", `${OTHER_DRIVE}/new/a.dll`],

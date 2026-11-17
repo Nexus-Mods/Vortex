@@ -31,6 +31,22 @@ export interface IDeployment {
   [relPath: string]: IDeployedFile;
 }
 
+/** The keys a deployment adds, removes, takes from another mod or takes with another time. */
+export function diffActivation(before: IDeployment, after: IDeployment) {
+  const keysBefore = Object.keys(before);
+  const keysAfter = Object.keys(after);
+  const keysBoth = _.intersection(keysBefore, keysAfter) || [];
+  return {
+    added: _.difference(keysAfter, keysBefore),
+    removed: _.difference(keysBefore, keysAfter),
+    sourceChanged: keysBoth.filter((key: string) => before[key]?.source !== after[key]?.source),
+    contentChanged: keysBoth.filter(
+      (key: string) =>
+        before[key]?.time !== after[key]?.time && before[key]?.source === after[key]?.source,
+    ),
+  };
+}
+
 // TODO: guess I need to pull this out of the linking activator as the deployment
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = ".vortex_backup";
@@ -201,7 +217,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
     this.mDirCache = new Set<string>();
 
     // unlink all files that were removed or changed
-    ({ added, removed, sourceChanged, contentChanged } = this.diffActivation(
+    ({ added, removed, sourceChanged, contentChanged } = diffActivation(
       context.previousDeployment,
       context.newDeployment,
     ));
@@ -838,21 +854,6 @@ abstract class LinkingActivator implements IDeploymentMethod {
         this.mContext.previousDeployment[key] = this.mContext.newDeployment[key];
         return this.mContext.newDeployment[key];
       });
-  }
-
-  private diffActivation(before: IDeployment, after: IDeployment) {
-    const keysBefore = Object.keys(before);
-    const keysAfter = Object.keys(after);
-    const keysBoth = _.intersection(keysBefore, keysAfter) || [];
-    return {
-      added: _.difference(keysAfter, keysBefore),
-      removed: _.difference(keysBefore, keysAfter),
-      sourceChanged: keysBoth.filter((key: string) => before[key]?.source !== after[key]?.source),
-      contentChanged: keysBoth.filter(
-        (key: string) =>
-          before[key]?.time !== after[key]?.time && before[key]?.source === after[key]?.source,
-      ),
-    };
   }
 
   private postLinkPurge(

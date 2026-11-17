@@ -1,11 +1,12 @@
 import {
+  DestinationState,
   DiskEntryKind,
   inApplyOrder,
   OperationKind,
   pathKeyOf,
   planDestinations,
   resolve,
-  sameOrigin,
+  sameFile,
   type DiskScan,
   type FileSource,
   type Lockfile,
@@ -18,6 +19,7 @@ import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { BACKUP_TAG } from "../LinkingDeployment";
+import type { DeployedOperation } from "./appliedManifests";
 import {
   apply,
   type ApplyOptions,
@@ -155,15 +157,21 @@ export async function resolveAndScan(
   profileId: VortexProfileId,
   previous: Lockfile,
   hashFile: HashFile,
-): Promise<{ current: StagedLockfile; resolveMs: number; diskScan: DiskScan; scanMs: number }> {
+): Promise<{
+  current: StagedLockfile;
+  resolveMs: number;
+  diskScan: DiskScan;
+  scanMs: number;
+}> {
   const game = getGame(gameMode);
   const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
   // TODO(MOD-144): add Vortex-generated files (plugins.txt, loadorder.txt) to both lockfiles with
   // withGeneratedFiles once Apply can write them; the plugin persistor writes them until then
   const [resolved, scanned] = await Promise.all([
     timed(async () => {
-      const { input, stagedFiles } = await gatherResolverInput(api, profileId, hashFile);
-      return { lockfile: resolve(input), stagedFiles };
+      const { input, stagedFilesFor } = await gatherResolverInput(api, profileId, hashFile);
+      const lockfile = resolve(input);
+      return { current: { lockfile, stagedFiles: stagedFilesFor(lockfile.files) } };
     }),
     timed(() =>
       scanDeploymentTargets(
@@ -173,16 +181,12 @@ export async function resolveAndScan(
     ),
   ]);
   return {
-    current: resolved.result,
+    ...resolved.result,
     resolveMs: resolved.ms,
     diskScan: scanned.result,
     scanMs: scanned.ms,
   };
 }
-
-// the planner's file identity (sameFile in the package's plan.ts): the same content from the same origin
-const sameFile = (lhs: FileSource, rhs: FileSource) =>
-  lhs.hashType === rhs.hashType && lhs.fileHash === rhs.fileHash && sameOrigin(lhs, rhs);
 
 /**
  * Where a plan's files are staged: a LINK's file where the current lockfile says, an UNLINK's where
@@ -207,6 +211,23 @@ function stagedFilesOfPlan(current: StagedLockfile, previous: StagedLockfile): S
     },
   };
 }
+
+/** A plan's operations in Apply's order, each LINK with where the current lockfile stages its file. */
+export const deployedOperationsOf = (
+  destinations: readonly PlannedDestination[],
+  currentStagedFiles: StagedFiles,
+): DeployedOperation[] =>
+  operationsInApplyOrder(destinations).map((operation) => ({
+    operation,
+    stagedPath:
+      operation.kind === OperationKind.Link ? currentStagedFiles.pathOf(operation.file) : undefined,
+  }));
+
+/** The destinations whose file left the lockfile and is gone from the disk, so nothing unlinks it. */
+export const clearedDestinationsOf = (destinations: readonly PlannedDestination[]): string[] =>
+  destinations
+    .filter(({ state }) => state === DestinationState.RemovedMissing)
+    .map(({ destinationPath }) => destinationPath);
 
 /** The plan that takes the game from `previous` to `current` through `destinations`. */
 export function deploymentPlanOf(
