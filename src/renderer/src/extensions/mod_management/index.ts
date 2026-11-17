@@ -3,8 +3,10 @@ import * as path from "path";
 import {
   getErrorCode,
   unknownToError,
-  type VortexGameId,
+  VortexDeploymentMethodId,
+  VortexGameId,
   VortexModId,
+  VortexModTypeId,
   VortexProfileId,
   VortexStagingFolder,
 } from "@vortex/shared";
@@ -100,7 +102,7 @@ import {
 import { answerManualInstallerRequest, MANUAL_INSTALLER_DIALOG_ID } from "./manualInstallerQueue";
 import deployMods from "./modActivation";
 import { deriveModInstallName } from "./modIdManager";
-import mergeMods, { mergedSourceName } from "./modMerging";
+import mergeMods, { mergedSourceName, type IMergeResultByType } from "./modMerging";
 import preStartDeployHook from "./preStartDeployHook";
 import { deploymentReducer } from "./reducers/deployment";
 import { manualInstallerReducer } from "./reducers/manualInstaller";
@@ -132,6 +134,13 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
+import {
+  applyJournalFileFor,
+  DeploymentPlanning,
+  deploymentPlanningFor,
+  keptFolderFor,
+  planAndApplyDeployment,
+} from "./util/applyDeploy";
 import { exposeApplyDevHandle } from "./util/applyDevHandle";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
@@ -161,6 +170,7 @@ import { dealWithExternalChanges } from "./util/externalChanges";
 import { attributeExtractor, upgradeExtractor } from "./util/extractors";
 import { registerAttributeExtractor } from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
+import { journalStorageAt } from "./util/journalStorage";
 import {
   LockfileContributions,
   contributorOf,
@@ -225,8 +235,7 @@ const appContext: IAppContext = {
 };
 
 let installManager: InstallManager;
-/** set in dev builds only */
-let deployOrchestrator: DeployOrchestrator | undefined;
+let deployOrchestrator: DeployOrchestrator;
 
 interface IInstaller {
   id: string;
@@ -514,11 +523,6 @@ function checkIncompatibilities(
   } else {
     return Promise.resolve();
   }
-}
-
-interface IMergeResultByType {
-  usedInMerge: string[];
-  mergeInfluences: { [outPath: string]: string[] };
 }
 
 async function doMergeMods(
@@ -897,8 +901,18 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 lastDeployment,
               );
 
-              // dev builds only; plans the disk as external changes left it
-              await deployOrchestrator?.plan(deployingProfileId);
+              const deployingVortexGameId = VortexGameId(gameId);
+              const planning = deploymentPlanningFor(
+                deployingVortexGameId,
+                VortexDeploymentMethodId(activator.id),
+              );
+              if (planning === DeploymentPlanning.BesideTodaysDeployment) {
+                // plans the disk as external changes left it
+                await deployOrchestrator.plan(deployingProfileId);
+              } else if (planning === DeploymentPlanning.Unplanned) {
+                // the game's last lockfile doesn't see the files today's deployment changes
+                deployOrchestrator.forget(deployingVortexGameId);
+              }
 
               progress(t("Starting deployment"), 35);
               resetDeploymentFailures(api, game.id);
@@ -909,18 +923,33 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 (typeId) => !truthy(modPaths[typeId]),
               );
               await validateDeploymentTarget(api, undiscovered);
-              await deployAllModTypes(
-                api,
-                activator,
-                profile,
-                sortedModList,
-                stagingPath,
-                mergeResult,
-                modPaths,
-                lastDeployment,
-                newDeployment,
-                deployProgress,
-              );
+              if (planning === DeploymentPlanning.ThroughApply) {
+                progress(t("Deploying mods"), 50);
+                const journalFile = applyJournalFileFor(deployingVortexGameId);
+                const savedManifestFiles = await planAndApplyDeployment(api, deployOrchestrator, {
+                  profileId: deployingProfileId,
+                  mergeResult,
+                  journal: journalStorageAt(journalFile),
+                  journalFile,
+                  keptFolder: keptFolderFor(stagingPath, deployingVortexGameId),
+                });
+                for (const typeId of deployableModTypes(modPaths)) {
+                  newDeployment[typeId] = savedManifestFiles.get(VortexModTypeId(typeId)) ?? [];
+                }
+              } else {
+                await deployAllModTypes(
+                  api,
+                  activator,
+                  profile,
+                  sortedModList,
+                  stagingPath,
+                  mergeResult,
+                  modPaths,
+                  lastDeployment,
+                  newDeployment,
+                  deployProgress,
+                );
+              }
               api.store.dispatch(setDeploymentPurged(gameId, false));
             });
 
@@ -1725,9 +1754,8 @@ function once(api: IExtensionApi) {
     onAddMod(api, gameMode, mod, callback);
   });
 
-  // hashes every staged file, so only dev builds resolve the lockfile for now
+  deployOrchestrator = registerDeployOrchestrator(api, registeredContributions);
   if (process.env.NODE_ENV === "development") {
-    deployOrchestrator = registerDeployOrchestrator(api, registeredContributions);
     exposeApplyDevHandle(api, deployOrchestrator);
   }
 
@@ -2177,7 +2205,7 @@ function init(context: IExtensionContext): boolean {
     },
   );
 
-  // the planner only runs in dev builds, see registerDeployOrchestrator
+  // only dev builds keep the last plan
   if (process.env.NODE_ENV === "development") {
     context.registerMainPage(
       "account_tree",
