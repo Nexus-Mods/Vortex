@@ -51,6 +51,10 @@ export function diffActivation(before: IDeployment, after: IDeployment) {
 //   code needs to know about these files when merging archives
 export const BACKUP_TAG = ".vortex_backup";
 
+/** What the tag file in a folder a deployment made says. */
+export const FOLDER_TAG_CONTENTS =
+  "This directory was created by Vortex deployment and will be removed during purging if it's empty";
+
 async function isAbsent(filePath: string): Promise<boolean> {
   try {
     await lstat(filePath);
@@ -687,8 +691,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         log("debug", "created directory", createdPath);
         return fs.writeFileAsync(
           path.join(createdPath, LinkingActivator.NEW_TAG_NAME),
-          "This directory was created by Vortex deployment and will be removed " +
-            "during purging if it's empty",
+          FOLDER_TAG_CONTENTS,
         );
       } else {
         return Promise.resolve();

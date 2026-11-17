@@ -7,7 +7,7 @@ import { describe, expect, test } from "vitest";
 import { apply, ApplyStatus, resumeApply, rollback, type ApplyOptions } from "./apply";
 import type { ApplyFixture } from "./applyFixture";
 import { ApplyFixtureSchema } from "./applyFixture";
-import { fixtureStore, killAfter, snapshotOf } from "./fixtureDisk";
+import { FIXTURE_FOLDER_TAG, fixtureStore, killAfter, snapshotOf } from "./fixtureDisk";
 import { JournalReadStatus, readJournal, type JournalStorage } from "./journal";
 import { memoryJournalStorage } from "./testJournalStorage";
 
@@ -30,6 +30,7 @@ const optionsFor = (fixture: ApplyFixture): Omit<ApplyOptions, "fs" | "journal">
   stagedFiles: { pathOf: (file) => fixture.staged[file.fileHash] },
   backupPathOf: (destinationPath) => `${destinationPath}.backup`,
   keptPathOf: (_destinationPath, _runId, entryIndex) => `/fixture-root/kept/${entryIndex}`,
+  folderTag: FIXTURE_FOLDER_TAG,
 });
 
 const journalStatusOf = async (journal: JournalStorage) => (await readJournal(journal)).status;
@@ -96,7 +97,7 @@ describe.each(fixtures)("$name", async (fixture) => {
     const { fs, journal } = await killedRun(fixture, calls);
     const started = (await journalStatusOf(journal)) === JournalReadStatus.Found;
 
-    const result = await resumeApply({ fs, journal });
+    const result = await resumeApply({ fs, journal, folderTag: FIXTURE_FOLDER_TAG });
 
     expect(result.status).toBe(started ? fixture.expected.status : ApplyStatus.NothingToDo);
     // a run killed before its journal holds nothing, and one killed after it ends is done
@@ -109,7 +110,7 @@ describe.each(fixtures)("$name", async (fixture) => {
     const { fs, journal } = await killedRun(fixture, calls);
     const started = (await journalStatusOf(journal)) === JournalReadStatus.Found;
 
-    const result = await rollback({ fs, journal });
+    const result = await rollback({ fs, journal, folderTag: FIXTURE_FOLDER_TAG });
 
     expect(result.status).toBe(started ? ApplyStatus.RolledBack : ApplyStatus.NothingToDo);
     const settled = started ? [before] : [before, after];

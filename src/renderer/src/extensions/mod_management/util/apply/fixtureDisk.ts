@@ -13,6 +13,12 @@ import type { JournalStorage } from "./journal";
 /** The folder every fixture path is in. */
 const FIXTURE_ROOT = "/fixture-root";
 
+/** The tag fixtures give the folders a run makes. */
+export const FIXTURE_FOLDER_TAG = {
+  name: "__folder_managed_by_vortex",
+  contents: "a folder Vortex made",
+};
+
 /** A disk as fixtures write it. */
 export interface FixtureDisk {
   /** contents by path; paths with the same contents are hardlinks of one file */
@@ -112,6 +118,10 @@ class KillableFS extends InMemoryFS {
 
   override createDirectory(path: QualifiedPath): Promise<void> {
     return this.#guarded(() => super.createDirectory(path));
+  }
+
+  override writeFile(path: QualifiedPath, contents: Uint8Array): Promise<void> {
+    return this.#guarded(() => super.writeFile(path, contents));
   }
 
   override enumerateDirectory(
