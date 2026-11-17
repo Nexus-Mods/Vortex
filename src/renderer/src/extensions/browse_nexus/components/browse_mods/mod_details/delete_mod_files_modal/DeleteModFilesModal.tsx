@@ -227,7 +227,7 @@ export const DeleteModFilesModal = ({ files, ...props }: IDeleteModFilesModalPro
   const { t } = useTranslation();
 
   return (
-    <Modal isOpen={!!files} size="lg" title={t("Remove mod files")} onClose={props.onClose}>
+    <Modal isOpen={!!files} title={t("Remove mod files")} onClose={props.onClose}>
       {!!files && <DeleteModFilesBody {...props} files={files} />}
     </Modal>
   );
