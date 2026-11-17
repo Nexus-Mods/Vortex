@@ -76,3 +76,26 @@ export function journalStorageAt(journalFile: string): JournalStorage {
     close,
   };
 }
+
+/** Apply's journal on disk, copied to `copyFile` before it is removed, for a tool to read. */
+export function journalStorageKeeping(journalFile: string, copyFile: string): JournalStorage {
+  const storage = journalStorageAt(journalFile);
+  return {
+    ...storage,
+    remove: async () => {
+      try {
+        await fs.mkdir(path.dirname(copyFile), { recursive: true });
+        await withFileRetry(() => fs.copyFile(journalFile, copyFile), ATTEMPTS_WHILE_HELD);
+      } catch (err) {
+        // the copy is a tool's aid; the run's journal ends either way
+        if (getErrorCode(err) !== "ENOENT") {
+          log("warn", "couldn't keep a copy of the journal", {
+            copyFile,
+            error: getErrorMessageOrDefault(err),
+          });
+        }
+      }
+      await storage.remove();
+    },
+  };
+}
