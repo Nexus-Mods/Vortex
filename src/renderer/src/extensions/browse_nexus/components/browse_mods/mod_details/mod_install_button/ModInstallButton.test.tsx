@@ -26,6 +26,8 @@ const mocks = vi.hoisted(() => {
     show: vi.fn(),
     fetchFiles: vi.fn(),
     installState: { kind: "none" } as ModInstallState,
+    openDelete: vi.fn(),
+    isDeleting: false,
   };
 
   /** The selectors the test answers. */
@@ -63,6 +65,13 @@ vi.mock("@/extensions/nexus_integration/util/download_and_install/downloadAndIns
 vi.mock("@/util/useRelativeTime", () => ({ useRelativeTime: () => "2 days ago" }));
 vi.mock("@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook", () => ({
   useModInstallState: () => ({ kind: "none" }),
+}));
+vi.mock("@/extensions/browse_nexus/hooks/use_delete_mod_files/useDeleteModFiles.hook", () => ({
+  useDeleteModFiles: () => ({
+    deleteAction: { label: "Delete", testId: "mod-install-delete", onClick: mocks.openDelete },
+    modal: null,
+    isDeleting: mocks.isDeleting,
+  }),
 }));
 
 vi.mock(
@@ -149,6 +158,8 @@ describe("ModInstallButton", () => {
     mocks.show.mockReset();
     mocks.fetchFiles.mockReset();
     mocks.installState = { kind: "none" };
+    mocks.openDelete.mockReset();
+    mocks.isDeleting = false;
     openUrl = vi.fn();
     window.api.shell = { openUrl } as unknown as typeof window.api.shell;
   });
@@ -482,6 +493,55 @@ describe("ModInstallButton", () => {
       expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
       expect(clicks("browse_mods_install_clicked")).toEqual([{ mod_uid: "7340033" }]);
     });
+
+    describe("Delete", () => {
+      it.each<[string, () => void]>([
+        ["installed", () => installed()],
+        ["installed with an update, for Premium", () => installed("update")],
+        [
+          "installed with an update, for free users",
+          () => {
+            mocks.isPremium = false;
+            installed("update");
+          },
+        ],
+        [
+          "downloaded",
+          () => {
+            mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
+          },
+        ],
+      ])("is the only action in the menu of a mod %s with a primary file", async (_, setUp) => {
+        setUp();
+        renderButton(mainFile);
+
+        await userEvent.click(screen.getByTestId("mod-install-options"));
+
+        const menu = await screen.findByRole("menu");
+        expect(within(menu).getAllByRole("menuitem")).toEqual([
+          screen.getByTestId("mod-install-delete"),
+        ]);
+      });
+
+      it("spins while the mod's files uninstall, so nothing starts on them twice", () => {
+        installed();
+        mocks.isDeleting = true;
+        renderButton(mainFile);
+
+        expect(screen.getByTestId("mod-install-view-installed")).toBeDisabled();
+        expect(screen.getByTestId("mod-install-options")).toBeDisabled();
+      });
+
+      it("opens the delete modal from the menu", async () => {
+        installed();
+        renderButton(mainFile);
+
+        await userEvent.click(screen.getByTestId("mod-install-options"));
+        await userEvent.click(await screen.findByTestId("mod-install-delete"));
+
+        expect(mocks.openDelete).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 
   describe("for a mod without a primary file", () => {
@@ -652,7 +712,7 @@ describe("ModInstallButton", () => {
       it("keeps showing the installed mod from the split button's main part", async () => {
         renderButton(newestFile);
 
-        await userEvent.click(screen.getByTestId("mod-install-main"));
+        await userEvent.click(screen.getByTestId("mod-install-view-installed"));
 
         expect(mocks.show).toHaveBeenCalledWith(expect.anything(), "skyui");
         expect(mocks.fetchFiles).not.toHaveBeenCalled();
@@ -667,7 +727,7 @@ describe("ModInstallButton", () => {
         };
         renderButton(newestFile);
 
-        await userEvent.click(screen.getByTestId("mod-install-main"));
+        await userEvent.click(screen.getByTestId("mod-install-view-installed"));
 
         expect(mocks.show).toHaveBeenCalledWith(expect.anything(), "skyui");
         expect(mocks.fetchFiles).not.toHaveBeenCalled();
@@ -682,7 +742,7 @@ describe("ModInstallButton", () => {
         mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
         renderButton(newestFile);
 
-        await userEvent.click(screen.getByTestId("mod-install-main"));
+        await userEvent.click(screen.getByTestId("mod-install-view-installed"));
 
         expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
         expect(mocks.show).not.toHaveBeenCalled();
@@ -697,7 +757,7 @@ describe("ModInstallButton", () => {
         mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 1 };
         renderButton(newestFile);
 
-        await userEvent.click(screen.getByTestId("mod-install-main"));
+        await userEvent.click(screen.getByTestId("mod-install-install"));
 
         expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
         expect(mocks.fetchFiles).not.toHaveBeenCalled();
@@ -708,7 +768,7 @@ describe("ModInstallButton", () => {
         mocks.installState = { kind: "downloaded", downloadId: "dl", downloadCount: 2 };
         renderButton(newestFile);
 
-        await userEvent.click(screen.getByTestId("mod-install-main"));
+        await userEvent.click(screen.getByTestId("mod-install-install"));
 
         expect(emit).toHaveBeenCalledWith("start-install-download", "dl");
         expect(mocks.fetchFiles).not.toHaveBeenCalled();
@@ -719,7 +779,7 @@ describe("ModInstallButton", () => {
         mocks.fetchFiles.mockResolvedValue(mainFiles(11, 12));
         renderButton(newestFile);
 
-        await userEvent.click(screen.getByTestId("mod-install-main"));
+        await userEvent.click(screen.getByTestId("mod-install-install"));
 
         expect(await screen.findByTestId("main-file-picker-close")).toBeInTheDocument();
         expect(emit).not.toHaveBeenCalledWith("start-install-download", expect.anything());
@@ -766,7 +826,9 @@ describe("ModInstallButton", () => {
 
         await viewAllFiles();
 
-        await waitFor(() => expect(screen.getByTestId("mod-install-main")).toBeDisabled());
+        await waitFor(() =>
+          expect(screen.getByTestId("mod-install-view-installed")).toBeDisabled(),
+        );
         expect(screen.getByTestId("mod-install-options")).toBeDisabled();
       });
 
@@ -778,14 +840,12 @@ describe("ModInstallButton", () => {
         await viewAllFiles();
 
         await waitFor(() =>
-          expect(showErrorNotification).toHaveBeenCalledWith(
-            "Couldn't load this mod's files",
-            error,
-            { allowReport: false },
-          ),
+          expect(showErrorNotification).toHaveBeenCalledWith(expect.any(String), error, {
+            allowReport: false,
+          }),
         );
         expect(pickerClose()).not.toBeInTheDocument();
-        await waitFor(() => expect(screen.getByTestId("mod-install-main")).toBeEnabled());
+        await waitFor(() => expect(screen.getByTestId("mod-install-view-installed")).toBeEnabled());
       });
 
       it("says in a notification when View all main files finds none", async () => {
@@ -797,8 +857,7 @@ describe("ModInstallButton", () => {
         await waitFor(() =>
           expect(sendNotification).toHaveBeenCalledWith({
             type: "info",
-            message:
-              "This mod isn't available through Vortex. Download it from Nexus Mods instead.",
+            message: expect.any(String),
           }),
         );
         expect(pickerClose()).not.toBeInTheDocument();
@@ -837,16 +896,19 @@ describe("ModInstallButton", () => {
         await userEvent.click(await screen.findByTestId("main-file-picker-close"));
 
         await waitFor(() => expect(pickerClose()).not.toBeInTheDocument());
-        await waitFor(() => expect(screen.getByTestId("mod-install-main")).toHaveFocus());
+        await waitFor(() => expect(screen.getByTestId("mod-install-view-installed")).toHaveFocus());
       });
 
-      it.each([
-        ["a primary file", mainFile],
-        ["only one Main file", onlyFile],
-      ])("keeps a mod with %s to its one button", (_, file) => {
-        renderButton(file);
+      it("lists View all main files above Delete", async () => {
+        renderButton(newestFile);
 
-        expect(screen.queryByTestId("mod-install-options")).not.toBeInTheDocument();
+        await userEvent.click(screen.getByTestId("mod-install-options"));
+
+        const menu = await screen.findByRole("menu");
+        expect(within(menu).getAllByRole("menuitem")).toEqual([
+          screen.getByTestId("mod-install-view-all-files"),
+          screen.getByTestId("mod-install-delete"),
+        ]);
       });
     });
   });

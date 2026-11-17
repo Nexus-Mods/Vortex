@@ -184,6 +184,25 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       source: FilePickerSource;
     }) => track("browse_mods_file_picker_opened", props),
 
+    // The split button's Delete picked; `file_count` is how many of the mod's files the modal
+    // lists, 0 when there were none to remove and it said so instead.
+    trackDeleteClicked: (props: { mod_uid: string; file_count: number }) =>
+      track("browse_mods_delete_clicked", props),
+
+    // The Delete modal's main action: how many of the chosen files went for good, and how many
+    // were uninstalled keeping a download to reinstall from, as its button said, and whether the
+    // user asked for downloads to be deleted too.
+    trackDeleteConfirmed: (props: {
+      mod_uid: string;
+      deleted_count: number;
+      uninstalled_count: number;
+      deletes_downloads: boolean;
+    }) => track("browse_mods_delete_confirmed", props),
+
+    // The Delete modal closed without removing anything; `file_count` as on its opening.
+    trackDeleteCancelled: (props: { mod_uid: string; file_count: number }) =>
+      track("browse_mods_delete_cancelled", props),
+
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 
     // Another of the details' tabs picked, by click or the keys; not sent for the one already open.
