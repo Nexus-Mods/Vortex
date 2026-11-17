@@ -12,10 +12,21 @@ export {
   type NexusV3Client,
   type NexusV3ClientOptions,
   type NexusV3InternalClient,
+  type TelemetryEventEntry,
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
+  EventGameFolderState,
+  EventGameFolderStateFiles,
   EventStoreGameVersion,
+  GameFolderDepot,
+  GameFolderFile,
+  GameFolderFileCount,
+  GameFolderFolderCount,
+  GameFolderPartStatus,
+  GameFolderStateFilesPayload,
+  GameFolderStatePayload,
+  TelemetryEvent,
   GogInstall,
   SteamDepot,
   SteamInstall,

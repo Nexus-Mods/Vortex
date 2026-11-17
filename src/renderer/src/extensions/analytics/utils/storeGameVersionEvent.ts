@@ -10,6 +10,7 @@ import { isTelemetryEnabled } from "../../../telemetry/selectors";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
 import { log } from "../../../util/log";
+import { normPath } from "../../../util/normPath";
 import type { ISteamEntry } from "../../../util/Steam";
 import { normalizeStoreQuery } from "../../../util/storeQuery";
 import { discoveryByGame, discovered } from "../../gamemode_management/selectors";
@@ -79,13 +80,6 @@ interface InstallRecord {
   install: InstallBlock | null;
   failureReason: string | null;
 }
-
-/** Windows and POSIX disagree about separators and case; matches either way. */
-const normPath = (value: string): string =>
-  value
-    .replace(/[/\\]+/g, "/")
-    .replace(/\/$/, "")
-    .toLowerCase();
 
 const asPayload = (
   base: {

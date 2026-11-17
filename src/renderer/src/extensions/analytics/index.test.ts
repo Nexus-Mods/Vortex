@@ -32,6 +32,10 @@ vi.mock("../../util/selectors", () => ({
 }));
 vi.mock("../nexus_integration/util", () => ({ nexusGamesProm: () => Promise.resolve() }));
 vi.mock("./utils/storeGameVersionEvent", () => ({ emitStoreGameVersions: vi.fn() }));
+vi.mock("./gameFolderCheck", () => ({
+  initGameFolderCheck: vi.fn(),
+  registerGameFolderCheckAction: vi.fn(),
+}));
 
 // The real tracker is a singleton whose startup queue closes for good, so the default export
 // forwards to a fresh real instance per test.
