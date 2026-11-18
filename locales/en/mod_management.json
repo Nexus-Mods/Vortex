@@ -204,7 +204,7 @@
       "body": "Are you sure you want to delete \"{{name}}\"? This won't delete any mods, but the view and its customisations will be permanently removed."
     },
     "viewName": {
-      "createIntro": "Give your view a name. You can customise its columns, grouping and filters after creating it.",
+      "createIntro": "Give your view a name. It keeps the filters, sort, grouping and columns showing now, and saves any you change after.",
       "renameIntro": "Give your view a new name. Your columns, grouping and filters won't change.",
       "placeholder": "e.g. Author view"
     },
@@ -258,6 +258,25 @@
       "archiveName": "Archive name",
       "variant": "Variant",
       "nexusFileId": "Nexus Mods file ID"
+    },
+    "filters": {
+      "filter": "Filter",
+      "status": "Status",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "uninstalled": "Uninstalled",
+      "comingSoon": "More filters coming soon...",
+      "resetCount": "Reset {{count}} filter to default",
+      "resetCount_plural": "Reset {{count}} filters to default",
+      "resetStatus": "Reset status to default",
+      "clearStatus": "Clear status filter",
+      "statusCount": "{{count}} status type",
+      "statusCount_plural": "{{count}} status types",
+      "noResults": "No mods match your filters"
+    },
+    "editedView": {
+      "resetHint": "Discards your changes and returns this view to its defaults.",
+      "saveHint": "Saves your current filters, sort, grouping and columns as a view you can return to."
     }
   },
   "modsDropTarget": {

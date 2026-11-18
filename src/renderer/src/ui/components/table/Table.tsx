@@ -81,6 +81,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   footer,
   empty,
   defaultSort,
+  sort: givenSort,
+  onSortChange,
   columnWidths,
   onColumnWidthsChange,
   className,
@@ -101,7 +103,10 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   onHeaderOffsetChange,
 }: ITableProps<T, G>) => {
   const { t } = useTranslation();
-  const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
+  const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort, {
+    sort: givenSort,
+    onSortChange,
+  });
 
   // Each row once, though a row in two groups shows in both.
   const rowIds = useMemo(
@@ -357,7 +362,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
   // A drag's widths, with the columns it holds; drawn straight onto the grid as it goes, so the
   // rows don't render for every move, and kept in one change once it's let go of.
-  const dragWidths = useRef<{ [columnId: string]: number }>(undefined);
+  const dragWidthsRef = useRef<{ [columnId: string]: number }>(undefined);
 
   const renderItem = (index: number) => {
     const item = items[index];
@@ -401,6 +406,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         index={index}
         level={item.level}
         row={item.row}
+        rowId={getRowId(item.row)}
         rowIndex={index + headRows + 1}
         sortedColumnId={sort?.columnId}
         onClick={
@@ -493,21 +499,21 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         onColumnDrag={(columnId, width) => {
           const element = tableRef.current;
           if (width === undefined) {
-            dragWidths.current = undefined;
+            dragWidthsRef.current = undefined;
             if (element) {
               element.style.gridTemplateColumns = savedTemplate;
             }
             return;
           }
 
-          dragWidths.current = {
-            ...(dragWidths.current ?? sharedWidths(columnId)),
+          dragWidthsRef.current = {
+            ...(dragWidthsRef.current ?? sharedWidths(columnId)),
             [columnId]: width,
           };
           if (element) {
             element.style.gridTemplateColumns = template({
               ...columnWidths,
-              ...dragWidths.current,
+              ...dragWidthsRef.current,
             });
           }
         }}
@@ -522,7 +528,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
               onColumnWidthsChange({ [columnId]: undefined });
               return;
             }
-            const { [columnId]: _dragged, ...held } = dragWidths.current ?? sharedWidths(columnId);
+            const { [columnId]: _dragged, ...held } =
+              dragWidthsRef.current ?? sharedWidths(columnId);
             onColumnWidthsChange({ ...held, [columnId]: keptWidth(column, width) });
           })
         }
@@ -537,6 +544,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           <Fragment key={items[index].key}>
             {/* Rows out of view, before a focused row kept far from the rest too. */}
             <TableSpacer height={gap} />
+
             {renderItem(index)}
           </Fragment>
         ))}
@@ -548,13 +556,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           return (
             <Fragment key={`block:${item.key}`}>
               <TableSpacer height={gap} />
+
               <TableGroup image={item.kind === "group" ? item.group.image : undefined}>
                 {blockRows.map((row) => (
                   <Fragment key={items[row.index].key}>
                     <TableSpacer height={row.gap} />
+
                     {renderItem(row.index)}
                   </Fragment>
                 ))}
+
                 <TableSpacer height={endGap} />
               </TableGroup>
             </Fragment>

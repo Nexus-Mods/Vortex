@@ -81,6 +81,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   onColumnWidthsChange?: (widths: { [columnId: string]: number | undefined }) => void;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
+  /** The sort, when the page keeps it; the table then sorts by it and doesn't keep its own. */
+  sort?: ITableSort;
+  /** Takes the sort a header click asks for, when the page keeps it. */
+  onSortChange?: (sort: ITableSort) => void;
   /** Classes for the table's grid element. */
   className?: string;
   /** Classes for an item's row, beside its own; unset or `undefined`, none. */
