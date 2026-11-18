@@ -23,6 +23,13 @@ export interface NexusV3ClientOptions {
   signal?: AbortSignal;
 }
 
+/** One event of a telemetry batch: the client's id for it, when it happened, and the event. */
+export interface TelemetryEventEntry {
+  id: string;
+  date: Temporal.Instant;
+  event: TelemetryEvent;
+}
+
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
 
 /** User-Agent plus bearer-else-apikey auth, shared by the public and internal clients. */
@@ -303,6 +310,29 @@ export function createNexusV3InternalClient(
     client.use(mw);
   }
 
+  const sendTelemetryEvents = async (events: readonly TelemetryEventEntry[]) => {
+    const { data, error, response } = await client.POST("/telemetry/events", {
+      body: {
+        client: {
+          name: options.clientName,
+          version: options.clientVersion,
+          instance_id: options.instanceId,
+        },
+
+        events: events.map(({ id, date, event }) => ({
+          id: id,
+          occurred_at: date.toString(),
+          version: event.version,
+          type: event.type,
+          payload: event.payload,
+        })),
+      },
+    });
+
+    if (error) throw toV3Error(error, response);
+    return data.data;
+  };
+
   return {
     ...client,
 
@@ -315,29 +345,16 @@ export function createNexusV3InternalClient(
       return data.data;
     },
 
-    async telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
-      const { data, error, response } = await client.POST("/telemetry/events", {
-        body: {
-          client: {
-            name: options.clientName,
-            version: options.clientVersion,
-            instance_id: options.instanceId,
-          },
+    telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
+      return sendTelemetryEvents([{ id, date, event }]);
+    },
 
-          events: [
-            {
-              id: id,
-              occurred_at: date.toString(),
-              version: event.version,
-              type: event.type,
-              payload: event.payload,
-            },
-          ],
-        },
-      });
-
-      if (error) throw toV3Error(error, response);
-      return data.data;
+    /**
+     * Submits several events in one request. The API accepts or rejects each event on its own,
+     * so check `rejected` in the ack.
+     */
+    telemetryEvents(events: readonly TelemetryEventEntry[]) {
+      return sendTelemetryEvents(events);
     },
   };
 }
