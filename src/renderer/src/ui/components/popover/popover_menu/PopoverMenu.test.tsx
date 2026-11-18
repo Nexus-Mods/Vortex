@@ -341,8 +341,8 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
     });
 
-    // The same pin either way: filled while the action is pinned, outlined while it isn't.
-    it("draws an outlined pin on a row that is not pinned", async () => {
+    // Filled while the action is pinned; outlined and struck through while it isn't.
+    it("draws an outlined, struck-through pin on a row that is not pinned", async () => {
       await openMenu([
         [
           {
@@ -352,7 +352,7 @@ describe("PopoverMenu", () => {
         ],
       ]);
 
-      expect(pinIcon("Pin Refresh")).toHaveAttribute("data-symbol", "keep");
+      expect(pinIcon("Pin Refresh")).toHaveAttribute("data-symbol", "keep_off");
       expect(pinIcon("Pin Refresh")).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
     });
 
