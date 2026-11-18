@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/semver": "catalog:",
+    "@typescript/native": "catalog:",
     "rolldown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

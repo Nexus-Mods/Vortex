@@ -18,6 +18,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-bootstrap": "catalog:",
+    "@typescript/native": "catalog:",
     "copyfiles": "catalog:",
     "memoize-one": "catalog:",
     "react-i18next": "catalog:",

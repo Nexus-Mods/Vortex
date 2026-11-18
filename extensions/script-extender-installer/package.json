@@ -15,6 +15,7 @@
     "@types/bluebird": "catalog:",
     "@types/lodash": "catalog:",
     "@types/node": "catalog:",
+    "@typescript/native": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "electron": "catalog:",

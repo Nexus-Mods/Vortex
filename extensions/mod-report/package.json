@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@typescript/native": "catalog:",
     "bs58": "catalog:",
     "copyfiles": "catalog:",
     "electron": "catalog:",

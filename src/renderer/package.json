@@ -129,6 +129,7 @@
     "@types/write-file-atomic": "catalog:",
     "@types/ws": "catalog:",
     "@types/xml2js": "catalog:",
+    "@typescript/native": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "@vortex/nexus-api-v3": "workspace:*",
     "@vortex/shared": "workspace:*",

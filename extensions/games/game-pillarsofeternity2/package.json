@@ -24,6 +24,7 @@
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
     "@types/semver": "catalog:",
+    "@typescript/native": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "react": "catalog:",

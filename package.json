@@ -58,6 +58,7 @@
     "@types/node": "catalog:",
     "@types/webpack-node-externals": "catalog:",
     "@typescript-eslint/utils": "catalog:",
+    "@typescript/native": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
     "cli-table3": "catalog:",

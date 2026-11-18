@@ -35,6 +35,7 @@
     "@types/react-redux": "catalog:",
     "@types/relaxed-json": "catalog:",
     "@types/semver": "catalog:",
+    "@typescript/native": "catalog:",
     "copyfiles": "catalog:",
     "electron": "catalog:",
     "modmeta-db": "catalog:",
