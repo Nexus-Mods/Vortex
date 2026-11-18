@@ -18,7 +18,7 @@ test("a generated file replaces a mod file at the same destination", () => {
   expect(addGeneratedFiles(lockfile, [generated]).files).toEqual([generated, otherModFile]);
 });
 
-test("a generated file replaces a mod file spelt in another case, at the mod file's spelling", () => {
+test("a generated file replaces a mod file spelt in another case, under its own name in the mod file's folder", () => {
   const lockfile = makeLockfile();
   const [modFile, otherModFile] = lockfile.files;
   const generated = makeGeneratedFileSource({
@@ -26,7 +26,7 @@ test("a generated file replaces a mod file spelt in another case, at the mod fil
   });
 
   expect(addGeneratedFiles(lockfile, [generated]).files).toEqual([
-    { ...generated, destinationPath: modFile.destinationPath },
+    { ...generated, destinationPath: "/fixture-root/game/Data/SKYUI_SE.ESP" },
     otherModFile,
   ]);
 });

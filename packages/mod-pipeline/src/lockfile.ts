@@ -1,3 +1,5 @@
+import { QualifiedPath } from "@nexusmods/paths";
+
 import { GameInstallSchema, type GameInstall } from "./gameInstall";
 import { NexusFileId, NexusGameId } from "./ids";
 import { AbsolutePathSchema, pathKeyOf } from "./pathKey";
@@ -41,9 +43,16 @@ export type GeneratedFileSource = Extract<
   { source: typeof FileSourceKind.VortexGenerated }
 >;
 
+/** The folder of `folderSource` with the file name of `nameSource`. */
+const inFolderOf = (folderSource: string, nameSource: string) =>
+  QualifiedPath.fromNative(folderSource)
+    .parent()
+    .join(QualifiedPath.fromNative(nameSource).basename).path;
+
 /**
- * A lockfile's files: one per destination key, in destination order. The later file wins, at the
- * destination's first spelling, which is the folder case the disk keeps.
+ * A lockfile's files: one per destination key, in destination order. The later file wins under its
+ * own file name, as a deployment links it, in the folder's first spelling, which is the case the
+ * disk keeps.
  */
 export function lockfileFiles(files: Iterable<FileSource>): FileSource[] {
   const fileByDestination = new Map<string, FileSource>();
@@ -52,7 +61,9 @@ export function lockfileFiles(files: Iterable<FileSource>): FileSource[] {
     const earlier = fileByDestination.get(key);
     fileByDestination.set(
       key,
-      earlier !== undefined ? { ...file, destinationPath: earlier.destinationPath } : file,
+      earlier !== undefined
+        ? { ...file, destinationPath: inFolderOf(earlier.destinationPath, file.destinationPath) }
+        : file,
     );
   }
   // destinations are unique

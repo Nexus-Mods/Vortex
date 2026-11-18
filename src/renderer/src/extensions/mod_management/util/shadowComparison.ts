@@ -1,7 +1,10 @@
 import { FileSourceKind, pathKeyOf, sameOrigin, type Lockfile } from "@nexusmods/mod-pipeline";
 import type { ManifestDiff, ManifestDiffReason } from "@vortex/nexus-api-v3";
+import { getErrorMessageOrDefault, type VortexGameId } from "@vortex/shared";
 
-import type { DeployedOrigin } from "./resolverInput";
+import { log } from "../../../logging";
+import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { gatherDeployedOrigins, type DeployedOrigin } from "./resolverInput";
 
 /** Why one destination differs between the resolver's lockfile and what a deployment wrote. */
 export const ReasonCode = {
@@ -50,4 +53,23 @@ export function compareWithDeployment(
     verdict: Object.values(counts).every((count) => count === 0) ? "pass" : "fail",
     counts,
   };
+}
+
+/** Compares the lockfile with the deployment's manifests and logs the result. */
+export async function compareWithManifests(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  lockfile: Lockfile,
+): Promise<ManifestDiff | null> {
+  try {
+    const shadow = compareWithDeployment(lockfile, await gatherDeployedOrigins(api, gameMode));
+    log("info", "shadow comparison", { gameMode, verdict: shadow.verdict, ...shadow.counts });
+    return shadow;
+  } catch (err) {
+    log("warn", "failed to compare with the deployment", {
+      gameMode,
+      error: getErrorMessageOrDefault(err),
+    });
+    return null;
+  }
 }

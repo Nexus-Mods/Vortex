@@ -119,7 +119,7 @@ async function chainAt(root: QualifiedPath): Promise<ReadonlySet<string>> {
 }
 
 /** Scans and returns all files in folder the mod and destination paths. Called
- * from resolveLockFile.ts to do a disk scan for a mod type
+ * from deploymentPlan.ts to do a disk scan for a mod type
  */
 export async function scanDeploymentTargets(
   modPaths: Iterable<string | null | undefined>,

@@ -20,7 +20,7 @@ import {
   type FileEntry,
 } from "@nexusmods/mod-pipeline";
 import { QualifiedPath, relativePath } from "@nexusmods/paths";
-import { parseError, type VortexGameId } from "@vortex/shared";
+import { parseError, VortexGameId, type VortexProfileId } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IGame } from "../../../types/IGame";
@@ -38,12 +38,13 @@ import {
   fetchArchiveFiles,
   type ArchiveFiles,
 } from "../../nexus_integration/util_v3/archiveManifests";
-import { lastActiveProfileForGame, profileById } from "../../profile_management/selectors";
+import { profileById } from "../../profile_management/selectors";
 import { mapWithConcurrency } from "../LinkingDeployment";
 import { installPathForGame } from "../selectors";
 import type { IDeployedFile } from "../types/IDeploymentMethod";
 import type { IMod } from "../types/IMod";
 import { readOwnManifest } from "./activationStore";
+import type { StagedFiles } from "./apply/apply";
 import BlacklistSet from "./BlacklistSet";
 import { genSubDirFunc } from "./deploy";
 import { deployedFilePath } from "./deployedFilePath";
@@ -228,27 +229,36 @@ async function addHashedFiles(
   });
 }
 
+/** Staged files from the staged path at each destination, by destination key. */
+const stagedFilesAt = (stagedPathByKey: ReadonlyMap<string, string>): StagedFiles => ({
+  pathOf: (file) => {
+    const stagedPath = stagedPathByKey.get(pathKeyOf(file.destinationPath));
+    return stagedPath === undefined ? undefined : toPortablePath(stagedPath);
+  },
+});
+
 const fetchArchiveFilesFor =
   (api: IExtensionApi): ArchiveFilesLookup =>
   (versionIds) =>
     fetchArchiveFiles(createVortexNexusV3Client(api), versionIds);
 
 /**
- * The resolver input for a game's deploying mods. A staged Nexus file takes its hash from its
- * archive's manifest where that is unambiguous.
+ * The resolver input for a profile's deploying mods, and the staged file each destination resolves
+ * to. A staged Nexus file takes its hash from its archive's manifest where that is unambiguous.
  */
 export async function gatherResolverInput(
   api: IExtensionApi,
-  gameMode: VortexGameId,
+  profileId: VortexProfileId,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
   lookupArchiveFiles: ArchiveFilesLookup = fetchArchiveFilesFor(api),
-): Promise<ResolverInput> {
+): Promise<{ input: ResolverInput; stagedFiles: StagedFiles }> {
   const state: IState = api.getState();
-  const { game, discovery, gamePath, gameId } = resolvableGame(state, gameMode);
-  const profile = profileById(state, lastActiveProfileForGame(state, gameMode));
+  const profile = profileById(state, profileId);
   if (profile === undefined) {
-    throw new Error(`${gameMode} has no profile`);
+    throw new Error(`there is no profile ${profileId}`);
   }
+  const gameMode = VortexGameId(profile.gameId);
+  const { game, discovery, gamePath, gameId } = resolvableGame(state, gameMode);
 
   const sortedMods = await doSortMods(api, profile, state.persistent.mods[gameMode] ?? {});
   const modPaths = game.getModPaths(gamePath);
@@ -263,6 +273,8 @@ export async function gatherResolverInput(
 
   const mods: ResolverMod[] = [];
   const sources: IStagedSource[] = [];
+  // by destination key; as in resolve(), a later mod wins unless it overrides the path
+  const winningStagedPaths = new Map<string, string>();
   for (const { mod, origin } of modOrigins) {
     const typeId = mod.type ?? "";
     const skipList = skipLists.get(typeId);
@@ -275,26 +287,36 @@ export async function gatherResolverInput(
       overriddenPaths: (mod.fileOverrides ?? []).map(toPortablePath),
     };
     mods.push(resolverMod);
+    const overriddenKeys = new Set(resolverMod.overriddenPaths.map(pathKeyOf));
     const nexusFileId = origin.source === FileSourceKind.Nexus ? origin.nexusFileId : undefined;
     const subDir = genSubDirFunc(game, getModType(mod.type))(mod);
     const modPath = path.join(stagingPath, mod.installationPath);
     for (const { relPath, size } of await stagedFiles(modPath)) {
       if (!skipList.skipFiles.has(skipList.normalize(path.join(mod.installationPath, relPath)))) {
+        const stagedPath = path.join(modPath, relPath);
+        const destinationPath = toPortablePath(deployedFilePath(modPaths[typeId], subDir, relPath));
         sources.push({
-          stagedPath: path.join(modPath, relPath),
-          destinationPath: toPortablePath(deployedFilePath(modPaths[typeId], subDir, relPath)),
+          stagedPath,
+          destinationPath,
           into: resolverMod.stagedFiles,
           nexusFileId,
           portableRelPath: relPath,
           size,
         });
+        const destinationKey = pathKeyOf(destinationPath);
+        if (!overriddenKeys.has(destinationKey)) {
+          winningStagedPaths.set(destinationKey, stagedPath);
+        }
       }
     }
   }
 
   await addHashedFiles(sources, pendingArchiveFiles, hashFile);
 
-  return { gameId, install: await gameInstall(gameMode, discovery), mods };
+  return {
+    input: { gameId, install: await gameInstall(gameMode, discovery), mods },
+    stagedFiles: stagedFilesAt(winningStagedPaths),
+  };
 }
 
 /** A manifest entry traced to its installed mod and staged file, in deploy order. */
@@ -414,14 +436,15 @@ export async function gatherDeployedOrigins(
 
 /**
  * The resolver input for what a game's deployment manifests say this instance deployed, one file
- * per destination. An entry that can't be traced to a staged file is left out with a note.
+ * per destination, and the staged file each destination came from. An entry that can't be traced to
+ * a staged file is left out with a note.
  */
 export async function gatherDeployedInput(
   api: IExtensionApi,
   gameMode: VortexGameId,
   hashFile: (filePath: string) => Promise<string> = fileMD5,
   lookupArchiveFiles: ArchiveFilesLookup = fetchArchiveFilesFor(api),
-): Promise<{ input: ResolverInput; notes: string[] }> {
+): Promise<{ input: ResolverInput; notes: string[]; stagedFiles: StagedFiles }> {
   const state: IState = api.getState();
   const { discovery, gameId } = resolvableGame(state, gameMode);
   const stagingPath = installPathForGame(state, gameMode);
@@ -460,7 +483,9 @@ export async function gatherDeployedInput(
   // destinations are unique once kept, so files group by mod alone
   const resolverMods = new Map<IMod, ResolverMod>();
   const sources: IStagedSource[] = [];
+  const stagedPathByKey = new Map<string, string>();
   for (const entry of keepOnePerDestination(deployed, notes)) {
+    stagedPathByKey.set(pathKeyOf(entry.destinationPath), entry.stagedPath);
     let resolverMod = resolverMods.get(entry.mod);
     if (resolverMod === undefined) {
       const origin = originByMod.get(entry.mod) ?? modOrigin(entry.mod, gameMode);
@@ -482,5 +507,9 @@ export async function gatherDeployedInput(
   await addHashedFiles(sources, pendingArchiveFiles, hashFile);
 
   const mods = [...resolverMods.values()];
-  return { input: { gameId, install: await gameInstall(gameMode, discovery), mods }, notes };
+  return {
+    input: { gameId, install: await gameInstall(gameMode, discovery), mods },
+    notes,
+    stagedFiles: stagedFilesAt(stagedPathByKey),
+  };
 }

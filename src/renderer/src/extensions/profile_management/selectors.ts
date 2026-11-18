@@ -1,3 +1,4 @@
+import { VortexGameId, type VortexProfileId } from "@vortex/shared";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
@@ -49,6 +50,15 @@ export function profileById(state: IState, profileId: string) {
   }
 
   return profileByIdImpl(state, profileId);
+}
+
+/** The game a profile is for; undefined when there is no such profile. */
+export function gameIdOfProfile(
+  state: IState,
+  profileId: VortexProfileId,
+): VortexGameId | undefined {
+  const gameId = profileById(state, profileId)?.gameId;
+  return gameId === undefined ? undefined : VortexGameId(gameId);
 }
 
 export const enabledModCountForProfile = createCachedSelector(
