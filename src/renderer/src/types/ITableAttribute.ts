@@ -113,7 +113,9 @@ export interface ITableAttribute<T = any> {
    */
   icon?: string;
   /**
-   * if true the attribute can be disabled in the table
+   * if true the attribute can be disabled in the table.
+   * if unset, the legacy table reads it as false, but the new Mods table reads it as true, so
+   * users can hide any column there unless the attribute sets this to false.
    */
   isToggleable?: boolean;
   /**
@@ -145,8 +147,10 @@ export interface ITableAttribute<T = any> {
    */
   isDefaultFilter?: boolean;
   /**
-   * if true (default), the column is visible by default otherwise the user has to activate it
-   * manually first
+   * if true, the column is visible by default otherwise the user has to activate it
+   * manually first.
+   * if unset, the legacy table reads it as true, but the new Mods table reads it as false, so a
+   * column starts hidden there unless the attribute sets this to true.
    */
   isDefaultVisible?: boolean;
   /**

@@ -162,7 +162,13 @@ const REGISTERED_COLUMN_WIDTH = "96px";
 const isInTable = ({ placement }: ITableAttribute) => placement === "table" || placement === "both";
 
 /** Whether the legacy table shows an attribute's column before the user, or the extension, says. */
-const isDefaultVisible = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? true;
+const isLegacyDefaultVisible = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? true;
+
+/**
+ * Whether a view shows an attribute's column here until the user says: only if it asks to be,
+ * unlike in the legacy table, so the columns extensions add don't crowd every view.
+ */
+const isShownByDefault = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? false;
 
 type LegacyColumnStates = { [attributeId: string]: { enabled?: boolean } } | undefined;
 
@@ -176,11 +182,17 @@ const legacyColumnStates = (state: IState): LegacyColumnStates =>
  * errors; otherwise as it does by default.
  */
 const isLegacyShown = (attribute: ITableAttribute, states: LegacyColumnStates) =>
-  states?.[attribute.id]?.enabled ?? isDefaultVisible(attribute);
+  states?.[attribute.id]?.enabled ?? isLegacyDefaultVisible(attribute);
+
+/**
+ * Whether the user can show or hide an attribute's column here: unless it says they can't, so
+ * a column whose extension says nothing of toggling can still be hidden, unlike in the legacy table.
+ */
+const isToggleable = (attribute: ITableAttribute) => attribute.isToggleable ?? true;
 
 /** Whether it's a column here: one the user can't toggle only while the legacy table shows it. */
 const isOffered = (attribute: ITableAttribute, states: LegacyColumnStates) =>
-  isInTable(attribute) && (attribute.isToggleable === true || isLegacyShown(attribute, states));
+  isInTable(attribute) && (isToggleable(attribute) || isLegacyShown(attribute, states));
 
 /**
  * How many times each offered attribute's `externalData` has said the data it's from changed,
@@ -268,7 +280,7 @@ export const useRegisteredModsColumns = (
           id: attribute.id,
           header,
           width: REGISTERED_COLUMN_WIDTH,
-          isToggleable: attribute.isToggleable === true,
+          isToggleable: isToggleable(attribute),
           // Always one, so a column the user can't toggle takes its place too, not the front.
           position: attribute.position ?? DEFAULT_POSITION,
           // The value as text, as the legacy table's filter matches it; drawn or not.
@@ -288,9 +300,9 @@ export const useRegisteredModsColumns = (
   );
 
   const { defaultShown, toggleableIds } = useMemo(() => {
-    const toggleable = offered.filter((attribute) => attribute.isToggleable === true);
+    const toggleable = offered.filter(isToggleable);
     return {
-      defaultShown: toggleable.filter(isDefaultVisible).map(({ id }) => id),
+      defaultShown: toggleable.filter(isShownByDefault).map(({ id }) => id),
       toggleableIds: new Set(toggleable.map(({ id }) => id)),
     };
   }, [offered]);
