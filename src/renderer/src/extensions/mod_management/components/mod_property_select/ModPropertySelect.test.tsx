@@ -143,8 +143,31 @@ describe("ModPropertySelect", () => {
     await open();
 
     expect(options()).toHaveLength(2);
-    expect(screen.getAllByText("modsTable::properties::none")).toHaveLength(1);
     expect(error).not.toHaveBeenCalled();
     error.mockRestore();
+  });
+
+  // As the legacy pane names it, where the extension's empty choice has its own label.
+  it("names its empty row as an extension's labelled empty choice does", async () => {
+    const onChange = vi.fn();
+    render(
+      <ModPropertySelect
+        property={category({
+          value: "a",
+          onChange,
+          choices: [
+            { value: "", label: "Default" },
+            { value: "a", label: "A" },
+          ],
+        })}
+      />,
+    );
+
+    await open();
+
+    expect(options()).toHaveLength(2);
+    expect(options()[0]).toHaveAccessibleName("Default");
+    await userEvent.click(options()[0]);
+    expect(onChange).toHaveBeenCalledWith("");
   });
 });

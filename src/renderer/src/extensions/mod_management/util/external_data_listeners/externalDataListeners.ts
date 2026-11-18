@@ -21,19 +21,28 @@ export const listenToExternalData = (
     current = own;
     listeners.set(attribute, own);
     // This set's own, so once released, the extension's call reaches only who's left in it.
-    attribute.externalData?.(() =>
-      own.forEach((each) => {
-        // Each on its own, so one that fails doesn't keep the others from hearing of it.
-        try {
-          each();
-        } catch (err) {
-          log("error", "failed to handle a change to an attribute's data", {
-            attribute: attribute.id,
-            error: getErrorMessageOrDefault(err),
-          });
-        }
-      }),
-    );
+    try {
+      attribute.externalData?.(() =>
+        own.forEach((each) => {
+          // Each on its own, so one that fails doesn't keep the others from hearing of it.
+          try {
+            each();
+          } catch (err) {
+            log("error", "failed to handle a change to an attribute's data", {
+              attribute: attribute.id,
+              error: getErrorMessageOrDefault(err),
+            });
+          }
+        }),
+      );
+    } catch (err) {
+      // Forgotten, so the next listener asks the extension again.
+      listeners.delete(attribute);
+      log("error", "failed to listen to an attribute's data", {
+        attribute: attribute.id,
+        error: getErrorMessageOrDefault(err),
+      });
+    }
   }
   const added = current;
   added.add(listener);

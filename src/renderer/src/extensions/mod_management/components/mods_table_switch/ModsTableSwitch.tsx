@@ -46,6 +46,7 @@ import { useModsEnabled } from "../../hooks/use_mods_enabled/useModsEnabled.hook
 import {
   MODS_TABLE_TOOLBARS,
   modsTableGroupToolbar,
+  type PropertiesOpenedVia,
   useModsTableAnalytics,
 } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import {
@@ -236,33 +237,36 @@ export const ModsTableSwitch = ({
     (open: boolean) => dispatch(setModsTablePropertiesOpen(open)),
     [dispatch],
   );
+  // Every way of opening the panel counts as one event, sent only when it wasn't open already.
+  const openProperties = useCallback(
+    (via: PropertiesOpenedVia) => {
+      if (!showProperties) {
+        analytics.onPropertiesOpened(via);
+      }
+      setPropertiesOpen(true);
+    },
+    [analytics, setPropertiesOpen, showProperties],
+  );
   const toggleProperties = useCallback(
-    () => setPropertiesOpen(!showProperties),
-    [setPropertiesOpen, showProperties],
+    () => (showProperties ? setPropertiesOpen(false) : openProperties("toolbar")),
+    [openProperties, setPropertiesOpen, showProperties],
   );
   // In the "open" section, as one more way to look at what's selected; not pinnable, as it's no
-  // row action, so it has no id to pin it by. It counts itself through the menu it's in instead,
-  // as without an id the menu can't. Its explicit `onActionClick` call relies on the action having
-  // no `id`; with one, `trackedActions` would count it a second time.
+  // row action, so it has no id to pin it by. Without an id the menu doesn't count it, so it's
+  // counted with the panel's other opens instead.
   const propertiesActionFor = useCallback(
-    (tracking: IToolbarAnalytics): IToolbarAction => ({
+    (via: PropertiesOpenedVia): IToolbarAction => ({
       label: t("modsTable::properties::open"),
       icon: { name: "dock_to_left", filled: false },
       section: "open",
-      onClick: () => {
-        tracking.onActionClick({ id: "properties" }, "menu");
-        setPropertiesOpen(true);
-      },
+      onClick: () => openProperties(via),
     }),
-    [setPropertiesOpen, t],
+    [openProperties, t],
   );
-  const rowPropertiesAction = useMemo(
-    () => propertiesActionFor(rowTracking),
-    [propertiesActionFor, rowTracking],
-  );
+  const rowPropertiesAction = useMemo(() => propertiesActionFor("row_menu"), [propertiesActionFor]);
   const selectionPropertiesAction = useMemo(
-    () => propertiesActionFor(selectionTracking),
-    [propertiesActionFor, selectionTracking],
+    () => propertiesActionFor("selection_menu"),
+    [propertiesActionFor],
   );
   const selectedEnabled = selectedIds.filter((id) => isEnabled(mods[id])).length;
 
@@ -419,8 +423,12 @@ export const ModsTableSwitch = ({
   const ownIds = useMemo(() => new Set(ownIdList.split("\n")), [ownIdList]);
   const registered = useRegisteredModsColumns(ownIds, tableMods, newTable);
   const registeredDetails = useMemo(
-    () => ({ attributes: registered.details, values: registered.textChanges }),
-    [registered.details, registered.textChanges],
+    () => ({
+      attributes: registered.details,
+      detailsOnly: registered.detailsOnly,
+      values: registered.textChanges,
+    }),
+    [registered.details, registered.detailsOnly, registered.textChanges],
   );
   const allColumns = useMemo(
     () => [...columns, ...registered.columns],
@@ -552,13 +560,7 @@ export const ModsTableSwitch = ({
     selectedIds: selected,
     onSelectedIdsChange: setSelected,
     // The table selects the row alone first, so the panel shows just it.
-    onRowDoubleClick: () => {
-      // Only a real open counts: a double-click with the panel already open just selects the row.
-      if (!showProperties) {
-        analytics.onPropertiesOpened("double_click");
-      }
-      setPropertiesOpen(true);
-    },
+    onRowDoubleClick: () => openProperties("double_click"),
     onHeaderOffsetChange: setHeaderOffset,
     // Over the panel too, as one bar for the page, so its toggle sits above the panel's edge; as
     // wide as the panel is, as it slides.
@@ -652,8 +654,10 @@ export const ModsTableSwitch = ({
             >
               {(showProperties || panelMounted) && (
                 // Around the panel, as the hooks that work out its contents run in its own render.
+                // Its error goes as the selection changes, as it may be only one mod's.
                 <ErrorBoundary
                   className="sticky top-(--properties-top) w-(--properties-width)"
+                  resetKey={selectedIds.join("\n")}
                   visible
                   onHide={() => setPropertiesOpen(false)}
                 >

@@ -229,11 +229,15 @@ const isOffered = (attribute: ITableAttribute, states: LegacyColumnStates) =>
  * legacy table's way to hear of changes to data outside the mods. Each change has its values
  * worked out again. It listens only while `isNewTable`, leaving them to the legacy table, as some
  * extensions keep only the last listener.
+ *
+ * @param quietly Whether their values are worked out again without telling `values`'
+ * subscribers, for attributes only the caller shows, which its versions draw again.
  */
 export const useExternalDataVersions = (
   attributes: ITableAttribute[],
   isNewTable: boolean,
   values: RegisteredValues,
+  quietly = false,
 ) => {
   const [versions, setVersions] = useState<{ [attributeId: string]: number }>({});
 
@@ -245,12 +249,12 @@ export const useExternalDataVersions = (
     const unsubscribes = attributes.map((attribute) =>
       listenToExternalData(attribute, () => {
         const { id } = attribute;
-        values.invalidate(id);
+        values.invalidate(id, { quietly });
         setVersions((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
       }),
     );
     return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  }, [attributes, isNewTable, values]);
+  }, [attributes, isNewTable, quietly, values]);
 
   return versions;
 };
@@ -289,8 +293,9 @@ export const RegisteredModsVersionsProvider = ({
  * @param mods All the mods, whose changes a volatile column is worked out again for.
  * @param isNewTable Whether the new table is the one shown, which alone listens for changes.
  * @returns Also `details`, the attributes the legacy details pane shows, for the Properties panel,
- * whose values come from `textChanges` and `inputs` as the columns' do; it listens for changes to
- * their data outside the mods itself, with {@link useExternalDataVersions}.
+ * whose values come from `textChanges` and `inputs` as the columns' do; and `detailsOnly`, those
+ * of them that aren't columns, whose data outside the mods the panel listens for itself, with
+ * {@link useExternalDataVersions}.
  */
 export const useRegisteredModsColumns = (
   ownIds: ReadonlySet<string>,
@@ -327,6 +332,13 @@ export const useRegisteredModsColumns = (
         .sort(byDetailPosition),
     // As for the columns: a condition is mostly which game is active.
     [attributes, gameId],
+  );
+
+  // The details the table doesn't listen for, as they're no column of it: the panel listens for
+  // these itself while it's open.
+  const detailsOnly = useMemo(
+    () => details.filter((attribute) => !offered.includes(attribute)),
+    [details, offered],
   );
 
   // Kept apart from the columns, which a mod changing doesn't change; anew for a new language.
@@ -405,5 +417,13 @@ export const useRegisteredModsColumns = (
     [attributes, legacyStates, ownIds, toggleableIds],
   );
 
-  return { columns, defaultShown, rowClassName, inputs, textChanges: values, details };
+  return {
+    columns,
+    defaultShown,
+    rowClassName,
+    inputs,
+    textChanges: values,
+    details,
+    detailsOnly,
+  };
 };

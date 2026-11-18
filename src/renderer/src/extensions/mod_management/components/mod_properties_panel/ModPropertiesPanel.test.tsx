@@ -67,7 +67,11 @@ const CATEGORY: ModProperty = {
 
 const MODS = [{ id: "a", attributes: { name: "SkyUI" } }] as unknown as IModWithState[];
 const MEMBERSHIPS = {};
-const REGISTERED = { attributes: [], values: {} as unknown as RegisteredValues };
+const REGISTERED = {
+  attributes: [],
+  detailsOnly: [],
+  values: {} as unknown as RegisteredValues,
+};
 
 const renderPanel = (properties: IModProperties, onClose = vi.fn(), registered = REGISTERED) => {
   vi.mocked(useModProperties).mockReturnValue(properties);
@@ -90,7 +94,11 @@ const t = ((key: string) => key) as unknown as TFunction;
  * `externalData`, as the legacy details pane listens to it: drawn by the extension itself, or
  * its `calc` value.
  */
-const renderRegistered = (drawn: "renderer" | "calc" = "renderer") => {
+const renderRegistered = (
+  drawn: "renderer" | "calc" = "renderer",
+  /** Whether the table listens for it, as one of its columns, rather than the panel. */
+  isColumn = false,
+) => {
   const extension = { label: "No rules", changed: () => {} };
   const externalData = vi.fn((onChanged: () => void) => {
     extension.changed = onChanged;
@@ -104,7 +112,11 @@ const renderRegistered = (drawn: "renderer" | "calc" = "renderer") => {
       : { calc: () => extension.label }),
     externalData,
   } as unknown as ITableAttribute;
-  const registered = { attributes: [attribute], values: new RegisteredValues(t) };
+  const registered = {
+    attributes: [attribute],
+    detailsOnly: isColumn ? [] : [attribute],
+    values: new RegisteredValues(t),
+  };
   const properties: IModProperties = {
     ...ONE_MOD,
     sections: [
@@ -126,7 +138,7 @@ const renderRegistered = (drawn: "renderer" | "calc" = "renderer") => {
     ],
   };
   const open = () => renderPanel(properties, vi.fn(), registered);
-  return { view: open(), open, extension, externalData };
+  return { view: open(), open, extension, externalData, values: registered.values };
 };
 
 describe("ModPropertiesPanel", () => {
@@ -255,6 +267,32 @@ describe("ModPropertiesPanel", () => {
     open();
 
     expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");
+  });
+
+  // The table's search re-runs over every mod as the values it subscribes to change.
+  it("works its fields out again without telling the table, which doesn't show them", () => {
+    const { view, extension, values } = renderRegistered("calc");
+    const tableHears = vi.fn();
+    values.subscribe(tableHears);
+
+    extension.label = "1 rule";
+    act(() => extension.changed());
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");
+    view.unmount();
+
+    expect(tableHears).not.toHaveBeenCalled();
+  });
+
+  // Its column's own listener has its values worked out again, as the table shows them too.
+  it("leaves a field that's also a column to the table to listen for", () => {
+    const { view, externalData, values } = renderRegistered("calc", true);
+    const tableHears = vi.fn();
+    values.subscribe(tableHears);
+
+    view.unmount();
+
+    expect(externalData).not.toHaveBeenCalled();
+    expect(tableHears).not.toHaveBeenCalled();
   });
 
   it("closes", async () => {

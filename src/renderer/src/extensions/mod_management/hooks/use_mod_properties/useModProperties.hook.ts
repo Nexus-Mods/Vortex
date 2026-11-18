@@ -292,6 +292,8 @@ const SHOWN_AS_OWN = new Set([
 export interface IRegisteredDetails {
   /** In the pane's order. */
   attributes: ITableAttribute[];
+  /** Those of them the table doesn't listen for, as they're no column of it. */
+  detailsOnly: ITableAttribute[];
   values: RegisteredValues;
 }
 

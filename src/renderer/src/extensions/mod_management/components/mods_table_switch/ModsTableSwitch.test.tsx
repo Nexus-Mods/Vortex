@@ -1539,17 +1539,14 @@ describe("ModsTableSwitch", () => {
       expect(within(panel()!).getByTestId("mod-properties-count")).toBeInTheDocument();
     });
 
-    // The shared toolbar event for Properties, as sent from a menu of the given toolbar.
-    const menuOpens = (toolbar: string) =>
-      mocks.emit.mock.calls.filter(
-        ([, event]) =>
-          event?.eventName === "app_toolbar_action_clicked" &&
-          (event.properties as { toolbar?: string }).toolbar === toolbar,
-      );
     const propertiesOpened = () =>
       mocks.emit.mock.calls.filter(
         ([, event]) => event?.eventName === "app_mods_table_properties_opened",
       );
+    const opened = (via: string) => [
+      "analytics-track-mixpanel-event",
+      { eventName: "app_mods_table_properties_opened", properties: { via } },
+    ];
 
     it("reports opening Properties from the row menu, offering no pin for it", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
@@ -1560,15 +1557,18 @@ describe("ModsTableSwitch", () => {
 
       await userEvent.click(openItem());
 
-      expect(menuOpens("mods-table-row")).toEqual([
-        [
-          "analytics-track-mixpanel-event",
-          {
-            eventName: "app_toolbar_action_clicked",
-            properties: { action: "properties", toolbar: "mods-table-row", surface: "menu" },
-          },
-        ],
-      ]);
+      expect(propertiesOpened()).toEqual([opened("row_menu")]);
+    });
+
+    it("doesn't report opening Properties from a menu while it's open", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, undefined, {
+        propertiesOpen: true,
+      });
+      fireEvent.contextMenu(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
       expect(propertiesOpened()).toHaveLength(0);
     });
 
@@ -1596,28 +1596,26 @@ describe("ModsTableSwitch", () => {
 
       await userEvent.click(openItem());
 
-      expect(menuOpens("mods-table-selection")).toEqual([
-        [
-          "analytics-track-mixpanel-event",
-          {
-            eventName: "app_toolbar_action_clicked",
-            properties: { action: "properties", toolbar: "mods-table-selection", surface: "menu" },
-          },
-        ],
-      ]);
+      expect(propertiesOpened()).toEqual([opened("selection_menu")]);
+    });
+
+    it("reports opening Properties from the toolbar, but not closing it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      mocks.emit.mockClear();
+
+      await userEvent.click(toggle());
+      await userEvent.click(toggle());
+
+      expect(propertiesOpened()).toEqual([opened("toolbar")]);
     });
 
     it("reports opening Properties by double-click", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      mocks.emit.mockClear();
 
       await userEvent.dblClick(rowAt(BETA));
 
-      expect(propertiesOpened()).toEqual([
-        [
-          "analytics-track-mixpanel-event",
-          { eventName: "app_mods_table_properties_opened", properties: { via: "double_click" } },
-        ],
-      ]);
+      expect(propertiesOpened()).toEqual([opened("double_click")]);
     });
 
     it("doesn't report a double-click while Properties is open", async () => {
@@ -1690,8 +1688,33 @@ describe("ModsTableSwitch", () => {
         expect(screen.getByRole("grid")).toBeInTheDocument();
         expect(screen.queryByTestId("mod-properties-panel")).toBeNull();
         expect(
-          within(screen.getByTestId("mod-properties-slot")).getByText(/Failed to render/),
-        ).toBeInTheDocument();
+          screen.getByTestId("mod-properties-slot").querySelector(".errorboundary"),
+        ).not.toBeNull();
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
+    it("shows the next mod's properties after one mod's failed", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const broken = mod("a", "Alpha", true, {
+          attributes: {
+            name: "Alpha",
+            get installerChoices(): never {
+              throw new Error("unreadable choices");
+            },
+          },
+        });
+        renderSwitch({ a: broken, b: mod("b", "Beta", true) }, undefined, {
+          propertiesOpen: true,
+        });
+        await userEvent.click(rowAt(ALPHA));
+        expect(panel()).toBeNull();
+
+        await userEvent.click(rowAt(BETA));
+
+        expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
       } finally {
         consoleError.mockRestore();
       }

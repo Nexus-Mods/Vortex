@@ -22,11 +22,18 @@ interface IModPropertySelectProps {
  */
 export const ModPropertySelect = ({ property }: IModPropertySelectProps) => {
   const { t } = useTranslation("mod_management");
+  // An extension's own empty choice is the None row, under its label where it gives one, so
+  // there's one empty row (and key), named as the legacy pane names it.
+  const ownEmpty = property.choices.find(({ value }) => value === "");
   const options = [
     ...(property.required
       ? []
-      : [{ value: "", label: property.emptyLabel ?? t("modsTable::properties::none") }]),
-    // A legacy empty choice would repeat the None row (and its key).
+      : [
+          {
+            value: "",
+            label: ownEmpty?.label || property.emptyLabel || t("modsTable::properties::none"),
+          },
+        ]),
     ...property.choices.filter(({ value }) => property.required || value !== ""),
   ];
   const picked = options.find(({ value }) => value === property.value);

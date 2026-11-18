@@ -58,7 +58,7 @@ const renderProperties = (
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  const registered = { attributes, values: new RegisteredValues(t) };
+  const registered = { attributes, detailsOnly: attributes, values: new RegisteredValues(t) };
   return renderHook(() => useModProperties(mods, memberships, registered), { wrapper }).result
     .current;
 };

@@ -62,14 +62,16 @@ export const ModPropertiesPanel = ({
   // Worked out here, only while the panel is mounted, as it reads a mod's INI edits from disk and
   // each change re-renders only the panel, not the table.
   const properties = useModProperties(mods, memberships, registered);
-  // Its extension fields' data outside the mods, listened for only while it's open, so a change
-  // draws only the panel again. It's only ever beside the new table.
-  const versions = useExternalDataVersions(registered.attributes, true, registered.values);
-  // Its fields' values are worked out again once it's open again, as no one hears of a change to
-  // their data while it's closed.
+  // The data outside the mods of its extension fields that aren't columns, which the table hears
+  // of for itself, listened for only while it's open. A change draws only the panel again, not
+  // telling the table, which doesn't show them. It's only ever beside the new table.
+  const { detailsOnly, values } = registered;
+  const versions = useExternalDataVersions(detailsOnly, true, values, true);
+  // Those fields' values are worked out again once it's open again, as no one hears of a change
+  // to their data while it's closed; quietly, as the table doesn't show them.
   useEffect(
-    () => () => registered.attributes.forEach(({ id }) => registered.values.invalidate(id)),
-    [registered],
+    () => () => detailsOnly.forEach(({ id }) => values.invalidate(id, { quietly: true })),
+    [detailsOnly, values],
   );
   const [picked, setPicked] = useState<ModPropertiesTab>("general");
 

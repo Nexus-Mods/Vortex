@@ -44,6 +44,26 @@ describe("listenToExternalData", () => {
     expect(second).toHaveBeenCalledTimes(1);
   });
 
+  it("logs an externalData that throws, and asks it again for the next listener", () => {
+    const { attr, externalData, changed } = attribute();
+    externalData.mockImplementationOnce(() => {
+      throw new Error("no documents folder");
+    });
+    const later = vi.fn();
+
+    expect(() => listenToExternalData(attr, vi.fn())).not.toThrow();
+    listenToExternalData(attr, later);
+    changed();
+
+    expect(log).toHaveBeenCalledWith(
+      "error",
+      "failed to listen to an attribute's data",
+      expect.objectContaining({ attribute: "extra" }),
+    );
+    expect(externalData).toHaveBeenCalledTimes(2);
+    expect(later).toHaveBeenCalledTimes(1);
+  });
+
   it("stops telling a listener that unsubscribed", () => {
     const { attr, changed } = attribute();
     const gone = vi.fn();

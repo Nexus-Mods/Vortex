@@ -76,10 +76,17 @@ export class RegisteredValues {
     return this.lookup(attribute, mod, this.mEntries.get(attribute.id)?.get(mod.id)?.mods);
   }
 
-  /** Has an attribute's values worked out again, as they're next asked for. */
-  public invalidate(attributeId: string) {
+  /**
+   * Has an attribute's values worked out again, as they're next asked for.
+   *
+   * @param quietly Whether to leave those subscribed, such as the table's search, unaware; for
+   * values only the caller reads, which it draws again itself.
+   */
+  public invalidate(attributeId: string, { quietly = false }: { quietly?: boolean } = {}) {
     this.mGenerations.set(attributeId, this.generation(attributeId) + 1);
-    this.changed();
+    if (!quietly) {
+      this.changed();
+    }
   }
 
   /**

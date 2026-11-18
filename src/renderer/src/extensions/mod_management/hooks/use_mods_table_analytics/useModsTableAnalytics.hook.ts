@@ -61,7 +61,10 @@ const menuOpenedEvent = (target: TableMenuTarget, via: "pointer" | "keyboard"): 
   properties: { target, via },
 });
 
-const propertiesOpenedEvent = (via: "double_click"): MixpanelEvent => ({
+/** Where the Properties panel was opened from. */
+export type PropertiesOpenedVia = "toolbar" | "row_menu" | "selection_menu" | "double_click";
+
+const propertiesOpenedEvent = (via: PropertiesOpenedVia): MixpanelEvent => ({
   eventName: "app_mods_table_properties_opened",
   properties: { via },
 });
@@ -85,10 +88,10 @@ export interface IModsTableAnalytics {
   /** A context menu opened. */
   onMenuOpen: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
   /**
-   * The Properties panel opened from a row, where no toolbar button reports it: by a
-   * double-click. Opening it from a menu or the toolbar is counted by those toolbars instead.
+   * The Properties panel opened, from wherever it was: one event for every way, sent only when
+   * it wasn't open already.
    */
-  onPropertiesOpened: (via: "double_click") => void;
+  onPropertiesOpened: (via: PropertiesOpenedVia) => void;
 }
 
 /**
