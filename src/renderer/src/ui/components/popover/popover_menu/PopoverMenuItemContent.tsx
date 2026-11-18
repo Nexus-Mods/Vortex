@@ -51,7 +51,7 @@ export const PopoverMenuItemContent = ({
     {!!action.pin && (
       <PopoverMenuItemControl
         hasFocus={hasFocus}
-        icon={action.pin.pinned ? "keep_off" : "keep"}
+        icon={{ name: "keep", filled: action.pin.pinned }}
         label={action.pin.label}
         pressed={action.pin.pinned}
         onActivate={action.pin.onToggle}
