@@ -19,6 +19,7 @@ node tools/mod-pipeline/fake-skyrimse.mjs
 node tools/mod-pipeline/fake-skyrimse.mjs tamper
 node tools/mod-pipeline/fake-skyrimse.mjs rollback
 node tools/mod-pipeline/fake-skyrimse.mjs manifests
+node tools/mod-pipeline/fake-skyrimse.mjs resume
 node tools/mod-pipeline/fake-skyrimse.mjs journal
 ```
 
@@ -28,7 +29,10 @@ changes deployed files behind Vortex's back. `rollback` runs a profile's plan
 through Apply with one disk call made to fail, then checks that the game and
 staging folders are as they were. `manifests` runs Apply to another profile and
 back, then checks that the files and folders it left and the manifests it saved
-are the ones today's deployment did. `journal` prints the journal of the latest
+are the ones today's deployment did. `resume` kills Vortex part-way through an
+Apply run, starts it again and checks that it finished the run at startup; it
+needs a setup with `--files 5000`, so the run lasts long enough to kill.
+`journal` prints the journal of the latest
 Apply run that `rollback` or `manifests` started: how the run ended, and each
 operation with how far it got. Apply removes its journal when a run ends, so a
 copy of each is kept under `<root>/work/journals`; a run that didn't end leaves
@@ -38,7 +42,8 @@ the options and the warnings to expect.
 ### Terminal screen
 
 `tui.mjs` shows whether the setup and its Vortex are there, runs the commands
-above on a key press and shows their checks and what they print. `j` shows the
+above on a key press and shows their checks and what they print; `b` sets up
+with 5,000 bulk files for `k`, which runs `resume`. `j` shows the
 journals, and `o` there opens one in VS Code. Its dependencies come with the
 workspace's `pnpm install`:
 
