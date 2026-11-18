@@ -3,6 +3,7 @@ import * as path from "node:path";
 import {
   getErrorMessageOrDefault,
   VortexDeploymentMethodId,
+  VortexError,
   type VortexGameId,
   type VortexModTypeId,
   type VortexProfileId,
@@ -12,17 +13,25 @@ import { FlagService } from "../../../FlagService";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import getVortexPath from "../../../util/getVortexPath";
 import type { IMergeResultByType } from "../modMerging";
+import { installPathForGame } from "../selectors";
+import { recordDeploymentSavingManifests } from "./appliedManifests";
 import {
   ApplyStatus,
   destinationOf,
   RefusalReason,
+  resumeApply,
   type AppliedResult,
   type ApplyResult,
   type FailedStep,
+  type NothingToDoResult,
   type RefusedResult,
+  type ResumeResult,
+  type RolledBackResult,
 } from "./apply/apply";
 import type { JournalStorage } from "./apply/journal";
+import { DEPLOYMENT_FOLDER_TAG } from "./deploymentPlan";
 import { isGameWithPlannedDeployments, type DeployOrchestrator } from "./DeployOrchestrator";
+import { journalStorageAt } from "./journalStorage";
 import { toPortablePath, type ManifestFiles } from "./resolverInput";
 
 /** The deployment method Apply deploys with. */
@@ -95,21 +104,19 @@ function failedStepDescriptionOf({ index, operation, cause }: FailedStep): strin
   return parts.join(", ");
 }
 
-function refusalMessageOf(
-  { reason, path: refusedPath, cause }: RefusedResult,
-  journalFile: string,
-) {
+/** Why Apply refused a run, as a clause. */
+function refusalCauseOf({ reason, path: refusedPath, cause }: RefusedResult, journalFile: string) {
   switch (reason) {
     case RefusalReason.JournalExists:
-      return `Vortex didn't deploy, because an earlier deployment left its journal at ${journalFile}`;
+      return `an earlier deployment left its journal at ${journalFile}`;
     case RefusalReason.JournalUnavailable:
-      return `Vortex didn't deploy, because it couldn't use the journal at ${journalFile}${cause === undefined ? "" : `: ${getErrorMessageOrDefault(cause)}`}`;
+      return `the journal at ${journalFile} can't be used${cause === undefined ? "" : `: ${getErrorMessageOrDefault(cause)}`}`;
     case RefusalReason.GeneratedFile:
-      return `Vortex didn't deploy, because the plan changes ${refusedPath}, a file Vortex generates`;
+      return `the plan changes ${refusedPath}, a file Vortex generates`;
     case RefusalReason.NoStagedFile:
-      return `Vortex didn't deploy, because the staged file for ${refusedPath} is missing`;
+      return `the staged file for ${refusedPath} is missing`;
     case RefusalReason.InvalidPath:
-      return `Vortex didn't deploy, because the plan holds a path it can't use: ${refusedPath}`;
+      return `the plan holds a path it can't use: ${refusedPath}`;
     default: {
       const exhausted: never = reason;
       return exhausted;
@@ -121,7 +128,7 @@ function refusalMessageOf(
 function failureMessageOf(result: Exclude<ApplyResult, AppliedResult>, journalFile: string) {
   switch (result.status) {
     case ApplyStatus.Refused:
-      return refusalMessageOf(result, journalFile);
+      return `Vortex didn't deploy, because ${refusalCauseOf(result, journalFile)}`;
     case ApplyStatus.RolledBack:
       return result.failedAt === undefined
         ? "The deployment was undone"
@@ -177,12 +184,78 @@ export async function planAndApplyDeployment(
   if (result.status !== ApplyStatus.Applied) {
     throw deploymentError(failureMessageOf(result, journalFile));
   }
-  if (result.kept.length > 0) {
+  notifyFilesSetAside(api, result, keptFolder);
+  return savedManifestFiles ?? new Map();
+}
+
+function notifyFilesSetAside(api: IExtensionApi, { kept }: AppliedResult, keptFolder: string) {
+  if (kept.length > 0) {
     api.sendNotification?.({
       type: "warning",
       title: "Files set aside",
-      message: `${result.kept.length} files Vortex didn't deploy were moved to ${keptFolder}`,
+      message: `${kept.length} files Vortex didn't deploy were moved to ${keptFolder}`,
     });
   }
-  return savedManifestFiles ?? new Map();
+}
+
+/** Why the run a killed deployment left can't be settled, as a clause. */
+function settleFailureCauseOf(
+  result: Exclude<ResumeResult, AppliedResult | RolledBackResult | NothingToDoResult>,
+  journalFile: string,
+) {
+  switch (result.status) {
+    case ApplyStatus.Refused:
+      return refusalCauseOf(result, journalFile);
+    case ApplyStatus.RollbackFailed:
+      return `undoing the run in the journal at ${journalFile} stopped at ${failedStepDescriptionOf(result.rollbackFailedAt)}`;
+    case ApplyStatus.Unfinished:
+      return `finishing the run in the journal at ${journalFile} failed: ${getErrorMessageOrDefault(result.cause)}`;
+    default: {
+      const exhausted: never = result;
+      return exhausted;
+    }
+  }
+}
+
+/**
+ * Finishes the run a killed deployment of the game left in its journal, or undoes it when it can't
+ * be finished; called with the activation lock held. Fails, naming the journal, while it can't.
+ */
+export async function settleLeftoverDeployment(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  journalFile = applyJournalFileFor(gameMode),
+  journal = journalStorageAt(journalFile),
+): Promise<void> {
+  if (!isGameWithPlannedDeployments(gameMode)) {
+    return;
+  }
+  const fs = window.api.fs;
+  const result = await resumeApply({
+    fs,
+    journal,
+    recordDeployment: recordDeploymentSavingManifests(api, gameMode, fs),
+    folderTag: DEPLOYMENT_FOLDER_TAG,
+  });
+  switch (result.status) {
+    case ApplyStatus.NothingToDo:
+      return;
+    case ApplyStatus.Applied:
+      api.sendNotification?.({ type: "info", message: "Interrupted deployment finished" });
+      notifyFilesSetAside(
+        api,
+        result,
+        keptFolderFor(installPathForGame(api.getState(), gameMode), gameMode),
+      );
+      return;
+    case ApplyStatus.RolledBack:
+      api.sendNotification?.({ type: "info", message: "Interrupted deployment undone" });
+      return;
+    default:
+      throw new VortexError(
+        `Vortex can't settle an interrupted deployment, because ` +
+          `${settleFailureCauseOf(result, journalFile)}, so it won't deploy or purge this game`,
+        { kind: "deployment:interrupted-run-unsettled", journalFile },
+      );
+  }
 }

@@ -62,8 +62,8 @@ import type { IMod } from "../types/IMod";
 import { readOwnManifest, saveActivation } from "./activationStore";
 import { manifestFilesAfter, saveAppliedManifests } from "./appliedManifests";
 import BlacklistSet from "./BlacklistSet";
-import { genSubDirFunc } from "./deploy";
 import { deployedFilePath } from "./deployedFilePath";
+import { genSubDirFunc } from "./modSubDirectory";
 import { gatherDeployedInput, gatherResolverInput } from "./resolverInput";
 import { doSortMods } from "./sort";
 

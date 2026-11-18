@@ -48,7 +48,7 @@ export interface DeploymentPlan {
 }
 
 /** The disk and journal an Apply run uses, and where it sets files aside. */
-export type ApplyRun = RunOptions & Pick<ApplyOptions, "keptPathOf">;
+export type ApplyRun = RunOptions & Pick<ApplyOptions, "keptPathOf" | "manifestSaveDetails">;
 
 type HashFile = (filePath: string) => Promise<string>;
 
