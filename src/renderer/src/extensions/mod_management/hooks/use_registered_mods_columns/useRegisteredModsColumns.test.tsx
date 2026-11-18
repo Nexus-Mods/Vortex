@@ -193,8 +193,9 @@ describe("useRegisteredModsColumns", () => {
     expect(defaultShown).toEqual(["sdv-compatibility"]);
   });
 
-  // So an extension hiding it on the legacy table, with `setAttributeVisible`, doesn't hide it here.
-  it("shows a column that doesn't say whether the user can toggle it as the view says", () => {
+  // So an extension hiding it on the legacy table, with `setAttributeVisible`, doesn't hide it
+  // here.
+  it("follows the view, not the legacy table, for a column with isToggleable unset", () => {
     const cssClass = vi.fn((_mod: IModWithState, enabled: boolean) => (enabled ? "shown" : ""));
     registered.attributes = [attribute({ id: "sdv", isToggleable: undefined, cssClass })];
     const store = makeModsTableStore({

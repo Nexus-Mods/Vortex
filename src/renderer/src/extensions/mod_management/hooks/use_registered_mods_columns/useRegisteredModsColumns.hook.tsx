@@ -185,8 +185,9 @@ const isLegacyShown = (attribute: ITableAttribute, states: LegacyColumnStates) =
   states?.[attribute.id]?.enabled ?? isLegacyDefaultVisible(attribute);
 
 /**
- * Whether the user can show or hide an attribute's column here: unless it says they can't, so
- * a column whose extension says nothing of toggling can still be hidden, unlike in the legacy table.
+ * Whether the user can show or hide an attribute's column here: unless it says they can't, so a
+ * column whose extension says nothing of toggling can still be hidden, unlike in the legacy
+ * table.
  */
 const isToggleable = (attribute: ITableAttribute) => attribute.isToggleable ?? true;
 
