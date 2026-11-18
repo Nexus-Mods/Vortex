@@ -27,6 +27,8 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   sortedColumnId?: string;
   /** A click on the row, not on a control in it, with the keys held. */
   onClick?: (click: ITableRowClick) => void;
+  /** A double-click on the row, not on a control in it; its second click isn't an `onClick`. */
+  onDoubleClick?: () => void;
   /** Opens the row's context menu, from a right-click or the keyboard's menu key. */
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 }
@@ -79,6 +81,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
   checkbox,
   sortedColumnId,
   onClick,
+  onDoubleClick,
   onContextMenu,
 }: ITableRowProps<T, G>) => (
   <EngagingRow
@@ -90,7 +93,9 @@ export const TableRow = <T, G extends ITableGroup<T>>({
     selected={!!checkbox?.checked}
     role="row"
     onClick={(event) => {
-      if (onClick !== undefined && isRowClick(event)) {
+      // A double-click's second click, which would deselect the row it's opening.
+      const isRepeat = onDoubleClick !== undefined && event.detail > 1;
+      if (onClick !== undefined && !isRepeat && isRowClick(event)) {
         onClick({ toggle: event.ctrlKey || event.metaKey, range: event.shiftKey });
       }
     }}
@@ -99,9 +104,18 @@ export const TableRow = <T, G extends ITableGroup<T>>({
         onContextMenu(event);
       }
     }}
-    // Shift and Ctrl would otherwise select the text between this click and the last.
+    onDoubleClick={(event) => {
+      if (onDoubleClick !== undefined && isRowClick(event)) {
+        onDoubleClick();
+      }
+    }}
+    // Shift and Ctrl would otherwise select the text between this click and the last, and a
+    // double-click the word under it.
     onMouseDown={(event) => {
-      if (onClick !== undefined && (event.shiftKey || event.ctrlKey) && isRowClick(event)) {
+      const selectsText =
+        (onClick !== undefined && (event.shiftKey || event.ctrlKey)) ||
+        (onDoubleClick !== undefined && event.detail > 1);
+      if (selectsText && isRowClick(event)) {
         event.preventDefault();
       }
     }}

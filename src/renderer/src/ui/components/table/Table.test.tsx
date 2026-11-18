@@ -339,7 +339,7 @@ describe("Table with selectable rows", () => {
       },
     ];
 
-    const renderFive = () =>
+    const renderFive = (onRowDoubleClick?: (row: IRow) => void) =>
       render(
         <Table
           selectable
@@ -348,6 +348,7 @@ describe("Table with selectable rows", () => {
           getRowLabel={(row) => row.name}
           label="Files"
           rows={FIVE}
+          onRowDoubleClick={onRowDoubleClick}
         />,
       );
 
@@ -512,6 +513,81 @@ describe("Table with selectable rows", () => {
       await userEvent.click(screen.getByText("Name"));
 
       expect(selected()).toEqual(["Alpha"]);
+    });
+
+    describe("double-clicked", () => {
+      // FIVE's rows come after the header row.
+      const rowOf = (index: number) => screen.getAllByRole("row")[index + 1];
+
+      it("reports a row's double-click, leaving only that row selected", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.click(rowOf(0));
+        await clickWith("Gamma", "Control");
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onRowDoubleClick).toHaveBeenCalledTimes(1);
+        expect(onRowDoubleClick).toHaveBeenCalledWith(FIVE[1]);
+        expect(selected()).toEqual(["Beta"]);
+      });
+
+      it("keeps a row that was the only one selected, though its first click deselects it", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.click(rowOf(1));
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onRowDoubleClick).toHaveBeenCalledWith(FIVE[1]);
+        expect(selected()).toEqual(["Beta"]);
+      });
+
+      it("never empties the selection on its second click", async () => {
+        const onSelectedIdsChange = vi.fn();
+        render(
+          <Table
+            selectable
+            columns={WITH_CONTROL}
+            getRowId={(row) => row.id}
+            label="Files"
+            rows={FIVE}
+            onRowDoubleClick={vi.fn()}
+            onSelectedIdsChange={onSelectedIdsChange}
+          />,
+        );
+
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onSelectedIdsChange).not.toHaveBeenCalledWith(new Set());
+        expect(onSelectedIdsChange).toHaveBeenLastCalledWith(new Set(["beta"]));
+      });
+
+      it("ignores a double-click on a control in the row", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.dblClick(screen.getByRole("button", { name: "Open Beta" }));
+
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+      });
+
+      it("doesn't select the word under it", () => {
+        renderFive(vi.fn());
+
+        // fireEvent says false once the default, selecting the word, is prevented.
+        expect(fireEvent.mouseDown(rowOf(1), { detail: 2 })).toBe(false);
+        expect(fireEvent.mouseDown(rowOf(1), { detail: 1 })).toBe(true);
+      });
+
+      it("still deselects the only selected row on two slow clicks", async () => {
+        renderFive(vi.fn());
+
+        await userEvent.click(rowOf(0));
+        await userEvent.click(rowOf(0));
+
+        expect(selected()).toEqual([]);
+      });
     });
   });
 });
@@ -698,6 +774,51 @@ describe("Table with a toolbar", () => {
     expect(header).toHaveAttribute("aria-rowindex", "2");
     expect(first).toHaveAttribute("aria-rowindex", "3");
     expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+
+  it("lets its toolbar reach past its right edge by the overhang it's given", () => {
+    const renderWith = (toolbarOverhang?: `${number}rem`) => (
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+        toolbarOverhang={toolbarOverhang}
+      />
+    );
+    const { rerender } = render(renderWith("27rem"));
+
+    const overhang = () =>
+      screen.getByRole("grid").style.getPropertyValue("--nxm-table-toolbar-overhang");
+    expect(overhang()).toBe("27rem");
+
+    rerender(renderWith());
+    expect(overhang()).toBe("");
+  });
+
+  it("tells how far below its top the header row starts, under the toolbar", () => {
+    // Nothing is laid out here, so the head is at 0 and the header row where the toolbar ends.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { top: this.classList.contains("nxm-table-header") ? 52 : 0 } as DOMRect;
+      });
+    const onHeaderOffsetChange = vi.fn();
+
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+        onHeaderOffsetChange={onHeaderOffsetChange}
+      />,
+    );
+    rect.mockRestore();
+
+    expect(onHeaderOffsetChange).toHaveBeenLastCalledWith(52);
   });
 });
 

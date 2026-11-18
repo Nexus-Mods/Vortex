@@ -51,8 +51,9 @@ const GROUP_ROW_GAP = 4;
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
  * scroller, under a header that sticks to it. A right-click on a row offers its `rowMenu`, once
- * the row is selected. Every selected row shows what's in it as a hovered one does, so a table
- * that shows actions in its rows decides itself what several selected rows show.
+ * the row is selected, and a double-click opens it through `onRowDoubleClick`, selected alone.
+ * Every selected row shows what's in it as a hovered one does, so a table that shows actions in
+ * its rows decides itself what several selected rows show.
  *
  * Each group's heading and rows render in a rowgroup as tall as all its rows, rendered or not,
  * so the heading sticks under the header while they pass and the next group's pushes it off.
@@ -75,6 +76,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowId,
   label,
   toolbar,
+  toolbarOverhang,
   footer,
   empty,
   defaultSort,
@@ -86,6 +88,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowLabel,
   selectedIds,
   onSelectedIdsChange,
+  onRowDoubleClick,
   rowMenu,
   groupMenu,
   groupTracking,
@@ -94,6 +97,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   focusRowId,
   onRowFocused,
   onMenuOpen,
+  onHeaderOffsetChange,
 }: ITableProps<T, G>) => {
   const { t } = useTranslation();
   const { sort, sortRows, toggleSort } = useTableSort(columns, defaultSort);
@@ -299,6 +303,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   const { tableRef } = virtual;
   const resizes = !!onColumnWidthsChange;
 
+  // Measured within the head, which sticks, so it's the same scrolled or not; again once the
+  // toolbar's new height is drawn.
+  useLayoutEffect(() => {
+    const head = tableRef.current?.querySelector(".nxm-table-head");
+    const header = head?.querySelector(".nxm-table-header");
+    if (onHeaderOffsetChange && head && header) {
+      onHeaderOffsetChange(header.getBoundingClientRect().top - head.getBoundingClientRect().top);
+    }
+  }, [onHeaderOffsetChange, tableRef, toolbarHeight]);
+
   const template = (widths: { [columnId: string]: number | undefined }) =>
     [
       "var(--nxm-table-gutter-start)",
@@ -392,6 +406,16 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             ? (click) => selection.click({ key: item.key, id: getRowId(item.row) }, click)
             : undefined
         }
+        onDoubleClick={
+          onRowDoubleClick
+            ? () => {
+                if (selectable) {
+                  selection.only({ key: item.key, id: getRowId(item.row) });
+                }
+                onRowDoubleClick(item.row);
+              }
+            : undefined
+        }
         onContextMenu={
           rowMenu
             ? (event) => {
@@ -440,6 +464,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
           "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
+          "--nxm-table-toolbar-overhang": toolbarOverhang,
           gridTemplateColumns: savedTemplate,
         } as CSSProperties
       }
