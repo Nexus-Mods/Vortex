@@ -1027,6 +1027,17 @@ export interface IModTypeOptions {
   noConflicts?: boolean;
 }
 
+type StateSlice<TState, P extends readonly string[]> = P extends readonly [
+  infer Head extends string,
+  ...infer Rest extends readonly string[],
+]
+  ? Head extends keyof TState
+    ? Rest extends readonly []
+      ? TState[Head]
+      : StateSlice<TState[Head], Rest>
+    : never // Head is not a key of this level → dead end
+  : TState; // empty path → the state itself (unreachable given the overload)
+
 /**
  * The extension context is an object passed into all extensions during initialisation.
  *
@@ -1221,7 +1232,10 @@ export interface IExtensionContext {
    *       doesn't work, registering any functionality that depends on state that never got loaded
    *       would load to further bug reports that are a lot harder to investigate
    */
-  registerReducer: (path: string[], spec: IReducerSpec) => void;
+  registerReducer<const P extends readonly [string, ...string[]]>(
+    path: P,
+    spec: IReducerSpec<StateSlice<IState, P>>,
+  ): void;
 
   /**
    * register a hive in the store to be persisted. A hive is a top-level branch in the state,
