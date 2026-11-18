@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -122,6 +122,23 @@ describe("ModGallery", () => {
     rerender(<ModGallery images={images} isAdult={false} />);
 
     expect(sources()).toEqual(["a.png", "a-thumb.png", "b-thumb.png"]);
+  });
+
+  it("shows a comparison large as a slider, under its after picture's thumbnail", () => {
+    const comparison = { ...picture("after"), before: picture("before") };
+    const { container, getAllByRole, getAllByText, queryByRole } = render(
+      <ModGallery images={[comparison, picture("plain")]} isAdult={false} />,
+    );
+    const sources = () =>
+      [...container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
+
+    expect(queryByRole("slider")).toBeInTheDocument();
+    expect(sources()).toEqual(["after.png", "before.png", "after-thumb.png", "plain-thumb.png"]);
+    expect(getAllByText("Compare")).toHaveLength(1);
+
+    fireEvent.click(getAllByRole("button", { name: /^Image/ })[1]);
+
+    expect(queryByRole("slider")).not.toBeInTheDocument();
   });
 
   it("names its picture by the title its author gave it", () => {
