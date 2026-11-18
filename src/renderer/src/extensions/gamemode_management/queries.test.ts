@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { IGameStored, ITierZeroGame } from "@/types/IState";
 
 import { makeGameStored } from "../../test-utils/builders";
-import { convertId, findGame, type IGameData, nexusGameData } from "./queries";
+import { convertId, findGame, type IGameData, nexusGameData, storedGameQuery } from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 
 // Dummy games. A and B are extension games, the tier zero game is managed without an
@@ -388,5 +388,38 @@ describe("nexusGameData", () => {
     const data = gameData({ nexusGames: [listed(numericA, domainA)] });
 
     expect(nexusGameData(data, VortexGameId("domain-a"))).toBeUndefined();
+  });
+});
+
+describe("storedGameQuery", () => {
+  it("is a known game's Vortex id", () => {
+    expect(storedGameQuery(knownGames(gameA), "game-a")).toEqual({ vortexGameId: gameA });
+  });
+
+  it("is a domain the site lists, for a game no extension registers", () => {
+    const data = gameData({ nexusGames: [listed(numericB, domainB)] });
+
+    expect(storedGameQuery(data, "domain-b")).toEqual({ gameDomain: domainB });
+  });
+
+  it("is a Tier 0 game's domain", () => {
+    const data = gameData({
+      tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+    });
+
+    expect(storedGameQuery(data, "tier-zero-domain")).toEqual({ gameDomain: tierZeroDomain });
+  });
+
+  it("takes a known game's id first, where a domain is spelled the same", () => {
+    const data = gameData({
+      known: [game(gameA)],
+      nexusGames: [listed(numericA, NexusGameDomain("game-a"))],
+    });
+
+    expect(storedGameQuery(data, "game-a")).toEqual({ vortexGameId: gameA });
+  });
+
+  it("is undefined for neither", () => {
+    expect(storedGameQuery(knownGames(gameA), "unknown")).toBeUndefined();
   });
 });

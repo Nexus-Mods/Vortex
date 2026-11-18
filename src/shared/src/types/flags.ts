@@ -18,12 +18,8 @@ export const flagVariantSchemas = {
   "vortex-tier-0-game-support": {},
   // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
   "laz-vortex-browse-mods": {},
-<<<<<<< HEAD
   // On/off gate for the planner_plan telemetry event.
   "vortex-planner-telemetry": {},
-};
-
-=======
   // Gate for the Steam game folder check (MOD-80). The optional "config" variant
   // overrides its defaults, so limits can change without a release.
   "vortex-game-folder-check": {
@@ -55,7 +51,6 @@ export interface IGameFolderCheckFlagConfig extends Partial<IGameFolderCheckLimi
   fullVerifyPercent?: number;
 }
 
->>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 type FlagVariantSchemas = typeof flagVariantSchemas;
 export type KnownFlagName = keyof FlagVariantSchemas;
 export const knownFlagNames: ReadonlySet<string> = new Set(Object.keys(flagVariantSchemas));

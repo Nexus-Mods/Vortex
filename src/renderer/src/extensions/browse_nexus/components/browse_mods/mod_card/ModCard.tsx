@@ -3,6 +3,7 @@ import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
+import { ModStatusBadge } from "@/extensions/mod_management/components/mod_status_badge/ModStatusBadge";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import type { IState } from "@/types/IState";
 import { Icon } from "@/ui/components/icon/Icon";
@@ -13,7 +14,6 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
-import { ModStatusBadge } from "../mod_status_badge/ModStatusBadge";
 
 interface IModCardProps {
   /** The mod it shows. */

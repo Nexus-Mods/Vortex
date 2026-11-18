@@ -23,8 +23,6 @@ export interface NexusV3ClientOptions {
   signal?: AbortSignal;
 }
 
-<<<<<<< HEAD
-=======
 /** One event of a telemetry batch: the client's id for it, when it happened, and the event. */
 export interface ITelemetryEventEntry {
   id: string;
@@ -32,7 +30,6 @@ export interface ITelemetryEventEntry {
   event: TelemetryEvent;
 }
 
->>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
 
 /** User-Agent plus bearer-else-apikey auth, shared by the public and internal clients. */
@@ -313,8 +310,6 @@ export function createNexusV3InternalClient(
     client.use(mw);
   }
 
-<<<<<<< HEAD
-=======
   const sendTelemetryEvents = async (events: readonly ITelemetryEventEntry[]) => {
     const { data, error, response } = await client.POST("/telemetry/events", {
       body: {
@@ -338,7 +333,6 @@ export function createNexusV3InternalClient(
     return data.data;
   };
 
->>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
   return {
     ...client,
 
@@ -351,38 +345,16 @@ export function createNexusV3InternalClient(
       return data.data;
     },
 
-    async telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
-      const { data, error, response } = await client.POST("/telemetry/events", {
-        body: {
-          client: {
-            name: options.clientName,
-            version: options.clientVersion,
-            instance_id: options.instanceId,
-          },
+    telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
+      return sendTelemetryEvents([{ id, date, event }]);
+    },
 
-<<<<<<< HEAD
-          events: [
-            {
-              id: id,
-              occurred_at: date.toString(),
-              version: event.version,
-              type: event.type,
-              payload: event.payload,
-            },
-          ],
-        },
-      });
-
-      if (error) throw toV3Error(error, response);
-      return data.data;
-=======
     /**
      * Submits several events in one request. The API accepts or rejects each event on its own,
      * so check `rejected` in the ack.
      */
     telemetryEvents(events: readonly ITelemetryEventEntry[]) {
       return sendTelemetryEvents(events);
->>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
     },
   };
 }

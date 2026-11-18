@@ -12,16 +12,23 @@ export {
   type NexusV3Client,
   type NexusV3ClientOptions,
   type NexusV3InternalClient,
-<<<<<<< HEAD
-=======
   type ITelemetryEventEntry,
->>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
   EventManualInstaller,
   EventPlannerPlan,
+  EventGameFolderState,
+  EventGameFolderStateFiles,
   EventStoreGameVersion,
+  GameFolderDepot,
+  GameFolderFile,
+  GameFolderFileCount,
+  GameFolderFolderCount,
+  GameFolderPartStatus,
+  GameFolderStateFilesPayload,
+  GameFolderStatePayload,
+  TelemetryEvent,
   GogInstall,
   ManifestDiff,
   ManifestDiffReason,

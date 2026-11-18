@@ -22,9 +22,9 @@ import {
   getErrorMessageOrDefault,
   isEnvironmentalError,
   VortexError,
+  VortexGameId,
   VortexProfileId,
 } from "@vortex/shared";
-import { VortexGameId } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
@@ -58,6 +58,7 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
+import { queueGameFolderCheck } from "../analytics/gameFolderCheck";
 import {
   emitGameActivated,
   emitGameManaged,
@@ -603,6 +604,7 @@ function manageGameDiscovered(api: IExtensionApi, gameId: VortexGameId) {
       );
       api.store.dispatch(setNextProfile(profileId));
       emitGameManaged(api, gameId);
+      queueGameFolderCheck(api, VortexGameId(gameId));
     })
     .catch((err) => {
       const instPath = installPathForGame(api.store.getState(), gameId);

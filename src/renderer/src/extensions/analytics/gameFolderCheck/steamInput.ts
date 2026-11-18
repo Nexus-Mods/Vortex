@@ -7,24 +7,31 @@ import type { IState } from "../../../types/IState";
 import { normPath } from "../../../util/normPath";
 import type { ISteamEntry } from "../../../util/Steam";
 import { discoveryByGame } from "../../gamemode_management/selectors";
+import { tierZeroGameId } from "../../gamemode_management/tiered/tierZeroGameId";
 import { detectedInternalId } from "../../gamemode_management/util/detected_games/detectedInternalId";
 import { getGame, getGameStoresSafe } from "../../gamemode_management/util/getGame";
 import { numericGameIdToDomainName } from "../../nexus_integration/util";
+import { convertGameIdReverse } from "../../nexus_integration/util/convertGameId";
 
 export function isSteamGame(state: IState, gameId: VortexGameId): boolean {
   const discovery = discoveryByGame(state, gameId);
   return discovery?.path !== undefined && discovery.store === "steam";
 }
 
-/** Steam app ids the detected-games response matched for a game, by the id its card uses. */
+/**
+ * Steam app ids the detected-games response matched for a game, by the id its card uses: the
+ * known game's id, the domain for a game no extension knows, or the Tier 0 id once Vortex
+ * manages it without one.
+ */
 function detectedSteamAppIds(state: IState, gameId: VortexGameId): string[] {
   const { known, detectedGames } = state.session.gameMode;
   const discovered = state.settings.gameMode.discovered;
   return detectedGames.flatMap((game) => {
     const domain = numericGameIdToDomainName(game.gameId);
-    return domain !== undefined && detectedInternalId(known, discovered, domain) === gameId
-      ? game.storeIDs.steam
-      : [];
+    if (domain === undefined) return [];
+    const cardId =
+      detectedInternalId(known, discovered, domain) ?? convertGameIdReverse(known, domain);
+    return cardId === gameId || tierZeroGameId(game.gameId) === gameId ? game.storeIDs.steam : [];
   });
 }
 
