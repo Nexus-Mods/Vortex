@@ -16,13 +16,10 @@ export {
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {
-<<<<<<< HEAD
   EventManualInstaller,
   EventPlannerPlan,
-=======
   EventGameFolderState,
   EventGameFolderStateFiles,
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
   EventStoreGameVersion,
   GameFolderDepot,
   GameFolderFile,

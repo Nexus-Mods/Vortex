@@ -163,8 +163,8 @@ export default function init(context: IExtensionContext) {
     registry.add(gameInfo, extPath);
   }) as any;
 
-  // Expose a runtime API so callers that run after init (e.g. the
-  // adaptor bridge's setup callback) can register load order pages.
+  // Expose a runtime API so callers that run after init can register
+  // load order pages.
   context.registerAPI(
     "addLoadOrderPage",
     (gameInfo: ILoadOrderGameInfo, isContributed?: boolean) =>

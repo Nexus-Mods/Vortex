@@ -17,10 +17,8 @@ export const flagVariantSchemas = {
   "vortex-tier-0-game-support": {},
   // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
   "laz-vortex-browse-mods": {},
-<<<<<<< HEAD
   // On/off gate for the planner_plan telemetry event.
   "vortex-planner-telemetry": {},
-=======
   // Gate for the Steam game folder check (MOD-80). The optional "config" variant
   // overrides its defaults, so limits can change without a release.
   "vortex-game-folder-check": {
@@ -42,7 +40,6 @@ export const flagVariantSchemas = {
         }),
       ) as z.ZodType<GameFolderCheckFlagConfig>,
   },
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 };
 
 export interface GameFolderCheckFlagConfig {

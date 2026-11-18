@@ -77,18 +77,6 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
-    adaptors: {
-      list: () => betterIpcRenderer.invoke("adaptors:list"),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      listWithInfoSync: () => ipcRenderer.sendSync("adaptors:list-with-info"),
-      call: (adaptorName: string, serviceUri: string, method: string, args: unknown[]) =>
-        betterIpcRenderer.invoke("adaptors:call", adaptorName, serviceUri, method, args),
-      buildSnapshot: (store: string, gamePath: string) =>
-        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
-      detectVersion: (source: { type: string; path: { value: string }; regex?: string }) =>
-        betterIpcRenderer.invoke("adaptors:detect-version", source),
-    },
-
     updater: {
       getStatus: (since?: number) => betterIpcRenderer.invoke("updater:get-status", since),
       getUpdateChangelog: (channel: string) =>

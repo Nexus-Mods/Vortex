@@ -2432,11 +2432,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -3107,11 +3103,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
@@ -3615,11 +3607,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3841,11 +3829,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4024,11 +4008,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4563,11 +4543,7 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -4594,11 +4570,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
 
   src/renderer:
     dependencies:
@@ -4902,11 +4874,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-<<<<<<< HEAD
-        version: 45.3.3
-=======
-        version: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+        version: 45.3.3(supports-color@10.2.2)
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -14191,11 +14159,7 @@ snapshots:
 
   '@electron/remote@2.1.3(electron@45.3.3)':
     dependencies:
-<<<<<<< HEAD
-      electron: 45.3.3
-=======
-      electron: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+      electron: 45.3.3(supports-color@10.2.2)
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -17555,11 +17519,7 @@ snapshots:
 
   electron-extension-installer@2.0.1(electron@45.3.3):
     dependencies:
-<<<<<<< HEAD
-      electron: 45.3.3
-=======
-      electron: 45.2.1(supports-color@10.2.2)
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+      electron: 45.3.3(supports-color@10.2.2)
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17599,11 +17559,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-<<<<<<< HEAD
-  electron@45.3.3:
-=======
-  electron@45.2.1(supports-color@10.2.2):
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
+  electron@45.3.3(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
       '@electron/get': 5.0.0(supports-color@10.2.2)

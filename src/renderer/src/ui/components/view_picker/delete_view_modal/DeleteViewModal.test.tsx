@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
+
 import { DeleteViewModal } from "./DeleteViewModal";
 
 const renderModal = (name?: string) => {
@@ -20,12 +22,14 @@ const renderModal = (name?: string) => {
 };
 
 describe("DeleteViewModal", () => {
-  it("asks before deleting a view, in the page's words", () => {
+  it("asks before deleting a view, in the page's words", async () => {
     renderModal("Mine");
 
     expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
       'Delete "Mine" for good?',
     );
+
+    await settleTransitions();
   });
 
   it("isn't showing without a view to delete", () => {

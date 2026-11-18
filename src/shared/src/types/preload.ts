@@ -62,9 +62,6 @@ export interface Api {
   /** Extensions API - for requesting main process initialization */
   extensions: ExtensionsApi;
 
-  /** Adaptor host API - for querying adaptor services from renderer */
-  adaptors: AdaptorsApi;
-
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
   /** Dialog APIs */
@@ -418,46 +415,6 @@ export interface ExtensionsApi {
    * Should be called once after ExtensionManager is initialized.
    */
   initializeAllMain(installType: string): void;
-}
-
-/** API for querying adaptor services from the main process */
-export interface AdaptorsApi {
-  /** Returns the list of loaded adaptors with their manifests. */
-  list(): Promise<
-    Array<{
-      name: string;
-      pid: string;
-      provides: string[];
-      requires: string[];
-    }>
-  >;
-  /**
-   * Synchronous version of `list` that also includes pre-fetched game info.
-   * Used by the adaptor bridge during extension init where only synchronous
-   * work is allowed (registerGame must be called before endRegistration).
-   */
-  listWithInfoSync(): Array<{
-    name: string;
-    pid: string;
-    provides: string[];
-    requires: string[];
-    gameInfo: unknown;
-  }>;
-  /** Calls a service method on a loaded adaptor. */
-  call(adaptorName: string, serviceUri: string, method: string, args: unknown[]): Promise<unknown>;
-  /**
-   * Builds a store-path snapshot for a discovered game. The returned
-   * value is a `StorePathSnapshot` from `@nexusmods/adaptor-api/stores/lib`
-   * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
-   * types into the preload surface; the bridge casts locally).
-   */
-  buildSnapshot(store: string, gamePath: string): Promise<unknown>;
-  /**
-   * Executes a declarative version detection strategy on the main
-   * process side. The source describes what to read (PE header, text
-   * file, etc.) and where.
-   */
-  detectVersion(source: { type: string; path: { value: string }; regex?: string }): Promise<string>;
 }
 
 /** API for querying update status from main process */

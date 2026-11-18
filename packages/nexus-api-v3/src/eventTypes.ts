@@ -1,13 +1,10 @@
 export type TelemetryEvent =
   | EventDetectedGame
   | EventStoreGameVersion
-<<<<<<< HEAD
   | EventManualInstaller
-  | EventPlannerPlan;
-=======
+  | EventPlannerPlan
   | EventGameFolderState
   | EventGameFolderStateFiles;
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 
 // https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 export type EventDetectedGame = {
@@ -72,7 +69,6 @@ export type GogInstall = {
   install_language: string;
 };
 
-<<<<<<< HEAD
 /**
  * The folder inside a game's install folder that a user chose in the Manual Installer dialog,
  * for a game managed without an extension. Sent once when the install of the mod the dialog
@@ -140,7 +136,8 @@ export type ManifestDiffReason =
 export type ManifestDiff = {
   verdict: "pass" | "fail";
   counts: Record<ManifestDiffReason, number>;
-=======
+};
+
 // https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 // One check is a game_folder_state event with everything but the file paths, plus up to
 // max_file_parts game_folder_state_files events holding the paths.
@@ -270,5 +267,4 @@ export type GameFolderFolderCount = {
   folder: string;
   files: number;
   bytes: number;
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 };

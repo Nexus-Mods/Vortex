@@ -4,6 +4,8 @@ import React from "react";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
+
 import type { IWhatsNew } from "../reducers";
 import { WhatsNewDialog } from "./WhatsNewDialog";
 
@@ -38,7 +40,7 @@ describe("WhatsNewDialog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("shows the release notes, keeping their images and video", () => {
+  it("shows the release notes, keeping their images and video", async () => {
     renderDialog({
       version: "2.7.0",
       notes:
@@ -52,6 +54,8 @@ describe("WhatsNewDialog", () => {
     expect(screen.getByRole("img", { name: "shot" })).toBeInTheDocument();
     expect(document.querySelector("video")).not.toBeNull();
     expect(screen.getByRole("dialog")).not.toHaveTextContent("demo.mp4");
+
+    await settleTransitions();
   });
 
   it("offers to download an update, then hides itself and acts", async () => {
@@ -67,10 +71,12 @@ describe("WhatsNewDialog", () => {
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 
-  it("offers to restart for an update already staged", () => {
+  it("offers to restart for an update already staged", async () => {
     renderDialog({ version: "2.7.0", notes: "<p>Notes</p>", action: "restart" });
 
     expect(screen.getByRole("button", { name: "Restart Now" })).toBeInTheDocument();
+
+    await settleTransitions();
   });
 
   it("has only Close after an update", async () => {
@@ -83,27 +89,35 @@ describe("WhatsNewDialog", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  it("makes Close the strong button when it is alone", () => {
+  it("makes Close the strong button when it is alone", async () => {
     renderDialog({ version: "2.7.0", notes: "<p>Notes</p>" });
 
     expect(screen.getByRole("button", { name: "Close" })).toHaveClass("nxm-button-strong");
+
+    await settleTransitions();
   });
 
-  it("makes Close the quieter button beside the update's", () => {
+  it("makes Close the quieter button beside the update's", async () => {
     renderDialog({ version: "2.7.0", notes: "<p>Notes</p>", action: "download" });
 
     expect(screen.getByRole("button", { name: "Close" })).toHaveClass("nxm-button-moderate");
+
+    await settleTransitions();
   });
 
-  it("says so when there are no notes", () => {
+  it("says so when there are no notes", async () => {
     renderDialog({ version: "2.7.0" });
     expect(screen.getByRole("dialog")).toHaveTextContent(
       "No release notes are available for this update.",
     );
+
+    await settleTransitions();
   });
 
-  it("says a new version is available when an update has no notes", () => {
+  it("says a new version is available when an update has no notes", async () => {
     renderDialog({ version: "2.7.0", action: "download" });
     expect(screen.getByRole("dialog")).toHaveTextContent("A new version of Vortex is available.");
+
+    await settleTransitions();
   });
 });

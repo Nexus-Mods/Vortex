@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
@@ -57,7 +57,7 @@ describe("useModsTableFocusRequest", () => {
   it("drops the request once the group has been shown", () => {
     const { result, requested } = render({ focusedGroupId: "a", groups: [group("a")] });
 
-    result.current.onGroupFocused();
+    act(() => result.current.onGroupFocused());
 
     expect(requested()).toBeUndefined();
   });
@@ -103,7 +103,7 @@ describe("useModsTableFocusRequest", () => {
 
       expect(result.current.focusModId).toBe("skyui");
 
-      result.current.onModFocused();
+      act(() => result.current.onModFocused());
 
       expect(requestedMod()).toBeUndefined();
     });

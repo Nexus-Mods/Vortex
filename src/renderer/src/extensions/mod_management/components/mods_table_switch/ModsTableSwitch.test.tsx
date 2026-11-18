@@ -304,7 +304,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
       const tab = screen.getByRole("button", { name: "Mine" });
-      tab.focus();
+      act(() => tab.focus());
 
       fireEvent.contextMenu(tab, { button: -1 });
       expect(await screen.findByRole("menuitem", { name: "Rename view" })).toHaveFocus();
@@ -417,7 +417,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
       const tab = screen.getByRole("button", { name: "Mine" });
-      tab.focus();
+      act(() => tab.focus());
 
       fireEvent.contextMenu(tab);
       await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));

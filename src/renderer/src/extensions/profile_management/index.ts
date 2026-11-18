@@ -58,16 +58,12 @@ import {
 } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { truthy } from "../../util/util";
-<<<<<<< HEAD
+import { queueGameFolderCheck } from "../analytics/gameFolderCheck";
 import {
   emitGameActivated,
   emitGameManaged,
   emitGameUnmanaged,
 } from "../analytics/mixpanel/gameManageAnalytics";
-=======
-import { queueGameFolderCheck } from "../analytics/gameFolderCheck";
-import { emitGameManaged, emitGameUnmanaged } from "../analytics/mixpanel/gameManageAnalytics";
->>>>>>> 13d6e786e (Merge pull request #24814 from Nexus-Mods/task/MOD-80-v2.10)
 import { clearGameAddStore } from "../gamemode_management/actions/session";
 import { tierZeroGameFor } from "../gamemode_management/tiered/tierZero";
 import { tierZeroEntry } from "../gamemode_management/util/detected_games/tierZeroEntry";
