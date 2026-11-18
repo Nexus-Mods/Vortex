@@ -69,8 +69,12 @@ import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
 import { getUnfulfilledNotificationId } from "./util";
 
-/** The error-context key naming the collection being installed. Reported as `context.collection`. */
-const COLLECTION_ERROR_CONTEXT = "collection";
+/**
+ * The error-context key naming the collection being installed. Reported as
+ * `context.installingCollection`. The context is global, so every error raised while the install
+ * runs carries it, related or not: the name says "installing" so it isn't read as the cause.
+ */
+const INSTALLING_COLLECTION_ERROR_CONTEXT = "installingCollection";
 
 export type Step =
   | "prepare"
@@ -774,7 +778,7 @@ class InstallDriver {
     outcome: "cancelled" | "paused" = "cancelled",
     context: CollectionInstallOutcomeContext = {},
   ) {
-    clearErrorContext(COLLECTION_ERROR_CONTEXT);
+    clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
     this.mPostprocessing = false;
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
@@ -826,7 +830,7 @@ class InstallDriver {
       return started;
     } finally {
       if (started === false) {
-        clearErrorContext(COLLECTION_ERROR_CONTEXT);
+        clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
         this.mOnStop?.();
       }
     }
@@ -930,7 +934,7 @@ class InstallDriver {
     const revisionNumber = this.revisionNumber;
     if (collectionSlug !== undefined && revisionNumber !== undefined) {
       setErrorContext(
-        COLLECTION_ERROR_CONTEXT,
+        INSTALLING_COLLECTION_ERROR_CONTEXT,
         formatCollectionSource({ collectionSlug, revisionNumber }),
       );
     }
@@ -1144,7 +1148,7 @@ class InstallDriver {
         ? "completed"
         : "failed";
     this.completeInstallationTracking(outcome);
-    clearErrorContext(COLLECTION_ERROR_CONTEXT);
+    clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
     this.mCollection = undefined;
     this.setDependentMods([]);
     this.mInstallDone = true;

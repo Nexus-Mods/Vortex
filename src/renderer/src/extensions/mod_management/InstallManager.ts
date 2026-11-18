@@ -414,9 +414,6 @@ function findCollectionByDownload(
 }
 
 /**
- * Helper: Filter rules to only include non-ignored requires/recommends rules
- */
-/**
  * The collection an install belongs to, as `slug@revision`, for telemetry. Empty when the install
  * isn't a collection member or the collection never came from the site.
  */
@@ -435,6 +432,9 @@ function collectionOfInstall(
     : "";
 }
 
+/**
+ * Helper: Filter rules to only include non-ignored requires/recommends rules
+ */
 function filterDependencyRules(rules: IModRule[]): IModRule[] {
   return (rules ?? []).filter(
     (rule: IModRule) => ["recommends", "requires"].includes(rule.type) && !rule.ignored,

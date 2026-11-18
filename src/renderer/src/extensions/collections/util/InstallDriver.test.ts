@@ -744,7 +744,7 @@ describe("InstallDriver error context", () => {
 
     await h.driver.start(profile, defaultFixture.collection);
 
-    expect(setErrorContext).toHaveBeenCalledWith("collection", "abc123@7");
+    expect(setErrorContext).toHaveBeenCalledWith("installingCollection", "abc123@7");
   });
 
   test("stops naming the collection once the install is cancelled", async ({ makeDriver }) => {
@@ -754,7 +754,7 @@ describe("InstallDriver error context", () => {
 
     h.driver.cancel();
 
-    expect(clearErrorContext).toHaveBeenCalledWith("collection");
+    expect(clearErrorContext).toHaveBeenCalledWith("installingCollection");
   });
 
   test("names nothing for a collection that has no site slug", async ({ startCollection }) => {
