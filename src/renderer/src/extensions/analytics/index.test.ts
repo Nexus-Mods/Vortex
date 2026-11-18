@@ -32,6 +32,10 @@ vi.mock("../../util/selectors", () => ({
 }));
 vi.mock("../nexus_integration/util", () => ({ nexusGamesProm: () => Promise.resolve() }));
 vi.mock("./utils/storeGameVersionEvent", () => ({ emitStoreGameVersions: vi.fn() }));
+vi.mock("./gameFolderCheck", () => ({
+  initGameFolderCheck: vi.fn(),
+  registerGameFolderCheckAction: vi.fn(),
+}));
 
 const relaunching = vi.hoisted(() => ({ value: false }));
 vi.mock("@/util/commandLine", () => ({ isRelaunching: () => relaunching.value }));

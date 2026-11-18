@@ -1,11 +1,19 @@
-import { setStoreGameVersionCache } from "@/extensions/analytics/actions/telemetry.action";
-import type { IStoreGameVersionCacheEntry } from "@/extensions/analytics/types/telemetry";
+import {
+  setGameFolderCheckMarker,
+  setStoreGameVersionCache,
+} from "@/extensions/analytics/actions/telemetry.action";
+import type {
+  IGameFolderCheckMarker,
+  IStoreGameVersionCacheEntry,
+} from "@/extensions/analytics/types/telemetry";
 import { actionsToReducerSpec } from "@/reducers/builder";
 
-/** Owns the store-game-version cache under persistent.analyticsTelemetry; it must
-    survive Vortex sessions, so an unchanged install never re-sends. */
+/** Owns the store-game-version cache and the game folder check markers under
+    persistent.analyticsTelemetry; both must survive Vortex sessions. */
 export interface IAnalyticsTelemetryState {
   storeGameVersions: { [gameId: string]: IStoreGameVersionCacheEntry };
+  /** missing from state persisted before the game folder check existed */
+  gameFolderChecks?: { [gameId: string]: IGameFolderCheckMarker };
 }
 
 declare module "@/types/IState" {
@@ -16,18 +24,26 @@ declare module "@/types/IState" {
 
 const defaultState: IAnalyticsTelemetryState = {
   storeGameVersions: {},
+  gameFolderChecks: {},
 };
 
-export default actionsToReducerSpec<IAnalyticsTelemetryState, { setStoreGameVersionCache }>(
+export default actionsToReducerSpec<
+  IAnalyticsTelemetryState,
+  { setStoreGameVersionCache; setGameFolderCheckMarker }
+>(
   defaultState,
-  { setStoreGameVersionCache },
+  { setStoreGameVersionCache, setGameFolderCheckMarker },
   {
     setStoreGameVersionCache: (state, { gameId, cache }) => {
       if (cache === null) {
         const { [gameId]: _removed, ...remaining } = state.storeGameVersions;
-        return { storeGameVersions: remaining };
+        return { ...state, storeGameVersions: remaining };
       }
-      return { storeGameVersions: { ...state.storeGameVersions, [gameId]: cache } };
+      return { ...state, storeGameVersions: { ...state.storeGameVersions, [gameId]: cache } };
     },
+    setGameFolderCheckMarker: (state, { gameId, marker }) => ({
+      ...state,
+      gameFolderChecks: { ...state.gameFolderChecks, [gameId]: marker },
+    }),
   },
 );
