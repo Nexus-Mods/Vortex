@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import React, { useRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { RemoveMenuOption } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/browseModsTracker";
 import type { OwnedModFile } from "@/extensions/browse_nexus/util/delete_mod_files/deleteModFiles";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
@@ -60,12 +61,24 @@ const sendNotification = vi.fn();
 const api = { getState: () => ({}), sendNotification } as unknown as IExtensionApi;
 
 /**
- * A button that runs the hook's Delete, the modal it renders, and whether it says the mod is
- * uninstalling. A new `opener` swaps the button for another, as the install button's changes.
+ * A button that runs the hook's Uninstall, or its Delete as `action`, the modal it renders, and
+ * whether it says the mod is uninstalling. A new `opener` swaps the button for another, as the
+ * install button's changes.
  */
-const Host = ({ opener = "first" }: { opener?: string }) => {
+const Host = ({
+  opener = "first",
+  action = "uninstall",
+}: {
+  opener?: string;
+  action?: RemoveMenuOption;
+}) => {
   const openerRef = useRef<HTMLButtonElement>(null);
-  const { deleteAction, modal, isDeleting } = useDeleteModFiles(api, mod, openerRef);
+  const { uninstallAction, deleteAction, modal, isDeleting } = useDeleteModFiles(
+    api,
+    mod,
+    openerRef,
+  );
+  const picked = action === "delete" ? deleteAction : uninstallAction;
 
   return (
     <>
@@ -74,7 +87,7 @@ const Host = ({ opener = "first" }: { opener?: string }) => {
         data-testid="opener"
         key={opener}
         ref={openerRef}
-        onClick={() => deleteAction.onClick?.()}
+        onClick={() => picked.onClick?.()}
       />
 
       {modal}
@@ -95,8 +108,8 @@ const withClient = (ui: React.ReactElement) => (
 /** The properties of the events of one name sent so far. */
 const sent = (eventName: string) => tracking.tracked(eventName).map((event) => event.properties);
 
-const openModal = async () => {
-  const view = render(withClient(<Host />));
+const openModal = async (action: RemoveMenuOption = "uninstall") => {
+  const view = render(withClient(<Host action={action} />));
   await userEvent.click(screen.getByTestId("opener"));
   return view;
 };
@@ -186,6 +199,21 @@ describe("useDeleteModFiles", () => {
     await settleTransitions();
   });
 
+  it("opens from Delete with deleting downloads ticked", async () => {
+    mocks.ownedFiles = [installedFile, downloadedFile];
+    await openModal("delete");
+
+    await userEvent.click(await screen.findByTestId("delete-mod-files-delete"));
+
+    expect(mocks.deleteFiles).toHaveBeenCalledWith(
+      api,
+      "skyrimse",
+      [installedFile, downloadedFile],
+      { deleteArchives: true },
+    );
+    await settleTransitions();
+  });
+
   it("deletes downloads too when the user asks", async () => {
     mocks.ownedFiles = [installedFile, downloadedFile];
     await openModal();
@@ -220,30 +248,62 @@ describe("useDeleteModFiles", () => {
   });
 
   describe("tracking", () => {
-    it("counts Delete picked, with how many files it found", async () => {
-      mocks.ownedFiles = [installedFile, downloadedFile];
-      await openModal();
+    it.each<RemoveMenuOption>(["uninstall", "delete"])(
+      "counts %s picked, with how many files it found",
+      async (action) => {
+        mocks.ownedFiles = [installedFile, downloadedFile];
+        await openModal(action);
 
-      expect(sent("browse_mods_delete_clicked")).toEqual([{ mod_uid: "7340033", file_count: 2 }]);
-      await settleTransitions();
+        expect(sent("browse_mods_remove_clicked")).toEqual([
+          { mod_uid: "7340033", file_count: 2, menu_option: action },
+        ]);
+        await settleTransitions();
+      },
+    );
+
+    it("counts an option picked when there was nothing to remove", async () => {
+      await openModal("delete");
+
+      expect(sent("browse_mods_remove_clicked")).toEqual([
+        { mod_uid: "7340033", file_count: 0, menu_option: "delete" },
+      ]);
     });
 
-    it("counts Delete picked when there was nothing to remove", async () => {
-      await openModal();
-
-      expect(sent("browse_mods_delete_clicked")).toEqual([{ mod_uid: "7340033", file_count: 0 }]);
-    });
-
-    it("counts a confirmed delete, as files deleted and uninstalled", async () => {
+    it("counts a confirmed removal, as files deleted and uninstalled", async () => {
       mocks.ownedFiles = [installedFile];
       await openModal();
 
       await userEvent.click(await screen.findByTestId("delete-mod-files-delete"));
 
-      expect(sent("browse_mods_delete_confirmed")).toEqual([
-        { mod_uid: "7340033", deleted_count: 0, uninstalled_count: 1, deletes_downloads: false },
+      expect(sent("browse_mods_remove_confirmed")).toEqual([
+        {
+          mod_uid: "7340033",
+          menu_option: "uninstall",
+          deleted_count: 0,
+          uninstalled_count: 1,
+          deletes_downloads: false,
+        },
       ]);
-      expect(sent("browse_mods_delete_cancelled")).toEqual([]);
+      expect(sent("browse_mods_remove_cancelled")).toEqual([]);
+      await settleTransitions();
+    });
+
+    it("keeps the option that opened the modal when the user changes what it removes", async () => {
+      mocks.ownedFiles = [installedFile];
+      await openModal("uninstall");
+
+      await userEvent.click(await screen.findByTestId("delete-mod-files-downloads"));
+      await userEvent.click(screen.getByTestId("delete-mod-files-delete"));
+
+      expect(sent("browse_mods_remove_confirmed")).toEqual([
+        {
+          mod_uid: "7340033",
+          menu_option: "uninstall",
+          deleted_count: 1,
+          uninstalled_count: 0,
+          deletes_downloads: true,
+        },
+      ]);
       await settleTransitions();
     });
 
@@ -253,8 +313,10 @@ describe("useDeleteModFiles", () => {
 
       await userEvent.click(await screen.findByTestId("delete-mod-files-cancel"));
 
-      expect(sent("browse_mods_delete_cancelled")).toEqual([{ mod_uid: "7340033", file_count: 2 }]);
-      expect(sent("browse_mods_delete_confirmed")).toEqual([]);
+      expect(sent("browse_mods_remove_cancelled")).toEqual([
+        { mod_uid: "7340033", file_count: 2, menu_option: "uninstall" },
+      ]);
+      expect(sent("browse_mods_remove_confirmed")).toEqual([]);
       await settleTransitions();
     });
   });

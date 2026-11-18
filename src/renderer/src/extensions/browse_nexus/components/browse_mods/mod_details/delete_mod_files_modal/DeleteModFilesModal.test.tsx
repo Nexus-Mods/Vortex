@@ -35,9 +35,15 @@ const downloadedFile: OwnedModFile = {
 let onDelete: ReturnType<typeof vi.fn<(files: OwnedModFile[], deleteDownloads: boolean) => void>>;
 let onClose: ReturnType<typeof vi.fn<() => void>>;
 
-const renderModal = (files: OwnedModFile[]) =>
+const renderModal = (files: OwnedModFile[], deletesDownloads?: boolean) =>
   render(
-    <DeleteModFilesModal files={files} modName="SkyUI" onClose={onClose} onDelete={onDelete} />,
+    <DeleteModFilesModal
+      deletesDownloads={deletesDownloads}
+      files={files}
+      modName="SkyUI"
+      onClose={onClose}
+      onDelete={onDelete}
+    />,
   );
 
 const removeButton = () => screen.getByTestId("delete-mod-files-delete");
@@ -59,6 +65,17 @@ describe("DeleteModFilesModal", () => {
       await userEvent.click(removeButton());
 
       expect(onDelete).toHaveBeenCalledWith([installedFile], false);
+      await settleTransitions();
+    });
+
+    it("starts with downloads to be deleted, every file ticked, when opened to delete", async () => {
+      renderModal([installedFile, downloadedFile], true);
+
+      expect(deleteDownloads()).toHaveAttribute("aria-checked", "true");
+      expect(fileBoxes().map((box) => box.getAttribute("aria-checked"))).toEqual(["true", "true"]);
+      await userEvent.click(removeButton());
+
+      expect(onDelete).toHaveBeenCalledWith([installedFile, downloadedFile], true);
       await settleTransitions();
     });
 
@@ -187,6 +204,22 @@ describe("DeleteModFilesModal", () => {
       await userEvent.click(removeButton());
 
       expect(onDelete).toHaveBeenCalledWith([installedFile], true);
+      await settleTransitions();
+    });
+
+    it("starts with its download to be deleted when opened to delete", async () => {
+      renderModal([installedFile], true);
+
+      await userEvent.click(removeButton());
+
+      expect(onDelete).toHaveBeenCalledWith([installedFile], true);
+      await settleTransitions();
+    });
+
+    it("leaves deleting downloads off, opened to delete, when its download is missing", async () => {
+      renderModal([missingFile], true);
+
+      expect(deleteDownloads()).toHaveAttribute("aria-checked", "false");
       await settleTransitions();
     });
 
