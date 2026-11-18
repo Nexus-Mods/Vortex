@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
-import React from "react";
+import React, { type ReactNode } from "react";
+import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
 import { EndorseModButton } from "./EndorseModButton";
@@ -10,6 +11,23 @@ import { EndorseModButton } from "./EndorseModButton";
 const t = ((key: string) => key) as unknown as TFunction;
 
 const GAME_ID = VortexGameId("skyrimse");
+
+/** Only what the button reads from the store: whether the user is logged in to Nexus. */
+const withLogin =
+  (isUserLoggedIn: boolean) =>
+  ({ children }: { children: ReactNode }) => {
+    const store = {
+      getState: () => ({
+        confidential: { account: isUserLoggedIn ? { nexus: { APIKey: "key" } } : {} },
+      }),
+      subscribe: () => () => undefined,
+      dispatch: vi.fn(),
+    };
+    return <Provider store={store as never}>{children}</Provider>;
+  };
+
+const LoggedIn = withLogin(true);
+const LoggedOut = withLogin(false);
 
 const renderButton = (endorsedStatus: string, onEndorseMod = vi.fn()) => {
   const button = (status: string) => (
@@ -21,7 +39,7 @@ const renderButton = (endorsedStatus: string, onEndorseMod = vi.fn()) => {
       onEndorseMod={onEndorseMod}
     />
   );
-  const { rerender } = render(button(endorsedStatus));
+  const { rerender } = render(button(endorsedStatus), { wrapper: LoggedIn });
   return { onEndorseMod, setStatus: (status: string) => rerender(button(status)) };
 };
 
@@ -99,12 +117,34 @@ describe("EndorseModButton", () => {
   });
 
   it("only shows the answer, with a reason, without a handler", async () => {
-    render(<EndorseModButton endorsedStatus="Endorsed" gameId={GAME_ID} modId="mod-1" t={t} />);
+    render(<EndorseModButton endorsedStatus="Endorsed" gameId={GAME_ID} modId="mod-1" t={t} />, {
+      wrapper: LoggedIn,
+    });
 
     await userEvent.click(getButton());
 
     expect(getButton()).toHaveAttribute("aria-disabled", "true");
     expect(getButton()).toHaveAttribute("aria-description");
     expect(isThumbFilled()).toBe(true);
+  });
+
+  it("can't be pressed while logged out, and says why", async () => {
+    const onEndorseMod = vi.fn();
+    render(
+      <EndorseModButton
+        endorsedStatus="Undecided"
+        gameId={GAME_ID}
+        modId="mod-1"
+        t={t}
+        onEndorseMod={onEndorseMod}
+      />,
+      { wrapper: LoggedOut },
+    );
+
+    await userEvent.click(getButton());
+
+    expect(getButton()).toHaveAttribute("aria-disabled", "true");
+    expect(getButton()).toHaveAttribute("aria-description");
+    expect(onEndorseMod).not.toHaveBeenCalled();
   });
 });

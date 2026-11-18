@@ -1,8 +1,11 @@
 import type { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 
 import { EndorseButton } from "@/ui/components/endorse_button/EndorseButton";
+
+import { isLoggedIn } from "../../selectors";
 
 export interface IEndorseModButtonProps {
   gameId: VortexGameId;
@@ -20,7 +23,8 @@ export interface IEndorseModButtonProps {
  * The store overwrites Nexus's answer with "pending" while it's asked, so this keeps the last
  * answer and, while pending, shows what was asked for: the opposite of it. Drawn while already
  * pending, it can't know which way it was asked, and shows a spinner. "Disabled" and "Blocked"
- * can't be pressed and give their reason.
+ * can't be pressed and give their reason, and neither can it while logged out, as Nexus would
+ * turn the request down. It reads the login itself, as a table cell isn't drawn again on login.
  */
 export const EndorseModButton = ({
   endorsedStatus,
@@ -37,12 +41,15 @@ export const EndorseModButton = ({
     setAnswer(status);
   }
   const isAnswerKnown = answer !== "pending";
+  const isUserLoggedIn = useSelector(isLoggedIn);
 
   const disabledReason =
     {
       disabled: t("Endorsement disabled by author"),
       blocked: t("You have been blocked by the curator."),
-    }[status] ?? (onEndorseMod ? undefined : t("Endorse a collection from its page"));
+    }[status] ??
+    (onEndorseMod ? undefined : t("Endorse a collection from its page")) ??
+    (isUserLoggedIn ? undefined : t("Log in to endorse"));
 
   return (
     <div className="flex justify-center">
