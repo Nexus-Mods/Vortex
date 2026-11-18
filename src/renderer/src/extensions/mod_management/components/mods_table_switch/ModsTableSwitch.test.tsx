@@ -22,15 +22,26 @@ vi.mock("@/ExtensionProvider", async (importOriginal) => ({
   useExtensionObjects: () => mocks.registeredColumns,
 }));
 
+// The failure alert's legacy icon loads its set from disk into the page, which isn't there.
+vi.mock("@/controls/Icon", () => ({ default: () => null }));
+
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useInstallMods: () => mocks.installMods,
 }));
 
+// Spied on, still working them out, to see which mods the panel's properties are worked out for.
+vi.mock("../../hooks/use_mod_properties/useModProperties.hook", async (importOriginal) => {
+  const original = await importOriginal<typeof ModProperties>();
+  return { ...original, useModProperties: vi.fn(original.useModProperties) };
+});
+
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import { focusModsTableGroup } from "../../actions/session";
+import type * as ModProperties from "../../hooks/use_mod_properties/useModProperties.hook";
+import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
 import type { IModWithState } from "../../types/IModProps";
 import { MODS_TABLE_FEEDBACK_URL } from "../mods_table_toolbar/ModsTableToolbar";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -1456,6 +1467,7 @@ describe("ModsTableSwitch", () => {
         "modsTable::toolbar::giveFeedback",
         "modsTable::toolbar::viewOptions",
         "modsTable::toolbar::search",
+        "modsTable::properties::toggle",
       ]);
     });
 
@@ -1468,6 +1480,372 @@ describe("ModsTableSwitch", () => {
 
       expect(openUrl).toHaveBeenCalledTimes(1);
       expect(openUrl).toHaveBeenCalledWith(MODS_TABLE_FEEDBACK_URL);
+    });
+  });
+
+  describe("Properties", () => {
+    const panel = () => screen.queryByTestId("mod-properties-panel");
+
+    // By place, as the rows are listed by name: Alpha first, then Beta.
+    const ALPHA = 0;
+    const BETA = 1;
+    const rowAt = (index: number) => bodyRows(screen.getByRole("grid"))[index];
+
+    const toggle = () => screen.getByTestId("mod-properties-toggle");
+    // A menu's Properties item, by its icon, as a menu's items carry no test ids.
+    const openItems = () =>
+      screen
+        .getAllByRole("menuitem")
+        .map((item) => item.querySelector('[data-symbol="dock_to_left"]') !== null);
+    const openItem = () => screen.getAllByRole("menuitem")[openItems().indexOf(true)];
+    // The panel's content goes once it's slid shut, which jsdom never animates.
+    const slideShut = () => fireEvent.transitionEnd(screen.getByTestId("mod-properties-slot"));
+    const toggleIcon = () => toggle().querySelector('[data-symbol="dock_to_left"]');
+
+    it("opens on a double-click, showing that mod", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      expect(panel()).toBeNull();
+
+      await userEvent.dblClick(rowAt(BETA));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+      expect(rowAt(BETA)).toHaveAttribute("aria-selected", "true");
+    });
+
+    it("opens from a row's menu, after its Open items", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Open in File Manager", action: vi.fn() },
+        { title: "Refresh Content", action: vi.fn() },
+      ]);
+
+      fireEvent.contextMenu(rowAt(BETA));
+      expect(openItems()).toEqual([false, true, false]);
+      await userEvent.click(openItem());
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+    });
+
+    it("opens for the selection from its menu, counting the mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const user = userEvent.setup();
+      await user.click(rowAt(ALPHA));
+      await user.keyboard("{Control>}");
+      await user.click(rowAt(BETA));
+      await user.keyboard("{/Control}");
+
+      fireEvent.contextMenu(rowAt(ALPHA));
+      await userEvent.click(openItem());
+
+      expect(within(panel()!).getByTestId("mod-properties-count")).toBeInTheDocument();
+    });
+
+    const propertiesOpened = () =>
+      mocks.emit.mock.calls.filter(
+        ([, event]) => event?.eventName === "app_mods_table_properties_opened",
+      );
+    const opened = (via: string) => [
+      "analytics-track-mixpanel-event",
+      { eventName: "app_mods_table_properties_opened", properties: { via } },
+    ];
+
+    it("reports opening Properties from the row menu, offering no pin for it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Open in File Manager", action: vi.fn() },
+      ]);
+      fireEvent.contextMenu(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(propertiesOpened()).toEqual([opened("row_menu")]);
+    });
+
+    it("doesn't report opening Properties from a menu while it's open", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, undefined, {
+        propertiesOpen: true,
+      });
+      fireEvent.contextMenu(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(propertiesOpened()).toHaveLength(0);
+    });
+
+    it("offers no pin toggle for Properties in a menu, though its other items have one", () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+
+      fireEvent.contextMenu(rowAt(BETA));
+
+      const others = screen.getAllByRole("menuitem").filter((item) => item !== openItem());
+      expect(within(openItem()).queryByRole("button")).toBeNull();
+      expect(others.some((item) => within(item).queryByRole("button") !== null)).toBe(true);
+    });
+
+    it("reports opening Properties from the selection menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const user = userEvent.setup();
+      await user.click(rowAt(ALPHA));
+      await user.keyboard("{Control>}");
+      await user.click(rowAt(BETA));
+      await user.keyboard("{/Control}");
+      fireEvent.contextMenu(rowAt(ALPHA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(propertiesOpened()).toEqual([opened("selection_menu")]);
+    });
+
+    it("reports opening Properties from the toolbar, but not closing it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      mocks.emit.mockClear();
+
+      await userEvent.click(toggle());
+      await userEvent.click(toggle());
+
+      expect(propertiesOpened()).toEqual([opened("toolbar")]);
+    });
+
+    it("reports opening Properties by double-click", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      mocks.emit.mockClear();
+
+      await userEvent.dblClick(rowAt(BETA));
+
+      expect(propertiesOpened()).toEqual([opened("double_click")]);
+    });
+
+    it("doesn't report a double-click while Properties is open", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      await userEvent.dblClick(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.dblClick(rowAt(ALPHA));
+
+      expect(propertiesOpened()).toHaveLength(0);
+      expect(rowAt(ALPHA)).toHaveAttribute("aria-selected", "true");
+    });
+
+    it("toggles from the toolbar, after the search", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
+
+      await userEvent.click(toggle());
+      expect(panel()).toBeInTheDocument();
+      expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 1' });
+
+      await userEvent.click(toggle());
+      // Still there as it slides shut.
+      expect(panel()).toBeInTheDocument();
+      slideShut();
+      expect(panel()).toBeNull();
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
+    });
+
+    it("closes from its own button, and stays closed", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
+
+      await userEvent.click(within(panel()!).getByTestId("mod-properties-close"));
+      slideShut();
+
+      expect(panel()).toBeNull();
+      await userEvent.click(rowAt(ALPHA));
+      expect(panel()).toBeNull();
+    });
+
+    it("doesn't work out properties while the panel is closed", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      vi.mocked(useModProperties).mockClear();
+
+      await userEvent.click(rowAt(ALPHA));
+      expect(useModProperties).not.toHaveBeenCalled();
+
+      await userEvent.click(toggle());
+      expect(vi.mocked(useModProperties).mock.lastCall?.[0]).toHaveLength(1);
+    });
+
+    it("keeps the page when working out properties throws, showing a failure in the panel's place", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const broken = mod("a", "Alpha", true, {
+          attributes: {
+            name: "Alpha",
+            get installerChoices(): never {
+              throw new Error("unreadable choices");
+            },
+          },
+        });
+        renderSwitch({ a: broken });
+
+        await userEvent.click(rowAt(ALPHA));
+        await userEvent.click(toggle());
+
+        expect(screen.getByRole("grid")).toBeInTheDocument();
+        expect(screen.queryByTestId("mod-properties-panel")).toBeNull();
+        expect(
+          screen.getByTestId("mod-properties-slot").querySelector(".errorboundary"),
+        ).not.toBeNull();
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
+    it("shows the next mod's properties after one mod's failed", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const broken = mod("a", "Alpha", true, {
+          attributes: {
+            name: "Alpha",
+            get installerChoices(): never {
+              throw new Error("unreadable choices");
+            },
+          },
+        });
+        renderSwitch({ a: broken, b: mod("b", "Beta", true) }, undefined, {
+          propertiesOpen: true,
+        });
+        await userEvent.click(rowAt(ALPHA));
+        expect(panel()).toBeNull();
+
+        await userEvent.click(rowAt(BETA));
+
+        expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
+    it("shows no panel with the classic table, though it was left open", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, undefined, {
+        betaTable: false,
+        propertiesOpen: true,
+      });
+
+      expect(panel()).toBeNull();
+    });
+
+    describe("an extension's field", () => {
+      afterEach(() => {
+        mocks.registeredColumns = [];
+      });
+
+      it("isn't drawn again when a mod that isn't selected changes", async () => {
+        const renderer = vi.fn(() => <span>drawn</span>);
+        mocks.registeredColumns = [
+          {
+            id: "rules",
+            name: "Rules",
+            placement: "detail",
+            isVolatile: true,
+            supportsMultiple: true,
+            customRenderer: renderer,
+          },
+        ];
+        const store = makeModsTableStore({ propertiesOpen: true });
+        const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+        const a = mod("a", "Alpha", true);
+        const b = mod("b", "Beta", true);
+        const view = (c: IModWithState) => (
+          <Provider store={store}>
+            <ModsTableSwitch {...props} mods={{ a, b, c }} />
+          </Provider>
+        );
+        const { rerender } = render(view(mod("c", "Gamma", true)));
+        const user = userEvent.setup();
+        await user.click(rowAt(ALPHA));
+        await user.keyboard("{Control>}");
+        await user.click(rowAt(BETA));
+        await user.keyboard("{/Control}");
+        expect(renderer).toHaveBeenCalled();
+        renderer.mockClear();
+
+        rerender(view(mod("c", "Gamma", false)));
+
+        expect(renderer).not.toHaveBeenCalled();
+      });
+
+      it("shows its controls' titles in the app's tooltip", async () => {
+        mocks.registeredColumns = [
+          {
+            id: "rules",
+            name: "Rules",
+            placement: "detail",
+            isVolatile: true,
+            customRenderer: () => (
+              <button title="Undecided" type="button">
+                <svg />
+              </button>
+            ),
+          },
+        ];
+        renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
+        await userEvent.click(rowAt(ALPHA));
+        // Extensions' fields end the Advanced tab.
+        await userEvent.click(within(panel()!).getByRole("tab", { name: /advanced/i }));
+        const control = within(panel()!).getByRole("button", { name: "Undecided" });
+
+        await userEvent.hover(control);
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+        expect(control).not.toHaveAttribute("title");
+      });
+    });
+
+    it("drops a mod that's removed while it's shown", async () => {
+      const store = makeModsTableStore({ propertiesOpen: true });
+      const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+      const { rerender } = render(
+        <Provider store={store}>
+          <ModsTableSwitch
+            {...props}
+            mods={{ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }}
+          />
+        </Provider>,
+      );
+      await userEvent.click(rowAt(BETA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+
+      rerender(
+        <Provider store={store}>
+          <ModsTableSwitch {...props} mods={{ a: mod("a", "Alpha", true) }} />
+        </Provider>,
+      );
+
+      expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
+    });
+
+    it("shows the new value when a selected mod changes", async () => {
+      const store = makeModsTableStore({ propertiesOpen: true });
+      const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+      const view = (alpha: IModWithState) => (
+        <Provider store={store}>
+          <ModsTableSwitch {...props} mods={{ a: alpha, b: mod("b", "Beta", true) }} />
+        </Provider>
+      );
+      const { rerender } = render(view(mod("a", "Alpha", true)));
+      await userEvent.click(rowAt(ALPHA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha");
+
+      rerender(view(mod("a", "Alpha renamed", true)));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha renamed");
+    });
+
+    it("follows the selection to different mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, undefined, {
+        propertiesOpen: true,
+      });
+      await userEvent.click(rowAt(ALPHA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha");
+
+      await userEvent.click(rowAt(BETA));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
     });
   });
 

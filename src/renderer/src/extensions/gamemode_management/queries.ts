@@ -105,6 +105,30 @@ export function nexusGameData(
     : { gameId: NexusGameId(listed.id), gameDomain: declared };
 }
 
+/**
+ * What to look up the game a stored string names by, where it may be either a Vortex game id or,
+ * for a game no extension registers, a Nexus Mods domain, as a mod's `downloadGame` is kept.
+ * Branded by what the data says it is: a known game's id first, else a domain the site lists.
+ * `undefined` where it's neither.
+ */
+export function storedGameQuery(
+  data: Pick<IGameData, "known" | "nexusGames" | "tier0">,
+  stored: string,
+): { vortexGameId: VortexGameId } | { gameDomain: NexusGameDomain } | undefined {
+  const game = data.known.find(({ id }) => id === stored);
+  if (game !== undefined) {
+    return { vortexGameId: VortexGameId(game.id) };
+  }
+
+  const tierZero = Object.values(data.tier0).find(({ domain }) => domain === stored);
+  if (tierZero !== undefined) {
+    return { gameDomain: tierZero.domain };
+  }
+
+  const listed = data.nexusGames.find(({ domain_name }) => domain_name === stored);
+  return listed === undefined ? undefined : { gameDomain: NexusGameDomain(listed.domain_name) };
+}
+
 function unsupportedQuery(query: unknown): never {
   throw new VortexError(`Unhandled game query: ${JSON.stringify(query)}`, {
     kind: "argument-invalid",

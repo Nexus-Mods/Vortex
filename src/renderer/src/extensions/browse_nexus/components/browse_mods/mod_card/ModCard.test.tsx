@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { ModStatus } from "@/extensions/mod_management/util/mod_status/modStatus";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 
-import type { ModStatus } from "../../../util/mod_status/modStatus";
 import { ModCard } from "./ModCard";
 
 // No one's logged in, so adult content is blurred, as it is by default.

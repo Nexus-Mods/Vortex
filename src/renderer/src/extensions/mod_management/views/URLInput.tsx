@@ -7,16 +7,7 @@ import { IconButton } from "../../../controls/TooltipControls";
 import type { TFunction } from "../../../util/i18n";
 import { setModAttribute } from "../actions/mods";
 import type { IMod } from "../types/IMod";
-
-function isURLValid(url: string) {
-  try {
-    // tslint:disable-next-line:no-unused-expression
-    new URL(url);
-  } catch (e) {
-    return false;
-  }
-  return true;
-}
+import { isUrlValid } from "../util/is_url_valid/isUrlValid";
 
 export interface IURLInputProps {
   t: TFunction;
@@ -46,7 +37,7 @@ function URLInput(props: IURLInputProps) {
       <IconButton
         data-testid="open-mod-website"
         icon="open-in-browser"
-        disabled={!isURLValid(mod.attributes?.url)}
+        disabled={!isUrlValid(mod.attributes?.url)}
         tooltip={t("Open website in your browser")}
         onClick={openSite}
       />

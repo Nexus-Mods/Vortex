@@ -1,7 +1,16 @@
-import React, { type ReactNode, useCallback, useMemo, useState } from "react";
+import React, {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
+import ErrorBoundary from "@/controls/ErrorBoundary";
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
@@ -14,12 +23,16 @@ import { Table } from "@/ui/components/table/Table";
 import type { ITableSort } from "@/ui/components/table/Table.types";
 import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
 import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { setModsTablePropertiesOpen } from "../../actions/settings";
 import { useCollectionGroupActions } from "../../hooks/use_collection_group_actions/useCollectionGroupActions.hook";
 import { useGroupEnabled } from "../../hooks/use_group_enabled/useGroupEnabled.hook";
 import { useInstallMods } from "../../hooks/use_install_mods/useInstallMods.hook";
@@ -33,6 +46,7 @@ import { useModsEnabled } from "../../hooks/use_mods_enabled/useModsEnabled.hook
 import {
   MODS_TABLE_TOOLBARS,
   modsTableGroupToolbar,
+  type PropertiesOpenedVia,
   useModsTableAnalytics,
 } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import {
@@ -62,6 +76,7 @@ import { CollectionHoverCard } from "../collection_hover_card/CollectionHoverCar
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModHoverCard } from "../mod_hover_card/ModHoverCard";
+import { ModPropertiesPanel } from "../mod_properties_panel/ModPropertiesPanel";
 import { actionsWidth, ModRowActions, PINNED_ACTION_WIDTH } from "../mod_row_actions/ModRowActions";
 import {
   MOD_VERSION_GROUPS,
@@ -94,6 +109,35 @@ interface IModsTableSwitchProps {
 const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
+
+const propertiesOpen = (state: IState) => state.settings.mods?.propertiesOpen === true;
+
+/** The Properties panel's width, its rule down its left included; the toolbar reaches over it. */
+const PROPERTIES_WIDTH = "26.5rem" as const;
+
+/**
+ * A menu's actions with Properties after its "open" section's, where it reads as one more thing
+ * to open; at the end if there's none.
+ */
+const withProperties = (actions: IToolbarAction[], properties: IToolbarAction) => {
+  const lastOpen = actions.findLastIndex(({ section }) => section === "open");
+  const at = lastOpen === -1 ? actions.length : lastOpen + 1;
+  return [...actions.slice(0, at), properties, ...actions.slice(at)];
+};
+
+/**
+ * The mods, kept as the same array while each is the same object as before, so what's drawn for
+ * them, such as an extension's field in the panel, isn't drawn again when another mod changes.
+ */
+const useStableMods = (mods: IModWithState[]) => {
+  const previous = useRef(mods);
+  const kept = previous.current;
+  const same = kept.length === mods.length && kept.every((mod, index) => mod === mods[index]);
+  if (!same) {
+    previous.current = mods;
+  }
+  return previous.current;
+};
 
 /** The groups the Status column puts rows in, in order; ids, not names. */
 const STATUS_GROUPS = [
@@ -139,6 +183,15 @@ export const ModsTableSwitch = ({
 }: IModsTableSwitchProps) => {
   const { t } = useTranslation("mod_management");
   const newTable = useSelector(betaTable);
+  const showProperties = useSelector(propertiesOpen);
+  // Whether the panel's content is drawn: while it's open, and as it slides shut.
+  const [panelMounted, setPanelMounted] = useState(showProperties);
+  useEffect(() => {
+    if (showProperties) {
+      setPanelMounted(true);
+    }
+  }, [showProperties]);
+  const dispatch = useDispatch();
 
   // The legacy table builds its own rows and groups, so build none for it.
   const tableMods = newTable ? mods : NO_MODS;
@@ -173,6 +226,48 @@ export const ModsTableSwitch = ({
     [mods, selected],
   );
   const selectionActions = useModSelectionActions(rowActions, selectedIds);
+
+  // Where the table's header row starts, under its toolbar: the panel starts level with it.
+  const [headerOffset, setHeaderOffset] = useState(0);
+
+  const selectedMods = useStableMods(
+    useMemo(() => selectedIds.map((id) => mods[id]), [mods, selectedIds]),
+  );
+  const setPropertiesOpen = useCallback(
+    (open: boolean) => dispatch(setModsTablePropertiesOpen(open)),
+    [dispatch],
+  );
+  // Every way of opening the panel counts as one event, sent only when it wasn't open already.
+  const openProperties = useCallback(
+    (via: PropertiesOpenedVia) => {
+      if (!showProperties) {
+        analytics.onPropertiesOpened(via);
+      }
+      setPropertiesOpen(true);
+    },
+    [analytics, setPropertiesOpen, showProperties],
+  );
+  const toggleProperties = useCallback(
+    () => (showProperties ? setPropertiesOpen(false) : openProperties("toolbar")),
+    [openProperties, setPropertiesOpen, showProperties],
+  );
+  // In the "open" section, as one more way to look at what's selected; not pinnable, as it's no
+  // row action, so it has no id to pin it by. Without an id the menu doesn't count it, so it's
+  // counted with the panel's other opens instead.
+  const propertiesActionFor = useCallback(
+    (via: PropertiesOpenedVia): IToolbarAction => ({
+      label: t("modsTable::properties::open"),
+      icon: { name: "dock_to_left", filled: false },
+      section: "open",
+      onClick: () => openProperties(via),
+    }),
+    [openProperties, t],
+  );
+  const rowPropertiesAction = useMemo(() => propertiesActionFor("row_menu"), [propertiesActionFor]);
+  const selectionPropertiesAction = useMemo(
+    () => propertiesActionFor("selection_menu"),
+    [propertiesActionFor],
+  );
   const selectedEnabled = selectedIds.filter((id) => isEnabled(mods[id])).length;
 
   // A row's actions are for its own mod, which would read as for every selected one.
@@ -261,7 +356,8 @@ export const ModsTableSwitch = ({
         ),
         /**
          * Part on while only some of its mods are, as after keeping the shared ones; right-aligned
-         * before the "…" the table puts at the cell's end, so it lines up with its rows' switches.
+         * before the "…" the table puts at the cell's end, so it lines up with its rows'
+         * switches.
          */
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
@@ -326,6 +422,14 @@ export const ModsTableSwitch = ({
   const ownIdList = columns.map(({ id }) => id).join("\n");
   const ownIds = useMemo(() => new Set(ownIdList.split("\n")), [ownIdList]);
   const registered = useRegisteredModsColumns(ownIds, tableMods, newTable);
+  const registeredDetails = useMemo(
+    () => ({
+      attributes: registered.details,
+      detailsOnly: registered.detailsOnly,
+      values: registered.textChanges,
+    }),
+    [registered.details, registered.detailsOnly, registered.textChanges],
+  );
   const allColumns = useMemo(
     () => [...columns, ...registered.columns],
     [columns, registered.columns],
@@ -429,7 +533,7 @@ export const ModsTableSwitch = ({
     onGroupFocused,
     focusRowId: focusModId,
     onRowFocused: onModFocused,
-    className: "mb-2 flex-1",
+    className: "mb-2 min-w-0 flex-1",
     toolbar: (
       <ModsTableToolbar
         displayOptions={displayOptions}
@@ -439,8 +543,10 @@ export const ModsTableSwitch = ({
         onAddView={addView}
         onRemoveView={removeView}
         onRenameView={renameView}
+        propertiesOpen={showProperties}
         onSearchChange={changeSearch}
         onSelectView={selectView}
+        onToggleProperties={toggleProperties}
       />
     ),
     columns: visibleColumns,
@@ -453,6 +559,12 @@ export const ModsTableSwitch = ({
     getRowLabel: ({ name }: IModRow) => name,
     selectedIds: selected,
     onSelectedIdsChange: setSelected,
+    // The table selects the row alone first, so the panel shows just it.
+    onRowDoubleClick: () => openProperties("double_click"),
+    onHeaderOffsetChange: setHeaderOffset,
+    // Over the panel too, as one bar for the page, so its toggle sits above the panel's edge; as
+    // wide as the panel is, as it slides.
+    toolbarOverhang: showProperties ? PROPERTIES_WIDTH : undefined,
     rowMenu: ({ mod, name }: IModRow, close: () => void) =>
       multiSelected ? (
         <>
@@ -465,7 +577,7 @@ export const ModsTableSwitch = ({
           <DropdownDivider />
 
           <ToolbarMenu
-            actions={selectionActions}
+            actions={withProperties(selectionActions, selectionPropertiesAction)}
             label={t("modsTable::selection::actions")}
             tracking={selectionTracking}
             onSelect={close}
@@ -473,7 +585,7 @@ export const ModsTableSwitch = ({
         </>
       ) : (
         <ToolbarMenu
-          actions={actionsFor(mod.id)}
+          actions={withProperties(actionsFor(mod.id), rowPropertiesAction)}
           label={t("modsTable::rowActions::menu", { name })}
           pinningId={MOD_ROW_PINNING_ID}
           pinTarget="row"
@@ -501,12 +613,67 @@ export const ModsTableSwitch = ({
 
   return (
     <>
-      <RegisteredModsInputsProvider value={registered.inputs}>
-        {/* One for every extension cell's titles, as only one shows at a time. */}
-        <LegacyTitleTooltips>
-          <Table {...tableProps} {...data} />
-        </LegacyTitleTooltips>
-      </RegisteredModsInputsProvider>
+      {/*
+        The panel beside the table, sliding in from the right as the table makes room for it; the
+        toolbar spans both. A rule down its left from the table's header row, where it starts,
+        under the toolbar, fading in at its top as no rule across meets it there; it sticks there
+        as the rows scroll, as the header does, no taller than the page's scroller. It slides as
+        fast as the app's transitions, so not with reduced motion.
+      */}
+      <div
+        className="flex flex-1 items-stretch"
+        style={
+          {
+            "--properties-top": `${headerOffset}px`,
+            "--properties-width": PROPERTIES_WIDTH,
+          } as CSSProperties
+        }
+      >
+        <RegisteredModsInputsProvider value={registered.inputs}>
+          {/*
+            One for every extension control's titles, in the table and the panel, as only one
+            shows at a time; it adds no box of its own, so the two stay the page's flex items.
+          */}
+          <LegacyTitleTooltips>
+            <Table {...tableProps} {...data} />
+
+            <div
+              className={joinClasses([
+                "relative mt-(--properties-top) mb-2 shrink-0 overflow-x-clip transition-[width]",
+                "before:absolute before:inset-y-0 before:left-0 before:w-px",
+                "before:bg-[linear-gradient(to_bottom,transparent,var(--color-stroke-weak)_3rem)]",
+                showProperties ? "w-(--properties-width)" : "w-0",
+              ])}
+              data-testid="mod-properties-slot"
+              // Its content goes once it's slid shut.
+              onTransitionEnd={(event) => {
+                if (event.target === event.currentTarget && !showProperties) {
+                  setPanelMounted(false);
+                }
+              }}
+            >
+              {(showProperties || panelMounted) && (
+                // Around the panel, as the hooks that work out its contents run in its own render.
+                // Its error goes as the selection changes, as it may be only one mod's.
+                <ErrorBoundary
+                  className="sticky top-(--properties-top) w-(--properties-width)"
+                  resetKey={selectedIds.join("\n")}
+                  visible
+                  onHide={() => setPropertiesOpen(false)}
+                >
+                  <ModPropertiesPanel
+                    className="sticky top-(--properties-top) max-h-[calc(100cqh-var(--properties-top)-0.5rem)] w-(--properties-width)"
+                    memberships={memberships}
+                    mods={selectedMods}
+                    registered={registeredDetails}
+                    onClose={() => setPropertiesOpen(false)}
+                  />
+                </ErrorBoundary>
+              )}
+            </div>
+          </LegacyTitleTooltips>
+        </RegisteredModsInputsProvider>
+      </div>
 
       <DisableSharedModsModal
         collections={pendingDisable?.shared.collections ?? []}
