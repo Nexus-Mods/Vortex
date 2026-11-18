@@ -360,7 +360,8 @@ describe("useRegisteredModsColumns", () => {
   });
 
   // Some extensions keep only the last listener, so one for nothing shown would take theirs.
-  it("listens for changes only to the data of the columns it offers and the panel's fields", () => {
+  // The Properties panel listens to its own fields' while it's open, so they redraw only it.
+  it("listens for changes only to the data of the columns it offers", () => {
     const externalData = vi.fn();
     registered.attributes = [
       attribute({ id: "shown", externalData }),
@@ -374,7 +375,66 @@ describe("useRegisteredModsColumns", () => {
       wrapper: storeWrapper(),
     });
 
-    // The column's, and the detail field the Properties panel shows.
+    expect(externalData).toHaveBeenCalledTimes(1);
+  });
+
+  // Extensions give no way to stop listening, so each call would add a listener for good.
+  it("calls externalData once across column toggles", () => {
+    const externalData = vi.fn();
+    registered.attributes = [attribute({ id: "shown", externalData })];
+    const store = makeModsTableStore();
+    renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      wrapper: storeWrapper(store),
+    });
+
+    for (let toggle = 0; toggle < 10; toggle += 1) {
+      act(() => {
+        store.dispatch(setAttributeVisible("mods", "other", toggle % 2 === 0));
+      });
+    }
+
+    expect(externalData).toHaveBeenCalledTimes(1);
+  });
+
+  // As the legacy table takes the listener of an extension that keeps only the last one, such as
+  // Tracked's.
+  it("listens again once it's back from the legacy table", () => {
+    let changed = () => {};
+    const externalData = vi.fn((onChanged: () => void) => {
+      changed = onChanged;
+    });
+    registered.attributes = [attribute({ id: "tracked", calc: () => "x", externalData })];
+    let isNewTable = true;
+    const { result, rerender } = renderHook(
+      () => useRegisteredModsColumns(NO_IDS, NO_MODS, isNewTable),
+      { wrapper: storeWrapper() },
+    );
+
+    isNewTable = false;
+    rerender();
+    // The legacy table's own.
+    externalData(() => {});
+    isNewTable = true;
+    rerender();
+    const before = result.current.inputs;
+    act(() => changed());
+
+    expect(externalData).toHaveBeenCalledTimes(3);
+    expect(result.current.inputs.versions).not.toEqual(before.versions);
+  });
+
+  // As the classic layout shows the legacy table without it.
+  it("listens again once it's mounted again", () => {
+    const externalData = vi.fn();
+    registered.attributes = [attribute({ id: "tracked", externalData })];
+    const mount = () =>
+      renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+        wrapper: storeWrapper(),
+      });
+
+    mount().unmount();
+    mount();
+
     expect(externalData).toHaveBeenCalledTimes(2);
   });
 

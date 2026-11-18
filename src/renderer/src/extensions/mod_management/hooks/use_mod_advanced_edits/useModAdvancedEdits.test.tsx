@@ -50,6 +50,13 @@ vi.mock("../../../gamemode_management/util/modTypeExtensions", () => {
       options: { name: "Fragile" },
       getPath: () => "/games/test/Fragile",
     },
+    // The legacy code keeps any truthy answer, not only `true`.
+    {
+      typeId: "truthy",
+      isSupported: () => 1,
+      options: { name: "Truthy" },
+      getPath: () => "/games/test/Truthy",
+    },
   ];
   return {
     getModTypeExtensions: () => types,
@@ -123,7 +130,17 @@ describe("useModAdvancedEdits", () => {
         { value: "dinput", label: "Engine injector" },
         { value: "bepinex", label: "bepinex" },
         { value: "fragile", label: "Fragile" },
+        { value: "truthy", label: "Truthy" },
       ]);
+    });
+
+    it("offers a mod type whose isSupported returns a truthy non-boolean", () => {
+      const modType = byId(renderEdits([mod("a")]).edits, "modType");
+
+      expect(modType?.kind === "select" && modType.choices).toContainEqual({
+        value: "truthy",
+        label: "Truthy",
+      });
     });
 
     it("leaves out where mods deploy when the mod type's getPath throws", () => {
@@ -153,6 +170,7 @@ describe("useModAdvancedEdits", () => {
         expect(modType?.kind === "select" && modType.choices).toEqual([
           { value: "dinput", label: "Engine injector" },
           { value: "bepinex", label: "bepinex" },
+          { value: "truthy", label: "Truthy" },
         ]);
         expect(mocks.log).toHaveBeenCalledWith(
           "warn",

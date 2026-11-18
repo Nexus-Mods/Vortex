@@ -7,19 +7,10 @@ import { TextField } from "@/ui/components/form/text_field/TextField";
 import type { ModProperty } from "../../hooks/use_mod_properties/useModProperties.hook";
 import { useUnsavedDraft } from "../../hooks/use_unsaved_draft/useUnsavedDraft.hook";
 import { COMPACT_FIELD } from "../../util/compact_field/compactField";
-
-/** Whether text is a full address, as the legacy field checks it. */
-const isAddress = (text: string) => {
-  try {
-    new URL(text);
-    return true;
-  } catch {
-    return false;
-  }
-};
+import { isUrlValid } from "../../util/is_url_valid/isUrlValid";
 
 /** Whether an address can be saved: a full one, or none to clear it. */
-const isSaveable = (text: string) => text === "" || isAddress(text);
+const isSaveable = (text: string) => text === "" || isUrlValid(text);
 
 interface IModPropertyUrlProps {
   property: Extract<ModProperty, { kind: "url" }>;

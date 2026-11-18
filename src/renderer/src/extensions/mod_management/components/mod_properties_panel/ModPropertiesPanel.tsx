@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
@@ -16,6 +16,10 @@ import type {
   IModProperties,
 } from "../../hooks/use_mod_properties/useModProperties.hook";
 import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
+import {
+  RegisteredModsVersionsProvider,
+  useExternalDataVersions,
+} from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import { ModPropertiesCard } from "../mod_properties_card/ModPropertiesCard";
@@ -58,6 +62,15 @@ export const ModPropertiesPanel = ({
   // Worked out here, only while the panel is mounted, as it reads a mod's INI edits from disk and
   // each change re-renders only the panel, not the table.
   const properties = useModProperties(mods, memberships, registered);
+  // Its extension fields' data outside the mods, listened for only while it's open, so a change
+  // draws only the panel again. It's only ever beside the new table.
+  const versions = useExternalDataVersions(registered.attributes, true, registered.values);
+  // Its fields' values are worked out again once it's open again, as no one hears of a change to
+  // their data while it's closed.
+  useEffect(
+    () => () => registered.attributes.forEach(({ id }) => registered.values.invalidate(id)),
+    [registered],
+  );
   const [picked, setPicked] = useState<ModPropertiesTab>("general");
 
   // Each written out, so the strings can be found.
@@ -164,7 +177,7 @@ export const ModPropertiesPanel = ({
       className={joinClasses(["flex min-h-0 flex-col overflow-y-auto px-5 pb-4", className])}
       data-testid="mod-properties-panel"
     >
-      {body()}
+      <RegisteredModsVersionsProvider versions={versions}>{body()}</RegisteredModsVersionsProvider>
     </aside>
   );
 };

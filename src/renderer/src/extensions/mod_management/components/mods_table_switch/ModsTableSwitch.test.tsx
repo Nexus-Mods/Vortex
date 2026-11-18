@@ -1539,6 +1539,98 @@ describe("ModsTableSwitch", () => {
       expect(within(panel()!).getByTestId("mod-properties-count")).toBeInTheDocument();
     });
 
+    // The shared toolbar event for Properties, as sent from a menu of the given toolbar.
+    const menuOpens = (toolbar: string) =>
+      mocks.emit.mock.calls.filter(
+        ([, event]) =>
+          event?.eventName === "app_toolbar_action_clicked" &&
+          (event.properties as { toolbar?: string }).toolbar === toolbar,
+      );
+    const propertiesOpened = () =>
+      mocks.emit.mock.calls.filter(
+        ([, event]) => event?.eventName === "app_mods_table_properties_opened",
+      );
+
+    it("reports opening Properties from the row menu, offering no pin for it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Open in File Manager", action: vi.fn() },
+      ]);
+      fireEvent.contextMenu(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(menuOpens("mods-table-row")).toEqual([
+        [
+          "analytics-track-mixpanel-event",
+          {
+            eventName: "app_toolbar_action_clicked",
+            properties: { action: "properties", toolbar: "mods-table-row", surface: "menu" },
+          },
+        ],
+      ]);
+      expect(propertiesOpened()).toHaveLength(0);
+    });
+
+    it("offers no pin toggle for Properties in a menu, though its other items have one", () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+
+      fireEvent.contextMenu(rowAt(BETA));
+
+      const others = screen.getAllByRole("menuitem").filter((item) => item !== openItem());
+      expect(within(openItem()).queryByRole("button")).toBeNull();
+      expect(others.some((item) => within(item).queryByRole("button") !== null)).toBe(true);
+    });
+
+    it("reports opening Properties from the selection menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const user = userEvent.setup();
+      await user.click(rowAt(ALPHA));
+      await user.keyboard("{Control>}");
+      await user.click(rowAt(BETA));
+      await user.keyboard("{/Control}");
+      fireEvent.contextMenu(rowAt(ALPHA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(menuOpens("mods-table-selection")).toEqual([
+        [
+          "analytics-track-mixpanel-event",
+          {
+            eventName: "app_toolbar_action_clicked",
+            properties: { action: "properties", toolbar: "mods-table-selection", surface: "menu" },
+          },
+        ],
+      ]);
+    });
+
+    it("reports opening Properties by double-click", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      await userEvent.dblClick(rowAt(BETA));
+
+      expect(propertiesOpened()).toEqual([
+        [
+          "analytics-track-mixpanel-event",
+          { eventName: "app_mods_table_properties_opened", properties: { via: "double_click" } },
+        ],
+      ]);
+    });
+
+    it("doesn't report a double-click while Properties is open", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      await userEvent.dblClick(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.dblClick(rowAt(ALPHA));
+
+      expect(propertiesOpened()).toHaveLength(0);
+      expect(rowAt(ALPHA)).toHaveAttribute("aria-selected", "true");
+    });
+
     it("toggles from the toolbar, after the search", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
@@ -1614,6 +1706,73 @@ describe("ModsTableSwitch", () => {
       expect(panel()).toBeNull();
     });
 
+    describe("an extension's field", () => {
+      afterEach(() => {
+        mocks.registeredColumns = [];
+      });
+
+      it("isn't drawn again when a mod that isn't selected changes", async () => {
+        const renderer = vi.fn(() => <span>drawn</span>);
+        mocks.registeredColumns = [
+          {
+            id: "rules",
+            name: "Rules",
+            placement: "detail",
+            isVolatile: true,
+            supportsMultiple: true,
+            customRenderer: renderer,
+          },
+        ];
+        const store = makeModsTableStore({ propertiesOpen: true });
+        const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+        const a = mod("a", "Alpha", true);
+        const b = mod("b", "Beta", true);
+        const view = (c: IModWithState) => (
+          <Provider store={store}>
+            <ModsTableSwitch {...props} mods={{ a, b, c }} />
+          </Provider>
+        );
+        const { rerender } = render(view(mod("c", "Gamma", true)));
+        const user = userEvent.setup();
+        await user.click(rowAt(ALPHA));
+        await user.keyboard("{Control>}");
+        await user.click(rowAt(BETA));
+        await user.keyboard("{/Control}");
+        expect(renderer).toHaveBeenCalled();
+        renderer.mockClear();
+
+        rerender(view(mod("c", "Gamma", false)));
+
+        expect(renderer).not.toHaveBeenCalled();
+      });
+
+      it("shows its controls' titles in the app's tooltip", async () => {
+        mocks.registeredColumns = [
+          {
+            id: "rules",
+            name: "Rules",
+            placement: "detail",
+            isVolatile: true,
+            customRenderer: () => (
+              <button title="Undecided" type="button">
+                <svg />
+              </button>
+            ),
+          },
+        ];
+        renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
+        await userEvent.click(rowAt(ALPHA));
+        // Extensions' fields end the Advanced tab.
+        await userEvent.click(within(panel()!).getByRole("tab", { name: /advanced/i }));
+        const control = within(panel()!).getByRole("button", { name: "Undecided" });
+
+        await userEvent.hover(control);
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+        expect(control).not.toHaveAttribute("title");
+      });
+    });
+
     it("drops a mod that's removed while it's shown", async () => {
       const store = makeModsTableStore({ propertiesOpen: true });
       const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
@@ -1635,6 +1794,35 @@ describe("ModsTableSwitch", () => {
       );
 
       expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
+    });
+
+    it("shows the new value when a selected mod changes", async () => {
+      const store = makeModsTableStore({ propertiesOpen: true });
+      const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+      const view = (alpha: IModWithState) => (
+        <Provider store={store}>
+          <ModsTableSwitch {...props} mods={{ a: alpha, b: mod("b", "Beta", true) }} />
+        </Provider>
+      );
+      const { rerender } = render(view(mod("a", "Alpha", true)));
+      await userEvent.click(rowAt(ALPHA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha");
+
+      rerender(view(mod("a", "Alpha renamed", true)));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha renamed");
+    });
+
+    it("follows the selection to different mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, undefined, {
+        propertiesOpen: true,
+      });
+      await userEvent.click(rowAt(ALPHA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha");
+
+      await userEvent.click(rowAt(BETA));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
     });
   });
 

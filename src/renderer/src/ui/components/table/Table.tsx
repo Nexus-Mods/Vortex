@@ -51,8 +51,8 @@ const GROUP_ROW_GAP = 4;
  * Carries the grid roles, so it reads as a table to assistive tech; grouped, it's a
  * treegrid whose group rows collapse. Only the rows in view render, against the page's
  * scroller, under a header that sticks to it. A right-click on a row offers its `rowMenu`, once
- * the row is selected, and a double-click opens it through `onRowDoubleClick`, selected alone; one with Ctrl, Cmd or Shift
- * held doesn't open it.
+ * the row is selected, and a double-click opens it through `onRowDoubleClick`, selected alone;
+ * one with Ctrl, Cmd or Shift held doesn't open it.
  * Every selected row shows what's in it as a hovered one does, so a table that shows actions in
  * its rows decides itself what several selected rows show.
  *
@@ -135,7 +135,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         )
       : undefined;
 
-  // Closed while rendering once what it was opened on is gone, so it never shows a frame for nothing.
+  // Closed while rendering once what it was opened on is gone, so it never shows a frame for
+  // nothing.
   if ((menu?.kind === "group" && !menuGroup) || (menu?.kind === "row" && menuRow === undefined)) {
     setMenu(undefined);
   }

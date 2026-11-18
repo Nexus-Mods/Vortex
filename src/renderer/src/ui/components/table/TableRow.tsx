@@ -45,7 +45,7 @@ const isRowClick = (event: MouseEvent<HTMLDivElement>) => {
   return event.currentTarget.contains(target) && target.closest(CONTROL) === null;
 };
 
-/** Whether Ctrl, Cmd or Shift is held, which makes a click change the selection, not open the row. */
+/** Whether Ctrl, Cmd or Shift is held, which makes a click change the selection, not open it. */
 const isModified = (event: MouseEvent<HTMLDivElement>) =>
   event.ctrlKey || event.metaKey || event.shiftKey;
 

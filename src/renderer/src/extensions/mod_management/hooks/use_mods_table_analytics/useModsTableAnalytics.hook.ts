@@ -17,7 +17,9 @@ export const MODS_TABLE_TOOLBARS = {
   selection: "mods-table-selection",
 } as const;
 
-/** A group heading's toolbar, named by its view's grouping, e.g. `"mods-table-group-collection"`. */
+/**
+ * A group heading's toolbar, named by its view's grouping, e.g. `"mods-table-group-collection"`.
+ */
 export const modsTableGroupToolbar = (grouping: string) => `mods-table-group-${grouping}`;
 
 /** How a custom view of the user's own changed. */
@@ -59,6 +61,11 @@ const menuOpenedEvent = (target: TableMenuTarget, via: "pointer" | "keyboard"): 
   properties: { target, via },
 });
 
+const propertiesOpenedEvent = (via: "double_click"): MixpanelEvent => ({
+  eventName: "app_mods_table_properties_opened",
+  properties: { via },
+});
+
 /** Usage tracking for the new Mods table, as callbacks for where each happens. */
 export interface IModsTableAnalytics {
   /**
@@ -77,6 +84,11 @@ export interface IModsTableAnalytics {
   onSearchStarted: () => void;
   /** A context menu opened. */
   onMenuOpen: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
+  /**
+   * The Properties panel opened from a row, where no toolbar button reports it: by a
+   * double-click. Opening it from a menu or the toolbar is counted by those toolbars instead.
+   */
+  onPropertiesOpened: (via: "double_click") => void;
 }
 
 /**
@@ -100,6 +112,7 @@ export const useModsTableAnalytics = (): IModsTableAnalytics => {
       onColumnToggled: (column, visible) => send(columnToggledEvent(column, visible)),
       onSearchStarted: () => send(searchedEvent()),
       onMenuOpen: (target, via) => send(menuOpenedEvent(target, via)),
+      onPropertiesOpened: (via) => send(propertiesOpenedEvent(via)),
     };
   }, [api]);
 };

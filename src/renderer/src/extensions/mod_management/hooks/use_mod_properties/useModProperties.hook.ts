@@ -6,8 +6,7 @@ import { useSelector } from "react-redux";
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import type { IState } from "@/types/IState";
 import type { ITableAttribute } from "@/types/ITableAttribute";
-import { getCurrentLanguage, preT } from "@/util/i18n";
-import { userFriendlyTime } from "@/util/relativeTime";
+import { preT } from "@/util/i18n";
 
 import { modAuthor } from "../../components/mod_author/ModAuthor";
 import type { IMod } from "../../types/IMod";
@@ -68,6 +67,11 @@ export type ModProperty = IModPropertyBase &
         value: string;
         /** Whether it has a button to copy it, as an id does. */
         copyable?: boolean;
+      }
+    | {
+        kind: "time";
+        /** When it was, in ms since the epoch; the panel shows it relative to now, ageing. */
+        timestamp: number;
       }
     | {
         kind: "select";
@@ -150,7 +154,8 @@ const installerChoiceLines = (attributes: IModWithState["attributes"]) => {
     return [];
   }
 
-  // `options` can be a plain object (collection manifests, older data), as the legacy attribute allows.
+  // `options` can be a plain object (collection manifests, older data), as the legacy attribute
+  // allows.
   return Object.values(choices.options ?? {}).flatMap((step) =>
     (step?.groups ?? [])
       .filter((group) => (group.choices ?? []).length > 0)
@@ -169,12 +174,14 @@ const valueProperty = (
   copyable?: boolean,
 ): ModProperty[] => (value ? [{ kind: "value", id, label, value, copyable }] : []);
 
-/** A time as the table's columns show it, relative to now; none where there's no valid one. */
-const relativeTime = (value: string | number | Date | undefined, t: TFunction) => {
-  const date = value === undefined ? undefined : new Date(value);
-  return date && !Number.isNaN(date.getTime())
-    ? userFriendlyTime(date, t, getCurrentLanguage())
-    : undefined;
+/** A time as a property that ages on screen; none where there's no valid one. */
+const timeProperty = (
+  id: string,
+  label: string,
+  value: string | number | Date | undefined,
+): ModProperty[] => {
+  const timestamp = value === undefined ? Number.NaN : new Date(value).getTime();
+  return Number.isNaN(timestamp) ? [] : [{ kind: "time", id, label, timestamp }];
 };
 
 /** The mod's card: its picture, status, name, summary and author. */
@@ -191,21 +198,13 @@ const cardOf = (mod: IModWithState): IModPropertiesCard => ({
 /** Its version, and when it was installed, downloaded and enabled. */
 const timeProperties = (mod: IModWithState, download: IDownload | undefined, t: TFunction) => [
   ...valueProperty("version", t("modsTable::properties::version"), textOf(mod.attributes?.version)),
-  ...valueProperty(
+  ...timeProperty(
     "installTime",
     t("modsTable::properties::installTime"),
-    relativeTime(mod.attributes?.installTime, t),
+    mod.attributes?.installTime,
   ),
-  ...valueProperty(
-    "downloadTime",
-    t("modsTable::properties::downloadTime"),
-    relativeTime(download?.fileTime, t),
-  ),
-  ...valueProperty(
-    "enabledTime",
-    t("modsTable::properties::enabledTime"),
-    relativeTime(mod.enabledTime, t),
-  ),
+  ...timeProperty("downloadTime", t("modsTable::properties::downloadTime"), download?.fileTime),
+  ...timeProperty("enabledTime", t("modsTable::properties::enabledTime"), mod.enabledTime),
 ];
 
 /**

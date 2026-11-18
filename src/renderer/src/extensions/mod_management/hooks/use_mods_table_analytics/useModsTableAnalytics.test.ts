@@ -80,6 +80,15 @@ describe("useModsTableAnalytics", () => {
     expect(sent()).toEqual({ eventName: "app_mods_table_searched", properties: {} });
   });
 
+  it("reports opening Properties by double-click", () => {
+    analytics().onPropertiesOpened("double_click");
+
+    expect(sent()).toEqual({
+      eventName: "app_mods_table_properties_opened",
+      properties: { via: "double_click" },
+    });
+  });
+
   it("reports a context menu opening, on what and from where", () => {
     analytics().onMenuOpen("selection", "keyboard");
 

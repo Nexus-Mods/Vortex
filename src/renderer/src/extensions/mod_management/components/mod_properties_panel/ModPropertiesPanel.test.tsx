@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { Provider } from "react-redux";
@@ -10,6 +10,8 @@ vi.mock("../../hooks/use_mod_properties/useModProperties.hook", () => ({
 }));
 
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
+import type { ITableAttribute } from "@/types/ITableAttribute";
+import type { TFunction } from "@/util/i18n";
 
 import type {
   IModProperties,
@@ -17,7 +19,7 @@ import type {
 } from "../../hooks/use_mod_properties/useModProperties.hook";
 import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
 import type { IModWithState } from "../../types/IModProps";
-import type { RegisteredValues } from "../../util/registered_values/registeredValues";
+import { RegisteredValues } from "../../util/registered_values/registeredValues";
 import { ModPropertiesPanel } from "./ModPropertiesPanel";
 
 const ONE_MOD: IModProperties = {
@@ -67,18 +69,64 @@ const MODS = [{ id: "a", attributes: { name: "SkyUI" } }] as unknown as IModWith
 const MEMBERSHIPS = {};
 const REGISTERED = { attributes: [], values: {} as unknown as RegisteredValues };
 
-const renderPanel = (properties: IModProperties, onClose = vi.fn()) => {
+const renderPanel = (properties: IModProperties, onClose = vi.fn(), registered = REGISTERED) => {
   vi.mocked(useModProperties).mockReturnValue(properties);
   return render(
     <Provider store={makeModsTableStore()}>
       <ModPropertiesPanel
         memberships={MEMBERSHIPS}
         mods={MODS}
-        registered={REGISTERED}
+        registered={registered}
         onClose={onClose}
       />
     </Provider>,
   );
+};
+
+const t = ((key: string) => key) as unknown as TFunction;
+
+/**
+ * The panel showing a field from data outside the mods an extension says has changed through
+ * `externalData`, as the legacy details pane listens to it: drawn by the extension itself, or
+ * its `calc` value.
+ */
+const renderRegistered = (drawn: "renderer" | "calc" = "renderer") => {
+  const extension = { label: "No rules", changed: () => {} };
+  const externalData = vi.fn((onChanged: () => void) => {
+    extension.changed = onChanged;
+  });
+  const attribute = {
+    id: "rules",
+    name: "Rules",
+    placement: "detail",
+    ...(drawn === "renderer"
+      ? { isVolatile: true, customRenderer: () => <span>{extension.label}</span> }
+      : { calc: () => extension.label }),
+    externalData,
+  } as unknown as ITableAttribute;
+  const registered = { attributes: [attribute], values: new RegisteredValues(t) };
+  const properties: IModProperties = {
+    ...ONE_MOD,
+    sections: [
+      {
+        id: "registered",
+        tab: "general",
+        layout: "list",
+        properties: [
+          {
+            kind: "registered",
+            id: "registered:rules",
+            label: "Rules",
+            attribute,
+            mods: MODS,
+            values: registered.values,
+          },
+        ],
+      },
+    ],
+  };
+  const open = () => renderPanel(properties, vi.fn(), registered);
+  return { view: open(), open, extension, externalData };
 };
 
 describe("ModPropertiesPanel", () => {
@@ -167,6 +215,46 @@ describe("ModPropertiesPanel", () => {
     renderPanel(ONE_MOD);
 
     expect(useModProperties).toHaveBeenCalledWith(MODS, MEMBERSHIPS, REGISTERED);
+  });
+
+  // Such as Dependencies, whose rules the dependency manager keeps outside the mods.
+  it("draws an extension's field again when the extension says the data it's from changed", () => {
+    const { extension } = renderRegistered();
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("No rules");
+
+    extension.label = "1 rule";
+    act(() => extension.changed());
+
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");
+  });
+
+  // Extensions give no way to stop listening, so each call would add a listener for good.
+  it("listens to the data its extension fields are from once, however often it opens", () => {
+    const { view, open, extension, externalData } = renderRegistered();
+
+    view.unmount();
+    // Heard by no one while it's closed.
+    act(() => extension.changed());
+    open().unmount();
+    open();
+    extension.label = "1 rule";
+    act(() => extension.changed());
+
+    expect(externalData).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");
+  });
+
+  // The data's change is heard by no one while it's closed, so its value is worked out again.
+  it("shows a value worked out again for data that changed while it was closed", () => {
+    const { view, open, extension } = renderRegistered("calc");
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("No rules");
+
+    view.unmount();
+    extension.label = "1 rule";
+    act(() => extension.changed());
+    open();
+
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");
   });
 
   it("closes", async () => {

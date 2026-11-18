@@ -25,6 +25,10 @@ import { activeGameId } from "@/util/selectors";
 
 import { ValueText } from "../../components/value_text/ValueText";
 import type { IModWithState } from "../../types/IModProps";
+import {
+  listenToExternalData,
+  releaseExternalData,
+} from "../../util/external_data_listeners/externalDataListeners";
 import type { IModRow } from "../../util/mods_table_views/modsTableViews";
 import {
   logAttributeFailure,
@@ -221,13 +225,12 @@ const isOffered = (attribute: ITableAttribute, states: LegacyColumnStates) =>
   isInTable(attribute) && (attribute.isToggleable === true || isLegacyShown(attribute, states));
 
 /**
- * How many times each offered attribute's `externalData` has said the data it's from changed,
- * by id: the legacy table's way to hear of changes to data outside the mods. Each change has its
- * values worked out again. Extensions give no way to stop listening, so once unmounted, their
- * calls are ignored, and some keep only the last listener, so it listens only while the new
- * table is shown, leaving them to the legacy one.
+ * How many times each attribute's `externalData` has said the data it's from changed, by id: the
+ * legacy table's way to hear of changes to data outside the mods. Each change has its values
+ * worked out again. It listens only while `isNewTable`, leaving them to the legacy table, as some
+ * extensions keep only the last listener.
  */
-const useExternalDataVersions = (
+export const useExternalDataVersions = (
   attributes: ITableAttribute[],
   isNewTable: boolean,
   values: RegisteredValues,
@@ -238,34 +241,56 @@ const useExternalDataVersions = (
     if (!isNewTable) {
       return undefined;
     }
-    let mounted = true;
-    for (const { id, externalData } of attributes) {
-      externalData?.(() => {
-        if (mounted) {
-          values.invalidate(id);
-          setVersions((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
-        }
-      });
-    }
-    return () => {
-      mounted = false;
-    };
+    // By the attribute itself, which its `externalData` is called once for.
+    const unsubscribes = attributes.map((attribute) =>
+      listenToExternalData(attribute, () => {
+        const { id } = attribute;
+        values.invalidate(id);
+        setVersions((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
+      }),
+    );
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
   }, [attributes, isNewTable, values]);
 
   return versions;
 };
 
 /**
- * The columns extensions register on the legacy Mods table, with `registerTableAttribute("mods", …)`,
- * for the new one. They change only with the extensions, the game and the table's own columns;
- * what their cells show from outside their own mod comes in `inputs`, for
- * {@link RegisteredModsInputsProvider}.
+ * Wraps part of the table's surroundings that listens to some attributes' data outside the mods
+ * itself, with {@link useExternalDataVersions}, such as the Properties panel, so its cells are
+ * drawn again as that data changes, as well as the table's.
+ */
+export const RegisteredModsVersionsProvider = ({
+  versions,
+  children,
+}: {
+  versions: { [attributeId: string]: number };
+  children: ReactNode;
+}) => {
+  const outer = useContext(RegisteredModsInputs);
+  const inputs = useMemo(() => {
+    // Added, not replaced, so a cell heard of by both is drawn again as either hears of a change.
+    const merged = { ...outer.versions };
+    for (const [id, count] of Object.entries(versions)) {
+      merged[id] = (merged[id] ?? 0) + count;
+    }
+    return { ...outer, versions: merged };
+  }, [outer, versions]);
+  return <RegisteredModsInputs.Provider value={inputs}>{children}</RegisteredModsInputs.Provider>;
+};
+
+/**
+ * The columns extensions register on the legacy Mods table, with
+ * `registerTableAttribute("mods", …)`, for the new one. They change only with the extensions, the
+ * game and the table's own columns; what their cells show from outside their own mod comes in
+ * `inputs`, for {@link RegisteredModsInputsProvider}.
  *
  * @param ownIds The table's own columns, which a registered one with the same id gives way to.
  * @param mods All the mods, whose changes a volatile column is worked out again for.
  * @param isNewTable Whether the new table is the one shown, which alone listens for changes.
  * @returns Also `details`, the attributes the legacy details pane shows, for the Properties panel,
- * whose values come from `textChanges` and `inputs` as the columns' do.
+ * whose values come from `textChanges` and `inputs` as the columns' do; it listens for changes to
+ * their data outside the mods itself, with {@link useExternalDataVersions}.
  */
 export const useRegisteredModsColumns = (
   ownIds: ReadonlySet<string>,
@@ -306,9 +331,19 @@ export const useRegisteredModsColumns = (
 
   // Kept apart from the columns, which a mod changing doesn't change; anew for a new language.
   const values = useMemo(() => new RegisteredValues(t), [attributes, t]);
-  // The panel's values too, which change with data outside the mods as the columns' do.
-  const listened = useMemo(() => [...new Set([...offered, ...details])], [offered, details]);
-  const versions = useExternalDataVersions(listened, isNewTable, values);
+  // The columns' alone: the Properties panel listens for its fields while it's open, so their
+  // changes don't draw the table again.
+  const versions = useExternalDataVersions(offered, isNewTable, values);
+
+  // The legacy table calls every attribute's `externalData` as it mounts, taking the listener of
+  // an extension that keeps only the last one, here or in the classic layout, so the new table
+  // calls it again once it's back, though not as its columns are toggled or the panel opens.
+  useEffect(() => {
+    if (!isNewTable) {
+      return undefined;
+    }
+    return () => attributes.forEach(releaseExternalData);
+  }, [attributes, isNewTable]);
 
   useEffect(() => values.prune(mods), [mods, values]);
 

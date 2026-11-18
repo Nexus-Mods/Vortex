@@ -143,9 +143,8 @@ const modTypeProperties = (
       value: typeId,
       isVarious,
       choices: getModTypeExtensions()
-        .filter(
-          (type) =>
-            fromExtension(type.typeId, "support check", () => type.isSupported(gameId)) === true,
+        .filter((type) =>
+          Boolean(fromExtension(type.typeId, "support check", () => type.isSupported(gameId))),
         )
         .map((type) => ({ value: type.typeId, label: type.options.name || type.typeId })),
       onChange: (value) => {
