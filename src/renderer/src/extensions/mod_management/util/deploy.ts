@@ -1,5 +1,6 @@
 import {
   getErrorCode,
+  VortexGameId,
   VortexModStagingFolder,
   VortexProfileId,
   VortexStagingFolder,
@@ -26,7 +27,6 @@ import {
 } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
-import type { IModType } from "../../gamemode_management/types/IModType";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { setDeploymentPurged } from "../actions/deployment";
 import { mergedSourceName } from "../modMerging";
@@ -40,37 +40,11 @@ import {
   savePurgeLeftovers,
   withActivationLock,
 } from "./activationStore";
+import { settleLeftoverDeployment } from "./applyDeploy";
 import BlacklistSet, { fileOverrideEntries, skipListEntries } from "./BlacklistSet";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
 import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
-const MERGE_SUBDIR = "zzz_merge";
-
-export function genSubDirFunc(game: IGame, modType: IModType): (mod: IMod) => string {
-  const mergeModsOpt =
-    modType !== undefined && modType.options.mergeMods !== undefined
-      ? modType.options.mergeMods
-      : (game.mergeMods ?? true);
-
-  if (typeof mergeModsOpt === "boolean") {
-    return mergeModsOpt ? () => "" : (mod: IMod) => (mod !== null ? mod.id : MERGE_SUBDIR);
-  } else {
-    return (mod: IMod) => {
-      try {
-        return mergeModsOpt(mod);
-      } catch (err) {
-        // if the game doesn't implement generating a output path for the merge,
-        // use the default
-        if (mod === null) {
-          return MERGE_SUBDIR;
-        } else {
-          throw err;
-        }
-      }
-    };
-  }
-}
-
 export interface ISingleModActivation {
   method: IDeploymentMethod;
   game: IGame;
@@ -276,6 +250,7 @@ async function purgeModsImpl(
   try {
     await withActivationLock(async () => {
       log("debug", "purging mods", { activatorId: activator.id, stagingPath });
+      await settleLeftoverDeployment(api, VortexGameId(gameId));
       onProgress(0, "Preparing purge");
 
       let lastDeployment: { [typeId: string]: IDeployedFile[] };
@@ -417,6 +392,7 @@ export function purgeModsInPath(
     () =>
       withActivationLock(async () => {
         log("debug", "purging mods", { activatorId: activator.id, stagingPath });
+        await settleLeftoverDeployment(api, VortexGameId(gameId));
         onProgress(0, "Preparing purge");
 
         if (gameId !== undefined && profile === undefined) {

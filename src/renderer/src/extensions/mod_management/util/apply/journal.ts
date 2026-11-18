@@ -1,4 +1,5 @@
 import { AbsolutePathSchema, OperationSchema, type Operation } from "@nexusmods/mod-pipeline";
+import { VortexDeploymentMethodId } from "@vortex/shared";
 import { z } from "zod";
 
 type MutuallyAssignable<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -38,8 +39,24 @@ export const JournalPhase = {
 } as const;
 export type JournalPhase = (typeof JournalPhase)[keyof typeof JournalPhase];
 
+const manifestSaveDetailsSchema = z.object({
+  deploymentMethod: z.string().transform(VortexDeploymentMethodId),
+  clearedDestinations: z.array(AbsolutePathSchema),
+});
+
+/**
+ * What saving a run's manifests needs besides its entries: the deployment method they record, and
+ * the destinations whose entries the plan drops.
+ */
+export type ManifestSaveDetails = z.infer<typeof manifestSaveDetailsSchema>;
+
+/** What a run's journal header holds besides its id and entries. */
+export interface JournalHeaderDetails {
+  manifestSaveDetails?: ManifestSaveDetails;
+}
+
 /** A run as its journal records it. */
-export interface Journal {
+export interface Journal extends JournalHeaderDetails {
   runId: string;
   entries: JournalEntry[];
   phase: JournalPhase;
@@ -89,7 +106,7 @@ export interface JournalWriter {
   finish(): Promise<void>;
 }
 
-const JOURNAL_VERSION = 1;
+const JOURNAL_VERSION = 2;
 const NEWLINE = 0x0a;
 
 const LineType = {
@@ -109,6 +126,7 @@ const headerSchema = z.object({
   version: z.literal(JOURNAL_VERSION),
   runId: z.string(),
   count: positionSchema,
+  manifestSaveDetails: manifestSaveDetailsSchema.optional(),
 });
 
 const entrySchema = z.object({
@@ -212,6 +230,7 @@ function parseJournal(text: string): Journal | undefined {
   }
   return {
     runId: header.runId,
+    manifestSaveDetails: header.manifestSaveDetails,
     entries,
     phase,
     changing,
@@ -252,12 +271,14 @@ export async function createJournal(
   storage: JournalStorage,
   entries: readonly JournalEntry[],
   runId: string,
+  headerDetails: JournalHeaderDetails = {},
 ): Promise<JournalWriter | undefined> {
   const header = {
     type: LineType.Header,
     version: JOURNAL_VERSION,
     runId,
     count: entries.length,
+    ...headerDetails,
   };
   return (await storage.create(encodeLines([header, ...entries])))
     ? writerFor(storage, runId)

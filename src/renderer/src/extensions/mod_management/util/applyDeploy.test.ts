@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import * as path from "node:path";
 
 import {
+  parseError,
   VortexDeploymentMethodId,
   VortexGameId,
   VortexModId,
@@ -42,7 +43,12 @@ import { writeInto } from "../../../test-utils/tempDir";
 import type { IMergeResultByType } from "../modMerging";
 import { saveActivation } from "./activationStore";
 import type { JournalStorage } from "./apply/journal";
-import { DeploymentPlanning, deploymentPlanningFor, planAndApplyDeployment } from "./applyDeploy";
+import {
+  DeploymentPlanning,
+  deploymentPlanningFor,
+  planAndApplyDeployment,
+  settleLeftoverDeployment,
+} from "./applyDeploy";
 import { DeployOrchestrator } from "./DeployOrchestrator";
 import { LockfileContributions } from "./lockfileContributions";
 
@@ -119,7 +125,7 @@ test("a deployment Apply refuses fails, naming why, and leaves the disk as it wa
   const { planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
 
   await expect(planAndApplyWith(await unreadableJournal())).rejects.toThrow(
-    `Vortex didn't deploy, because it couldn't use the journal at ${JOURNAL_FILE}`,
+    `Vortex didn't deploy, because the journal at ${JOURNAL_FILE} can't be used`,
   );
 
   expect(await isModFileDeployed()).toBe(false);
@@ -172,6 +178,60 @@ test("a deployment that can't be planned fails, with no file work", async () => 
   ).rejects.toThrow("couldn't be planned");
 
   expect(await isModFileDeployed()).toBe(false);
+});
+
+test("a run stopped before its journal recorded a step is finished by settling, which saves its manifest", async () => {
+  const { game, planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
+  const journal = await newJournal();
+  // as a kill leaves it: the journal holds the run's steps and nothing after them
+  await planAndApplyWith({ ...journal, append: () => Promise.reject(new Error("killed")) }).catch(
+    () => undefined,
+  );
+  expect(await isModFileDeployed()).toBe(false);
+
+  await settleLeftoverDeployment(game.api, VortexGameId(game.gameId), JOURNAL_FILE, journal);
+
+  expect(await isModFileDeployed()).toBe(true);
+  expect(await game.recordedFiles()).toEqual(["mod.esp"]);
+  expect(await journal.read()).toBeUndefined();
+  expect(game.notifications).toContainEqual(
+    expect.objectContaining({ message: "Interrupted deployment finished" }),
+  );
+});
+
+test("settling a game with no journal changes nothing", async () => {
+  const { game, isModFileDeployed } = await makeGameWithUndeployedMod();
+
+  await settleLeftoverDeployment(
+    game.api,
+    VortexGameId(game.gameId),
+    JOURNAL_FILE,
+    await newJournal(),
+  );
+
+  expect(await isModFileDeployed()).toBe(false);
+  expect(game.notifications).toEqual([]);
+});
+
+test("a journal settling can't use stops the game's deployments and purges", async () => {
+  const { game } = await makeGameWithUndeployedMod();
+  const journal = await unreadableJournal();
+
+  const settling = settleLeftoverDeployment(
+    game.api,
+    VortexGameId(game.gameId),
+    JOURNAL_FILE,
+    journal,
+  );
+
+  expect(parseError(await settling.catch((err: unknown) => err)).data.kind).toBe(
+    "deployment:interrupted-run-unsettled",
+  );
+  await expect(settling).rejects.toThrow(
+    `Vortex can't settle an interrupted deployment, because the journal at ${JOURNAL_FILE} can't ` +
+      "be used, so it won't deploy or purge this game",
+  );
+  expect(await journal.read()).toBeDefined();
 });
 
 const SKYRIM_SE = VortexGameId("skyrimse");

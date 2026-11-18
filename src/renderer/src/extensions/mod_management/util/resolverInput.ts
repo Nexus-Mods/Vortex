@@ -48,8 +48,8 @@ import type { IMod } from "../types/IMod";
 import { readOwnManifest } from "./activationStore";
 import type { StagedFiles } from "./apply/apply";
 import BlacklistSet from "./BlacklistSet";
-import { genSubDirFunc } from "./deploy";
 import { deployedFilePath } from "./deployedFilePath";
+import { genSubDirFunc } from "./modSubDirectory";
 import { doSortMods } from "./sort";
 
 // files hashed at once; keeps the main process's hash workers, at most 16, busy
