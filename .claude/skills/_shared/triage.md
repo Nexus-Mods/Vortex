@@ -348,21 +348,21 @@ Once the user approves, update every open `Bug` issue in Linear with its status,
 
 Write triage comments for teammates reading the issue in Linear, using plain English rather than internal triage codes:
 
-| Instead of internal jargon…        | Write in the comment…                                     |
-| ---------------------------------- | --------------------------------------------------------- |
-| `P1`, `P2`, `C1`, `C3`             | Plain numbers and shares (never label codes)              |
-| Raw percentage (`0.4%` daily rate) | `"about 1 in <N> users"`                                  |
-| Raw telemetry install count        | `"about <N> people on <version>"` (`installs × 2`)        |
-| _"exposure only"_ / _"trigger"_    | Explain what users did and why we don't know if it harmed |
-| _"ships in `<version>` hotfix"_    | Omit release targets (comments outlive release branches)  |
+| Instead of internal jargon…     | Write in the comment…                                     |
+| ------------------------------- | --------------------------------------------------------- |
+| `P1`, `P2`, `C1`, `C3`          | Plain numbers and shares (never label codes)              |
+| Bare rate (`0.4%` daily rate)   | `"about 0.4% of <group>"`, naming the user group          |
+| Raw telemetry install count     | `"about <N> people on <version>"` (`installs × 2`)        |
+| _"exposure only"_ / _"trigger"_ | Explain what users did and why we don't know if it harmed |
+| _"ships in `<version>` hotfix"_ | Omit release targets (comments outlive release branches)  |
 
 **Structure** (two heading lines, a blank line, the severity explanation, then short bullets):
 
 - **`Severity: <tier>.`** On a re-triage, append the previous tier: _"(was S2)"_.
 - **`Priority: <priority>.`** Append _"(was Medium)"_ when it changes.
 - **Severity explanation** (new triages and re-triages): what happens to the user, why it isn't the tier above when that isn't obvious (e.g. S3 vs. S1: _"nothing on disk changes"_), and what would confirm or rule out an unconfirmed S1.
-- **`* Players:`** estimated headcount (_"about `<N>` people on `<version>`"_), plus the peak daily rate as _"1 in `<N>`"_ across all users on that version. For game-specific bugs, add the in-game rate (_"1 in `<N>` people playing a Bethesda game"_). When there is no telemetry, write _"unknown"_, explain why, and note that unknown isn't the same as rare.
-- **`* Content:`** whether the bug is tied to particular collections or mods—and when it is, their combined share in plain words (_"collections that carry about 1 in `<N>` collection downloads"_) and whether it is confirmed. Name the collections or mods, not the people behind them, and never quote one person's share; curator and author names belong in the description.
+- **`* Players:`** estimated headcount (_"about `<N>` people on `<version>`"_), plus the peak daily rate as a percentage of a named user group (_"about 0.4% of `<version>` users"_, _"about 17% of stable users"_), never as _"1 in `<N>`"_. Round to at most two significant figures. For game-specific bugs, add the in-game rate (_"about 3% of people playing a Bethesda game"_). When there is no telemetry, write _"unknown"_, explain why, and note that unknown isn't the same as rare.
+- **`* Content:`** whether the bug is tied to particular collections or mods—and when it is, their combined share in plain words (_"collections that carry about 5% of collection downloads"_) and whether it is confirmed. Name the collections or mods, not the people behind them, and never quote one person's share; curator and author names belong in the description.
 - **`* Why <priority>:`** include when the priority isn't obvious from the severity alone (the impact or override that raised it, or that S1 is at least High regardless of user count).
 - **Optional bullets** (only when they add value): `* What would change this:`, `* Also:` (GitHub context, related issues, partial fixes), `* Needed:` / `* Next step:` (for needs-info issues), `* Open to community contributions:`.
 
@@ -376,7 +376,7 @@ Priority: High.
 
 On the machines it hits, LOOT never starts, so the load order can't be sorted in any session. Restarting Vortex doesn't help, which is why it isn't S3. It doesn't change the load order or any files on disk, so it isn't S1.
 
-* Players: about <N> people on <version>. On its worst day, about 1 in <M> users hit it.
+* Players: about <N> people on <version>. On its worst day, about <M>% of <version> users hit it.
 * Content: not tied to any particular collection.
 * Why High: it blocks sorting for a visible share of users, and it's new in this release.
 * What would change this: if the beta diagnostics show it's broader, we'll revisit.
