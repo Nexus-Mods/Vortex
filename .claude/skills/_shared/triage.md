@@ -44,6 +44,21 @@ Use the column of the issue's **higher** impact score. For example, an `S3` bug 
 - **Majority of all users on the version affected** → **Urgent** at any severity. This override measures the whole platform; a bug that affects most of one game's players is scored through its severity and the [single-game route](#single-game-rate-rules) instead.
 - **Bug in a feature introduced in the current beta** → at least **High**.
 
+**Critical-path overrides** set a minimum priority for failures where daily user counts cannot measure the real risk (the matrix can still raise priority higher):
+
+| Bug                                                                                         | Minimum Priority | Why user counts miss it                                                                             |
+| ------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
+| **Security vulnerability**                                                                  | **Urgent**       | Risk depends on what can be exploited, not how many users have hit it so far.                       |
+| **Broken installer or auto-updater** (on either update channel)                             | **Urgent**       | Users who cannot install or update Vortex cannot receive future fixes.                              |
+| **Deletes or overwrites user files outside Vortex** (game saves, game files, personal data) | **Urgent**       | Permanent loss of user files is unacceptable regardless of how few people hit it.                   |
+| **Broken error or crash reporting**                                                         | **High**         | Blinds triage to other bugs in the release, and cannot report its own failure.                      |
+| **Bundled game completely broken (regression)**                                             | **High**         | Without this, a regression that breaks a smaller game for everyone playing it would stop at Medium. |
+
+- **Confirm before applying:** An override requires the bug to be reproduced or traced to code. Until then, score the report through the matrix and mark it as an _override candidate_ noting what would confirm it.
+- **Keep severity independent:** Overrides only raise **priority**, never the severity label (for example, broken telemetry is still `S5 Internal`; a deleted save file is `S1 Corrupted State`).
+- **Keep security details private:** Record security findings on the Linear issue only—never in a GitHub issue, pull request, or anything else public before the fix ships.
+- **What counts as a bundled-game regression:** A game whose extension ships with Vortex worked on the previous stable release, and now cannot be managed or launched by anyone playing it. Partial bugs in a working extension, games already broken on the previous stable release, and third-party extensions (unless Vortex broke an API contract they rely on) score through the matrix instead.
+
 **Ordering and justification:**
 
 - Within each priority level, order issues by **severity** first, then by **affected users** (most first), then by **content reach** (`C1 Wide` before `C2 Moderate`).
@@ -302,7 +317,7 @@ Group items requiring code investigation by subsystem area (e.g. plugins/LOOT/lo
 Nothing in Linear changes until the user approves. Present the proposal in this order:
 
 1. **Executive summary:**
-    - Whether anything clears the **stable hotfix** bar (`Urgent`).
+    - Whether anything clears the **stable hotfix** bar (`Urgent`), and any critical-path override that applies or needs confirmation.
     - All **S1 candidates** for the user to confirm.
     - Any cause that scores `P2 Moderate` or above and has no Linear issue, plus any telemetry-silent GitHub report needing manual impact review.
     - Any notable new regressions in the release.
