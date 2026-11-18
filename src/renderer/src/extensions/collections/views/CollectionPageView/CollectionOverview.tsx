@@ -504,8 +504,8 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
     if (success && showUpvoteResponse) {
       onVoteSuccess?.(collection.id, success);
 
-      // if we've already endorsed then we don't need to show the dialog
-      if (endorsedStatus === "Endorsed") return;
+      // if we've already endorsed, or Nexus is still being asked, then we don't need to show the dialog
+      if (endorsedStatus === "Endorsed" || rawEndorsedStatus === "pending") return;
 
       this.context.api
         .showDialog(

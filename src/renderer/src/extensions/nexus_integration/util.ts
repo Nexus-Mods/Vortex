@@ -1163,6 +1163,21 @@ const IGNORE_ERRORS = [
   "ESOCKETTIMEDOUT",
 ];
 
+/**
+ * Puts back a mod's endorsement from before a request that failed, unless something has written
+ * over its pending step since, such as a refresh with Nexus's answer.
+ */
+function restoreEndorsement(
+  api: IExtensionApi,
+  gameMode: string,
+  modId: string,
+  endorsedStatus: string,
+) {
+  if (api.getState().persistent.mods[gameMode]?.[modId]?.attributes?.endorsed === "pending") {
+    api.store.dispatch(setModAttribute(gameMode, modId, "endorsed", endorsedStatus));
+  }
+}
+
 function reportEndorseError(
   api: IExtensionApi,
   err: Error,
@@ -1297,7 +1312,7 @@ function endorseCollectionImpl(
       );
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsedStatus));
+      restoreEndorsement(api, gameMode, mod.id, endorsedStatus);
       reportEndorseError(api, err, "collection", gameId, nexusCollectionId);
     });
 }
@@ -1342,7 +1357,7 @@ function endorseModImpl(
       store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsed));
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsedStatus));
+      restoreEndorsement(api, gameMode, mod.id, endorsedStatus);
       reportEndorseError(api, err, "mod", gameId, nexusModId, version);
     });
 }

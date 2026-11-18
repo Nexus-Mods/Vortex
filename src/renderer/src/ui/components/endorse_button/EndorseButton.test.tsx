@@ -83,6 +83,16 @@ describe("EndorseButton", () => {
     expect(hasBurst()).toBe(false);
   });
 
+  it("doesn't burst on a withdrawal, whose pending step comes with the emptied thumb", () => {
+    const { setProps } = renderButton({ isEndorsed: true });
+
+    setProps({ isEndorsed: false, isPending: true });
+    expect(hasBurst()).toBe(false);
+
+    setProps({ isEndorsed: false });
+    expect(hasBurst()).toBe(false);
+  });
+
   it("doesn't burst when it's drawn endorsed", () => {
     renderButton({ isEndorsed: true });
 
