@@ -205,8 +205,9 @@ const byDetailPosition = (lhs: ITableAttribute, rhs: ITableAttribute) =>
   (lhs.position || 100) - (rhs.position || 100);
 
 /**
- * Whether a view shows an attribute's column here until the user says: only if it asks to be,
- * unlike in the legacy table, so the columns extensions add don't crowd every view.
+ * Whether the attribute asks for its column to be shown here until the user says: only if it sets
+ * `isDefaultVisible: true`, unlike in the legacy table, so the columns extensions add don't crowd
+ * every view.
  */
 const asksToBeShown = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? false;
 
