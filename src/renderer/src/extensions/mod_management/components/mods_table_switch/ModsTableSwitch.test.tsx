@@ -27,10 +27,18 @@ vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOrigina
   useInstallMods: () => mocks.installMods,
 }));
 
+// Spied on, still working them out, to see which mods the panel's properties are worked out for.
+vi.mock("../../hooks/use_mod_properties/useModProperties.hook", async (importOriginal) => {
+  const original = await importOriginal<typeof ModProperties>();
+  return { ...original, useModProperties: vi.fn(original.useModProperties) };
+});
+
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import { focusModsTableGroup } from "../../actions/session";
+import type * as ModProperties from "../../hooks/use_mod_properties/useModProperties.hook";
+import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
 import type { IModWithState } from "../../types/IModProps";
 import { MODS_TABLE_FEEDBACK_URL } from "../mods_table_toolbar/ModsTableToolbar";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -1456,6 +1464,7 @@ describe("ModsTableSwitch", () => {
         "modsTable::toolbar::giveFeedback",
         "modsTable::toolbar::viewOptions",
         "modsTable::toolbar::search",
+        "modsTable::properties::toggle",
       ]);
     });
 
@@ -1468,6 +1477,134 @@ describe("ModsTableSwitch", () => {
 
       expect(openUrl).toHaveBeenCalledTimes(1);
       expect(openUrl).toHaveBeenCalledWith(MODS_TABLE_FEEDBACK_URL);
+    });
+  });
+
+  describe("Properties", () => {
+    const panel = () => screen.queryByTestId("mod-properties-panel");
+
+    // By place, as the rows are listed by name: Alpha first, then Beta.
+    const ALPHA = 0;
+    const BETA = 1;
+    const rowAt = (index: number) => bodyRows(screen.getByRole("grid"))[index];
+
+    const toggle = () => screen.getByTestId("mod-properties-toggle");
+    // A menu's Properties item, by its icon, as a menu's items carry no test ids.
+    const openItems = () =>
+      screen
+        .getAllByRole("menuitem")
+        .map((item) => item.querySelector('[data-symbol="dock_to_left"]') !== null);
+    const openItem = () => screen.getAllByRole("menuitem")[openItems().indexOf(true)];
+    // The panel's content goes once it's slid shut, which jsdom never animates.
+    const slideShut = () => fireEvent.transitionEnd(screen.getByTestId("mod-properties-slot"));
+    const toggleIcon = () => toggle().querySelector('[data-symbol="dock_to_left"]');
+
+    it("opens on a double-click, showing that mod", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      expect(panel()).toBeNull();
+
+      await userEvent.dblClick(rowAt(BETA));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+      expect(rowAt(BETA)).toHaveAttribute("aria-selected", "true");
+    });
+
+    it("opens from a row's menu, after its Open items", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Open in File Manager", action: vi.fn() },
+        { title: "Refresh Content", action: vi.fn() },
+      ]);
+
+      fireEvent.contextMenu(rowAt(BETA));
+      expect(openItems()).toEqual([false, true, false]);
+      await userEvent.click(openItem());
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+    });
+
+    it("opens for the selection from its menu, counting the mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const user = userEvent.setup();
+      await user.click(rowAt(ALPHA));
+      await user.keyboard("{Control>}");
+      await user.click(rowAt(BETA));
+      await user.keyboard("{/Control}");
+
+      fireEvent.contextMenu(rowAt(ALPHA));
+      await userEvent.click(openItem());
+
+      expect(within(panel()!).getByTestId("mod-properties-count")).toBeInTheDocument();
+    });
+
+    it("toggles from the toolbar, after the search", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
+
+      await userEvent.click(toggle());
+      expect(panel()).toBeInTheDocument();
+      expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 1' });
+
+      await userEvent.click(toggle());
+      // Still there as it slides shut.
+      expect(panel()).toBeInTheDocument();
+      slideShut();
+      expect(panel()).toBeNull();
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
+    });
+
+    it("closes from its own button, and stays closed", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
+
+      await userEvent.click(within(panel()!).getByTestId("mod-properties-close"));
+      slideShut();
+
+      expect(panel()).toBeNull();
+      await userEvent.click(rowAt(ALPHA));
+      expect(panel()).toBeNull();
+    });
+
+    it("works out no properties while it's closed, as they read the mod's files", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      await userEvent.click(rowAt(ALPHA));
+      expect(vi.mocked(useModProperties).mock.lastCall?.[0]).toEqual([]);
+
+      await userEvent.click(toggle());
+      expect(vi.mocked(useModProperties).mock.lastCall?.[0]).toHaveLength(1);
+    });
+
+    it("shows no panel with the classic table, though it was left open", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, undefined, {
+        betaTable: false,
+        propertiesOpen: true,
+      });
+
+      expect(panel()).toBeNull();
+    });
+
+    it("drops a mod that's removed while it's shown", async () => {
+      const store = makeModsTableStore({ propertiesOpen: true });
+      const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+      const { rerender } = render(
+        <Provider store={store}>
+          <ModsTableSwitch
+            {...props}
+            mods={{ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }}
+          />
+        </Provider>,
+      );
+      await userEvent.click(rowAt(BETA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+
+      rerender(
+        <Provider store={store}>
+          <ModsTableSwitch {...props} mods={{ a: mod("a", "Alpha", true) }} />
+        </Provider>,
+      );
+
+      expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
     });
   });
 

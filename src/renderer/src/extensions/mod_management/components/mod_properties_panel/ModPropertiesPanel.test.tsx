@@ -1,0 +1,155 @@
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React from "react";
+import { Provider } from "react-redux";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { makeModsTableStore } from "@/test-utils/modsTableStore";
+
+import type {
+  IModProperties,
+  ModProperty,
+} from "../../hooks/use_mod_properties/useModProperties.hook";
+import { ModPropertiesPanel } from "./ModPropertiesPanel";
+
+const ONE_MOD: IModProperties = {
+  count: 1,
+  card: {
+    name: "SkyUI",
+    summary: "A friendlier menu.",
+    author: "schlangster",
+    isAdult: false,
+    status: "downloaded",
+  },
+  sections: [
+    {
+      id: "times",
+      tab: "general",
+      layout: "grid",
+      properties: [{ kind: "value", id: "version", label: "Version", value: "5.2" }],
+    },
+    {
+      id: "links",
+      tab: "general",
+      layout: "list",
+      properties: [
+        { kind: "value", id: "nexusModId", label: "Nexus Mods ID", value: "12604", copyable: true },
+      ],
+    },
+    {
+      id: "files",
+      tab: "advanced",
+      layout: "list",
+      properties: [{ kind: "value", id: "archiveName", label: "Archive name", value: "SkyUI.7z" }],
+    },
+  ],
+};
+
+const CATEGORY: ModProperty = {
+  kind: "select",
+  id: "category",
+  label: "Category",
+  value: "1",
+  isVarious: false,
+  choices: [{ value: "1", label: "Armour" }],
+  onChange: vi.fn(),
+};
+
+const renderPanel = (properties: IModProperties, onClose = vi.fn()) =>
+  render(
+    <Provider store={makeModsTableStore()}>
+      <ModPropertiesPanel properties={properties} onClose={onClose} />
+    </Provider>,
+  );
+
+describe("ModPropertiesPanel", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows the empty state with nothing selected", () => {
+    renderPanel({ count: 0, sections: [] });
+
+    expect(screen.getByTestId("mod-properties-empty")).toBeInTheDocument();
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+  });
+
+  it("shows one mod's card, with its status tag, and General's values", () => {
+    renderPanel(ONE_MOD);
+
+    const general = screen.getByRole("tabpanel");
+    expect(within(general).getByTestId("mod-properties-card")).toBeInTheDocument();
+    expect(within(general).getByTestId("mod-status-downloaded")).toBeInTheDocument();
+    expect(within(general).getByTestId("mod-property-version")).toHaveTextContent("5.2");
+    expect(within(general).queryByTestId("mod-property-archiveName")).not.toBeInTheDocument();
+  });
+
+  it("switches between General and Advanced", async () => {
+    renderPanel(ONE_MOD);
+
+    const [general, advanced] = screen.getAllByRole("tab");
+    await userEvent.click(advanced);
+
+    expect(advanced).toHaveAttribute("aria-selected", "true");
+    expect(general).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByTestId("mod-property-archiveName")).toHaveTextContent("SkyUI.7z");
+    expect(screen.queryByTestId("mod-properties-card")).not.toBeInTheDocument();
+  });
+
+  it("has no Advanced tab with nothing on it", () => {
+    renderPanel({ ...ONE_MOD, sections: ONE_MOD.sections.filter(({ tab }) => tab === "general") });
+
+    expect(screen.getAllByRole("tab")).toHaveLength(1);
+  });
+
+  it("copies a value it offers to", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("api", { ...window.api, clipboard: { writeText } });
+    renderPanel(ONE_MOD);
+
+    await userEvent.click(screen.getByTestId("mod-property-copy-nexusModId"));
+
+    expect(writeText).toHaveBeenCalledWith("12604");
+  });
+
+  it("shows the fields to change among one mod's values", () => {
+    renderPanel({
+      ...ONE_MOD,
+      sections: [{ id: "organise", tab: "general", layout: "list", properties: [CATEGORY] }],
+    });
+
+    // The design system's dropdown: a button named by its label, showing the pick.
+    expect(screen.getByRole("button", { name: /^Category/ })).toBeInTheDocument();
+  });
+
+  it("counts several mods, with no card, above what they can all change", () => {
+    renderPanel({
+      count: 3,
+      sections: [
+        { id: "organise", tab: "general", layout: "list", properties: [CATEGORY] },
+        {
+          id: "type",
+          tab: "advanced",
+          layout: "list",
+          properties: [{ ...CATEGORY, id: "modType", label: "Mod type" }],
+        },
+      ],
+    });
+
+    expect(screen.getByTestId("mod-properties-count")).toBeInTheDocument();
+    expect(screen.queryByTestId("mod-properties-card")).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Category/ })).toBeInTheDocument();
+    // Advanced's too, under General's, as there are no tabs to put them on.
+    expect(screen.getByRole("button", { name: /^Mod type/ })).toBeInTheDocument();
+  });
+
+  it("closes", async () => {
+    const onClose = vi.fn();
+    renderPanel(ONE_MOD, onClose);
+
+    await userEvent.click(screen.getByTestId("mod-properties-close"));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

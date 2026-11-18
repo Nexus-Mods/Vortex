@@ -359,8 +359,8 @@ describe("useRegisteredModsColumns", () => {
     expect(calc).toHaveBeenCalledTimes(2);
   });
 
-  // Some extensions keep only the last listener, so one for no column would take theirs.
-  it("listens for changes only to the data of the columns it offers", () => {
+  // Some extensions keep only the last listener, so one for nothing shown would take theirs.
+  it("listens for changes only to the data of the columns it offers and the panel's fields", () => {
     const externalData = vi.fn();
     registered.attributes = [
       attribute({ id: "shown", externalData }),
@@ -374,7 +374,8 @@ describe("useRegisteredModsColumns", () => {
       wrapper: storeWrapper(),
     });
 
-    expect(externalData).toHaveBeenCalledTimes(1);
+    // The column's, and the detail field the Properties panel shows.
+    expect(externalData).toHaveBeenCalledTimes(2);
   });
 
   describe("search", () => {

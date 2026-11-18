@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useReducer,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -36,7 +37,7 @@ import {
 } from "../use_mods_table_columns/useModsTableColumns.hook";
 
 /** A `calc` value as text, a date in the user's language; none for one that has no text to show. */
-const valueText = (value: unknown): string | undefined => {
+export const valueText = (value: unknown): string | undefined => {
   if (typeof value === "string" || typeof value === "number") {
     return String(value);
   }
@@ -50,7 +51,7 @@ const valueText = (value: unknown): string | undefined => {
 };
 
 /** A `calc` value as the legacy table's cell shows one, with true as a tick. */
-const valueCell = (value: unknown, header: string): ReactNode => {
+export const valueCell = (value: unknown, header: string): ReactNode => {
   if (value === true) {
     return <Icon name="check" size="sm" title={header} />;
   }
@@ -84,10 +85,14 @@ interface IRegisteredValueProps {
 }
 
 /**
- * A cell's `calc` value, as last worked out. One worked out asynchronously shows once it's
- * ready, the last one staying until then.
+ * An attribute's `calc` value for a mod, as last worked out. One worked out asynchronously comes
+ * once it's ready, drawing again, the last one staying until then.
  */
-const RegisteredValue = ({ attribute, mod, header, values }: IRegisteredValueProps) => {
+export const useRegisteredValue = (
+  attribute: ITableAttribute,
+  mod: IModWithState,
+  values: RegisteredValues,
+): unknown => {
   const { mods } = useContext(RegisteredModsInputs);
   const entry = values.get(attribute, mod, mods);
   const [, settled] = useReducer((count: number) => count + 1, 0);
@@ -109,8 +114,26 @@ const RegisteredValue = ({ attribute, mod, header, values }: IRegisteredValuePro
     };
   }, [pending]);
 
-  return valueCell(entry.value, header);
+  return entry.value;
 };
+
+/**
+ * An attribute's `calc` values for several mods, in their order, as last worked out. Drawn again
+ * as any value the attribute has is worked out, so one worked out asynchronously comes once ready.
+ */
+export const useRegisteredValues = (
+  attribute: ITableAttribute,
+  mods: readonly IModWithState[],
+  values: RegisteredValues,
+): unknown[] => {
+  const { mods: all } = useContext(RegisteredModsInputs);
+  useSyncExternalStore(values.subscribe, values.revision);
+  return mods.map((mod) => values.get(attribute, mod, all).value);
+};
+
+/** A cell's `calc` value, as {@link useRegisteredValue} works it out. */
+const RegisteredValue = ({ attribute, mod, header, values }: IRegisteredValueProps) =>
+  valueCell(useRegisteredValue(attribute, mod, values), header);
 
 // Only the Dependencies column highlights its row, while its icon is dragged over it, which
 // comes once the table lets you drag one mod onto another to add a rule.
@@ -118,8 +141,14 @@ const NO_HIGHLIGHT: ICustomProps = { onHighlight: () => undefined };
 
 interface ICustomCellProps {
   attribute: ITableAttribute;
-  mod: IModWithState;
+  /**
+   * The mod it's drawn for; in a details pane, every selected one, for an attribute that takes
+   * several.
+   */
+  mod: IModWithState | readonly IModWithState[];
   t: TFunction;
+  /** Whether it's drawn in a details pane rather than a table cell, which the renderer is told. */
+  detail?: boolean;
   /** Changes when the data it's drawn from outside the mod does, which draws it again. */
   version: number;
 }
@@ -130,25 +159,27 @@ interface ICustomCellProps {
  * Drawn again only when its mod or its data outside the mods change, as in the legacy table,
  * as some renderers start work as they're called, such as Content's scan of the mod's files.
  */
-const CustomCell = memo(({ attribute, mod, t }: ICustomCellProps) => {
+const CustomCell = memo(({ attribute, mod, t, detail = false }: ICustomCellProps) => {
+  // Named by the first of several, as the legacy pane names it.
+  const [first] = ([] as IModWithState[]).concat(mod);
   let control: ReactNode = null;
   try {
     // `||` as the legacy table has it: `shown && <Control />` gives false, which the gate
     // would take for a broken control.
-    control = attribute.customRenderer?.(mod, false, t, NO_HIGHLIGHT) || null;
+    control = attribute.customRenderer?.(mod, detail, t, NO_HIGHLIGHT) || null;
   } catch (err) {
-    logAttributeFailure("failed to render attribute", attribute, mod, err);
+    logAttributeFailure("failed to render attribute", attribute, first, err);
   }
   // Legacy controls name themselves with a title, shown in the tooltip around the table.
   return control === null ? null : (
     <LegacyTitled>
-      <ExtensionGate id={`extension-${mod.id}-${attribute.id}`}>{control}</ExtensionGate>
+      <ExtensionGate id={`extension-${first.id}-${attribute.id}`}>{control}</ExtensionGate>
     </LegacyTitled>
   );
 });
 
 /** A {@link CustomCell}, given its attribute's version of the data outside the mods. */
-const VersionedCustomCell = (props: Omit<ICustomCellProps, "version">) => {
+export const VersionedCustomCell = (props: Omit<ICustomCellProps, "version">) => {
   const { versions } = useContext(RegisteredModsInputs);
   return <CustomCell {...props} version={versions[props.attribute.id] ?? 0} />;
 };
@@ -160,6 +191,13 @@ const VersionedCustomCell = (props: Omit<ICustomCellProps, "version">) => {
 const REGISTERED_COLUMN_WIDTH = "96px";
 
 const isInTable = ({ placement }: ITableAttribute) => placement === "table" || placement === "both";
+
+const isInDetails = ({ placement }: ITableAttribute) =>
+  placement === "detail" || placement === "both";
+
+/** The legacy details pane's order: by position, 100 where it has none. */
+const byDetailPosition = (lhs: ITableAttribute, rhs: ITableAttribute) =>
+  (lhs.position || 100) - (rhs.position || 100);
 
 /** Whether the legacy table shows an attribute's column before the user, or the extension, says. */
 const isDefaultVisible = (attribute: ITableAttribute) => attribute.isDefaultVisible ?? true;
@@ -226,6 +264,8 @@ const useExternalDataVersions = (
  * @param ownIds The table's own columns, which a registered one with the same id gives way to.
  * @param mods All the mods, whose changes a volatile column is worked out again for.
  * @param isNewTable Whether the new table is the one shown, which alone listens for changes.
+ * @returns Also `details`, the attributes the legacy details pane shows, for the Properties panel,
+ * whose values come from `textChanges` and `inputs` as the columns' do.
  */
 export const useRegisteredModsColumns = (
   ownIds: ReadonlySet<string>,
@@ -254,9 +294,21 @@ export const useRegisteredModsColumns = (
     [attributes, gameId, legacyStates, ownIds],
   );
 
+  // What the legacy details pane shows, in its order, for the Properties panel.
+  const details = useMemo(
+    () =>
+      attributes
+        .filter((attribute) => isInDetails(attribute) && (attribute.condition?.() ?? true))
+        .sort(byDetailPosition),
+    // As for the columns: a condition is mostly which game is active.
+    [attributes, gameId],
+  );
+
   // Kept apart from the columns, which a mod changing doesn't change; anew for a new language.
   const values = useMemo(() => new RegisteredValues(t), [attributes, t]);
-  const versions = useExternalDataVersions(offered, isNewTable, values);
+  // The panel's values too, which change with data outside the mods as the columns' do.
+  const listened = useMemo(() => [...new Set([...offered, ...details])], [offered, details]);
+  const versions = useExternalDataVersions(listened, isNewTable, values);
 
   useEffect(() => values.prune(mods), [mods, values]);
 
@@ -318,5 +370,5 @@ export const useRegisteredModsColumns = (
     [attributes, legacyStates, ownIds, toggleableIds],
   );
 
-  return { columns, defaultShown, rowClassName, inputs, textChanges: values };
+  return { columns, defaultShown, rowClassName, inputs, textChanges: values, details };
 };

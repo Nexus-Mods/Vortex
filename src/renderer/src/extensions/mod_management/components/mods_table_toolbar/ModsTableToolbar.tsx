@@ -37,12 +37,16 @@ interface IModsTableToolbarProps {
   search: string;
   /** Filters the rows by what's typed into the search. */
   onSearchChange: (search: string) => void;
+  /** Whether the Properties panel is open beside the table. */
+  propertiesOpen: boolean;
+  /** Opens or closes the Properties panel. */
+  onToggleProperties: () => void;
 }
 
 /**
  * The new Mods table's views and actions, in its sticky head: its views in a
  * `ViewPicker`, the user's own with a menu to rename, edit or delete them. On the right,
- * the feedback form, the view options and the search.
+ * the feedback form, the view options, the search, then the Properties panel's toggle.
  */
 export const ModsTableToolbar = ({
   views,
@@ -54,6 +58,8 @@ export const ModsTableToolbar = ({
   displayOptions,
   search,
   onSearchChange,
+  propertiesOpen,
+  onToggleProperties,
 }: IModsTableToolbarProps) => {
   const { t } = useTranslation("mod_management");
   // "new" while making a view, the view while renaming one, and unset otherwise.
@@ -75,6 +81,23 @@ export const ModsTableToolbar = ({
       { ...displayOptions, id: "view-options", panelHandle: optionsPanel },
     ],
     [displayOptions, t],
+  );
+
+  // After the search, at the edge the panel opens from.
+  const panelActions = useMemo<IToolbarAction[]>(
+    () => [
+      {
+        id: "properties",
+        label: t("modsTable::properties::toggle"),
+        testId: "mod-properties-toggle",
+        // Filled while the panel is open, as the toggle's on.
+        icon: { name: "dock_to_left", filled: propertiesOpen },
+        active: propertiesOpen,
+        trackingProperties: { opened: !propertiesOpen },
+        onClick: onToggleProperties,
+      },
+    ],
+    [onToggleProperties, propertiesOpen, t],
   );
 
   useEffect(() => {
@@ -139,6 +162,8 @@ export const ModsTableToolbar = ({
           value={search}
           onChange={onSearchChange}
         />
+
+        <ToolbarGroup actions={panelActions} />
       </Toolbar>
 
       <DeleteViewModal
