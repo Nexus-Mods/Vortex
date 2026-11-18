@@ -18,7 +18,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
-import type { GameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
 import type { VortexGameId } from "./ids";
 import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
@@ -117,7 +117,7 @@ export interface Api {
   hash: HashApi;
 
   /** Steam game folder check (MOD-80), run in main */
-  gameFolderCheck: GameFolderCheckApi;
+  gameFolderCheck: IGameFolderCheckApi;
 
   /** Diagnostic APIs */
   diag: Diag;
@@ -595,13 +595,13 @@ export interface HashApi {
   compute(algorithm: HashAlgorithm, filePath: string): Promise<{ hash: string; numBytes: number }>;
 }
 
-export interface GameFolderCheckApi {
+export interface IGameFolderCheckApi {
   /**
    * Runs a check. The finished check arrives through the handler registered with
    * `onSubmit`, so register it first. Resolves once that handler is done or the
    * check was cancelled; rejects if the check or the handler failed.
    */
-  start(input: GameFolderCheckInput): Promise<void>;
+  start(input: IGameFolderCheckInput): Promise<void>;
 
   /** Cancels the queued or running check for a game. Nothing is submitted for it. */
   cancel(gameId: VortexGameId): void;
@@ -616,7 +616,7 @@ export interface GameFolderCheckApi {
    * Development builds only: runs a check now, writes a JSON report, shows it in the
    * file manager and resolves with its path. Sends nothing.
    */
-  runManual(input: GameFolderCheckInput): Promise<string>;
+  runManual(input: IGameFolderCheckInput): Promise<string>;
 }
 
 /** API for receiving feature flag updates pushed from the main process */

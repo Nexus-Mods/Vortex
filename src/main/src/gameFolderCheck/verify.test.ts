@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { GameFolderCheckLimits } from "@vortex/shared/ipc";
+import type { IGameFolderCheckLimits } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
 import { pathKey, type IBaseline } from "./baseline";
@@ -11,7 +11,7 @@ import { DEPOT_FLAG, type IDepotFile } from "./depotManifest";
 import { chooseFilesToHash, sampledChunkIndices, verifySteamFiles } from "./verify";
 
 const CHUNK = 4;
-const LIMITS: GameFolderCheckLimits = {
+const LIMITS: IGameFolderCheckLimits = {
   maxDurationMs: 60_000,
   maxBytes: 1024 * 1024 * 1024,
   hashConcurrency: 4,
@@ -51,7 +51,7 @@ const verify = (
   baseline: IBaseline,
   overrides: Partial<{
     fullVerify: boolean;
-    limits: GameFolderCheckLimits;
+    limits: IGameFolderCheckLimits;
     signal: AbortSignal;
   }> = {},
 ) =>

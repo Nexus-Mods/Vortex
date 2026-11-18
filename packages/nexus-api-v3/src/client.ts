@@ -24,7 +24,7 @@ export interface NexusV3ClientOptions {
 }
 
 /** One event of a telemetry batch: the client's id for it, when it happened, and the event. */
-export interface TelemetryEventEntry {
+export interface ITelemetryEventEntry {
   id: string;
   date: Temporal.Instant;
   event: TelemetryEvent;
@@ -323,7 +323,7 @@ export function createNexusV3InternalClient(
     client.use(mw);
   }
 
-  const sendTelemetryEvents = async (events: readonly TelemetryEventEntry[]) => {
+  const sendTelemetryEvents = async (events: readonly ITelemetryEventEntry[]) => {
     const { data, error, response } = await client.POST("/telemetry/events", {
       body: {
         client: {
@@ -366,7 +366,7 @@ export function createNexusV3InternalClient(
      * Submits several events in one request. The API accepts or rejects each event on its own,
      * so check `rejected` in the ack.
      */
-    telemetryEvents(events: readonly TelemetryEventEntry[]) {
+    telemetryEvents(events: readonly ITelemetryEventEntry[]) {
       return sendTelemetryEvents(events);
     },
   };

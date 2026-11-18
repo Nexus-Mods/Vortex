@@ -3,19 +3,19 @@
  * queued or running.
  */
 import type { VortexGameId } from "@vortex/shared";
-import type { GameFolderCheckInput } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput } from "@vortex/shared/ipc";
 
 import { runGameFolderCheck, type IRunOutput } from "./run";
 
 interface IJob {
-  input: GameFolderCheckInput;
+  input: IGameFolderCheckInput;
   controller: AbortController;
   promise: Promise<IRunOutput | undefined>;
   resolve: (output: IRunOutput | undefined) => void;
   reject: (err: unknown) => void;
 }
 
-export type RunCheck = (input: GameFolderCheckInput, signal: AbortSignal) => Promise<IRunOutput>;
+export type RunCheck = (input: IGameFolderCheckInput, signal: AbortSignal) => Promise<IRunOutput>;
 
 export class GameFolderCheckService {
   readonly #run: RunCheck;
@@ -30,7 +30,7 @@ export class GameFolderCheckService {
    * Resolves with the finished check, or undefined if it was cancelled. A game that already has
    * a check queued or running joins it, e.g. a reloaded renderer starting its pending check again.
    */
-  schedule(input: GameFolderCheckInput): Promise<IRunOutput | undefined> {
+  schedule(input: IGameFolderCheckInput): Promise<IRunOutput | undefined> {
     const existing = [this.#running, ...this.#queue].find(
       (job) => job?.input.gameId === input.gameId,
     );

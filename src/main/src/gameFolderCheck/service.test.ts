@@ -1,11 +1,11 @@
 import { VortexGameId } from "@vortex/shared";
-import type { GameFolderCheckInput } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
 import type { IRunOutput } from "./run";
 import { GameFolderCheckService } from "./service";
 
-const input = (gameId: string) => ({ gameId: VortexGameId(gameId) }) as GameFolderCheckInput;
+const input = (gameId: string) => ({ gameId: VortexGameId(gameId) }) as IGameFolderCheckInput;
 const output = (gameId: string) =>
   ({ result: { input: input(gameId) }, files: [] }) as unknown as IRunOutput;
 
@@ -13,7 +13,7 @@ const output = (gameId: string) =>
 function controllableRun() {
   const pending = new Map<string, () => void>();
   const started: string[] = [];
-  const run = (job: GameFolderCheckInput, signal: AbortSignal) =>
+  const run = (job: IGameFolderCheckInput, signal: AbortSignal) =>
     new Promise<IRunOutput>((resolve, reject) => {
       started.push(job.gameId);
       signal.addEventListener("abort", () => reject(new Error("aborted")));

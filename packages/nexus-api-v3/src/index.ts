@@ -12,7 +12,7 @@ export {
   type NexusV3Client,
   type NexusV3ClientOptions,
   type NexusV3InternalClient,
-  type TelemetryEventEntry,
+  type ITelemetryEventEntry,
 } from "./client";
 export { V3ApiError } from "./errors";
 export type {

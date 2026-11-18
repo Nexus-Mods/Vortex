@@ -1,10 +1,10 @@
 import { NexusGameId, VortexGameId } from "@vortex/shared";
-import type { GameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
 import { toBatches, toGameFolderStateEvents } from "./payload";
 
-const INPUT: GameFolderCheckInput = {
+const INPUT: IGameFolderCheckInput = {
   gameId: VortexGameId("skyrimse"),
   appId: 489830,
   buildId: 16659740,

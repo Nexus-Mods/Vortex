@@ -1,7 +1,7 @@
 import type { VortexGameId } from "./ids";
 
 /** Limits for one game folder check; going over aborts the part that hit it. */
-export interface GameFolderCheckLimits {
+export interface IGameFolderCheckLimits {
   maxDurationMs: number;
   maxBytes: number;
   /** Steam files hashed at the same time */
@@ -15,7 +15,7 @@ export interface GameFolderCheckLimits {
 }
 
 /** Everything main needs to check one Steam game folder, from the renderer's Steam scan. */
-export interface GameFolderCheckInput {
+export interface IGameFolderCheckInput {
   gameId: VortexGameId;
   appId: number;
   buildId: number;
@@ -27,10 +27,10 @@ export interface GameFolderCheckInput {
   depots: Array<{ depotId: number; manifestId: string }>;
   /** Hash every chunk of every Steam file, and record what sampling alone would have found */
   fullVerify: boolean;
-  limits: GameFolderCheckLimits;
+  limits: IGameFolderCheckLimits;
 }
 
-export interface GameFolderFileCount {
+export interface IGameFolderFileCount {
   files: number;
   bytes: number;
 }
@@ -41,23 +41,23 @@ export type GameFolderPartStatus =
 
 export type GameFolderDetection = "size" | "sampled_chunk" | "full_hash";
 
-export interface GameFolderSteamFiles {
+export interface IGameFolderSteamFiles {
   /** hashed and matched */
-  verified: GameFolderFileCount;
+  verified: IGameFolderFileCount;
   /** same size as Steam's, not picked for hashing */
-  sizeMatched: GameFolderFileCount;
-  modified: GameFolderFileCount;
-  missing: GameFolderFileCount;
+  sizeMatched: IGameFolderFileCount;
+  modified: IGameFolderFileCount;
+  missing: IGameFolderFileCount;
   /** on disk, but couldn't be read */
-  unreadable: GameFolderFileCount;
+  unreadable: IGameFolderFileCount;
   /** user config and symlinks, which Steam's own verify doesn't restore either */
-  notCompared: GameFolderFileCount;
+  notCompared: IGameFolderFileCount;
   /** not reached before the check stopped */
-  unchecked: GameFolderFileCount;
+  unchecked: IGameFolderFileCount;
 }
 
-export interface GameFolderCheckCounts {
-  steamFiles: GameFolderSteamFiles;
+export interface IGameFolderCheckCounts {
+  steamFiles: IGameFolderSteamFiles;
   modifiedBy: Record<GameFolderDetection, number>;
   /** with fullVerify: modified files the chunk sample alone would have missed */
   sampleMissed: number | null;
@@ -65,14 +65,14 @@ export interface GameFolderCheckCounts {
   fileSampleMissed: number | null;
   /** files picked for hashing; capped when there were more same-size files than the samples take */
   hashSample: { files: number; capped: boolean };
-  unknown: GameFolderFileCount;
+  unknown: IGameFolderFileCount;
   /** unknown files in a folder Vortex created (holding a folder marker), or below one */
-  unknownInVortexFolder: GameFolderFileCount;
-  vortex: GameFolderFileCount;
-  vortexChangedSinceDeploy: GameFolderFileCount;
+  unknownInVortexFolder: IGameFolderFileCount;
+  vortex: IGameFolderFileCount;
+  vortexChangedSinceDeploy: IGameFolderFileCount;
 }
 
-export interface GameFolderCheckCost {
+export interface IGameFolderCheckCost {
   durationMs: number;
   filesWalked: number;
   bytesRead: number;
@@ -84,16 +84,16 @@ export type GameFolderCheckOutcome =
   | {
       status: "checked";
       verification: GameFolderPartStatus;
-      counts: GameFolderCheckCounts;
+      counts: IGameFolderCheckCounts;
       deployedBeforeCheck: boolean;
-      files: GameFolderReportedFile[];
+      files: IGameFolderReportedFile[];
       /** more unknown files than `maxUnknownPaths`; `unknownByFolder` still covers them all */
       unknownTruncated: boolean;
-      unknownByFolder: GameFolderFolderCount[];
+      unknownByFolder: IGameFolderFolderCount[];
     };
 
 /** A file sent with the check; paths are relative to the game folder, with `/` separators. */
-export interface GameFolderReportedFile {
+export interface IGameFolderReportedFile {
   path: string;
   status: "modified" | "missing" | "unknown";
   detectedBy?: GameFolderDetection;
@@ -104,7 +104,7 @@ export interface GameFolderReportedFile {
 }
 
 /** Unknown files totalled by their first two folders */
-export interface GameFolderFolderCount {
+export interface IGameFolderFolderCount {
   folder: string;
   files: number;
   bytes: number;
@@ -113,10 +113,10 @@ export interface GameFolderFolderCount {
 /** A finished check, as main hands it to the renderer to send. Times are ms since the epoch. */
 export type GameFolderCheckResult = GameFolderCheckOutcome & {
   /** without the local paths, which stay on the machine */
-  input: Omit<GameFolderCheckInput, "steamPath" | "gamePath">;
+  input: Omit<IGameFolderCheckInput, "steamPath" | "gamePath">;
   folderCreatedAt: number | null;
   manifestCreatedAt: Record<string, number | null>;
-  cost: GameFolderCheckCost;
+  cost: IGameFolderCheckCost;
 };
 
 export type GameFolderFileKind =
@@ -131,7 +131,7 @@ export type GameFolderFileKind =
   | "vortex";
 
 /** One file in a dev-build report; these never leave the machine. */
-export interface GameFolderFileReport {
+export interface IGameFolderFileReport {
   relPath: string;
   kind: GameFolderFileKind;
   size: number;
