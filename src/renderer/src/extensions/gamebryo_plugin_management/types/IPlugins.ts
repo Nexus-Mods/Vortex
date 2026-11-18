@@ -146,7 +146,8 @@ export interface IPluginConnectionEnd {
 
 /** session.pluginDependencies: the state of the plugin rule editing UI */
 export interface IPluginDependencies {
-  connection: {
+  // undefined while no rule is being dragged
+  connection?: {
     source?: IPluginConnectionEnd;
     target?: IPluginConnectionEnd;
   };

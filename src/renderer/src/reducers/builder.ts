@@ -39,6 +39,18 @@ function mappingToReducers<TState, TActions>(
 }
 
 /**
+ * Sets one field of a slice, keeping the same state when the field already holds that value, as
+ * immutability-helper's `$set` did, so an unchanged value causes no re-render or persist write.
+ */
+export function setField<TState extends object, K extends keyof TState>(
+  state: TState,
+  key: K,
+  value: TState[K],
+): TState {
+  return key in state && state[key] === value ? state : { ...state, [key]: value };
+}
+
+/**
  * Builds IReducerSpec from known actions.
  * @public
  */
@@ -67,6 +79,7 @@ export function actionsToPartialReducerSpec<TState, TActions>(
   verifiers?: Partial<StateToVerifiers<TState>>,
 ): IPartialReducerSpec<TState> {
   return {
+    partial: true,
     defaults: defaultState,
     reducers: mappingToReducers(actions, mapping),
     verifiers,

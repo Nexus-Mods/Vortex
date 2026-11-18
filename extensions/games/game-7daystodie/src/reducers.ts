@@ -21,26 +21,23 @@ declare module "@nexusmods/vortex-api" {
   }
 }
 
-export const reducer: types.IReducerSpec<I7DTDSettings> = {
-  reducers: {
-    [setPrefixOffset as any]: (
-      state: I7DTDSettings,
-      payload: { profile: string; offset: number },
-    ) => {
+const settingsActions = { setPrefixOffset, setUDF, setPreviousLO };
+
+export const reducer = util.actionsToReducerSpec<I7DTDSettings, typeof settingsActions>(
+  {},
+  settingsActions,
+  {
+    setPrefixOffset: (state, payload) => {
       const { profile, offset } = payload;
       return util.setSafe(state, ["prefixOffset", profile], offset);
     },
-    [setUDF as any]: (state: I7DTDSettings, payload: { udf: string }) => {
+    setUDF: (state, payload) => {
       const { udf } = payload;
       return util.setSafe(state, ["udf"], udf);
     },
-    [setPreviousLO as any]: (
-      state: I7DTDSettings,
-      payload: { profile: string; previousLO: LoadOrder },
-    ) => {
+    setPreviousLO: (state, payload) => {
       const { profile, previousLO } = payload;
       return util.setSafe(state, ["previousLO", profile], previousLO);
     },
   },
-  defaults: {},
-};
+);

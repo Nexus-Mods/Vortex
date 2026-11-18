@@ -1,4 +1,4 @@
-import { actionsToReducerSpec } from "../../../reducers/builder";
+import { actionsToReducerSpec, setField } from "../../../reducers/builder";
 import * as actions from "../actions/account";
 
 /** The OAuth session's credentials, as setOAuthCredentials stores them. */
@@ -34,9 +34,7 @@ export const accountReducer = actionsToReducerSpec<INexusAccountState, typeof ac
   },
   actions,
   {
-    // an unchanged key keeps the same state, as immutability-helper's $set did
-    setUserAPIKey: (state, payload) =>
-      "APIKey" in state && state.APIKey === payload ? state : { ...state, APIKey: payload },
+    setUserAPIKey: (state, payload) => setField(state, "APIKey", payload),
     clearOAuthCredentials: (state) => ({ ...state, OAuthCredentials: undefined }),
     setOAuthCredentials: (state, payload) => ({ ...state, OAuthCredentials: { ...payload } }),
     setForcedLogout: (state, payload) => ({ ...state, ForcedLogout: payload }),

@@ -82,9 +82,10 @@ const userlistSpec = actionsToReducerSpec<ILOOTList, typeof actions>(
       const list = listForType(payload.type);
       if (existing !== -1) {
         const plugin = state.plugins[existing];
-        const remaining = (plugin[list] ?? []).filter(
-          (ref) =>
-            !(typeof ref === "string" && ref.toUpperCase() === payload.reference.toUpperCase()),
+        const target = payload.reference.toUpperCase();
+        // rules from a LOOT userlist file can be references with a condition, not just names
+        const remaining = asArray(plugin[list]).filter(
+          (ref) => (typeof ref === "string" ? ref : ref?.name)?.toUpperCase() !== target,
         );
         return {
           ...state,

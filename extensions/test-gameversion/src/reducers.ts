@@ -12,19 +12,15 @@ declare module "@nexusmods/vortex-api" {
   }
 }
 
-const persistentReducer: types.IPartialReducerSpec<types.IStateGameMode> = {
-  reducers: {
-    [actions.setGameVersion as any]: (
-      state: types.IStateGameMode,
-      payload: { gameId: VortexGameId; version: string },
-    ) => {
+const persistentReducer = util.actionsToPartialReducerSpec<types.IStateGameMode, typeof actions>(
+  { versions: {} },
+  actions,
+  {
+    setGameVersion: (state, payload) => {
       const { gameId, version } = payload;
       return util.setSafe(state, ["versions", gameId], version);
     },
   },
-  defaults: {
-    versions: {},
-  },
-};
+);
 
 export default persistentReducer;

@@ -34,7 +34,8 @@ before the state is registered produces failures that are hard to trace back.
 `registerReducer` checks the spec against the slice at its path, so a path
 `IState` doesn't declare fails to compile. A reducer that shares its path with
 others supplies defaults only for its own fields: build it with
-`actionsToPartialReducerSpec`. An extension that keeps its reducers in a list
+`actionsToPartialReducerSpec`, which marks it `partial: true`. Any other spec
+has to supply defaults for the whole slice. An extension that keeps its reducers in a list
 (one a test harness also binds) declares each entry with `reducerBinding(path,
 spec)` and registers it with `binding.register(context)`; both live in
 `src/renderer/src/reducers/builder.ts`.

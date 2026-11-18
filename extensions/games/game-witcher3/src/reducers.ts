@@ -22,22 +22,23 @@ declare module "@nexusmods/vortex-api" {
 }
 
 // reducer
-export const W3Reducer: types.IReducerSpec<IW3Settings> = {
-  reducers: {
-    [setSuppressModLimitPatch as any]: (state: IW3Settings, payload: boolean) => {
-      return util.setSafe(state, ["suppressModLimitPatch"], payload);
-    },
-    [setRemasterNoticeSeen as any]: (state: IW3Settings, payload: boolean) => {
-      return util.setSafe(state, ["remasterNoticeSeen"], payload);
-    },
-    [autoSortLoadOrderChanged as any]: (state: IW3Settings, payload: boolean): IW3Settings => ({
-      ...state,
-      autoSortLoadOrder: payload,
-    }),
-  },
-  defaults: {
+const settingsActions = {
+  setSuppressModLimitPatch,
+  setRemasterNoticeSeen,
+  autoSortLoadOrderChanged,
+};
+
+export const W3Reducer = util.actionsToReducerSpec<IW3Settings, typeof settingsActions>(
+  {
     suppressModLimitPatch: false,
     remasterNoticeSeen: false,
     autoSortLoadOrder: false,
   },
-};
+  settingsActions,
+  {
+    setSuppressModLimitPatch: (state, payload) =>
+      util.setSafe(state, ["suppressModLimitPatch"], payload),
+    setRemasterNoticeSeen: (state, payload) => util.setSafe(state, ["remasterNoticeSeen"], payload),
+    autoSortLoadOrderChanged: (state, payload) => ({ ...state, autoSortLoadOrder: payload }),
+  },
+);

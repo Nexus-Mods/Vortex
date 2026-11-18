@@ -1,6 +1,6 @@
 import type { UpdaterSnapshot } from "@vortex/shared/ipc";
 
-import { actionsToReducerSpec } from "../../reducers/builder";
+import { actionsToReducerSpec, setField } from "../../reducers/builder";
 import type { ISettingsUpdate } from "../../types/IState";
 import { setUpdateChannel, setUpdaterSnapshot, setWhatsNew } from "./actions";
 
@@ -24,8 +24,8 @@ export const sessionReducer = actionsToReducerSpec<IUpdaterSessionState, typeof 
   {},
   sessionActions,
   {
-    setUpdaterSnapshot: (state, payload) => ({ ...state, snapshot: payload }),
-    setWhatsNew: (state, payload) => ({ ...state, whatsNew: payload }),
+    setUpdaterSnapshot: (state, payload) => setField(state, "snapshot", payload),
+    setWhatsNew: (state, payload) => setField(state, "whatsNew", payload),
   },
 );
 
@@ -36,7 +36,7 @@ const settingsReducer = actionsToReducerSpec<ISettingsUpdate, typeof settingsAct
   { channel: "stable" },
   settingsActions,
   {
-    setUpdateChannel: (state, payload) => ({ ...state, channel: payload }),
+    setUpdateChannel: (state, payload) => setField(state, "channel", payload),
   },
 );
 

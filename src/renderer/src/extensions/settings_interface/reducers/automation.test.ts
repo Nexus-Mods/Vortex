@@ -24,4 +24,13 @@ describe("setAutoDeployment", () => {
       minimized: false,
     });
   });
+
+  it("keeps the same state when the value is unchanged", () => {
+    const input = { deploy: true, install: false, enable: false, start: false, minimized: false };
+    const result = automationReducer.reducers.SET_AUTO_DEPLOYMENT(
+      input,
+      setAutoDeployment(true).payload,
+    );
+    expect(result).toBe(input);
+  });
 });

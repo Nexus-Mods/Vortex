@@ -173,6 +173,8 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
+export { actionsToPartialReducerSpec, actionsToReducerSpec, setField } from "../reducers/builder";
+export type { ActionsToReducerMapping } from "../reducers/builder";
 export { request, rawRequest, upload, jsonRequest } from "./network";
 export type { IRequestOptions, Method } from "./network";
 export {

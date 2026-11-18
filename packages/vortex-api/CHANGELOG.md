@@ -12,8 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `GameUid`, the id of a game in the Nexus Mods game catalogue, with its brander
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
 - Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
-- `IPartialReducerSpec<T>`, for a reducer that shares its state slice with other reducers at the same path: it supplies defaults only for the fields it owns
+- `IPartialReducerSpec<T>`, for a reducer that shares its state slice with other reducers at the same path: it supplies defaults only for the fields it owns, and is marked `partial: true`
 - `StatePath`, `StateSlice<TState, P>` and `ReducerSpecFor<P>`, the types `registerReducer` uses to match a spec to the state at its path
+- `util.actionsToReducerSpec` and `util.actionsToPartialReducerSpec`, which build a reducer spec from your action creators with each handler's payload typed from its action, so a spec needs no `as any` keys - see the [reducer section of the migration guide](./docs/MIGRATION.md#vortex-2x-typed-registerreducer)
+- `util.setField`, which sets one field of a slice and keeps the same state when the value is unchanged
 
 ### Removed
 

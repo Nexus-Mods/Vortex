@@ -541,10 +541,13 @@ From 2.11 `util.steam` is `undefined` and the call throws a `TypeError`. These l
 
 ### Declare your slice
 
-Add your slice to the state interfaces with module augmentation, next to your reducer. Pick the interface that holds your path: `ISettings` for `["settings", …]`, `ISessionState` for `["session", …]`, `IPersistentState` for `["persistent", …]`, and `IState` for a new top-level hive.
+Add your slice to the state interfaces with module augmentation, next to your reducer. If you alias the package as `vortex-api` (see [Moving to `@nexusmods/vortex-api`](#moving-to-nexusmodsvortex-api)), augment `declare module "vortex-api"` instead: TypeScript only finds the module under the name you import it by. Pick the interface that holds your path: `ISettings` for `["settings", …]`, `ISessionState` for `["session", …]`, `IPersistentState` for `["persistent", …]`, and `IState` for a new top-level hive.
 
 ```ts
-import { types } from "@nexusmods/vortex-api";
+import { util } from "@nexusmods/vortex-api";
+import { createAction } from "redux-act";
+
+export const setEnabled = createAction("MY_EXTENSION_SET_ENABLED", (enabled: boolean) => enabled);
 
 export interface IMyExtensionSettings {
     enabled: boolean;
@@ -558,21 +561,26 @@ declare module "@nexusmods/vortex-api" {
     }
 }
 
-const settingsReducer: types.IReducerSpec<IMyExtensionSettings> = {
-    reducers: {
-        [setEnabled as any]: (state, payload: boolean) => ({ ...state, enabled: payload }),
+const settingsActions = { setEnabled };
+
+const settingsReducer = util.actionsToReducerSpec<IMyExtensionSettings, typeof settingsActions>(
+    { enabled: false },
+    settingsActions,
+    {
+        setEnabled: (state, payload) => util.setField(state, "enabled", payload),
     },
-    defaults: { enabled: false },
-};
+);
 
 context.registerReducer(["settings", "myExtension"], settingsReducer);
 ```
 
 This also types the slice everywhere you read it, for example in `mapStateToProps`.
 
+`util.actionsToReducerSpec` takes your defaults, an object of action creators, and one handler per action. Each handler's `payload` is typed from its action creator, and a missing handler fails the typecheck. `util.setField` sets one field and keeps the same state when the value hasn't changed. Both need a Vortex that ships them; on older versions build the spec by hand as a `types.IReducerSpec`, keyed by `setEnabled.getType()`.
+
 ### Sharing a slice
 
-If you add fields to a slice that Vortex or another extension already registers, such as `["settings", "interface"]`, augment that slice's interface with only your fields and type your spec as `types.IPartialReducerSpec`. Its `defaults` covers only your fields, while its handlers receive and return the whole slice.
+If you add fields to a slice that Vortex or another extension already registers, such as `["settings", "interface"]`, augment that slice's interface with only your fields and build your spec with `util.actionsToPartialReducerSpec`. Its defaults cover only your fields, while its handlers receive and return the whole slice. It marks the spec `partial: true` (a hand-written `types.IPartialReducerSpec` needs that too); any other spec has to supply defaults for the whole slice.
 
 ```ts
 declare module "@nexusmods/vortex-api" {
@@ -583,12 +591,14 @@ declare module "@nexusmods/vortex-api" {
     }
 }
 
-const interfaceReducer: types.IPartialReducerSpec<types.ISettingsInterface> = {
-    reducers: {
-        [selectTheme as any]: (state, payload: string) => ({ ...state, myTheme: payload }),
-    },
-    defaults: { myTheme: "default" },
-};
+const themeActions = { selectTheme };
+
+const interfaceReducer = util.actionsToPartialReducerSpec<
+    types.ISettingsInterface,
+    typeof themeActions
+>({ myTheme: "default" }, themeActions, {
+    selectTheme: (state, payload) => util.setField(state, "myTheme", payload),
+});
 ```
 
 ### Building the path at runtime

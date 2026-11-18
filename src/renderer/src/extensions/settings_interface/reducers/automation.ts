@@ -1,4 +1,4 @@
-import { actionsToReducerSpec } from "@/reducers/builder";
+import { actionsToReducerSpec, setField } from "@/reducers/builder";
 import type { ISettingsAutomation } from "@/types/IState";
 
 import * as actions from "../actions/automation";
@@ -16,11 +16,11 @@ const automationReducer = actionsToReducerSpec<ISettingsAutomation, typeof actio
   },
   actions,
   {
-    setAutoDeployment: (state, payload) => ({ ...state, deploy: payload }),
-    setAutoInstall: (state, payload) => ({ ...state, install: payload }),
-    setAutoEnable: (state, payload) => ({ ...state, enable: payload }),
-    setAutoStart: (state, payload) => ({ ...state, start: payload }),
-    setStartMinimized: (state, payload) => ({ ...state, minimized: payload }),
+    setAutoDeployment: (state, payload) => setField(state, "deploy", payload),
+    setAutoInstall: (state, payload) => setField(state, "install", payload),
+    setAutoEnable: (state, payload) => setField(state, "enable", payload),
+    setAutoStart: (state, payload) => setField(state, "start", payload),
+    setStartMinimized: (state, payload) => setField(state, "minimized", payload),
   },
 );
 

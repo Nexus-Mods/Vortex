@@ -62,6 +62,24 @@ describe("showUsageInstruction", () => {
     );
     expect(result).toEqual({ ...defaults, usage: { other: true, mine: false } });
   });
+
+  it("keeps the same state when the instruction already has that value", () => {
+    const input = { ...defaults, usage: { mine: false } };
+    const result = settingsReducer.reducers.SHOW_USAGE_INSTRUCTION(
+      input,
+      actions.showUsageInstruction("mine", false).payload,
+    );
+    expect(result).toBe(input);
+  });
+
+  it("creates usage when it is missing", () => {
+    const input = { ...defaults, usage: undefined };
+    const result = settingsReducer.reducers.SHOW_USAGE_INSTRUCTION(
+      input,
+      actions.showUsageInstruction("mine", true).payload,
+    );
+    expect(result.usage).toEqual({ mine: true });
+  });
 });
 
 describe("setAlwaysCompactHeaders", () => {

@@ -13,27 +13,53 @@ import type {
   IRuleDialog,
 } from "./types/IDependenciesState";
 
-export const settingsReducer: types.IPartialReducerSpec<types.ISettingsWorkarounds> = {
-  reducers: {
-    [actions.setModTypeConflictsSetting as any]: (
-      state: types.ISettingsWorkarounds,
-      payload: { enabled: boolean },
-    ) => {
-      const { enabled } = payload;
-      return util.setSafe(state, ["modTypeConflictsEnabled"], enabled);
-    },
+const settingsActions = { setModTypeConflictsSetting: actions.setModTypeConflictsSetting };
+
+export const settingsReducer = util.actionsToPartialReducerSpec<
+  types.ISettingsWorkarounds,
+  typeof settingsActions
+>({ modTypeConflictsEnabled: true }, settingsActions, {
+  setModTypeConflictsSetting: (state, payload) => {
+    const { enabled } = payload;
+    return util.setSafe(state, ["modTypeConflictsEnabled"], enabled);
   },
-  defaults: {
-    modTypeConflictsEnabled: true,
-  },
+});
+
+const sessionActions = {
+  setSource: actions.setSource,
+  setTarget: actions.setTarget,
+  setCreateRule: actions.setCreateRule,
+  closeDialog: actions.closeDialog,
+  setType: actions.setType,
+  setConflictInfo: actions.setConflictInfo,
+  setConflictDialog: actions.setConflictDialog,
+  setFileOverrideDialog: actions.setFileOverrideDialog,
+  highlightConflictIcon: actions.highlightConflictIcon,
+  setEditCycle: actions.setEditCycle,
+  setUnsolvedConflictsCount: actions.setUnsolvedConflictsCount,
 };
 
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer: types.IReducerSpec<IDependenciesSessionState> = {
-  reducers: {
-    [actions.setSource as any]: (state: IDependenciesSessionState, payload: IConnectionEnd) => {
+export const sessionReducer = util.actionsToReducerSpec<
+  IDependenciesSessionState,
+  typeof sessionActions
+>(
+  {
+    connection: undefined,
+    dialog: undefined,
+    highlightConflicts: false,
+    conflicts: undefined,
+    conflictDialog: undefined,
+    overrideDialog: undefined,
+    editCycle: undefined,
+    unsolvedConflictsCount: 0,
+    hasUnsolvedConflicts: false,
+  },
+  sessionActions,
+  {
+    setSource: (state, payload) => {
       if (_.isEqual(payload, util.getSafe(state, ["connection", "source"], undefined))) {
         // unchanged
         return state;
@@ -47,7 +73,7 @@ export const sessionReducer: types.IReducerSpec<IDependenciesSessionState> = {
         return state;
       }
     },
-    [actions.setTarget as any]: (state: IDependenciesSessionState, payload: IConnectionEnd) => {
+    setTarget: (state, payload) => {
       if (
         payload.pos !== undefined &&
         (payload.id !== null ||
@@ -63,48 +89,20 @@ export const sessionReducer: types.IReducerSpec<IDependenciesSessionState> = {
         return state;
       }
     },
-    [actions.setCreateRule as any]: (state: IDependenciesSessionState, payload: IRuleDialog) =>
-      util.setSafe(state, ["dialog"], payload),
-    [actions.closeDialog as any]: (state: IDependenciesSessionState) =>
-      util.setSafe(state, ["dialog"], undefined),
-    [actions.setType as any]: (state: IDependenciesSessionState, payload: RuleType) =>
-      util.setSafe(state, ["dialog", "type"], payload),
-    [actions.setConflictInfo as any]: (
-      state: IDependenciesSessionState,
-      payload: { [modId: string]: IConflict[] },
-    ) => util.setSafe(state, ["conflicts"], payload),
-    [actions.setConflictDialog as any]: (
-      state: IDependenciesSessionState,
-      payload: IConflictDialog,
-    ) => util.setSafe(state, ["conflictDialog"], payload),
-    [actions.setFileOverrideDialog as any]: (
-      state: IDependenciesSessionState,
-      payload: IOverrideDialog,
-    ) => util.setSafe(state, ["overrideDialog"], payload),
-    [actions.highlightConflictIcon as any]: (state: IDependenciesSessionState, payload: boolean) =>
-      util.setSafe(state, ["highlightConflicts"], payload),
-    [actions.setEditCycle as any]: (state: IDependenciesSessionState, payload: IEditCycle) =>
-      util.setSafe(state, ["editCycle"], payload),
+    setCreateRule: (state, payload) => util.setSafe(state, ["dialog"], payload),
+    closeDialog: (state) => util.setSafe(state, ["dialog"], undefined),
+    setType: (state, payload) => util.setSafe(state, ["dialog", "type"], payload),
+    setConflictInfo: (state, payload) => util.setSafe(state, ["conflicts"], payload),
+    setConflictDialog: (state, payload) => util.setSafe(state, ["conflictDialog"], payload),
+    setFileOverrideDialog: (state, payload) => util.setSafe(state, ["overrideDialog"], payload),
+    highlightConflictIcon: (state, payload) => util.setSafe(state, ["highlightConflicts"], payload),
+    setEditCycle: (state, payload) => util.setSafe(state, ["editCycle"], payload),
     // The count is what the mods toolbar says in the Manage Rules tooltip; the boolean
     // stays derived from it for what already reads that.
-    [actions.setUnsolvedConflictsCount as any]: (
-      state: IDependenciesSessionState,
-      payload: { count: number },
-    ): IDependenciesSessionState => ({
+    setUnsolvedConflictsCount: (state, payload) => ({
       ...state,
       unsolvedConflictsCount: payload.count,
       hasUnsolvedConflicts: payload.count > 0,
     }),
   },
-  defaults: {
-    connection: undefined,
-    dialog: undefined,
-    highlightConflicts: false,
-    conflicts: undefined,
-    conflictDialog: undefined,
-    overrideDialog: undefined,
-    editCycle: undefined,
-    unsolvedConflictsCount: 0,
-    hasUnsolvedConflicts: false,
-  },
-};
+);

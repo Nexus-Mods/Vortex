@@ -246,8 +246,8 @@ export const stateReducer = actionsToPartialReducerSpec<IStateDownloads, typeof 
           ? "started"
           : "init";
       const file = state.files[id];
-      // Count each pause transition (the download is known and not final here, so the state
-      // always changes). Persisted, so it accumulates across restarts; surfaced as pause_count.
+      // Count each pause request, including one for a download that is already paused.
+      // Persisted, so it accumulates across restarts; surfaced as pause_count.
       return putFile(
         state,
         id,

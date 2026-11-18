@@ -1008,6 +1008,11 @@ export interface IReducerSpec<T = { [key: string]: any }> {
   reducers: { [key: string]: (state: T, payload: any) => T };
   defaults: T;
   verifiers?: { [key: string]: IStateVerifier };
+  /**
+   * set by an {@link IPartialReducerSpec}; `registerReducer` only accepts partial defaults from a
+   * spec that has it
+   */
+  partial?: boolean;
 }
 
 /**
@@ -1018,6 +1023,11 @@ export interface IReducerSpec<T = { [key: string]: any }> {
  * @public
  */
 export interface IPartialReducerSpec<T> {
+  /**
+   * marks the spec as owning only part of its slice. Without it, `defaults` has to cover the
+   * whole slice, so a reducer that owns its slice can't silently leave a field undefined.
+   */
+  partial: true;
   reducers: { [key: string]: (state: T, payload: any) => T };
   defaults: Partial<T>;
   verifiers?: { [key: string]: IStateVerifier };

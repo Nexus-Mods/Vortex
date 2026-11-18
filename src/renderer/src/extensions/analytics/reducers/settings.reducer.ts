@@ -5,7 +5,7 @@ import * as actions from "../actions/analytics.action";
 /** settings.analytics: whether the user agreed to send analytics */
 export interface ISettingsAnalytics {
   // undefined until the user has answered
-  enabled: boolean;
+  enabled?: boolean;
 }
 
 declare module "@/types/IState" {

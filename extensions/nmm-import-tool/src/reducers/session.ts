@@ -1,24 +1,32 @@
-import { types, util } from "@nexusmods/vortex-api";
+import { util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
-import type { IModImportSessionState, ImportStep } from "../types/state";
+import type { IModImportSessionState } from "../types/state";
 
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer: types.IReducerSpec<IModImportSessionState> = {
-  reducers: {
-    [actions.setImportStep as any]: (state: IModImportSessionState, payload: ImportStep) =>
-      util.setSafe(state, ["importStep"], payload),
-    [actions.selectImportFolder as any]: (state: IModImportSessionState, payload: boolean) => {
-      const importFolder = payload;
-      return util.setSafe(state, ["selectFolder"], importFolder);
-    },
-  },
-  defaults: {
+const sessionActions = {
+  setImportStep: actions.setImportStep,
+  selectImportFolder: actions.selectImportFolder,
+};
+
+export const sessionReducer = util.actionsToReducerSpec<
+  IModImportSessionState,
+  typeof sessionActions
+>(
+  {
     importStep: undefined,
     importedMods: {},
     selectFolder: false,
     selectedProfile: undefined,
   },
-};
+  sessionActions,
+  {
+    setImportStep: (state, payload) => util.setSafe(state, ["importStep"], payload),
+    selectImportFolder: (state, payload) => {
+      const importFolder = payload;
+      return util.setSafe(state, ["selectFolder"], importFolder);
+    },
+  },
+);

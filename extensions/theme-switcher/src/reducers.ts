@@ -12,14 +12,12 @@ declare module "@nexusmods/vortex-api" {
   }
 }
 
-const settingsReducer: types.IPartialReducerSpec<types.ISettingsInterface> = {
-  reducers: {
-    [actions.selectTheme as any]: (state: types.ISettingsInterface, payload: string) =>
-      util.setSafe(state, ["currentTheme"], payload),
+const settingsReducer = util.actionsToPartialReducerSpec<types.ISettingsInterface, typeof actions>(
+  { currentTheme: "default" },
+  actions,
+  {
+    selectTheme: (state, payload) => util.setSafe(state, ["currentTheme"], payload),
   },
-  defaults: {
-    currentTheme: "default",
-  },
-};
+);
 
 export default settingsReducer;

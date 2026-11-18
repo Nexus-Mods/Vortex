@@ -1,4 +1,4 @@
-import { actionsToReducerSpec } from "../../../reducers/builder";
+import { actionsToReducerSpec, setField } from "../../../reducers/builder";
 import * as actions from "../actions/persistent";
 import type { IValidateKeyDataV2 } from "../types/IValidateKeyData";
 
@@ -29,13 +29,8 @@ export const persistentReducer = actionsToReducerSpec<INexusPersistentState, typ
   },
   actions,
   {
-    // an unchanged value keeps the same state, as immutability-helper's $set did
-    setUserInfo: (state, payload) =>
-      "userInfo" in state && state.userInfo === payload ? state : { ...state, userInfo: payload },
-    setNewestVersion: (state, payload) =>
-      "newestVersion" in state && state.newestVersion === payload
-        ? state
-        : { ...state, newestVersion: payload },
+    setUserInfo: (state, payload) => setField(state, "userInfo", payload),
+    setNewestVersion: (state, payload) => setField(state, "newestVersion", payload),
   },
   {
     userInfo: {
