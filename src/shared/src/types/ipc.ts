@@ -533,38 +533,6 @@ export interface InvokeChannels {
    */
   "upload:cancel": (uploadId: number) => Promise<void>;
 
-  // Adaptor host — renderer queries adaptor services through these
-  "adaptors:list": () => Promise<
-    Array<{
-      name: string;
-      pid: string;
-      provides: string[];
-      requires: string[];
-    }>
-  >;
-  "adaptors:call": (
-    adaptorName: string,
-    serviceUri: string,
-    method: string,
-    args: unknown[],
-  ) => Promise<Serializable>;
-  /**
-   * Builds a store-path snapshot for a newly discovered game. The
-   * renderer uses this instead of constructing path bases itself so the
-   * adaptor can be handed a fully-resolved {@link StorePathProvider}.
-   */
-  "adaptors:build-snapshot": (store: string, gamePath: string) => Promise<Serializable>;
-
-  /**
-   * Executes a declarative version detection strategy on the main
-   * process side (PE header read, text file parse, etc.).
-   */
-  "adaptors:detect-version": (source: {
-    type: string;
-    path: { value: string };
-    regex?: string;
-  }) => Promise<string>;
-
   "fs:copy": (
     source: QualifiedPathWire,
     target: QualifiedPathWire,

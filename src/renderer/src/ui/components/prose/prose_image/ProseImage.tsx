@@ -1,20 +1,9 @@
 import React, { type CSSProperties, useState } from "react";
 
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
+import { pixels } from "@/ui/utils/image_size/imageSize";
 import { joinClasses } from "@/ui/utils/joinClasses";
 import { webImageSrc } from "@/ui/utils/web_image_src/webImageSrc";
-
-/** The largest width or height an image is given, as the site caps them. */
-const MAX_SIZE = 3600;
-
-/** A size given in pixels, if it is one, capped. */
-const pixels = (size: number | undefined) => {
-  if (!size || !Number.isFinite(size) || size <= 0) {
-    return undefined;
-  }
-
-  return Math.min(Math.round(size), MAX_SIZE);
-};
 
 interface IProseImageProps {
   /** Where the image is; drawn only if `webImageSrc` keeps it. */

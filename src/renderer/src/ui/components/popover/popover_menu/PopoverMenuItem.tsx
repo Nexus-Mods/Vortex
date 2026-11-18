@@ -8,9 +8,22 @@ import { PopoverMenuItemContent } from "./PopoverMenuItemContent";
 import { PopoverMenuPanelItem } from "./PopoverMenuPanelItem";
 import { takeFocus } from "./takeFocus";
 
+/** The row's role: a checkbox, one of a choice, or a plain item. */
+const roleOf = ({ checked, selected }: { checked?: boolean; selected?: boolean }) => {
+  if (selected !== undefined) {
+    return "menuitemcheckbox";
+  }
+
+  if (checked !== undefined) {
+    return "menuitemradio";
+  }
+
+  return "menuitem";
+};
+
 /**
- * One row of a {@link PopoverMenu}. A plain action runs and dismisses the menu;
- * one with a panel opens it alongside instead.
+ * One row of a {@link PopoverMenu}. A plain action runs and dismisses the menu; a checkbox row
+ * runs and leaves it open; one with a panel opens it alongside instead.
  */
 export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemProps>(
   ({ action, hasFocus, reservesChevron, tabIndex, onTakeFocus, onSelect }, ref) => {
@@ -35,7 +48,7 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
 
     return (
       <button
-        aria-checked={action.checked}
+        aria-checked={action.selected ?? action.checked}
         aria-disabled={keepsPin || undefined}
         className={joinClasses(["nxm-dropdown-item", dropdownItemBrandClass(action.brand)], {
           "nxm-dropdown-item-active": !!action.active,
@@ -44,7 +57,7 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
         data-testid={action.testId}
         disabled={disabled && !keepsPin}
         ref={ref}
-        role={action.checked === undefined ? "menuitem" : "menuitemradio"}
+        role={roleOf(action)}
         tabIndex={tabIndex}
         type="button"
         onClick={() => {
@@ -52,7 +65,9 @@ export const PopoverMenuItem = forwardRef<HTMLButtonElement, IPopoverMenuItemPro
             return;
           }
           action.onClick?.();
-          onSelect();
+          if (action.selected === undefined) {
+            onSelect();
+          }
         }}
         onFocus={onTakeFocus}
         onMouseEnter={(event) => takeFocus(event.currentTarget)}

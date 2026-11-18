@@ -772,8 +772,7 @@ function init(context: IExtensionContext): boolean {
         game.final = semver.gte(gameExtInfo.version, "1.0.0");
         game.version = gameExtInfo.version;
       } else {
-        // No info.json (e.g. adaptor bridge registrations).
-        // Use sensible defaults so the game still appears.
+        // No info.json: use sensible defaults so the game still appears.
         game.final = true;
         game.version = "1.0.0";
       }
@@ -793,9 +792,9 @@ function init(context: IExtensionContext): boolean {
       log("warn", "skipping game stub without an id", { name: game.name });
       return;
     }
-    // If a full game extension (e.g. from the adaptor bridge) already
-    // registered this game ID, skip the stub so it doesn't trigger the
-    // "game extension no longer included" dialog.
+    // If a full game extension already registered this game ID, skip the
+    // stub so it doesn't trigger the "game extension no longer included"
+    // dialog.
     if ($.extensionGames.some((g) => g.id === game.id)) {
       return;
     }

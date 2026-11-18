@@ -2,6 +2,7 @@ import { Tag } from "bbcode-to-react";
 import * as React from "react";
 
 import { ProseImage } from "@/ui/components/prose/prose_image/ProseImage";
+import { numberIn } from "@/ui/utils/image_size/imageSize";
 
 import { externalImagePlaceholderFor } from "./externalImages";
 
@@ -9,17 +10,6 @@ import { externalImagePlaceholderFor } from "./externalImages";
 const ALIGNS = ["left", "center", "right"] as const;
 
 const alignOf = (value: unknown) => ALIGNS.find((align) => align === value);
-
-/** The whole number a parameter starts with, or a pattern finds in it. */
-const numberIn = (value: string | undefined, pattern = /^\s*(\d+)/) => {
-  const match = pattern.exec(value ?? "");
-
-  if (!match) {
-    return undefined;
-  }
-
-  return Number(match[1]);
-};
 
 /**
  * The size `[img width=300,height=200]` asks for. The parser reads that as one `width` of

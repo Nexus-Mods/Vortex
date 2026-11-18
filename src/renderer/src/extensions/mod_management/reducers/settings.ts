@@ -1,43 +1,61 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
+import type { ISettingsMods } from "@/types/IState";
+
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/settings";
+
+declare module "@/types/IState" {
+  interface ISettingsMods {
+    /** Whether the Properties panel shows beside the new Mods table. */
+    propertiesOpen: boolean;
+  }
+}
+
+/**
+ * What this reducer keeps under `settings.mods`: all of it but the FOMOD installer's sandbox
+ * switch, which that installer's own reducer keeps there.
+ */
+type ModsSettingsState = Omit<ISettingsMods, "installerSandbox">;
+
+const defaultState: ModsSettingsState = {
+  installPath: {},
+  installPathMode: "userData",
+  suggestInstallPathDirectory: "Vortex Mods",
+  modlistState: {},
+  activator: {},
+  showDropzone: true,
+  confirmPurge: true,
+  cleanupOnDeploy: false,
+  betaTable: false,
+  propertiesOpen: false,
+};
 
 /**
  * reducer for changes to settings regarding mods
  */
-export const settingsReducer: IReducerSpec = {
-  reducers: {
-    [actions.setInstallPath as any]: (state, payload) => {
-      const { gameId, path } = payload;
-      return setSafe(state, ["installPath", gameId], path);
-    },
-    [actions.setInstallPathMode as any]: (state, payload) =>
-      setSafe(state, ["installPathMode"], payload),
-    [actions.setSuggestInstallPathDirectory as any]: (state, payload) =>
-      setSafe(state, ["suggestInstallPathDirectory"], payload),
-    [actions.setActivator as any]: (state, payload) => {
-      const { gameId, activatorId } = payload;
-      return setSafe(state, ["activator", gameId], activatorId);
-    },
-    [actions.setShowModDropzone as any]: (state, payload) =>
-      setSafe(state, ["showDropzone"], payload),
-    [actions.setConfirmPurge as any]: (state, payload) => setSafe(state, ["confirmPurge"], payload),
-    [actions.setCleanupOnDeploy as any]: (state, payload) =>
-      setSafe(state, ["cleanupOnDeploy"], payload),
-    [actions.setBetaModsTable as any]: (state, payload) => setSafe(state, ["betaTable"], payload),
+export const settingsReducer = actionsToReducerSpec<ModsSettingsState, typeof actions>(
+  defaultState,
+  actions,
+  {
+    setInstallPath: (state, { gameId, path }) => ({
+      ...state,
+      installPath: { ...state.installPath, [gameId]: path },
+    }),
+    setInstallPathMode: (state, mode) => ({ ...state, installPathMode: mode }),
+    setSuggestInstallPathDirectory: (state, path) => ({
+      ...state,
+      suggestInstallPathDirectory: path,
+    }),
+    setActivator: (state, { gameId, activatorId }) => ({
+      ...state,
+      activator: { ...state.activator, [gameId]: activatorId },
+    }),
+    setShowModDropzone: (state, show) => ({ ...state, showDropzone: show }),
+    setConfirmPurge: (state, confirm) => ({ ...state, confirmPurge: confirm }),
+    setCleanupOnDeploy: (state, cleanup) => ({ ...state, cleanupOnDeploy: cleanup }),
+    setBetaModsTable: (state, beta) => ({ ...state, betaTable: beta }),
+    setModsTablePropertiesOpen: (state, open) => ({ ...state, propertiesOpen: open }),
   },
-  defaults: {
-    installPath: {},
-    installPathMode: "userData",
-    suggestInstallPathDirectory: "Vortex Mods",
-    modlistState: {},
-    activator: {},
-    showDropzone: true,
-    confirmPurge: true,
-    cleanupOnDeploy: false,
-    betaTable: false,
-  },
-  verifiers: {
+  {
     installPath: {
       // shouldn't be possible
       description: () => "Severe! Invalid set of staging folders",
@@ -49,4 +67,4 @@ export const settingsReducer: IReducerSpec = {
       },
     },
   },
-};
+);
