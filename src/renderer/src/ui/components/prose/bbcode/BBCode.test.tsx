@@ -94,7 +94,7 @@ describe("BBCode", () => {
       expect(wrapper.style.getPropertyValue("--prose-image-ratio")).toBe(ratio);
     });
 
-    it("shows a comparison as a slider, no wider than it asks", () => {
+    it("shows a comparison as an unframed slider, no wider than it asks", () => {
       const { container } = render(
         <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png width=846]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
       );
@@ -105,6 +105,17 @@ describe("BBCode", () => {
         "https://staticdelivery.nexusmods.com/mods/1704/images/before.png",
       ]);
       expect(slider.closest<HTMLElement>("[style]")?.style.maxWidth).toBe("846px");
+      expect(container.querySelector(".nxm-image-styled")).toBeNull();
+    });
+
+    it("caps a comparison's width as an image's", () => {
+      render(
+        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png width=999999]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+      );
+
+      expect(screen.getByRole("slider").closest<HTMLElement>("[style]")?.style.maxWidth).toBe(
+        "3600px",
+      );
     });
 
     it("shows a comparison with an image from elsewhere as its Nexus Mods image alone", () => {
@@ -411,6 +422,20 @@ describe("BBCode", () => {
       expect(placeholders()).toHaveLength(1);
       expect(screen.getByText("External image")).toBeInTheDocument();
       expect(container.querySelector("img")).toBeNull();
+    });
+
+    it("stands in for a comparison's image from elsewhere, showing its Nexus Mods one", () => {
+      const { container } = render(
+        <BBCode
+          bbcode="[compare before=https://i.imgur.com/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]"
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(1);
+      expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
+        "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
+      ]);
     });
 
     it("leaves images from Nexus Mods as they are", () => {

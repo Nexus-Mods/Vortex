@@ -26,11 +26,12 @@ const withComparison = (image: IGalleryImage): IGalleryImage => {
     return image;
   }
 
-  const beforeFile = (url: string) => url.replace(/[^/]+$/, () => match[1]);
+  // The path's last segment, keeping any query or fragment after it.
+  const beforeFile = (url: string) => url.replace(/[^/?#]+(?=[?#]|$)/, () => match[1]);
 
   return {
     ...image,
-    title: title.slice(match[0].length),
+    title: title.slice(match[0].length).trim(),
     before: {
       url: beforeFile(image.url),
       thumbnail_url: beforeFile(image.thumbnail_url),
@@ -42,8 +43,9 @@ const withComparison = (image: IGalleryImage): IGalleryImage => {
 };
 
 /**
- * A mod's images in the authors' order, led by its primary image when they don't include it, or
- * the search's thumbnail until the mod's own query has them, standing in for every size.
+ * A mod's images in the authors' order, led by its primary image when they don't include it, as
+ * a picture or a comparison's before picture, or the search's thumbnail until the mod's own query
+ * has them, standing in for every size.
  */
 const getGalleryImages = (summary: ModSummary, mod?: Mod): IGalleryImage[] => {
   if (!mod) {
@@ -65,7 +67,7 @@ const getGalleryImages = (summary: ModSummary, mod?: Mod): IGalleryImage[] => {
   const primary = mod.primary_image;
   const gallery = mod.gallery_images.map(withComparison);
 
-  if (!primary || gallery.some(({ url }) => url === primary.url)) {
+  if (!primary || gallery.some(({ url, before }) => [url, before?.url].includes(primary.url))) {
     return gallery;
   }
 

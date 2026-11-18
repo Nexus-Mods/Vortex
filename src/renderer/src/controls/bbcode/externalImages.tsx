@@ -121,3 +121,25 @@ export const externalImagePlaceholderFor = (tag: unknown): ReactElement | null |
 
   return <ExternalImagePlaceholder images={runFrom(image, after)} {...externalImagePlaceholders} />;
 };
+
+/**
+ * The placeholder for those of a tag's image sources from outside Nexus Mods, such as a
+ * comparison's two, when the bbcode's context asks for placeholders; undefined when it doesn't, or
+ * none is from outside.
+ */
+export const externalSourcesPlaceholderFor = (
+  tag: unknown,
+  sources: Array<string | undefined>,
+): ReactElement | undefined => {
+  const { externalImagePlaceholders } = (tag as IParsedTag).renderer.options;
+  const images = sources.flatMap((src) => {
+    const host = src && externalHostOf(src);
+    return host ? [{ host }] : [];
+  });
+
+  if (!externalImagePlaceholders || !images.length) {
+    return undefined;
+  }
+
+  return <ExternalImagePlaceholder images={images} {...externalImagePlaceholders} />;
+};

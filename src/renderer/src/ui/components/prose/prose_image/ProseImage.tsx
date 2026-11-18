@@ -8,7 +8,7 @@ import { webImageSrc } from "@/ui/utils/web_image_src/webImageSrc";
 const MAX_SIZE = 3600;
 
 /** A size given in pixels, if it is one, capped. */
-const pixels = (size: number | undefined) => {
+export const pixels = (size: number | undefined) => {
   if (!size || !Number.isFinite(size) || size <= 0) {
     return undefined;
   }

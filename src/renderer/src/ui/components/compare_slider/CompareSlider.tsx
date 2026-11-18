@@ -18,6 +18,10 @@ interface ICompareSliderProps {
   after: ICompareSliderPicture;
   /** Blurs both pictures for a user who hasn't opted into adult content. */
   isAdult: boolean;
+  /** What the comparison shows, such as its author's title, named in each picture's alt text. */
+  title?: string;
+  /** Gives each picture a frame's background, border and corners, as the gallery's have. */
+  isStyled?: boolean;
 }
 
 /**
@@ -25,9 +29,16 @@ interface ICompareSliderProps {
  * the before picture over it as far as a divider the user drags, each side labelled. The divider
  * is a range input stretched over both pictures and drawn invisible, so a click or drag anywhere
  * moves it there, Tab reaches it, the arrow keys move it, and screen readers announce it. It moves
- * as it's told to, with nothing animated, so it needs nothing for reduced motion.
+ * as it's told to, with nothing animated, so it needs nothing for reduced motion. Its styles are
+ * `.nxm-compare-slider`'s, so utilities can override them.
  */
-export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) => {
+export const CompareSlider = ({
+  before,
+  after,
+  isAdult,
+  title,
+  isStyled = true,
+}: ICompareSliderProps) => {
   const { t } = useTranslation();
   const [position, setPosition] = useState(50);
 
@@ -35,9 +46,10 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
     <AdultAwareImage
       alt={alt}
       blurredSrc={blurredSrc}
-      className="w-full rounded-sm"
+      className="nxm-compare-slider-picture"
       imageType="mod"
       isAdult={isAdult}
+      isStyled={isStyled}
       loading="lazy"
       referrerPolicy="no-referrer"
       src={src}
@@ -45,15 +57,17 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
   );
 
   return (
-    <div className="relative [overflow-anchor:none]">
-      {picture(after, t("After"))}
+    <div className="nxm-compare-slider">
+      <div data-testid="compare-slider-after" style={{ clipPath: `inset(0 0 0 ${position}%)` }}>
+        {picture(after, title ? t("{{title}}, after", { title }) : t("After"))}
+      </div>
 
       <div
-        className="absolute inset-0"
+        className="nxm-compare-slider-before"
         data-testid="compare-slider-before"
         style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
       >
-        {picture(before, t("Before"))}
+        {picture(before, title ? t("{{title}}, before", { title }) : t("Before"))}
       </div>
 
       <input
@@ -62,7 +76,7 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
           before: position,
           after: 100 - position,
         })}
-        className="peer absolute inset-0 size-full cursor-ew-resize appearance-none opacity-0 [&::-webkit-slider-thumb]:size-px [&::-webkit-slider-thumb]:appearance-none"
+        className="nxm-compare-slider-input"
         max={100}
         min={0}
         type="range"
@@ -72,7 +86,7 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
 
       <Pill
         appearance="scrim"
-        className="pointer-events-none absolute bottom-2.5 left-2.5"
+        className="nxm-compare-slider-label nxm-compare-slider-label-before"
         data-testid="compare-slider-before-label"
       >
         {t("Before")}
@@ -80,18 +94,14 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
 
       <Pill
         appearance="scrim"
-        className="pointer-events-none absolute right-2.5 bottom-2.5"
+        className="nxm-compare-slider-label nxm-compare-slider-label-after"
         data-testid="compare-slider-after-label"
       >
         {t("After")}
       </Pill>
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 flex w-0.5 -translate-x-1/2 items-center justify-center bg-translucent-600 shadow-md peer-focus-visible:*:outline-2 peer-focus-visible:*:outline-focus-subdued"
-        style={{ left: `${position}%` }}
-      >
-        <span className="flex shrink-0 items-center justify-center rounded-full border border-stroke-moderate bg-surface-mid p-1 text-neutral-strong shadow-md">
+      <div aria-hidden className="nxm-compare-slider-divider" style={{ left: `${position}%` }}>
+        <span className="nxm-compare-slider-handle">
           {/* The font's `code` is the `< >` of the site's handle. */}
           <Icon name="code" size="lg" />
         </span>

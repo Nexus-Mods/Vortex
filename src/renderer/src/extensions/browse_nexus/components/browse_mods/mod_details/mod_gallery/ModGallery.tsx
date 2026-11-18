@@ -128,6 +128,7 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
           before={{ src: shown.before.url, blurredSrc: shown.before.blurred_large_thumbnail_url }}
           isAdult={isAdult}
           key={shown.url}
+          title={shown.title}
         />
       ) : shown ? (
         <AdultAwareImage
@@ -176,10 +177,17 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
               >
                 {!!image && (
                   <button
-                    aria-label={t("Image {{index}} of {{count}}", {
-                      index: index + 1,
-                      count: images.length,
-                    })}
+                    aria-label={
+                      image.before
+                        ? t("Image {{index}} of {{count}}, a before and after comparison", {
+                            index: index + 1,
+                            count: images.length,
+                          })
+                        : t("Image {{index}} of {{count}}", {
+                            index: index + 1,
+                            count: images.length,
+                          })
+                    }
                     aria-pressed={index === picked}
                     className="block w-full animate-fade-in rounded-xs"
                     ref={(element) => (thumbnailsRef.current[index] = element)}

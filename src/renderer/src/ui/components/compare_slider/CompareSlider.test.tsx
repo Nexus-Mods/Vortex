@@ -20,27 +20,30 @@ const renderSlider = (isAdult = false) => {
   );
   const sources = [...view.container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
   const beforeLayer = () => view.getByTestId("compare-slider-before");
+  const afterLayer = () => view.getByTestId("compare-slider-after");
 
-  return { ...view, sources, beforeLayer, slider: view.getByRole("slider") };
+  return { ...view, sources, beforeLayer, afterLayer, slider: view.getByRole("slider") };
 };
 
 describe("CompareSlider", () => {
-  it("shows the before picture over the after picture as far as the divider, half way at first", () => {
-    const { sources, beforeLayer, slider, getByTestId } = renderSlider();
+  it("shows each picture on its own side of the divider, so neither shows through, half way at first", () => {
+    const { sources, beforeLayer, afterLayer, slider, getByTestId } = renderSlider();
 
     expect(sources).toEqual(["after.png", "before.png"]);
     expect(getByTestId("compare-slider-before-label")).toBeInTheDocument();
     expect(getByTestId("compare-slider-after-label")).toBeInTheDocument();
     expect(beforeLayer().style.clipPath).toBe("inset(0 50% 0 0)");
+    expect(afterLayer().style.clipPath).toBe("inset(0 0 0 50%)");
     expect(slider).toHaveValue("50");
   });
 
   it("moves the divider with its range input, named and valued for screen readers", () => {
-    const { beforeLayer, slider } = renderSlider();
+    const { beforeLayer, afterLayer, slider } = renderSlider();
 
     fireEvent.change(slider, { target: { value: "30" } });
 
     expect(beforeLayer().style.clipPath).toBe("inset(0 70% 0 0)");
+    expect(afterLayer().style.clipPath).toBe("inset(0 0 0 30%)");
     expect(slider).toHaveValue("30");
     expect(slider).toHaveAccessibleName();
     expect(slider).toHaveAttribute("aria-valuetext");

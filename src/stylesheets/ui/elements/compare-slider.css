@@ -1,0 +1,88 @@
+@layer components {
+    /* A before/after comparison: the after picture, with the before picture over it. Each is
+       clipped to its own side of the divider, so neither shows through the other while one
+       loads, fails or is letterboxed. The divider is a range input stretched over both and drawn
+       invisible, so a click or drag anywhere moves it; its line and handle are drawn under it,
+       the handle ringed while the input has keyboard focus. */
+    .nxm-compare-slider {
+        position: relative;
+        overflow-anchor: none;
+
+        & .nxm-compare-slider-before {
+            inset: 0;
+            position: absolute;
+        }
+
+        & .nxm-compare-slider-picture {
+            width: 100%;
+
+            &.nxm-image-styled {
+                border-radius: var(--radius-sm);
+            }
+        }
+
+        & .nxm-compare-slider-input {
+            inset: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            appearance: none;
+            cursor: ew-resize;
+
+            /* A thumb a pixel wide, so the value is where the pointer is, from edge to edge. */
+            &::-webkit-slider-thumb {
+                width: 1px;
+                height: 1px;
+                appearance: none;
+            }
+        }
+
+        & .nxm-compare-slider-label {
+            position: absolute;
+            bottom: calc(var(--spacing) * 2.5);
+            pointer-events: none;
+        }
+
+        & .nxm-compare-slider-label-before {
+            left: calc(var(--spacing) * 2.5);
+        }
+
+        & .nxm-compare-slider-label-after {
+            right: calc(var(--spacing) * 2.5);
+        }
+
+        & .nxm-compare-slider-divider {
+            display: flex;
+            position: absolute;
+            inset-block: 0;
+            width: calc(var(--spacing) * 0.5);
+            translate: -50% 0;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            background-color: var(--color-translucent-600);
+            box-shadow: var(--shadow-md);
+        }
+
+        & .nxm-compare-slider-handle {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            padding: calc(var(--spacing) * 1);
+            border: 1px solid var(--color-stroke-moderate);
+            border-radius: calc(infinity * 1px);
+            color: var(--color-neutral-strong);
+            background-color: var(--color-surface-mid);
+            box-shadow: var(--shadow-md);
+        }
+
+        &
+            .nxm-compare-slider-input:focus-visible
+            ~ .nxm-compare-slider-divider
+            .nxm-compare-slider-handle {
+            outline: calc(var(--spacing) * 0.5) solid var(--color-focus-subdued);
+        }
+    }
+}
