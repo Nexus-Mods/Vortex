@@ -46,6 +46,16 @@ describe("EndorseButton", () => {
     expect(hasBurst()).toBe(false);
   });
 
+  it("bursts when the pending step lands after an optimistic fill", () => {
+    const { setProps } = renderButton();
+
+    setProps({ isEndorsed: true });
+    expect(hasBurst()).toBe(false);
+
+    setProps({ isEndorsed: true, isPending: true });
+    expect(hasBurst()).toBe(true);
+  });
+
   it("stops the burst if the pop is cancelled", () => {
     const { setProps } = renderButton();
     setProps({ isEndorsed: true, isPending: true });

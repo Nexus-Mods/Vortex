@@ -27,7 +27,7 @@ export const setExtensionVersion = createAction(
 
 export const setExtensionEndorsed = createAction(
   "SET_EXTENSION_ENDORSED",
-  (extensionId: string, endorsed: EndorsedStatus | "pending") => ({ extensionId, endorsed }),
+  (extensionId: string, endorsed: EndorsedStatus) => ({ extensionId, endorsed }),
 );
 
 export const setExtensionModId = createAction(

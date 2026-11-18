@@ -132,7 +132,6 @@ export const ExtensionManager = ({
             return;
           }
 
-          dispatch(setExtensionEndorsed(extId, "pending"));
           api
             .emitAndAwait("endorse-nexus-mod", SITE_ID, modId, current[extId].version, endorseState)
             .then((endorsed: EndorsedStatus[]) => {

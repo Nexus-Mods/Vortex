@@ -166,8 +166,8 @@ export interface IExtensionState {
   fileId?: number;
   /** The Nexus Mods game the extension is for, as the extension catalog names it. Game extensions only. */
   nexus?: { gameId: NexusGameId; gameDomain: NexusGameDomain };
-  /** Nexus Mods endorsed status of the extension mod page; "pending" while Nexus is asked. */
-  endorsed: EndorsedStatus | "pending";
+  /** Nexus Mods endorsed status of the extension mod page. */
+  endorsed: EndorsedStatus;
   /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
   nexusLinkDeclined?: boolean;
 }

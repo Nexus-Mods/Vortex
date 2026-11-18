@@ -1297,7 +1297,7 @@ function endorseCollectionImpl(
       );
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "Undecided"));
+      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsedStatus));
       reportEndorseError(api, err, "collection", gameId, nexusCollectionId);
     });
 }
@@ -1342,7 +1342,7 @@ function endorseModImpl(
       store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsed));
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "Undecided"));
+      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsedStatus));
       reportEndorseError(api, err, "mod", gameId, nexusModId, version);
     });
 }

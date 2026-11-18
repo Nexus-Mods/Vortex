@@ -10,8 +10,9 @@ export interface IEndorseButtonProps {
   /** Whether it's endorsed: the thumb filled, and the toggle pressed. */
   isEndorsed: boolean;
   /**
-   * Whether a request the user made is under way: busy, and clicks do nothing. Becoming endorsed
-   * while it is pops the thumb with a burst, so set it only for the user's own request.
+   * Whether a request the user made is under way: busy, and clicks do nothing. While it is,
+   * `isEndorsed` is what was asked for, and becoming endorsed and pending, in either order, pops
+   * the thumb with a burst; so set it only for the user's own request.
    */
   isPending?: boolean;
   /** Shows a spinner in place of the thumb and turns it off, for a request whose way isn't known. */
@@ -39,9 +40,9 @@ const EndorseBurst = () => (
 /**
  * An endorsement as a thumb toggle, filled once endorsed.
  *
- * Becoming endorsed while a request is pending, which only the user's own click causes, pops the
- * thumb with a burst until the pop ends or is cancelled, such as by the page being hidden. A thumb
- * drawn endorsed, or filled by a refresh, doesn't celebrate. React 18 has no `onAnimationCancel`,
+ * Becoming endorsed and pending, in either order, which only the user's own request causes, pops
+ * the thumb with a burst until the pop ends or is cancelled, such as by the page being hidden, or
+ * the thumb empties. A thumb drawn endorsed, or filled by a refresh, doesn't celebrate. React 18 has no `onAnimationCancel`,
  * so the thumb's box listens for the event itself.
  */
 export const EndorseButton = ({
@@ -52,11 +53,17 @@ export const EndorseButton = ({
   label,
   onClick,
 }: IEndorseButtonProps) => {
-  const [wasEndorsed, setWasEndorsed] = useState(isEndorsed);
+  const isAskedToEndorse = isEndorsed && isPending;
+  const [wasAskedToEndorse, setWasAskedToEndorse] = useState(isAskedToEndorse);
   const [isCelebrating, setIsCelebrating] = useState(false);
-  if (isEndorsed !== wasEndorsed) {
-    setWasEndorsed(isEndorsed);
-    setIsCelebrating(isEndorsed && isPending);
+  if (isAskedToEndorse !== wasAskedToEndorse) {
+    setWasAskedToEndorse(isAskedToEndorse);
+    if (isAskedToEndorse) {
+      setIsCelebrating(true);
+    }
+  }
+  if (isCelebrating && !isEndorsed) {
+    setIsCelebrating(false);
   }
 
   const stopOnCancel = useCallback((box: HTMLSpanElement | null) => {
