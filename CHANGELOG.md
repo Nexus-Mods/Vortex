@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
-=======
 ## [2.11.0] - 2026-11-18
 
 _Stable 2.11 release. See the beta entries below for the full list of changes since 2.10._
@@ -52,7 +50,6 @@ _Stable 2.11 release. See the beta entries below for the full list of changes si
 - Game registered by a stub extension, so its community extension was no longer offered ([#24702](https://github.com/Nexus-Mods/Vortex/pull/24702))
 - Redownloading a file starting a new download or renaming over an existing one ([#24692](https://github.com/Nexus-Mods/Vortex/pull/24692))
 
->>>>>>> 9c785f8ae (Merge pull request #24961 from Nexus-Mods/changelogs/v2.11.0)
 ## [2.11.0-beta.1] - 2026-11-04
 
 _First beta of the 2.11 release._
@@ -2743,14 +2740,11 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
-<<<<<<< HEAD
-=======
 [2.11.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0
 [2.11.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.5
 [2.11.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.4
 [2.11.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.3
 [2.11.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.2
->>>>>>> 9c785f8ae (Merge pull request #24961 from Nexus-Mods/changelogs/v2.11.0)
 [2.11.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.1
 [2.10.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0
 [2.10.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.3
