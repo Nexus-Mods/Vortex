@@ -149,7 +149,7 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
             showModOnModsPage(api, modId);
           }}
         >
-          {t("View installed mod")}
+          {t("Manage mod")}
         </Button>
       );
     }
