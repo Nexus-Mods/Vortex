@@ -1010,6 +1010,54 @@ export interface IReducerSpec<T = { [key: string]: any }> {
   verifiers?: { [key: string]: IStateVerifier };
 }
 
+/**
+ * A reducer for a slice it shares with other reducers registered at the same path. Their
+ * handlers and defaults are merged, so each supplies only the defaults for the fields it owns,
+ * while its handlers still receive and return the whole slice.
+ *
+ * @public
+ */
+export interface IPartialReducerSpec<T> {
+  reducers: { [key: string]: (state: T, payload: any) => T };
+  defaults: Partial<T>;
+  verifiers?: { [key: string]: IStateVerifier };
+}
+
+/**
+ * A path into the application state, e.g. `["settings", "interface"]`.
+ *
+ * @public
+ */
+export type StatePath = readonly [string, ...string[]];
+
+/**
+ * The type of the state at `P`, or `never` when `P` names a key `TState` does not declare.
+ * An extension makes its own slice known by augmenting the state interfaces with
+ * `declare module`.
+ *
+ * @public
+ */
+export type StateSlice<TState, P extends readonly string[]> = P extends readonly [
+  infer Head extends string,
+  ...infer Rest extends readonly string[],
+]
+  ? Head extends keyof TState
+    ? Rest extends readonly []
+      ? TState[Head]
+      : StateSlice<TState[Head], Rest>
+    : never
+  : TState;
+
+/**
+ * The spec `registerReducer` accepts at `P`: one typed for the slice there, owning either all
+ * of it or, as an {@link IPartialReducerSpec}, part of it.
+ *
+ * @public
+ */
+export type ReducerSpecFor<P extends StatePath> =
+  | IReducerSpec<StateSlice<IState, P>>
+  | IPartialReducerSpec<StateSlice<IState, P>>;
+
 export interface IModTypeOptions {
   // if set, the merge behavior specified here overrides the one specified for the game
   mergeMods?: boolean | ((mod: IMod) => string);
@@ -1026,17 +1074,6 @@ export interface IModTypeOptions {
   deploymentEssential?: boolean;
   noConflicts?: boolean;
 }
-
-type StateSlice<TState, P extends readonly string[]> = P extends readonly [
-  infer Head extends string,
-  ...infer Rest extends readonly string[],
-]
-  ? Head extends keyof TState
-    ? Rest extends readonly []
-      ? TState[Head]
-      : StateSlice<TState[Head], Rest>
-    : never // Head is not a key of this level → dead end
-  : TState; // empty path → the state itself (unreachable given the overload)
 
 /**
  * The extension context is an object passed into all extensions during initialisation.
@@ -1226,16 +1263,19 @@ export interface IExtensionContext {
    * @param {IReducerSpec} spec a IReducerSpec object that contains reducer functions and defaults
    *        for the newly introduced settings
    *
+   * The spec's type has to match the state at `path`. A path that the state interfaces don't
+   * declare resolves to `never` and fails to compile: declare your slice by augmenting them,
+   * e.g. from an extension
+   * `declare module "@nexusmods/vortex-api" { namespace types { interface ISettings { mine: IMine } } }`.
+   * A reducer that shares its slice with others at the same path uses {@link IPartialReducerSpec}.
+   *
    * @memberOf IExtensionContext
    * @note If you have registerReducer calls you should call them first thing in the init function.
    *       Usually if your init call fails your extension shouldn't load at all but in case that
    *       doesn't work, registering any functionality that depends on state that never got loaded
    *       would load to further bug reports that are a lot harder to investigate
    */
-  registerReducer<const P extends readonly [string, ...string[]]>(
-    path: P,
-    spec: IReducerSpec<StateSlice<IState, P>>,
-  ): void;
+  registerReducer<const P extends StatePath>(path: P, spec: ReducerSpecFor<P>): void;
 
   /**
    * register a hive in the store to be persisted. A hive is a top-level branch in the state,

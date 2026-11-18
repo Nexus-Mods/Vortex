@@ -31,8 +31,8 @@ export default function init(context: IExtensionContext) {
   const registry = new LoadOrderRegistry();
   const getGameEntry = (gameId: string) => registry.find(gameId);
 
-  for (const { path: statePath, reducer } of REDUCER_BINDINGS) {
-    context.registerReducer(statePath, reducer);
+  for (const binding of REDUCER_BINDINGS) {
+    binding.register(context);
   }
 
   const setOrder = (profileId: string, loadOrder: LoadOrder, loadOrderId?: string) => {
