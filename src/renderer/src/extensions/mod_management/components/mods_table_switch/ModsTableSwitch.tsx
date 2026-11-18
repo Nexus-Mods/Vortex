@@ -9,6 +9,7 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import ErrorBoundary from "@/controls/ErrorBoundary";
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
@@ -39,7 +40,6 @@ import {
   useModRowActions,
   useModSelectionActions,
 } from "../../hooks/use_mod_actions/useModActions.hook";
-import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
 import { useModsEnabled } from "../../hooks/use_mods_enabled/useModsEnabled.hook";
 import {
   MODS_TABLE_TOOLBARS,
@@ -148,7 +148,6 @@ const isStatusGroup = (value: string): value is StatusGroup =>
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
 const NO_MODS: { [id: string]: IModWithState } = {};
-const NO_SELECTION: IModWithState[] = [];
 const nop = () => undefined;
 
 /**
@@ -391,12 +390,6 @@ export const ModsTableSwitch = ({
     () => ({ attributes: registered.details, values: registered.textChanges }),
     [registered.details, registered.textChanges],
   );
-  // Worked out only while the panel shows, as working them out reads a mod's INI edits from disk.
-  const properties = useModProperties(
-    newTable && (showProperties || panelMounted) ? selectedMods : NO_SELECTION,
-    memberships,
-    registeredDetails,
-  );
   const allColumns = useMemo(
     () => [...columns, ...registered.columns],
     [columns, registered.columns],
@@ -618,11 +611,20 @@ export const ModsTableSwitch = ({
             }}
           >
             {(showProperties || panelMounted) && (
-              <ModPropertiesPanel
-                className="sticky top-(--properties-top) max-h-[calc(100cqh-var(--properties-top)-0.5rem)] w-(--properties-width)"
-                properties={properties}
-                onClose={() => setPropertiesOpen(false)}
-              />
+              // Around the panel, as the hooks that work out its contents run in its own render.
+              <ErrorBoundary
+                className="sticky top-(--properties-top) w-(--properties-width)"
+                visible
+                onHide={() => setPropertiesOpen(false)}
+              >
+                <ModPropertiesPanel
+                  className="sticky top-(--properties-top) max-h-[calc(100cqh-var(--properties-top)-0.5rem)] w-(--properties-width)"
+                  memberships={memberships}
+                  mods={selectedMods}
+                  registered={registeredDetails}
+                  onClose={() => setPropertiesOpen(false)}
+                />
+              </ErrorBoundary>
             )}
           </div>
         </RegisteredModsInputsProvider>

@@ -47,4 +47,43 @@ describe("useUnsavedDraft", () => {
     expect(first).not.toHaveBeenCalled();
     expect(last).toHaveBeenCalledWith("Typed");
   });
+
+  it("follows a new value while nothing is typed", () => {
+    const { result, rerender } = renderHook(({ value }) => useUnsavedDraft(value, vi.fn()), {
+      initialProps: { value: "Before" },
+    });
+
+    rerender({ value: "After" });
+
+    expect(result.current.draft).toBe("After");
+  });
+
+  it("keeps what's typed, unsaved, when the value changes", () => {
+    const onSave = vi.fn();
+    const { result, rerender } = renderHook(({ value }) => useUnsavedDraft(value, onSave), {
+      initialProps: { value: "" },
+    });
+
+    act(() => result.current.change("hel"));
+    rerender({ value: "elsewhere" });
+
+    expect(result.current.draft).toBe("hel");
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("settles on what was saved when it comes back as the value, saving nothing more", () => {
+    const onSave = vi.fn();
+    const { result, rerender, unmount } = renderHook(
+      ({ value }) => useUnsavedDraft(value, onSave),
+      { initialProps: { value: "" } },
+    );
+
+    act(() => result.current.change("Typed"));
+    act(() => result.current.save());
+    rerender({ value: "Typed" });
+    unmount();
+
+    expect(result.current.draft).toBe("Typed");
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
 });

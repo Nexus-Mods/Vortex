@@ -3,12 +3,10 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { ModProperty } from "../../hooks/use_mod_properties/useModProperties.hook";
+import type { IRegisteredText } from "../../util/registered_editor/registeredEditor";
 import { ModPropertyText } from "./ModPropertyText";
 
-const text = (
-  overrides: Partial<Extract<ModProperty, { kind: "text" }>> = {},
-): Extract<ModProperty, { kind: "text" }> => ({
+const text = (overrides: Partial<IRegisteredText> = {}): IRegisteredText => ({
   kind: "text",
   id: "registered:tag",
   label: "Tag",

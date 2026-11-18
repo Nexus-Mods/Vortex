@@ -26,7 +26,8 @@ export const ModPropertySelect = ({ property }: IModPropertySelectProps) => {
     ...(property.required
       ? []
       : [{ value: "", label: property.emptyLabel ?? t("modsTable::properties::none") }]),
-    ...property.choices,
+    // A legacy empty choice would repeat the None row (and its key).
+    ...property.choices.filter(({ value }) => property.required || value !== ""),
   ];
   const picked = options.find(({ value }) => value === property.value);
   const shown = property.isVarious
@@ -41,7 +42,7 @@ export const ModPropertySelect = ({ property }: IModPropertySelectProps) => {
       <Listbox
         className="nxm-field-control"
         disabled={property.disabled}
-        value={property.isVarious ? undefined : property.value}
+        value={property.isVarious ? null : property.value}
         onChange={(value: string) => {
           if (property.isVarious || value !== property.value) {
             property.onChange(value);

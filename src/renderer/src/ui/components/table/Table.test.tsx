@@ -563,6 +563,31 @@ describe("Table with selectable rows", () => {
         expect(onSelectedIdsChange).toHaveBeenLastCalledWith(new Set(["beta"]));
       });
 
+      it("Ctrl+clicking a row twice quickly toggles it twice and opens nothing", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+        await userEvent.click(rowOf(0));
+
+        fireEvent.click(rowOf(1), { ctrlKey: true, detail: 1 });
+        expect(selected()).toEqual(["Alpha", "Beta"]);
+        fireEvent.click(rowOf(1), { ctrlKey: true, detail: 2 });
+        fireEvent.doubleClick(rowOf(1), { ctrlKey: true });
+
+        expect(selected()).toEqual(["Alpha"]);
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+      });
+
+      it("Shift+double-click opens nothing", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+        await userEvent.click(rowOf(0));
+
+        fireEvent.doubleClick(rowOf(2), { shiftKey: true });
+
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+        expect(selected()).toEqual(["Alpha"]);
+      });
+
       it("ignores a double-click on a control in the row", async () => {
         const onRowDoubleClick = vi.fn();
         renderFive(onRowDoubleClick);

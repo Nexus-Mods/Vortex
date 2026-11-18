@@ -111,4 +111,40 @@ describe("ModPropertySelect", () => {
     expect(trigger()).toHaveAccessibleName(expect.stringContaining("Category"));
     expect(trigger()).toHaveAccessibleDescription("Pick one");
   });
+
+  it("marks no choice while the mods differ, after one was picked", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { rerender } = render(<ModPropertySelect property={category({ value: "1" })} />);
+
+    rerender(<ModPropertySelect property={category({ value: "", isVarious: true })} />);
+    await open();
+
+    for (const option of options()) {
+      expect(option).not.toHaveAttribute("aria-selected", "true");
+    }
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it("offers one empty row when a choice is already empty", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <ModPropertySelect
+        property={category({
+          value: "a",
+          choices: [
+            { value: "", label: "" },
+            { value: "a", label: "A" },
+          ],
+        })}
+      />,
+    );
+
+    await open();
+
+    expect(options()).toHaveLength(2);
+    expect(screen.getAllByText("modsTable::properties::none")).toHaveLength(1);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
 });

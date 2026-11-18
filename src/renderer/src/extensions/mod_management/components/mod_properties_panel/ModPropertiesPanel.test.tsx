@@ -4,12 +4,20 @@ import React from "react";
 import { Provider } from "react-redux";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// What the hook works out is set by each test: its own work is the hook's tests'.
+vi.mock("../../hooks/use_mod_properties/useModProperties.hook", () => ({
+  useModProperties: vi.fn(),
+}));
+
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import type {
   IModProperties,
   ModProperty,
 } from "../../hooks/use_mod_properties/useModProperties.hook";
+import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
+import type { IModWithState } from "../../types/IModProps";
+import type { RegisteredValues } from "../../util/registered_values/registeredValues";
 import { ModPropertiesPanel } from "./ModPropertiesPanel";
 
 const ONE_MOD: IModProperties = {
@@ -55,12 +63,23 @@ const CATEGORY: ModProperty = {
   onChange: vi.fn(),
 };
 
-const renderPanel = (properties: IModProperties, onClose = vi.fn()) =>
-  render(
+const MODS = [{ id: "a", attributes: { name: "SkyUI" } }] as unknown as IModWithState[];
+const MEMBERSHIPS = {};
+const REGISTERED = { attributes: [], values: {} as unknown as RegisteredValues };
+
+const renderPanel = (properties: IModProperties, onClose = vi.fn()) => {
+  vi.mocked(useModProperties).mockReturnValue(properties);
+  return render(
     <Provider store={makeModsTableStore()}>
-      <ModPropertiesPanel properties={properties} onClose={onClose} />
+      <ModPropertiesPanel
+        memberships={MEMBERSHIPS}
+        mods={MODS}
+        registered={REGISTERED}
+        onClose={onClose}
+      />
     </Provider>,
   );
+};
 
 describe("ModPropertiesPanel", () => {
   afterEach(() => {
@@ -142,6 +161,12 @@ describe("ModPropertiesPanel", () => {
     expect(screen.getByRole("button", { name: /^Category/ })).toBeInTheDocument();
     // Advanced's too, under General's, as there are no tabs to put them on.
     expect(screen.getByRole("button", { name: /^Mod type/ })).toBeInTheDocument();
+  });
+
+  it("works out its contents from the mods, memberships and registered details it's given", () => {
+    renderPanel(ONE_MOD);
+
+    expect(useModProperties).toHaveBeenCalledWith(MODS, MEMBERSHIPS, REGISTERED);
   });
 
   it("closes", async () => {

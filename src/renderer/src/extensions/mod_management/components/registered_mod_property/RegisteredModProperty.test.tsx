@@ -45,10 +45,43 @@ describe("RegisteredModProperty", () => {
     expect(screen.queryByTestId("mod-property-checksum")).not.toBeInTheDocument();
   });
 
+  it("leaves out an editable field whose value is undefined for the mod", () => {
+    renderProperty({
+      id: "tag",
+      name: "Tag",
+      calc: () => undefined,
+      edit: { onChangeValue: vi.fn() },
+    });
+
+    expect(screen.queryByTestId("mod-property-tag")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("shows a volatile field whose value is undefined", () => {
+    renderProperty({
+      id: "tag",
+      name: "Tag",
+      isVolatile: true,
+      calc: () => undefined,
+      edit: { onChangeValue: vi.fn() },
+    });
+
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
+  });
+
+  it("doesn't call a non-volatile renderer that has no value", () => {
+    const customRenderer = vi.fn(() => <span data-testid="drawn-by-extension" />);
+    renderProperty({ id: "drawn", name: "Drawn", customRenderer });
+
+    expect(customRenderer).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("drawn-by-extension")).not.toBeInTheDocument();
+  });
+
   it("draws one an extension draws itself", () => {
     renderProperty({
       id: "drawn",
       name: "Drawn",
+      isVolatile: true,
       customRenderer: () => <span data-testid="drawn-by-extension">Hello</span>,
     });
 
@@ -59,6 +92,7 @@ describe("RegisteredModProperty", () => {
     renderProperty({
       id: "drawn",
       name: "Drawn",
+      isVolatile: true,
       customRenderer: (_mod, detail) => (
         <span data-testid="drawn-by-extension">{detail ? "details" : "cell"}</span>
       ),
@@ -90,7 +124,10 @@ describe("RegisteredModProperty", () => {
     it("draws one an extension draws itself with them all", () => {
       const customRenderer = vi.fn(() => <span data-testid="drawn-by-extension" />);
       const mods = [modOf("a"), modOf("b")];
-      renderProperty({ id: "drawn", name: "Drawn", supportsMultiple: true, customRenderer }, mods);
+      renderProperty(
+        { id: "drawn", name: "Drawn", isVolatile: true, supportsMultiple: true, customRenderer },
+        mods,
+      );
 
       expect(customRenderer).toHaveBeenCalledWith(mods, true, expect.anything(), expect.anything());
     });
@@ -132,6 +169,34 @@ describe("RegisteredModProperty", () => {
       fireEvent.blur(screen.getByRole("textbox"));
 
       expect(onChangeValue).toHaveBeenCalledWith(MOD, "Mine");
+    });
+
+    it("keeps focus and typing when the value changes mid-word", async () => {
+      const onChangeValue = vi.fn();
+      let value = "";
+      const attribute = {
+        id: "tag",
+        name: "Tag",
+        calc: () => value,
+        edit: { onChangeValue },
+      };
+      const property = () => ({
+        kind: "registered" as const,
+        id: "registered:tag",
+        label: "Tag",
+        attribute: { placement: "detail", ...attribute } as ITableAttribute,
+        mods: [MOD],
+        values: new RegisteredValues(t),
+      });
+      const { rerender } = render(<RegisteredModProperty property={property()} />);
+
+      await userEvent.type(screen.getByRole("textbox"), "hel");
+      value = "elsewhere";
+      rerender(<RegisteredModProperty property={property()} />);
+
+      expect(screen.getByRole("textbox")).toHaveFocus();
+      expect(screen.getByRole("textbox")).toHaveValue("hel");
+      expect(onChangeValue).not.toHaveBeenCalled();
     });
   });
 });

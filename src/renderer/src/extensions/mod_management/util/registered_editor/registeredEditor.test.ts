@@ -25,7 +25,7 @@ const CHOICES = [
 
 describe("registeredEditor", () => {
   it("is none for a field the extension offers no way to change", () => {
-    expect(registeredEditor(attribute({}), [mod("a")], ["x"], "Load order")).toBeUndefined();
+    expect(registeredEditor(attribute({}), [mod("a")], ["x"], "Load order", false)).toBeUndefined();
   });
 
   describe("with choices", () => {
@@ -35,6 +35,7 @@ describe("registeredEditor", () => {
         [mod("a")],
         ["Late"],
         "Load order",
+        false,
       );
 
       expect(editor).toMatchObject({
@@ -56,6 +57,7 @@ describe("registeredEditor", () => {
         [a],
         ["Late"],
         "Load order",
+        false,
       );
       if (editor?.kind !== "select") {
         throw new Error("expected a select");
@@ -78,6 +80,7 @@ describe("registeredEditor", () => {
         mods,
         ["Early", "Late"],
         "Load order",
+        true,
       );
       if (editor?.kind !== "select") {
         throw new Error("expected a select");
@@ -100,6 +103,7 @@ describe("registeredEditor", () => {
         [mod("a")],
         ["v1"],
         "Load order",
+        false,
       );
       if (editor?.kind !== "text") {
         throw new Error("expected text");
@@ -116,6 +120,7 @@ describe("registeredEditor", () => {
         [mod("a")],
         [3],
         "Load order",
+        false,
       );
 
       expect(editor).toMatchObject({ kind: "text", value: "3", isValid: undefined });
@@ -127,6 +132,7 @@ describe("registeredEditor", () => {
         [mod("a")],
         ["x"],
         "Load order",
+        false,
       );
 
       expect(editor?.disabled).toBe(true);

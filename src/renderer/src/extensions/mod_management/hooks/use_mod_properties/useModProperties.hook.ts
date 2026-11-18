@@ -114,19 +114,6 @@ export type ModProperty = IModPropertyBase &
         values: RegisteredValues;
       }
     | {
-        kind: "text";
-        /** The mods' text, "" while they differ. */
-        value: string;
-        /** Whether the selected mods differ. */
-        isVarious: boolean;
-        /** Whether typed text can be saved; any can where it doesn't say. */
-        isValid?: (text: string) => boolean;
-        /** Whether it can't be changed for these mods, though it shows. */
-        disabled?: boolean;
-        /** Saves typed text to every selected mod. */
-        onSave: (text: string) => void;
-      }
-    | {
         kind: "url";
         value: string;
         /** The mod it's of, by id: a draft typed for one is never another's. */

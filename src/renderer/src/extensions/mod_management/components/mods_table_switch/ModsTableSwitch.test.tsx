@@ -22,6 +22,9 @@ vi.mock("@/ExtensionProvider", async (importOriginal) => ({
   useExtensionObjects: () => mocks.registeredColumns,
 }));
 
+// The failure alert's legacy icon loads its set from disk into the page, which isn't there.
+vi.mock("@/controls/Icon", () => ({ default: () => null }));
+
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useInstallMods: () => mocks.installMods,
@@ -1565,14 +1568,41 @@ describe("ModsTableSwitch", () => {
       expect(panel()).toBeNull();
     });
 
-    it("works out no properties while it's closed, as they read the mod's files", async () => {
+    it("doesn't work out properties while the panel is closed", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
+      vi.mocked(useModProperties).mockClear();
 
       await userEvent.click(rowAt(ALPHA));
-      expect(vi.mocked(useModProperties).mock.lastCall?.[0]).toEqual([]);
+      expect(useModProperties).not.toHaveBeenCalled();
 
       await userEvent.click(toggle());
       expect(vi.mocked(useModProperties).mock.lastCall?.[0]).toHaveLength(1);
+    });
+
+    it("keeps the page when working out properties throws, showing a failure in the panel's place", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const broken = mod("a", "Alpha", true, {
+          attributes: {
+            name: "Alpha",
+            get installerChoices(): never {
+              throw new Error("unreadable choices");
+            },
+          },
+        });
+        renderSwitch({ a: broken });
+
+        await userEvent.click(rowAt(ALPHA));
+        await userEvent.click(toggle());
+
+        expect(screen.getByRole("grid")).toBeInTheDocument();
+        expect(screen.queryByTestId("mod-properties-panel")).toBeNull();
+        expect(
+          within(screen.getByTestId("mod-properties-slot")).getByText(/Failed to render/),
+        ).toBeInTheDocument();
+      } finally {
+        consoleError.mockRestore();
+      }
     });
 
     it("shows no panel with the classic table, though it was left open", () => {

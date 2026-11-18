@@ -12,6 +12,7 @@ export interface IUnsavedDraft {
 /**
  * A text field's draft, starting as its value: saved when `save` is called, as on leaving the
  * field, and on the way out with typing unsaved, as when the field is made again for other mods.
+ * It follows a changed value only while nothing is typed and unsaved.
  * It saves with the `onSave` it was last drawn with, so to what it was typed for.
  */
 export const useUnsavedDraft = (value: string, onSave: (text: string) => void): IUnsavedDraft => {
@@ -23,6 +24,14 @@ export const useUnsavedDraft = (value: string, onSave: (text: string) => void): 
   useEffect(() => {
     latest.current = onSave;
   });
+
+  // Follows a value changed elsewhere, but never over typing not yet saved. Once saved, the value
+  // comes back as what was typed, so the draft stays as it is.
+  useEffect(() => {
+    if (unsaved.current === undefined) {
+      setDraft(value);
+    }
+  }, [value]);
 
   const save = useCallback(() => {
     const text = unsaved.current;

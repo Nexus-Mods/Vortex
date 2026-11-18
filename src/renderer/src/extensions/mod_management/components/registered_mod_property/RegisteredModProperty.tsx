@@ -19,19 +19,26 @@ interface IRegisteredModPropertyProps {
 /**
  * A field an extension registered for the legacy details pane, under its name, drawn as that pane
  * draws it: by its own renderer, given every selected mod if it takes several; in the editor the
- * extension offers; or its value as text, "Various" where the mods differ. One with no value to
- * show isn't shown, as the legacy pane leaves it out.
+ * extension offers; or its value as text, "Various" where the mods differ. One that isn't
+ * volatile and has no value for the first mod isn't shown at all, as the legacy pane leaves it out,
+ * whether it draws itself or is edited.
  */
 export const RegisteredModProperty = ({ property }: IRegisteredModPropertyProps) => {
   const { attribute, label, mods } = property;
   const { t } = useTranslation("common");
   const shown = useRegisteredValues(attribute, mods, property.values);
 
+  // As the legacy pane keeps an attribute only if it's volatile or has a value for the first mod.
+  if (attribute.isVolatile !== true && shown[0] === undefined) {
+    return null;
+  }
+
+  const isVarious = shown.some((value) => !Object.is(value, shown[0]));
+
   if (attribute.customRenderer === undefined) {
-    const editor = registeredEditor(attribute, mods, shown, label);
-    // Made again for other mods, or once the value changes elsewhere, saving typing left unsaved
-    // to the mods it was typed for.
-    const key = [...mods.map(({ id }) => id), editor?.value].join("\n");
+    const editor = registeredEditor(attribute, mods, shown, label, isVarious);
+    // Made again for other mods, saving typing left unsaved to the mods it was typed for.
+    const key = mods.map(({ id }) => id).join("\n");
     if (editor?.kind === "select") {
       return <ModPropertySelect property={editor} />;
     }
@@ -40,7 +47,6 @@ export const RegisteredModProperty = ({ property }: IRegisteredModPropertyProps)
     }
   }
 
-  const isVarious = shown.some((value) => !Object.is(value, shown[0]));
   const content =
     attribute.customRenderer !== undefined ? (
       <VersionedCustomCell

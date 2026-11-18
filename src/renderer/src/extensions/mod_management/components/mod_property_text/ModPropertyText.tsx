@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 
 import { TextField } from "@/ui/components/form/text_field/TextField";
 
-import type { ModProperty } from "../../hooks/use_mod_properties/useModProperties.hook";
 import { useUnsavedDraft } from "../../hooks/use_unsaved_draft/useUnsavedDraft.hook";
 import { COMPACT_FIELD } from "../../util/compact_field/compactField";
+import type { IRegisteredText } from "../../util/registered_editor/registeredEditor";
 
 interface IModPropertyTextProps {
-  property: Extract<ModProperty, { kind: "text" }>;
+  property: IRegisteredText;
 }
 
 /**

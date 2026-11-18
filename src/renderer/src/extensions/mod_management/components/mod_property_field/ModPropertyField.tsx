@@ -4,7 +4,6 @@ import type { ModProperty } from "../../hooks/use_mod_properties/useModPropertie
 import { ModPropertyNotes } from "../mod_property_notes/ModPropertyNotes";
 import { ModPropertySelect } from "../mod_property_select/ModPropertySelect";
 import { ModPropertySwitch } from "../mod_property_switch/ModPropertySwitch";
-import { ModPropertyText } from "../mod_property_text/ModPropertyText";
 import { ModPropertyUrl } from "../mod_property_url/ModPropertyUrl";
 import { ModPropertyValue } from "../mod_property_value/ModPropertyValue";
 import { RegisteredModProperty } from "../registered_mod_property/RegisteredModProperty";
@@ -23,20 +22,13 @@ export const ModPropertyField = ({ property }: IModPropertyFieldProps) => {
     case "select":
       return <ModPropertySelect property={property} />;
     case "notes":
-      // Made again for other mods, or once their notes change elsewhere; typing unsaved then is
-      // saved on the way out, to the mods it was typed for.
-      return (
-        <ModPropertyNotes
-          key={[...property.modIds, property.value].join("\n")}
-          property={property}
-        />
-      );
+      // Made again for other mods; typing unsaved then is saved on the way out, to the mods it
+      // was typed for.
+      return <ModPropertyNotes key={property.modIds.join("\n")} property={property} />;
     case "url":
-      // Made again for another mod, or once its address changes elsewhere; a valid address typed
-      // and unsaved then is saved on the way out, to the mod it was typed for.
-      return <ModPropertyUrl key={`${property.modId}\n${property.value}`} property={property} />;
-    case "text":
-      return <ModPropertyText property={property} />;
+      // Made again for another mod; a valid address typed and unsaved then is saved on the way
+      // out, to the mod it was typed for.
+      return <ModPropertyUrl key={property.modId} property={property} />;
     case "switch":
       return <ModPropertySwitch property={property} />;
   }

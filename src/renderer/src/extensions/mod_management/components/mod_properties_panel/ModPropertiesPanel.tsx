@@ -11,15 +11,23 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type {
-  IModProperties,
+  IRegisteredDetails,
   ModPropertiesTab,
+  IModProperties,
 } from "../../hooks/use_mod_properties/useModProperties.hook";
+import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
+import type { IMod } from "../../types/IMod";
+import type { IModWithState } from "../../types/IModProps";
 import { ModPropertiesCard } from "../mod_properties_card/ModPropertiesCard";
 import { ModPropertySection } from "../mod_property_section/ModPropertySection";
 
 interface IModPropertiesPanelProps {
-  /** What it shows, for the selected mods. */
-  properties: IModProperties;
+  /** The selected mods, whose properties it works out and shows. */
+  mods: IModWithState[];
+  /** The collections each mod is in, by mod id. */
+  memberships: { [modId: string]: IMod[] };
+  /** The fields extensions registered for the legacy details pane. */
+  registered: IRegisteredDetails;
   onClose: () => void;
   /** Classes for its frame, which the page sizes and places. */
   className?: string;
@@ -40,11 +48,16 @@ const sectionsOn = (properties: IModProperties, tab: ModPropertiesTab) =>
  * picked stays as the selection changes, falling back to General where it's gone.
  */
 export const ModPropertiesPanel = ({
-  properties,
+  mods,
+  memberships,
+  registered,
   onClose,
   className,
 }: IModPropertiesPanelProps) => {
   const { t } = useTranslation("mod_management");
+  // Worked out here, only while the panel is mounted, as it reads a mod's INI edits from disk and
+  // each change re-renders only the panel, not the table.
+  const properties = useModProperties(mods, memberships, registered);
   const [picked, setPicked] = useState<ModPropertiesTab>("general");
 
   // Each written out, so the strings can be found.

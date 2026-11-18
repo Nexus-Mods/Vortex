@@ -45,6 +45,10 @@ const isRowClick = (event: MouseEvent<HTMLDivElement>) => {
   return event.currentTarget.contains(target) && target.closest(CONTROL) === null;
 };
 
+/** Whether Ctrl, Cmd or Shift is held, which makes a click change the selection, not open the row. */
+const isModified = (event: MouseEvent<HTMLDivElement>) =>
+  event.ctrlKey || event.metaKey || event.shiftKey;
+
 /**
  * The row's element, which notes once it's pointed at or focused, and counts as engaged while
  * it's selected, so a selected row's actions show as a hovered one's do. Its cells come in as
@@ -93,8 +97,9 @@ export const TableRow = <T, G extends ITableGroup<T>>({
     selected={!!checkbox?.checked}
     role="row"
     onClick={(event) => {
-      // A double-click's second click, which would deselect the row it's opening.
-      const isRepeat = onDoubleClick !== undefined && event.detail > 1;
+      // A double-click's second click, which would deselect the row it's opening. A modified
+      // click never opens the row, so each one is its own toggle or range.
+      const isRepeat = onDoubleClick !== undefined && event.detail > 1 && !isModified(event);
       if (onClick !== undefined && !isRepeat && isRowClick(event)) {
         onClick({ toggle: event.ctrlKey || event.metaKey, range: event.shiftKey });
       }
@@ -105,7 +110,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
       }
     }}
     onDoubleClick={(event) => {
-      if (onDoubleClick !== undefined && isRowClick(event)) {
+      if (onDoubleClick !== undefined && !isModified(event) && isRowClick(event)) {
         onDoubleClick();
       }
     }}
