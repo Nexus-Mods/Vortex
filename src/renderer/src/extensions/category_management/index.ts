@@ -10,14 +10,13 @@ import { log } from "../../util/log";
 import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { setDownloadModInfo } from "../download_management/actions/state";
-import { setModAttribute } from "../mod_management/actions/mods";
 import type { IModWithState } from "../mod_management/types/IModProps";
+import { modAttributeActions } from "../mod_management/util/mod_attribute_actions/modAttributeActions";
 import { isLoggedIn } from "../nexus_integration/selectors";
 import { loadCategories, updateCategories } from "./actions/category";
 import { categoryReducer } from "./reducers/category";
-import { allCategories } from "./selectors";
 import type { ICategoryDictionary } from "./types/ICategoryDictionary";
+import { categoryChoices } from "./util/category_choices/categoryChoices";
 import CategoryFilter from "./util/CategoryFilter";
 import { resolveCategoryName, resolveCategoryPath } from "./util/retrieveCategoryPath";
 import CategoryDialog from "./views/CategoryDialog";
@@ -30,16 +29,6 @@ const getModCategory = (mod: IModWithState): string | number | undefined =>
 
 const getModName = (mod: IModWithState): string | undefined =>
   mod.attributes?.name || mod.attributes?.fileName;
-
-function getCategoryChoices(state: IState) {
-  const categories: ICategoryDictionary = allCategories(state);
-
-  return [{ key: "", text: "" }].concat(
-    Object.keys(categories)
-      .map((id) => ({ key: id, text: resolveCategoryPath(id, state) }))
-      .sort((lhs, rhs) => categories[lhs.key].order - categories[rhs.key].order),
-  );
-}
 
 function undefSort(lhs?: string, rhs?: string) {
   return lhs !== undefined ? 1 : rhs !== undefined ? -1 : 0;
@@ -116,16 +105,18 @@ function init(context: IExtensionContext): boolean {
     supportsMultiple: true,
     calc: (mod: IModWithState) => resolveCategoryPath(getModCategory(mod), context.api.getState()),
     edit: {
-      choices: () => getCategoryChoices(context.api.getState()),
+      choices: () => [
+        { key: "", text: "" },
+        ...categoryChoices(context.api.getState()).map(({ value, label }) => ({
+          key: value,
+          text: label,
+        })),
+      ],
       onChangeValue: (rows: IModWithState[], newValue: string | number) => {
         const gameMode = activeGameId(context.api.getState());
-        rows.forEach((row) => {
-          if (row.state === "downloaded") {
-            context.api.store.dispatch(setDownloadModInfo(row.id, "custom.category", newValue));
-          } else {
-            context.api.store.dispatch(setModAttribute(gameMode, row.id, "category", newValue));
-          }
-        });
+        modAttributeActions(gameMode, rows, "category", String(newValue)).forEach((action) =>
+          context.api.store.dispatch(action),
+        );
       },
     },
     externalData: (onChanged: () => void) => {

@@ -8,6 +8,7 @@ import {
   isModDetailsTab,
   type ModDetailsTab,
 } from "@/extensions/browse_nexus/util/mod_details_tab/modDetailsTab";
+import { modStatusDisplay } from "@/extensions/mod_management/util/mod_status/modStatus";
 import { modQuery } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import {
@@ -31,7 +32,6 @@ import { useRelativeTime } from "@/util/useRelativeTime";
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
 import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
-import { modStatusDisplay } from "../../../util/mod_status/modStatus";
 import { ModCommentsComingSoon } from "./mod_comments_coming_soon/ModCommentsComingSoon";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
