@@ -23,7 +23,7 @@ import { checkModVersion } from "./util/checkModsVersion";
 import { convertGameIdReverse, nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, queryResetSource } from "./util/guessModID";
 import EndorsementFilter from "./views/EndorsementFilter";
-import EndorseModButton from "./views/EndorseModButton";
+import { EndorseModButton } from "./views/EndorseModButton";
 import NexusModIdDetail from "./views/NexusModIdDetail";
 
 interface INexusIdProps {

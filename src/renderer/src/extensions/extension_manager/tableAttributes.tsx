@@ -9,7 +9,7 @@ import type { ITableAttribute } from "../../types/ITableAttribute";
 import { getSafe } from "../../util/storeHelper";
 import { SITE_ID } from "../gamemode_management/constants";
 import type { EndorseMod } from "../nexus_integration/attributes";
-import EndorseModButton from "../nexus_integration/views/EndorseModButton";
+import { EndorseModButton } from "../nexus_integration/views/EndorseModButton";
 
 interface IAttributesContext {
   onSetExtensionEnabled: (extensionName: string, enabled: boolean) => void;

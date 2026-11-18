@@ -1,72 +1,101 @@
 import type { TFunction } from "i18next";
-import * as React from "react";
+import React, { useState } from "react";
 
-import { ComponentEx } from "../../../controls/ComponentEx";
-import Icon from "../../../controls/Icon";
-import Spinner from "../../../controls/Spinner";
-import { IconButton } from "../../../controls/TooltipControls";
+import { Icon } from "@/ui/components/icon/Icon";
+import { ToolbarButton } from "@/ui/components/toolbar/ToolbarButton";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
-export interface IProps {
+export interface IEndorseModButtonProps {
   gameId: string;
   modId: string;
+  /** Nexus's answer, such as "Undecided", "Endorsed" or "Disabled"; "pending" while it's asked. */
   endorsedStatus: string;
   t: TFunction;
-  onEndorseMod: (gameId: string, modId: string, endorsedStatus) => void;
+  onEndorseMod: (gameId: string, modId: string, endorsedStatus: string) => void;
 }
+
+/** One spark every 45 degrees, each turned to fly out along its angle. */
+const SPARK_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/** The ring and sparks that burst out of the thumb as a mod is endorsed. */
+const EndorseBurst = () => (
+  <span aria-hidden={true} className="nxm-endorse-burst" data-testid="endorse-burst">
+    <span className="nxm-endorse-burst-ring" />
+
+    {SPARK_ANGLES.map((angle) => (
+      <span className="nxm-endorse-burst-spark" key={angle} style={{ rotate: `${angle}deg` }} />
+    ))}
+  </span>
+);
 
 /**
- * Endorse Button
- *
- * @class EndorseModButton
+ * A mod's endorsement as a thumb, filled once endorsed, that endorses the mod or withdraws it.
+ * Becoming endorsed pops the thumb with a burst. While Nexus is asked, it shows what was asked
+ * for, the opposite of its last answer.
  */
-class EndorseModButton extends ComponentEx<IProps, {}> {
-  public render(): JSX.Element {
-    const { endorsedStatus, modId, t } = this.props;
+export const EndorseModButton = ({
+  endorsedStatus,
+  gameId,
+  modId,
+  t,
+  onEndorseMod,
+}: IEndorseModButtonProps) => {
+  const status = endorsedStatus.toLowerCase();
+  const isPending = status === "pending";
 
-    if (endorsedStatus === "pending") {
-      return (
-        <div style={{ textAlign: "center" }}>
-          <Spinner />
-        </div>
-      );
-    }
-
-    const { icon, tooltip } = {
-      undecided: { icon: "endorse-maybe", tooltip: t("Undecided") },
-      abstained: { icon: "endorse-maybe", tooltip: t("Abstained") },
-      endorsed: { icon: "endorse-yes", tooltip: t("Endorsed") },
-      disabled: {
-        icon: "endorse-disabled",
-        tooltip: t("Endorsement disabled by author"),
-      },
-      blocked: {
-        icon: "endorse-disabled",
-        tooltip: t("You have been blocked by the curator."),
-      },
-    }[endorsedStatus.toLowerCase()] || {
-      icon: "like-maybe",
-      tooltip: t("Undecided"),
-    };
-
-    return (
-      <div style={{ textAlign: "center" }}>
-        <IconButton
-          className="btn-embed"
-          id={modId}
-          tooltip={tooltip}
-          icon={icon}
-          onClick={this.endorseMod}
-          disabled={endorsedStatus === "Disabled"}
-          stroke
-        />
-      </div>
-    );
+  // Nexus's last answer; "pending" if it was being asked before this was drawn.
+  const [answer, setAnswer] = useState(status);
+  if (!isPending && status !== answer) {
+    setAnswer(status);
   }
 
-  private endorseMod = () => {
-    const { endorsedStatus, gameId, modId, onEndorseMod } = this.props;
-    onEndorseMod(gameId, modId, endorsedStatus);
-  };
-}
+  const isEndorsed = isPending ? answer !== "endorsed" : status === "endorsed";
 
-export default EndorseModButton;
+  // Only a change while it's drawn celebrates, not a mod endorsed before it's shown.
+  const [wasEndorsed, setWasEndorsed] = useState(isEndorsed);
+  const [isCelebrating, setIsCelebrating] = useState(false);
+  if (isEndorsed !== wasEndorsed) {
+    setWasEndorsed(isEndorsed);
+    setIsCelebrating(isEndorsed);
+  }
+
+  const disabledReason = {
+    disabled: t("Endorsement disabled by author"),
+    blocked: t("You have been blocked by the curator."),
+  }[status];
+
+  return (
+    <div className="flex justify-center">
+      <ToolbarButton
+        appearance="weak"
+        brand={isEndorsed ? "primary" : "neutral"}
+        data-testid="endorse-button"
+        disabledReason={disabledReason}
+        isLoading={isPending && answer === "pending"}
+        label={isEndorsed ? t("Endorsed") : t("Endorse")}
+        leftIcon={
+          <span className="nxm-endorse">
+            {isCelebrating && <EndorseBurst />}
+
+            <Icon
+              className={joinClasses(["nxm-endorse-thumb"], {
+                "nxm-endorse-thumb-pop": isCelebrating,
+              })}
+              data-testid="endorse-thumb"
+              filled={isEndorsed}
+              name="thumb_up"
+              size="none"
+              onAnimationEnd={() => setIsCelebrating(false)}
+            />
+          </span>
+        }
+        size="sm"
+        onClick={() => {
+          if (!isPending) {
+            onEndorseMod(gameId, modId, endorsedStatus);
+          }
+        }}
+      />
+    </div>
+  );
+};

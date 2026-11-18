@@ -6,6 +6,7 @@
 
 import React, { type ComponentType, useState } from "react";
 
+import { EndorseModButtonDemo } from "@/extensions/nexus_integration/views/EndorseModButton.demo";
 import { AlertDemo } from "@/ui/components/alert/Alert.demo";
 import { BadgesDemo } from "@/ui/components/badges/Badges.demo";
 import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
@@ -79,6 +80,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
       { id: "split-button", name: "Split button", Demo: SplitButtonDemo },
       { id: "view-picker", name: "View picker", Demo: ViewPickerDemo },
       { id: "toolbar", name: "Toolbar", Demo: ToolbarDemo },
+      { id: "endorse-button", name: "Endorse button", Demo: EndorseModButtonDemo },
     ],
   },
   {
