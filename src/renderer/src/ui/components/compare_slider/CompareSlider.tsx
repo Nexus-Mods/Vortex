@@ -1,41 +1,47 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { ModImage } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import { Icon } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { mdiUnfoldMoreVertical } from "@/ui/icon-paths";
 
+/** One side of a comparison, with the server's blurred version where it sends one. */
+export interface ICompareSliderPicture {
+  src: string;
+  blurredSrc?: string | null;
+}
+
 interface ICompareSliderProps {
   /** The picture without the mod, shown left of the divider. */
-  before: ModImage;
+  before: ICompareSliderPicture;
   /** The picture with the mod, shown right of the divider. */
-  after: ModImage;
+  after: ICompareSliderPicture;
   /** Blurs both pictures for a user who hasn't opted into adult content. */
   isAdult: boolean;
 }
 
 /**
- * A before/after comparison, styled as the site's slider: the after picture, with the before
- * picture over it as far as a divider the user drags, each side labelled. The divider is a range
- * input stretched over
- * both pictures and drawn invisible, so a click or drag anywhere moves it there, Tab reaches it,
- * the arrow keys move it, and screen readers announce it. It moves as it's told to, with nothing
- * animated, so it needs nothing for reduced motion.
+ * A before/after comparison, styled as the site's slider: the after picture in a 16:9 frame, with
+ * the before picture over it as far as a divider the user drags, each side labelled. The divider
+ * is a range input stretched over both pictures and drawn invisible, so a click or drag anywhere
+ * moves it there, Tab reaches it, the arrow keys move it, and screen readers announce it. It moves
+ * as it's told to, with nothing animated, so it needs nothing for reduced motion.
  */
 export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) => {
   const { t } = useTranslation();
   const [position, setPosition] = useState(50);
 
-  const picture = (image: ModImage, alt: string) => (
+  const picture = ({ src, blurredSrc }: ICompareSliderPicture, alt: string) => (
     <AdultAwareImage
       alt={alt}
-      blurredSrc={image.blurred_large_thumbnail_url}
+      blurredSrc={blurredSrc}
       className="w-full rounded-sm"
       imageType="mod"
       isAdult={isAdult}
-      src={image.url}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      src={src}
     />
   );
 

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import type { ModImage } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import { Button } from "@/ui/components/button/Button";
+import { CompareSlider } from "@/ui/components/compare_slider/CompareSlider";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
 import { joinClasses } from "@/ui/utils/joinClasses";
@@ -11,7 +12,6 @@ import type {
   GalleryDirection,
   SelectionInput,
 } from "../../../../hooks/browse_mods_tracking/browseModsTracker";
-import { CompareSlider } from "./CompareSlider";
 
 /**
  * One picture in a mod's gallery, as the API sends it, with its title where it has one, and the
@@ -123,7 +123,12 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
   return (
     <div className="flex flex-col gap-y-2">
       {shown?.before && !isLoading ? (
-        <CompareSlider after={shown} before={shown.before} isAdult={isAdult} key={shown.url} />
+        <CompareSlider
+          after={{ src: shown.url, blurredSrc: shown.blurred_large_thumbnail_url }}
+          before={{ src: shown.before.url, blurredSrc: shown.before.blurred_large_thumbnail_url }}
+          isAdult={isAdult}
+          key={shown.url}
+        />
       ) : shown ? (
         <AdultAwareImage
           alt={shown.title ?? ""}

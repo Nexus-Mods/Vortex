@@ -2,21 +2,16 @@ import { fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { ModImage } from "@/extensions/nexus_integration/queries/mod/mod.query";
-
-import { CompareSlider } from "./CompareSlider";
+import { CompareSlider, type ICompareSliderPicture } from "./CompareSlider";
 
 // No one is logged in, so an adult mod's pictures are blurred.
 vi.mock("react-redux", () => ({ useSelector: () => undefined }));
 vi.mock("@/extensions/nexus_integration/selectors", () => ({ userInfo: () => undefined }));
 
-/** A picture in each size the API sends, named for `name`. */
-const picture = (name: string): ModImage => ({
-  url: `${name}.png`,
-  large_thumbnail_url: `${name}-large.png`,
-  thumbnail_url: `${name}-thumb.png`,
-  blurred_large_thumbnail_url: `${name}-blurred-large.png`,
-  blurred_thumbnail_url: `${name}-blurred.png`,
+/** A picture named for `name`, with the server's blurred version. */
+const picture = (name: string): ICompareSliderPicture => ({
+  src: `${name}.png`,
+  blurredSrc: `${name}-blurred-large.png`,
 });
 
 const renderSlider = (isAdult = false) => {

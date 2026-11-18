@@ -94,13 +94,26 @@ describe("BBCode", () => {
       expect(wrapper.style.getPropertyValue("--prose-image-ratio")).toBe(ratio);
     });
 
-    it("shows both images of a comparison", () => {
+    it("shows a comparison as a slider, no wider than it asks", () => {
       const { container } = render(
-        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png width=846]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
       );
+      const slider = screen.getByRole("slider");
 
       expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
+        "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
         "https://staticdelivery.nexusmods.com/mods/1704/images/before.png",
+      ]);
+      expect(slider.closest<HTMLElement>("[style]")?.style.maxWidth).toBe("846px");
+    });
+
+    it("shows a comparison with an image from elsewhere as its Nexus Mods image alone", () => {
+      const { container } = render(
+        <BBCode bbcode="[compare before=https://i.imgur.com/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+      );
+
+      expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+      expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
         "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
       ]);
     });
