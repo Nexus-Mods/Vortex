@@ -1,4 +1,5 @@
 import type { EndorsedStatus } from "@nexusmods/nexus-api";
+import { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 
@@ -48,7 +49,7 @@ function createEndorsedIcon(ext: IExtensionWithState, onEndorse: EndorseMod, t: 
     <EndorseModButton
       endorsedStatus={endorsed}
       t={t}
-      gameId={SITE_ID}
+      gameId={VortexGameId(SITE_ID)}
       modId={ext.modId.toString()}
       onEndorseMod={onEndorse}
     />

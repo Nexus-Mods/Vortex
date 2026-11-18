@@ -3,12 +3,16 @@
  * The Mods table's endorse button, against a pretend Nexus, so trying it endorses nothing.
  */
 
+import { VortexGameId } from "@vortex/shared";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Typography } from "@/ui/components/typography/Typography";
 
 import { EndorseModButton } from "./EndorseModButton";
+
+/** A game id for the pretend Nexus; nothing is asked of a real game. */
+const DEMO_GAME_ID = VortexGameId("demo");
 
 /** How long the pretend Nexus takes to answer, about as long as the real one. */
 const ANSWER_DELAY = 800;
@@ -31,7 +35,7 @@ const SimulatedEndorse = ({
   const { t } = useTranslation();
   const [status, setStatus] = useState("Undecided");
 
-  const onEndorseMod = (_gameId: string, _modId: string, current: string) => {
+  const onEndorseMod = (_gameId: VortexGameId, _modId: string, current: string) => {
     const answer = current.toLowerCase() === "endorsed" ? "Abstained" : "Endorsed";
     if (hasPendingStep) {
       setStatus("pending");
@@ -43,7 +47,7 @@ const SimulatedEndorse = ({
     <div className="flex w-40 flex-col items-center gap-2">
       <EndorseModButton
         endorsedStatus={status}
-        gameId="demo"
+        gameId={DEMO_GAME_ID}
         modId={label}
         t={t}
         onEndorseMod={onEndorseMod}
@@ -100,7 +104,7 @@ export const EndorseModButtonDemo = () => {
             <div className="flex w-24 flex-col items-center gap-2" key={status}>
               <EndorseModButton
                 endorsedStatus={status}
-                gameId="demo"
+                gameId={DEMO_GAME_ID}
                 modId={status}
                 t={t}
                 onEndorseMod={() => undefined}

@@ -1,4 +1,5 @@
 import type Nexus from "@nexusmods/nexus-api";
+import { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { useSelector } from "react-redux";
@@ -89,7 +90,6 @@ function NexusId(props: INexusIdProps) {
 
 export type EndorseMod = (gameId: string, modId: string, endorsedStatus: string) => void;
 export type TrackMod = (gameId: string, modId: string, track: boolean) => void;
-const noOp = () => null;
 function createEndorsedIcon(
   store: Redux.Store<any>,
   mod: IMod,
@@ -131,16 +131,17 @@ function createEndorsedIcon(
     endorsed = undefined;
   }
 
-  let endorseFunc = onEndorse;
+  // A collection is endorsed from its own page, so its row only shows the answer.
+  let endorseFunc: EndorseMod | undefined = onEndorse;
   if (mod.attributes?.collectionId) {
     const collectionInfo =
       store.getState().persistent.collections?.collections?.[mod.attributes.collectionId]?.info;
     endorsed = collectionInfo?.viewerIsBlocked ? "Blocked" : endorsed;
-    endorseFunc = noOp;
+    endorseFunc = undefined;
   }
 
-  const gameId =
-    getSafe(mod.attributes, ["downloadGame"], undefined) || activeGameId(store.getState());
+  const downloadGame: string | undefined = mod.attributes?.downloadGame;
+  const gameId = downloadGame ? VortexGameId(downloadGame) : activeGameId(store.getState());
   if (endorsed !== undefined) {
     return (
       <EndorseModButton
