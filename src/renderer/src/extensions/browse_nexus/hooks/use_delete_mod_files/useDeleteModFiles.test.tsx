@@ -214,6 +214,21 @@ describe("useDeleteModFiles", () => {
     await settleTransitions();
   });
 
+  it("opens afresh from Uninstall, downloads kept, after Delete was cancelled", async () => {
+    mocks.ownedFiles = [installedFile, downloadedFile];
+    const view = await openModal("delete");
+
+    await userEvent.click(await screen.findByTestId("delete-mod-files-cancel"));
+    view.rerender(withClient(<Host action="uninstall" />));
+    await userEvent.click(screen.getByTestId("opener"));
+
+    expect(await screen.findByTestId("delete-mod-files-downloads")).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    await settleTransitions();
+  });
+
   it("deletes downloads too when the user asks", async () => {
     mocks.ownedFiles = [installedFile, downloadedFile];
     await openModal();
@@ -307,17 +322,20 @@ describe("useDeleteModFiles", () => {
       await settleTransitions();
     });
 
-    it("counts the modal closed without removing anything", async () => {
-      mocks.ownedFiles = [installedFile, downloadedFile];
-      await openModal();
+    it.each<RemoveMenuOption>(["uninstall", "delete"])(
+      "counts the modal opened from %s closed without removing anything",
+      async (option) => {
+        mocks.ownedFiles = [installedFile, downloadedFile];
+        await openModal(option);
 
-      await userEvent.click(await screen.findByTestId("delete-mod-files-cancel"));
+        await userEvent.click(await screen.findByTestId("delete-mod-files-cancel"));
 
-      expect(sent("browse_mods_remove_cancelled")).toEqual([
-        { mod_uid: "7340033", file_count: 2, menu_option: "uninstall" },
-      ]);
-      expect(sent("browse_mods_remove_confirmed")).toEqual([]);
-      await settleTransitions();
-    });
+        expect(sent("browse_mods_remove_cancelled")).toEqual([
+          { mod_uid: "7340033", file_count: 2, menu_option: option },
+        ]);
+        expect(sent("browse_mods_remove_confirmed")).toEqual([]);
+        await settleTransitions();
+      },
+    );
   });
 });

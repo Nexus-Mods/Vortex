@@ -102,8 +102,8 @@ interface IModInstallButtonProps {
  * one, it's installed as a primary is. v3 giving it no file at all means it isn't available
  * through Vortex. Once the user has a mod, its button splits, its menu uninstalling or deleting it
  * and, for a mod with several Main files and no primary, reaching the picker again; with several
- * of those files downloaded or installed, a Premium user's main action opens the picker too. It spins while any
- * of the mod's files is uninstalling, so nothing is started on them twice.
+ * of those files downloaded or installed, a Premium user's main action opens the picker too. It
+ * spins while any of the mod's files is uninstalling, so nothing is started on them twice.
  */
 export const ModInstallButton = ({
   api,
