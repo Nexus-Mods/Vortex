@@ -35,6 +35,7 @@ import {
   type ModsById,
   RegisteredValues,
 } from "../../util/registered_values/registeredValues";
+import { isShownAsRegistered } from "../../util/shown_as_registered/shownAsRegistered";
 import {
   DEFAULT_POSITION,
   type IModsTableColumn,
@@ -294,7 +295,7 @@ export const RegisteredModsVersionsProvider = ({
  * @param isNewTable Whether the new table is the one shown, which alone listens for changes.
  * @returns Also `details`, the attributes the legacy details pane shows, for the Properties panel,
  * whose values come from `textChanges` and `inputs` as the columns' do; and `detailsOnly`, those
- * of them that aren't columns, whose data outside the mods the panel listens for itself, with
+ * of them the panel draws that aren't columns, whose data outside the mods it listens for itself, with
  * {@link useExternalDataVersions}.
  */
 export const useRegisteredModsColumns = (
@@ -335,9 +336,10 @@ export const useRegisteredModsColumns = (
   );
 
   // The details the table doesn't listen for, as they're no column of it: the panel listens for
-  // these itself while it's open.
+  // these itself while it's open, those it draws from their values, not as its own fields.
   const detailsOnly = useMemo(
-    () => details.filter((attribute) => !offered.includes(attribute)),
+    () =>
+      details.filter((attribute) => !offered.includes(attribute) && isShownAsRegistered(attribute)),
     [details, offered],
   );
 

@@ -15,6 +15,7 @@ import { attributeText as textOf } from "../../util/attribute_text/attributeText
 import { type ModStatus, localModStatus } from "../../util/mod_status/modStatus";
 import { displayName } from "../../util/mods_table_views/modsTableViews";
 import type { RegisteredValues } from "../../util/registered_values/registeredValues";
+import { isShownAsRegistered } from "../../util/shown_as_registered/shownAsRegistered";
 import { useIniTweaks } from "../use_ini_tweaks/useIniTweaks.hook";
 import { useModAdvancedEdits } from "../use_mod_advanced_edits/useModAdvancedEdits.hook";
 import { useModPropertyEdits } from "../use_mod_property_edits/useModPropertyEdits.hook";
@@ -270,29 +271,11 @@ const installerProperties = (mod: IModWithState): ModProperty[] =>
     value,
   }));
 
-/**
- * The legacy details pane's fields shown here as the panel's own, by attribute id, so an
- * extension's field the panel doesn't show is all that's left.
- */
-const SHOWN_AS_OWN = new Set([
-  "category-detail",
-  "notes",
-  "modSource",
-  "sourceURL",
-  "collection",
-  "nexusModId",
-  "nexusCollectionId",
-  "modType",
-  "downloadGame",
-  "installer",
-  "iniEdits",
-]);
-
 /** What extensions registered for the legacy details pane, and where their values are kept. */
 export interface IRegisteredDetails {
   /** In the pane's order. */
   attributes: ITableAttribute[];
-  /** Those of them the table doesn't listen for, as they're no column of it. */
+  /** Those of them it draws that the table doesn't listen for, as they're no column of it. */
   detailsOnly: ITableAttribute[];
   values: RegisteredValues;
 }
@@ -310,7 +293,7 @@ const registeredProperties = (
   mods.length === 0
     ? []
     : attributes
-        .filter(({ id, calc, customRenderer }) => !SHOWN_AS_OWN.has(id) && (calc || customRenderer))
+        .filter(isShownAsRegistered)
         .filter(({ supportsMultiple }) => mods.length === 1 || supportsMultiple === true)
         .map((attribute) => ({
           kind: "registered",

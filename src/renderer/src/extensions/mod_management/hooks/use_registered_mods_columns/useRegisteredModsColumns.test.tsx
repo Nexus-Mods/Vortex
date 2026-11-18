@@ -378,6 +378,19 @@ describe("useRegisteredModsColumns", () => {
     expect(externalData).toHaveBeenCalledTimes(1);
   });
 
+  // Its own fields, such as Category, the panel doesn't draw from their values, so needn't hear of.
+  it("leaves the panel to listen only for details it draws from their values that aren't columns", () => {
+    registered.attributes = [
+      attribute({ id: "column", placement: "both", calc: () => "" }),
+      attribute({ id: "drawn", placement: "detail", calc: () => "" }),
+      attribute({ id: "rendered", placement: "detail", customRenderer: () => null }),
+      attribute({ id: "category-detail", placement: "detail", calc: () => "" }),
+      attribute({ id: "nothingToDraw", placement: "detail" }),
+    ];
+
+    expect(renderRegistered().detailsOnly.map(({ id }) => id)).toEqual(["drawn", "rendered"]);
+  });
+
   // Extensions give no way to stop listening, so each call would add a listener for good.
   it("calls externalData once across column toggles", () => {
     const externalData = vi.fn();

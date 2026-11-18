@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
@@ -59,20 +59,18 @@ export const ModPropertiesPanel = ({
   className,
 }: IModPropertiesPanelProps) => {
   const { t } = useTranslation("mod_management");
+  const { detailsOnly, values } = registered;
+  // Its extension fields that aren't columns are worked out again as it opens, before they're
+  // drawn, as no one heard of a change to their data while it was closed, nor since the table
+  // stopped showing one as a column; quietly, as the table doesn't show them.
+  useState(() => detailsOnly.forEach(({ id }) => values.invalidate(id, { quietly: true })));
   // Worked out here, only while the panel is mounted, as it reads a mod's INI edits from disk and
   // each change re-renders only the panel, not the table.
   const properties = useModProperties(mods, memberships, registered);
-  // The data outside the mods of its extension fields that aren't columns, which the table hears
-  // of for itself, listened for only while it's open. A change draws only the panel again, not
-  // telling the table, which doesn't show them. It's only ever beside the new table.
-  const { detailsOnly, values } = registered;
+  // The data outside the mods of those fields, which the table doesn't hear of, listened for only
+  // while it's open. A change draws only the panel again, not telling the table, which doesn't
+  // show them. It's only ever beside the new table.
   const versions = useExternalDataVersions(detailsOnly, true, values, true);
-  // Those fields' values are worked out again once it's open again, as no one hears of a change
-  // to their data while it's closed; quietly, as the table doesn't show them.
-  useEffect(
-    () => () => detailsOnly.forEach(({ id }) => values.invalidate(id, { quietly: true })),
-    [detailsOnly, values],
-  );
   const [picked, setPicked] = useState<ModPropertiesTab>("general");
 
   // Each written out, so the strings can be found.

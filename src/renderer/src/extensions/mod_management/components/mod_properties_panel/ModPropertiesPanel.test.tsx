@@ -138,7 +138,7 @@ const renderRegistered = (
     ],
   };
   const open = () => renderPanel(properties, vi.fn(), registered);
-  return { view: open(), open, extension, externalData, values: registered.values };
+  return { view: open(), open, attribute, extension, externalData, values: registered.values };
 };
 
 describe("ModPropertiesPanel", () => {
@@ -264,6 +264,18 @@ describe("ModPropertiesPanel", () => {
     view.unmount();
     extension.label = "1 rule";
     act(() => extension.changed());
+    open();
+
+    expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");
+  });
+
+  // Such as a column an extension hides while the panel's closed: the table stops listening.
+  it("works out again a field whose value was worked out before it opened", () => {
+    const { view, open, attribute, extension, values } = renderRegistered("calc");
+    view.unmount();
+    // Worked out by the table while it was still a column, then changed with no one listening.
+    values.get(attribute, MODS[0], {});
+    extension.label = "1 rule";
     open();
 
     expect(screen.getByTestId("mod-property-rules")).toHaveTextContent("1 rule");

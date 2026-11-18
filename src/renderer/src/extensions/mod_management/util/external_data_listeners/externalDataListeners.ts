@@ -36,12 +36,14 @@ export const listenToExternalData = (
         }),
       );
     } catch (err) {
-      // Forgotten, so the next listener asks the extension again.
+      // Forgotten, so the next listener asks the extension again; this one isn't kept in a set
+      // nothing reaches, and its caller listens again as its effect runs again.
       listeners.delete(attribute);
       log("error", "failed to listen to an attribute's data", {
         attribute: attribute.id,
         error: getErrorMessageOrDefault(err),
       });
+      return () => undefined;
     }
   }
   const added = current;
