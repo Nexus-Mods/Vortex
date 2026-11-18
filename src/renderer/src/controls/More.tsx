@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Popover } from "react-bootstrap";
 import type { WithTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 
 import { Markdown } from "@/ui/components/prose/markdown/Markdown";
+import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 
 import type { IExtensionApi } from "../types/api";
 import { ComponentEx, translate } from "./ComponentEx";

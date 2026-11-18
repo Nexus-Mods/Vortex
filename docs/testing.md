@@ -55,6 +55,14 @@ renderer's test setup, `src/renderer/test-setup.mts`, enforces this: when React
 logs one, the test that logged it fails with
 `React updated X outside act()`.
 
+It also fails a test on a function component that sets `defaultProps`
+(`X set defaultProps on a function component`), which React 19 drops. In our
+code, use default parameter values instead. From a dependency, upgrade it. If the
+version that fixes it is ESM-only, the renderer can't `import` it while it
+compiles to CommonJS; load it the way
+`src/renderer/src/ui/components/prose/react_markdown/ReactMarkdown.ts` loads
+react-markdown.
+
 The check is there because nothing else surfaces these warnings. Vitest's
 default reporter hides a test's console output, so a run that logs dozens of
 warnings still looks clean, and a passing CI log doesn't get read. The suite was
@@ -114,8 +122,8 @@ The usual sources:
 - An update that lands after testing-library's cleanup fails the next test in
   the file, or the file's `afterAll` after its last test, rather than the test
   that caused it.
-- Only `act()` warnings fail a test. The deprecation warnings still in the log
-  (`findDOMNode`, `defaultProps`, legacy `contextTypes`) come from older code:
+- Only `act()` and `defaultProps` warnings fail a test. The deprecation warnings
+  still in the log (`findDOMNode`, legacy `contextTypes`) come from older code:
   class components built on `ComponentEx` in `src/renderer/src/controls/`, and
   old dependencies such as `react-bootstrap` 0.33. Clearing them means changing
   that code, not the tests.

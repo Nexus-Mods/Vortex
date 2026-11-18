@@ -17,8 +17,9 @@ import type {
 import { DragSource, DropTarget } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
-import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
+
+import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 
 import Advanced from "../../../controls/Advanced";
 import { ComponentEx } from "../../../controls/ComponentEx";

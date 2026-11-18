@@ -10,7 +10,8 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import I18next from "i18next";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
-import ReactMarkdown from "react-markdown";
+
+import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 
 import { ComponentEx, translate } from "../../../controls/ComponentEx";
 import More from "../../../controls/More";

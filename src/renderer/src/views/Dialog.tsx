@@ -10,8 +10,9 @@ import {
   Radio,
 } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
+
+import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 
 import type { ILink } from "../actions";
 import { triggerDialogLink } from "../actions";

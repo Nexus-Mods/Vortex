@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import ReactMarkdown from "react-markdown";
 
+import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 import { WebLink } from "@/ui/components/prose/web_link/WebLink";
 
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
