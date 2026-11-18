@@ -208,6 +208,7 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
                     appearance="scrim"
                     aria-hidden
                     className="pointer-events-none absolute top-1 left-1"
+                    data-testid="mod-gallery-compare-pill"
                   >
                     {t("Compare")}
                   </Pill>

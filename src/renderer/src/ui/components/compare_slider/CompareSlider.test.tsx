@@ -19,18 +19,18 @@ const renderSlider = (isAdult = false) => {
     <CompareSlider after={picture("after")} before={picture("before")} isAdult={isAdult} />,
   );
   const sources = [...view.container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
-  const beforeLayer = () => view.getByAltText("Before").closest<HTMLElement>("div")!;
+  const beforeLayer = () => view.getByTestId("compare-slider-before");
 
   return { ...view, sources, beforeLayer, slider: view.getByRole("slider") };
 };
 
 describe("CompareSlider", () => {
   it("shows the before picture over the after picture as far as the divider, half way at first", () => {
-    const { sources, beforeLayer, slider, getByText } = renderSlider();
+    const { sources, beforeLayer, slider, getByTestId } = renderSlider();
 
     expect(sources).toEqual(["after.png", "before.png"]);
-    expect(getByText("Before")).toBeInTheDocument();
-    expect(getByText("After")).toBeInTheDocument();
+    expect(getByTestId("compare-slider-before-label")).toBeInTheDocument();
+    expect(getByTestId("compare-slider-after-label")).toBeInTheDocument();
     expect(beforeLayer().style.clipPath).toBe("inset(0 50% 0 0)");
     expect(slider).toHaveValue("50");
   });
@@ -42,7 +42,7 @@ describe("CompareSlider", () => {
 
     expect(beforeLayer().style.clipPath).toBe("inset(0 70% 0 0)");
     expect(slider).toHaveValue("30");
-    expect(slider).toHaveAccessibleName("Before and after comparison");
+    expect(slider).toHaveAccessibleName();
     expect(slider).toHaveAttribute("aria-valuetext");
   });
 

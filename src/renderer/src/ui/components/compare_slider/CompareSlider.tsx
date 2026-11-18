@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/ui/components/icon/Icon";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
 import { Pill } from "@/ui/components/pill/Pill";
-import { mdiUnfoldMoreVertical } from "@/ui/icon-paths";
 
 /** One side of a comparison, with the server's blurred version where it sends one. */
 export interface ICompareSliderPicture {
@@ -49,7 +48,11 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
     <div className="relative [overflow-anchor:none]">
       {picture(after, t("After"))}
 
-      <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}>
+      <div
+        className="absolute inset-0"
+        data-testid="compare-slider-before"
+        style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
+      >
         {picture(before, t("Before"))}
       </div>
 
@@ -67,11 +70,19 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
         onChange={(event) => setPosition(event.target.valueAsNumber)}
       />
 
-      <Pill appearance="scrim" className="pointer-events-none absolute bottom-2.5 left-2.5">
+      <Pill
+        appearance="scrim"
+        className="pointer-events-none absolute bottom-2.5 left-2.5"
+        data-testid="compare-slider-before-label"
+      >
         {t("Before")}
       </Pill>
 
-      <Pill appearance="scrim" className="pointer-events-none absolute right-2.5 bottom-2.5">
+      <Pill
+        appearance="scrim"
+        className="pointer-events-none absolute right-2.5 bottom-2.5"
+        data-testid="compare-slider-after-label"
+      >
         {t("After")}
       </Pill>
 
@@ -81,7 +92,8 @@ export const CompareSlider = ({ before, after, isAdult }: ICompareSliderProps) =
         style={{ left: `${position}%` }}
       >
         <span className="flex shrink-0 items-center justify-center rounded-full border border-stroke-moderate bg-surface-mid p-1 text-neutral-strong shadow-md">
-          <Icon path={mdiUnfoldMoreVertical} size="lg" />
+          {/* The font's `code` is the `< >` of the site's handle. */}
+          <Icon name="code" size="lg" />
         </span>
       </div>
     </div>

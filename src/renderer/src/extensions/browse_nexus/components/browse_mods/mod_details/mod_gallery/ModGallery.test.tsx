@@ -126,7 +126,7 @@ describe("ModGallery", () => {
 
   it("shows a comparison large as a slider, under its after picture's thumbnail", () => {
     const comparison = { ...picture("after"), before: picture("before") };
-    const { container, getAllByRole, getAllByText, queryByRole } = render(
+    const { container, getAllByRole, getAllByTestId, queryByRole } = render(
       <ModGallery images={[comparison, picture("plain")]} isAdult={false} />,
     );
     const sources = () =>
@@ -134,7 +134,7 @@ describe("ModGallery", () => {
 
     expect(queryByRole("slider")).toBeInTheDocument();
     expect(sources()).toEqual(["after.png", "before.png", "after-thumb.png", "plain-thumb.png"]);
-    expect(getAllByText("Compare")).toHaveLength(1);
+    expect(getAllByTestId("mod-gallery-compare-pill")).toHaveLength(1);
 
     fireEvent.click(getAllByRole("button", { name: /^Image/ })[1]);
 
