@@ -47,8 +47,8 @@ function writeProgram(func: (...args: any[]) => any, moduleBase: string, args?: 
   let prog: string = `
         let __non_webpack_require__ = require;\n
         const __webpack_require__ = require;\n
-        let moduleRoot = '${projectRoot}';\n
-        let baseDir = '${moduleBase.replace(/\\/g, "/")}';\n
+        let moduleRoot = ${JSON.stringify(projectRoot)};\n
+        let baseDir = ${JSON.stringify(moduleBase.replace(/\\/g, "/"))};\n
       `;
   args.forEach((arg) => {
     if (arg instanceof Function) {
