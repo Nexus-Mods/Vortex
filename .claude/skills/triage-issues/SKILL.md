@@ -1,20 +1,24 @@
 ---
 name: triage-issues
-description: Triage open Vortex bug issues in Linear (both community CMTY reports and internal issues). Checks each issue against the codebase and git history, pulls extra context from matching GitHub reports, sizes its reach from ClickHouse telemetry and Mixpanel baselines, and proposes priorities under the shared Vortex triage policy. Read-only until the user approves.
+description: Triage open Vortex bug issues in Linear (both community CMTY reports and internal issues). Checks each issue against the codebase and git history, pulls extra context from matching GitHub reports, scores its player impact and content reach from ClickHouse telemetry, Mixpanel baselines and the warehouse, and proposes priorities under the shared Vortex triage policy. Read-only until the user approves.
 when_to_use: When the user asks to triage Linear bugs or issues for Vortex, re-prioritise a bug backlog, decide what goes into a stable hotfix or the next beta, or check whether a set of issues is still valid, fixed, or duplicated. Not for discovering untracked problems in telemetry — use /triage-telemetry for that.
 user-invocable: true
 ---
 
 # `/triage-issues`
 
-Triage existing Vortex bug issues in Linear, using telemetry to size each issue's reach.
+Triage existing Vortex bug issues in Linear, using telemetry and warehouse data to score each issue's impact.
 
 Read these shared references before running:
 
-- [`../_shared/triage.md`](../_shared/triage.md) — priority matrix, severity tiers (`S1`–`S5`), reach labels (`R1`–`R3`), daily rate math, shared workflow steps, and Linear recording format.
-- [`../_shared/mixpanel.md`](../_shared/mixpanel.md) — active-user baseline queries.
-- [`../_shared/clickstack.md`](../_shared/clickstack.md) — ClickHouse schema and landscape queries.
-- [`../_shared/github.md`](../_shared/github.md) — which GitHub reports are usable, and search recipes.
+- [`../_shared/triage.md`](../_shared/triage.md) — priority matrix, severity tiers (`S1`–`S5`), player impact (`P1`–`P3`) and content reach (`C1`–`C3`), shared workflow steps, and Linear recording format.
+- [`../_shared/mixpanel.md`](../_shared/mixpanel.md) — active-user baselines, collection installers, and trigger counts.
+- [`../_shared/nao.md`](../_shared/nao.md) — warehouse queries for content reach.
+- [`../_shared/collection-manifest.md`](../_shared/collection-manifest.md) — inspecting what a collection defines (mod rules, optional mods).
+- [`../_shared/clickstack.md`](../_shared/clickstack.md) — telemetry rules and the ClickHouse recipes to fetch.
+- [`../_shared/github.md`](../_shared/github.md) — usable GitHub report rules and search recipes.
+
+The queries behind `clickstack.md`, `mixpanel.md` and `nao.md` are kept in a private repository; [fetch them](../_shared/triage.md#private-recipes) before running any query.
 
 ## Arguments (`$ARGUMENTS`)
 
@@ -25,6 +29,8 @@ Read these shared references before running:
 ---
 
 ## Workflow
+
+Before starting, check the [prerequisites in `triage.md`](../_shared/triage.md#prerequisites) (in particular, confirm the `nao` connector is available).
 
 ### 1. Collect Untriaged Issues
 
@@ -40,7 +46,7 @@ Follow `cursor` while `hasNextPage` is true. Keep issues that meet **all** of th
 - Have a `statusType` other than `completed`, `canceled`, or `duplicate`.
 - Do **not** yet carry a `Vortex Triage Severity` label (`S1`–`S5`). The retired `Vortex Triage Performed` label does not count as triaged.
 
-Report how many issues were skipped as already triaged.
+Report how many issues were skipped as already triaged. If more than ~25 issues remain, work through them in batches by subsystem area and present one proposal per batch.
 
 > [!TIP]
 > Paginated responses usually exceed the tool output limit and are saved to a local file. Parse that file with a `node -e` one-liner rather than reading the raw file into context.
@@ -53,21 +59,22 @@ Resolve `stable`, `beta`, `master`, and new beta features per [Release State in 
 
 Follow [Parallel Code Investigation in `triage.md`](../_shared/triage.md#parallel-code-investigation) using the prompt in [`reference.md`](reference.md#agent-prompt). Each subagent also searches GitHub for other users hitting the same bug and pulls in the context they add (versions, games, reproduction steps, logs, workarounds), using only [usable reports](../_shared/github.md#usable-reports). While the background subagents run, proceed to Step 4.
 
-### 4. Measure Reach and Daily Rate
+### 4. Measure Impact
 
-Follow [Sizing Reach and Daily Rate in `triage.md`](../_shared/triage.md#sizing-reach-and-daily-rate):
+Follow [Sizing Impact in `triage.md`](../_shared/triage.md#sizing-impact):
 
-1. Fetch active-user baselines ([`mixpanel.md`](../_shared/mixpanel.md)) and run the [cause landscape query](../_shared/clickstack.md#cause-landscape-with-8020-cut-used-for-priority-ordering) for stable (and beta) to establish the 80/20 threshold.
-2. Map each issue to the specific telemetry causes it covers (matching on the error title, message, or stack trace from the issue description and code check) to score its installs, assign `R1`–`R3`, and calculate its peak daily rate.
-3. Flag any widespread causes in telemetry that no existing Linear issue covers—those are candidates for `/triage-telemetry`.
+1. **Baselines & causes:** Fetch active-user baselines ([`mixpanel.md`](../_shared/mixpanel.md)) and run the [cause landscape query](../_shared/clickstack.md#cause-landscape) for stable (and beta) to list the causes to match issues against.
+2. **Player impact (`P1`–`P3`):** Map each issue to the specific telemetry causes it covers (matching on error title, message, or stack trace) to count affected installs and compute its peak daily rate. Size bugs that raise no error [by their trigger](../_shared/mixpanel.md#sizing-a-bug-by-its-trigger).
+3. **Content reach (`C1`–`C3`):** For issues tied to specific collections, mods, or a creator workflow, look up the affected creators' [content or mod share](../_shared/nao.md). Every other issue scores `C3 Limited/General`.
+4. **Untracked causes:** Flag any cause widespread enough to score `P2 Moderate` or above that no existing Linear issue covers—those are candidates for `/triage-telemetry`.
 
 ### 5. Decide Triage Outcomes
 
 For each issue, combine the code check, GitHub context, and telemetry to determine:
 
-- **Verdict:** `valid`, `fixed-in`, `duplicate-of`, `needs-info`, `stale-close`, `relabel`, or `not-a-bug`.
-- **Severity tier (`S1`–`S5`)**, **reach label (`R1`–`R3`)**, **daily rate**, **priority (`current → proposed`)**, and **`Open to Community Contributions` eligibility** per the [shared policy](../_shared/triage.md#priority-policy).
-- **Recommended action.** A `needs-info` issue whose missing details a GitHub report supplies is no longer `needs-info`.
+- **Verdict:** `valid`, `fixed-in`, `duplicate-of`, `needs-info`, `stale-close`, `relabel`, or `not-a-bug` (a `needs-info` issue whose missing details a GitHub report supplies is no longer `needs-info`).
+- **Scores & priority:** Severity tier (`S1`–`S5`), player impact (`P1`–`P3`) with daily rate, content reach (`C1`–`C3`) with content share, `current → proposed` priority, and `Open to Community Contributions` eligibility per the [shared policy](../_shared/triage.md#priority-policy).
+- **Recommended action.**
 
 ### 6. Present Proposal, Then Apply on Approval
 

@@ -1,46 +1,25 @@
 # Mixpanel Recipes
 
-Active-user baselines for [`/triage-issues`](../triage-issues/SKILL.md) and [`/triage-telemetry`](../triage-telemetry/SKILL.md). Policy for using them lives in [`triage.md`](triage.md).
+Active-user baselines and trigger counts for [`/triage-issues`](../triage-issues/SKILL.md) and [`/triage-telemetry`](../triage-telemetry/SKILL.md). Policy for using them lives in [`triage.md`](triage.md).
 
-- **Project:** `Nexus Mods` (Production)
-- **Tool:** `Run-Query` with `report_type: "insights"`
-- **Core event & property:** `app_launched`, filtered or broken down by `app_version`
-- **Note:** Today's DAU is a partial day—always compare against the last full weekday.
+The project, events, properties and query bodies are in the private recipe file `mixpanel.md`. [Fetch it](triage.md#private-recipes) before running any Mixpanel query; this file only names the recipes the skills refer to.
 
-## Overall DAU / WAU / MAU (last 8 days)
+- **Partial days:** Today's DAU is a partial day—always compare against the last full weekday.
 
-```json
-{
-    "name": "Vortex DAU/WAU/MAU overall",
-    "metrics": [
-        { "eventName": "app_launched", "measurement": { "type": "basic", "math": "dau" } },
-        { "eventName": "app_launched", "measurement": { "type": "basic", "math": "wau" } },
-        { "eventName": "app_launched", "measurement": { "type": "basic", "math": "mau" } }
-    ],
-    "chartType": "line",
-    "unit": "day",
-    "dateRange": { "type": "relative", "range": { "unit": "day", "value": 8 } }
-}
-```
+## Overall and Version Baselines
+
+Overall DAU / WAU / MAU across all versions, DAU for one version, and cumulative users on a version since its release.
 
 ## Query Variations
 
-- **Version-specific DAU:** Add a version filter to the query above:
-    ```json
-    "filters": [
-      { "type": "string", "propertyName": "app_version", "operator": "equals", "value": "<version>" }
-    ]
-    ```
-- **Cumulative users since release:** Use `math: "unique"`, `chartType: "bar"`, and an absolute date range (`from` and `to` sit directly on `dateRange`; a nested `range` object is rejected):
-    ```json
-    "dateRange": { "type": "absolute", "from": "<release date>", "to": "<today>" }
-    ```
-- **Per-game DAU (for game-specific bugs):** Query event `app_game_launched` with the `app_version` filter, `math: "dau"`, broken down by `game_id` (numeric Nexus `NexusGameId`):
+Variations on the baseline query, including **per-game DAU** for the [single-game rate](triage.md#daily-rate-player-impact). Games are keyed by their numeric `NexusGameId`.
 
-    | `game_id` | Game              | `game_id` | Game      |
-    | --------- | ----------------- | --------- | --------- |
-    | `1704`    | Skyrim SE         | `120`     | Fallout 3 |
-    | `1151`    | Fallout 4         | `100`     | Morrowind |
-    | `130`     | Fallout New Vegas | `101`     | Oblivion  |
-    | `4187`    | Starfield         | `3333`    | BG3       |
-    | `110`     | Skyrim            | `952`     | Cyberpunk |
+## Collection Installers
+
+Counts how many users start a collection install per day, overall or per collection. Use this as context for bugs that only occur during collection installation—their [daily rate](triage.md#daily-rate-player-impact) is still scored against overall version DAU.
+
+## Sizing a Bug by Its Trigger
+
+When a bug raises no telemetry error, count the users who met its triggering condition and compare that count against the version's DAU.
+
+- **Policy:** A trigger count measures **exposure, not confirmed harm**, and caps at `P2 Moderate`; see [`triage.md`](triage.md#daily-rate-player-impact).

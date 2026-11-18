@@ -20,12 +20,14 @@ import {
   getFailedRequiredMods,
   isActiveSessionStalled,
 } from "../../../util/collectionInstallSessionSelectors";
+import { formatCollectionSource } from "../../../util/collectionMembershipSelectors";
 import {
   reconstructSessionMods,
   resyncCollectionSessionRules,
 } from "../../../util/collectionSessionReconstruct";
 import { markCollectionMemberSkipped } from "../../../util/collectionSkip";
 import Debouncer from "../../../util/Debouncer";
+import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
 import { discoveryByGame } from "../../gamemode_management/selectors";
@@ -66,6 +68,9 @@ import { isGamebryoGame } from "./gameSupport";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
 import { getUnfulfilledNotificationId } from "./util";
+
+/** The error-context key naming the collection being installed. Reported as `context.collection`. */
+const COLLECTION_ERROR_CONTEXT = "collection";
 
 export type Step =
   | "prepare"
@@ -769,6 +774,7 @@ class InstallDriver {
     outcome: "cancelled" | "paused" = "cancelled",
     context: CollectionInstallOutcomeContext = {},
   ) {
+    clearErrorContext(COLLECTION_ERROR_CONTEXT);
     this.mPostprocessing = false;
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
@@ -820,6 +826,7 @@ class InstallDriver {
       return started;
     } finally {
       if (started === false) {
+        clearErrorContext(COLLECTION_ERROR_CONTEXT);
         this.mOnStop?.();
       }
     }
@@ -915,6 +922,17 @@ class InstallDriver {
         this.mInstallDone = true;
         return false;
       }
+    }
+
+    // Errors raised from here until the install stops name the collection, so a failure can be
+    // traced to the collections it happens in. It says when the error happened, not what caused it.
+    const collectionSlug = this.collectionSlug;
+    const revisionNumber = this.revisionNumber;
+    if (collectionSlug !== undefined && revisionNumber !== undefined) {
+      setErrorContext(
+        COLLECTION_ERROR_CONTEXT,
+        formatCollectionSource({ collectionSlug, revisionNumber }),
+      );
     }
 
     this.mApi.events.emit("will-install-collection", gameId, collection.id);
@@ -1126,6 +1144,7 @@ class InstallDriver {
         ? "completed"
         : "failed";
     this.completeInstallationTracking(outcome);
+    clearErrorContext(COLLECTION_ERROR_CONTEXT);
     this.mCollection = undefined;
     this.setDependentMods([]);
     this.mInstallDone = true;

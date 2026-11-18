@@ -96,6 +96,7 @@ import {
   isCollectionPhaseComplete,
   isCollectionPhaseSettledSuccessfully,
 } from "../../util/collectionInstallSessionSelectors";
+import { formatCollectionSource } from "../../util/collectionMembershipSelectors";
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import {
@@ -415,6 +416,25 @@ function findCollectionByDownload(
 /**
  * Helper: Filter rules to only include non-ignored requires/recommends rules
  */
+/**
+ * The collection an install belongs to, as `slug@revision`, for telemetry. Empty when the install
+ * isn't a collection member or the collection never came from the site.
+ */
+function collectionOfInstall(
+  state: IState,
+  profile: IProfile | undefined,
+  sourceModId: string | undefined,
+): string {
+  if (profile?.gameId === undefined || sourceModId === undefined) {
+    return "";
+  }
+  const { collectionSlug, revisionNumber } =
+    state.persistent.mods[profile.gameId]?.[sourceModId]?.attributes ?? {};
+  return collectionSlug !== undefined && revisionNumber !== undefined
+    ? formatCollectionSource({ collectionSlug, revisionNumber })
+    : "";
+}
+
 function filterDependencyRules(rules: IModRule[]): IModRule[] {
   return (rules ?? []).filter(
     (rule: IModRule) => ["recommends", "requires"].includes(rule.type) && !rule.ignored,
@@ -1373,6 +1393,7 @@ class InstallManager {
               "mod.archiveId": archiveId ?? "",
               "mod.numericModId": dlInfo?.modInfo?.nexus?.ids?.modId ?? "",
               "mod.fileId": dlInfo?.modInfo?.nexus?.ids?.fileId ?? "",
+              "mod.collection": collectionOfInstall(api.getState(), currentProfile, sourceModId),
               "mod.installerChoices":
                 fullInfo.choices != null ? JSON.stringify(fullInfo.choices) : "",
               "mod.hasPatches": fullInfo.patches != null,
