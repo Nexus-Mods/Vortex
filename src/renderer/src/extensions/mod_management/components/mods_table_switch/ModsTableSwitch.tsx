@@ -20,7 +20,6 @@ import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Table } from "@/ui/components/table/Table";
-import type { ITableSort } from "@/ui/components/table/Table.types";
 import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
@@ -67,6 +66,7 @@ import {
   useRegisteredModsColumns,
 } from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
+import { filterModsByStatus } from "../../util/mods_table_filters/modsTableFilters";
 import {
   allModRows,
   type IModGroup,
@@ -105,8 +105,6 @@ interface IModsTableSwitchProps {
   /** Removes one of a mod's versions or variants, by id, asking first. */
   onRemoveVersion?: (alternativeId: string) => void;
 }
-
-const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
 
@@ -170,7 +168,10 @@ const nop = () => undefined;
 /**
  * The Mods page's table: the classic one, or the new one while the user has the beta view on.
  *
- * The new table is asked to show a group or a mod; see useModsTableFocusRequest.
+ * The new table is asked to show a group or a mod; see useModsTableFocusRequest. A selected mod
+ * the filters hide is deselected while rendering, however it comes to be hidden, so nothing acts on
+ * a mod out of sight. With no rows to show, it says the search found nothing only when the filters
+ * left some for it, and otherwise that nothing matches the filters.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -195,7 +196,6 @@ export const ModsTableSwitch = ({
 
   // The legacy table builds its own rows and groups, so build none for it.
   const tableMods = newTable ? mods : NO_MODS;
-  const rows = useMemo(() => allModRows(tableMods), [tableMods]);
   const memberships = useCollectionMemberships(mods);
   const { changing, setEnabled, isEnabled } = useModsEnabled(onSetModsEnabled);
 
@@ -446,22 +446,49 @@ export const ModsTableSwitch = ({
     groupingLocked,
     isColumnShown,
     columnWidths,
+    sort,
+    filters,
+    changedFilters,
+    isEdited,
     canReset,
     select: selectView,
     setGrouping,
+    setSort,
+    setFilters,
+    resetFilters,
+    suspendFilters,
     setColumnVisible,
     setColumnWidths,
     reset: resetView,
     addView,
     renameView,
     removeView,
-  } = useModsTableView(mods, registered.defaultShown, columnIds);
+  } = useModsTableView({
+    mods,
+    defaultShown: registered.defaultShown,
+    columnIds,
+  });
 
   const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
 
   const { visibleColumns, toggles, groupable } = useModsTableColumns(allColumns, isColumnShown);
 
-  const groups = useModsTableGroups(tableMods, grouping, groupable, memberships, t);
+  const filteredMods = useMemo(
+    () => filterModsByStatus(tableMods, filters.status, isEnabled),
+    [filters.status, isEnabled, tableMods],
+  );
+  const allRows = useMemo(() => allModRows(tableMods), [tableMods]);
+  const isFiltering = filters.status.length > 0;
+  const rows = useMemo(
+    () => (isFiltering ? allModRows(filteredMods) : allRows),
+    [allRows, filteredMods, isFiltering],
+  );
+
+  if ([...selected].some((id) => !!tableMods[id] && !filteredMods[id])) {
+    setSelected(new Set([...selected].filter((id) => !tableMods[id] || !!filteredMods[id])));
+  }
+
+  const groups = useModsTableGroups(filteredMods, grouping, groupable, memberships, t);
 
   const { search, setSearch, changeSearch, isSearching, shownRows, shownGroups } =
     useModsTableSearch({
@@ -476,9 +503,11 @@ export const ModsTableSwitch = ({
 
   const { focusGroupId, onGroupFocused, focusModId, onModFocused } = useModsTableFocusRequest({
     groups,
-    rows,
+    rows: allRows,
     search,
     setSearch,
+    isFilteredOut: useCallback((modId: string) => !filteredMods[modId], [filteredMods]),
+    clearFilters: suspendFilters,
   });
   useModsTableNameFilter(setSearch, newTable);
 
@@ -497,7 +526,7 @@ export const ModsTableSwitch = ({
         <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />
       </>
     ),
-    onReset: resetView,
+    onReset: () => resetView("panel"),
   });
 
   if (!newTable) {
@@ -528,6 +557,19 @@ export const ModsTableSwitch = ({
     </TableSelectionBar>
   );
 
+  /** What shows in place of rows: why the filters or the search left none, or nothing. */
+  const emptyState = () => {
+    if (isSearching && rows.length > 0) {
+      return <NoResults icon="search" title={t("modsTable::noResults")} />;
+    }
+
+    if (isFiltering) {
+      return <NoResults icon="filter_list" title={t("modsTable::filters::noResults")} />;
+    }
+
+    return isSearching && <NoResults icon="search" title={t("modsTable::noResults")} />;
+  };
+
   const tableProps = {
     focusGroupId,
     onGroupFocused,
@@ -536,13 +578,18 @@ export const ModsTableSwitch = ({
     className: "mb-2 min-w-0 flex-1",
     toolbar: (
       <ModsTableToolbar
+        changedFilters={changedFilters}
         displayOptions={displayOptions}
+        filters={filters}
+        isEdited={isEdited}
         search={search}
         selectedView={view.id}
         views={views}
         onAddView={addView}
+        onFiltersChange={setFilters}
         onRemoveView={removeView}
         onRenameView={renameView}
+        onResetFilters={resetFilters}
         propertiesOpen={showProperties}
         onSearchChange={changeSearch}
         onSelectView={selectView}
@@ -601,9 +648,10 @@ export const ModsTableSwitch = ({
     },
     groupTracking,
     onMenuOpen: analytics.onMenuOpen,
-    defaultSort: BY_NAME,
+    sort,
+    onSortChange: setSort,
     footer,
-    empty: isSearching && <NoResults icon="search" title={t("modsTable::noResults")} />,
+    empty: emptyState(),
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.

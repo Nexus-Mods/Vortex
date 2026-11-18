@@ -931,6 +931,23 @@ describe("ModsTableSwitch", () => {
       expect(screen.getByRole("gridcell", { name: "Ada" })).toBeInTheDocument();
     });
 
+    it("keeps a header's sort to the view, without showing the edited bar", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const nameHeader = () => screen.getAllByRole("columnheader")[0];
+      expect(screen.queryByTestId("edited-view-reset")).toBeNull();
+
+      await userEvent.click(within(nameHeader()).getByRole("button"));
+
+      expect(nameHeader()).toHaveAttribute("aria-sort", "descending");
+      expect(screen.queryByTestId("edited-view-reset")).toBeNull();
+
+      await userEvent.click(viewButtons()[1]);
+      expect(nameHeader()).toHaveAttribute("aria-sort", "ascending");
+
+      await userEvent.click(viewButtons()[0]);
+      expect(nameHeader()).toHaveAttribute("aria-sort", "descending");
+    });
+
     describe("group by", () => {
       const CATEGORISED = {
         a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
@@ -1059,22 +1076,12 @@ describe("ModsTableSwitch", () => {
         ).toHaveTextContent("modsTable::columns::category");
       });
 
-      it("resets a built-in view to its defaults, offering to only once it's changed", async () => {
+      it("doesn't show the edited bar for a change of grouping", async () => {
         renderSwitch(CATEGORISED);
 
-        await userEvent.click(
-          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
-        );
-        expect(screen.queryByText("Reset to default")).toBeNull();
-        await userEvent.click(
-          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
-        );
-
         await groupBy("modsTable::columns::author");
-        await userEvent.click(screen.getByText("Reset to default"));
 
-        expect(screen.getByRole("grid")).toBeInTheDocument();
-        expect(pressedViews()).toEqual(["true", "false", "false"]);
+        expect(screen.queryByTestId("edited-view-reset")).toBeNull();
       });
     });
   });
@@ -1176,6 +1183,118 @@ describe("ModsTableSwitch", () => {
         "modsTable::rowActions::enabled",
         "More actions",
       ]);
+    });
+  });
+
+  describe("status filter", () => {
+    const tickStatus = async (index: number) => {
+      await userEvent.click(screen.getByTestId("mods-table-filter"));
+      await userEvent.click(within(await screen.findByRole("menu")).getAllByRole("menuitem")[0]);
+      const [, submenu] = await screen.findAllByRole("menu");
+      await userEvent.click(within(submenu).getAllByRole("menuitemcheckbox")[index]);
+      await userEvent.keyboard("{Escape}{Escape}");
+    };
+
+    /** The mods the table shows, by id, in order. */
+    const shownIds = () =>
+      bodyRows(screen.getByRole("grid")).map((row) =>
+        row.getAttribute("data-testid")?.replace("table-row-", ""),
+      );
+
+    const lastView = () => userEvent.click(viewButtons().at(-1)!);
+
+    const search = async (text: string) => {
+      await userEvent.click(screen.getByTestId("mods-table-search"));
+      await userEvent.type(screen.getByTestId("mods-table-search-input"), text);
+    };
+
+    it("shows only the ticked statuses, editing the view until reset from the bar", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) });
+
+      await tickStatus(0);
+
+      expect(shownIds()).toEqual(["a"]);
+      expect(screen.getByTestId("mods-table-status-chip")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByTestId("edited-view-reset"));
+
+      expect(shownIds()).toEqual(["a", "b"]);
+      expect(screen.queryByTestId("mods-table-status-chip")).toBeNull();
+    });
+
+    it("deselects a selected mod the filter hides", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) });
+      await userEvent.click(screen.getByTestId("table-row-b"));
+
+      await tickStatus(0);
+      await userEvent.click(screen.getByTestId("edited-view-reset"));
+
+      expect(screen.getByTestId("table-row-b")).toHaveAttribute("aria-selected", "false");
+    });
+    /** A view of the user's own showing only disabled mods, opened or not. */
+    const filteredView = (selected?: string) => ({
+      views: {
+        selected,
+        changes: { "custom-1": { filters: { status: ["disabled" as const] } } },
+        custom: [{ id: "custom-1", name: "Mine" }],
+      },
+    });
+
+    it("doesn't count a selected mod the open view's filter hides", async () => {
+      const user = userEvent.setup();
+      renderSwitch(
+        { a: mod("a", "Alpha", true), b: mod("b", "Beta", false) },
+        undefined,
+        filteredView(),
+      );
+      await user.click(screen.getByTestId("table-row-a"));
+      await user.keyboard("{Control>}");
+      await user.click(screen.getByTestId("table-row-b"));
+      await user.keyboard("{/Control}");
+      expect(screen.getByRole("region")).toBeInTheDocument();
+
+      await lastView();
+
+      expect(screen.queryByRole("region")).toBeNull();
+    });
+
+    it("shows a mod a saved filter hides when asked to, leaving the filter saved", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) }, undefined, {
+        ...filteredView("custom-1"),
+        focusedModId: "a",
+      });
+
+      expect(shownIds()).toEqual(["a", "b"]);
+      expect(screen.queryByTestId("mods-table-status-chip")).toBeNull();
+
+      await userEvent.click(viewButtons()[0]);
+      await lastView();
+
+      expect(shownIds()).toEqual(["b"]);
+    });
+
+    it("blames the filter, not a search, when the filter alone leaves nothing", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await tickStatus(2);
+
+      await search("zzz");
+
+      expect(document.querySelector(".nxm-table-empty [data-symbol]")).toHaveAttribute(
+        "data-symbol",
+        "filter_list",
+      );
+    });
+
+    it("says the search found nothing, not the filter, while searching", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) });
+      await tickStatus(0);
+
+      await search("zzz");
+
+      expect(document.querySelector(".nxm-table-empty [data-symbol]")).toHaveAttribute(
+        "data-symbol",
+        "search",
+      );
     });
   });
 
@@ -1451,23 +1570,20 @@ describe("ModsTableSwitch", () => {
       (window as unknown as { api: Record<string, unknown> }).api.shell = { openUrl };
     });
 
-    it("sits before the view options and the search", () => {
+    it("sits before the filter, the view options, the search and the Properties toggle", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      const toolbar = screen
-        .getAllByRole("toolbar")
-        .find((bar) =>
-          within(bar).queryByRole("button", { name: "modsTable::toolbar::viewOptions" }),
-        )!;
+      const toolbar = screen.getByTestId("mods-table-view-options").closest('[role="toolbar"]')!;
       expect(
-        within(toolbar)
+        within(toolbar as HTMLElement)
           .getAllByRole("button")
-          .map((button) => button.getAttribute("aria-label")),
+          .map((button) => button.getAttribute("data-testid")),
       ).toEqual([
-        "modsTable::toolbar::giveFeedback",
-        "modsTable::toolbar::viewOptions",
-        "modsTable::toolbar::search",
-        "modsTable::properties::toggle",
+        "mods-table-feedback",
+        "mods-table-filter",
+        "mods-table-view-options",
+        "mods-table-search",
+        "mod-properties-toggle",
       ]);
     });
 

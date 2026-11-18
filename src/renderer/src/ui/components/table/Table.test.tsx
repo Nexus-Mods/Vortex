@@ -252,6 +252,44 @@ describe("Table sorted by a column", () => {
     expect(names()).toEqual(["Beta", "Alpha"]);
   });
 
+  it("sorts by the sort it's given, and reports a header click without sorting itself", async () => {
+    const onSortChange = vi.fn();
+    render(
+      <Table
+        columns={SORTABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        sort={{ columnId: "name", direction: "descending" }}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    expect(names()).toEqual(["Beta", "Alpha"]);
+
+    await userEvent.click(within(screen.getAllByRole("columnheader")[0]).getByRole("button"));
+
+    expect(onSortChange).toHaveBeenCalledWith({ columnId: "name", direction: "ascending" });
+    expect(names()).toEqual(["Beta", "Alpha"]);
+  });
+
+  it("keeps the rows in their given order when sorted by a column it doesn't have", () => {
+    render(
+      <Table
+        columns={SORTABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={[ROWS[1], ROWS[0]]}
+        sort={{ columnId: "missing", direction: "ascending" }}
+        onSortChange={vi.fn()}
+      />,
+    );
+
+    const [nameHeader] = screen.getAllByRole("columnheader");
+    expect(names()).toEqual(["Beta", "Alpha"]);
+    expect(nameHeader).toHaveAttribute("aria-sort", "none");
+  });
+
   it("sorts each group's rows, leaving the groups in their order", () => {
     render(
       <Table

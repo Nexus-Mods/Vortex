@@ -13,21 +13,26 @@ const focusedModId = (state: IState) => state.session.mods?.focusedModId;
 /**
  * The new table is asked to show a group, which it opens and scrolls to, or a mod, which it
  * scrolls to and selects, then drops the request. A search could hide either, so a new request
- * clears it once. A request nothing answers, as when the view isn't grouped by collection or the
- * mod isn't in the table, is dropped.
+ * clears it once; a filter could hide the mod, so a request for one it hides clears the filters.
+ * A request nothing answers, as when the view isn't grouped by collection or the mod isn't in the
+ * table, is dropped.
  *
- * `groups` and `rows` are all the table's, not only those a search leaves.
+ * `groups` and `rows` are all the table's, not only those a search or filter leaves.
  */
 export const useModsTableFocusRequest = ({
   groups,
   rows,
   search,
   setSearch,
+  isFilteredOut,
+  clearFilters,
 }: {
   groups: IModGroup[] | undefined;
   rows: IModRow[];
   search: string;
   setSearch: (search: string) => void;
+  isFilteredOut: (modId: string) => boolean;
+  clearFilters: () => void;
 }) => {
   const dispatch = useDispatch();
   const focusGroupId = useSelector(focusedGroupId);
@@ -51,10 +56,19 @@ export const useModsTableFocusRequest = ({
   }, [focusGroupId, groups, onGroupFocused]);
 
   useEffect(() => {
-    if (focusModId && !rows.some((row) => row.mod.id === focusModId)) {
-      onModFocused();
+    if (!focusModId) {
+      return;
     }
-  }, [focusModId, rows, onModFocused]);
+
+    if (!rows.some((row) => row.mod.id === focusModId)) {
+      onModFocused();
+      return;
+    }
+
+    if (isFilteredOut(focusModId)) {
+      clearFilters();
+    }
+  }, [clearFilters, focusModId, isFilteredOut, onModFocused, rows]);
 
   return { focusGroupId, onGroupFocused, focusModId, onModFocused };
 };

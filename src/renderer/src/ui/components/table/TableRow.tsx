@@ -15,6 +15,8 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   columns: Array<ITableColumn<T, G>>;
   /** Its place among the table's rows, under the head. */
   index: number;
+  /** Its item's id, which its `data-testid` is made from. */
+  rowId: string;
   /** Its place among every row, the head's included, counting from 1. */
   rowIndex: number;
   /** The row's depth in a treegrid: 2 under a group. Unset in a flat grid. */
@@ -81,6 +83,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
   index,
   level,
   row,
+  rowId,
   rowIndex,
   checkbox,
   sortedColumnId,
@@ -94,6 +97,7 @@ export const TableRow = <T, G extends ITableGroup<T>>({
     aria-selected={checkbox?.checked}
     className={joinClasses(["nxm-table-row", className])}
     data-index={index}
+    data-testid={`table-row-${rowId}`}
     selected={!!checkbox?.checked}
     role="row"
     onClick={(event) => {

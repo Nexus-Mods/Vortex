@@ -2,8 +2,12 @@ import { useMemo } from "react";
 
 import { useMainContext } from "@/contexts";
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
-import type { TableMenuTarget } from "@/ui/components/table/Table.types";
+import type { ITableSort, TableMenuTarget } from "@/ui/components/table/Table.types";
 
+import type {
+  IModsTableFilters,
+  ModsTableStatus,
+} from "../../util/mods_table_filters/modsTableFilters";
 import type { IModsTableView, ModsTableGrouping } from "../../util/mods_table_views/modsTableViews";
 
 /**
@@ -25,6 +29,9 @@ export const modsTableGroupToolbar = (grouping: string) => `mods-table-group-${g
 /** How a custom view of the user's own changed. */
 export type ModsTableViewChange = "created" | "renamed" | "deleted" | "reset";
 
+/** Where a view was made or reset from: View options, the picker's +, the edited bar, or Filter. */
+export type ModsTableViewSource = "panel" | "picker" | "edited_strip" | "filter_menu";
+
 /**
  * A view as it's reported: a built-in one by its id, the user's own only as `"custom"`, so
  * the name they gave it never leaves the machine.
@@ -36,9 +43,25 @@ const viewSelectedEvent = (view: IModsTableView): MixpanelEvent => ({
   properties: { view: reportedView(view) },
 });
 
-const viewChangedEvent = (change: ModsTableViewChange): MixpanelEvent => ({
+const viewChangedEvent = (
+  change: ModsTableViewChange,
+  source?: ModsTableViewSource,
+): MixpanelEvent => ({
   eventName: "app_mods_table_view_changed",
-  properties: { change },
+  properties: source ? { change, source } : { change },
+});
+
+const filterChangedEvent = (
+  filter: keyof IModsTableFilters,
+  values: ModsTableStatus[],
+): MixpanelEvent => ({
+  eventName: "app_mods_table_filter_changed",
+  properties: { filter, values },
+});
+
+const sortChangedEvent = (sort: ITableSort): MixpanelEvent => ({
+  eventName: "app_mods_table_sort_changed",
+  properties: { column: sort.columnId, direction: sort.direction },
 });
 
 const groupingChangedEvent = (grouping: ModsTableGrouping): MixpanelEvent => ({
@@ -77,10 +100,14 @@ export interface IModsTableAnalytics {
    * offered, such as Updates once there are none.
    */
   onViewSelected: (view: IModsTableView) => void;
-  /** The user created, renamed or deleted a view of their own, or reset a built-in one. */
-  onViewChanged: (change: ModsTableViewChange) => void;
+  /** The user made, renamed or deleted their own view, or reset a built-in one, from `source`. */
+  onViewChanged: (change: ModsTableViewChange, source?: ModsTableViewSource) => void;
   /** The user changed what the mods are grouped by. */
   onGroupingChanged: (grouping: ModsTableGrouping) => void;
+  /** The user sorted by a column, or turned its sort around. */
+  onSortChanged: (sort: ITableSort) => void;
+  /** The user changed a filter; `values` is everything ticked after the change. */
+  onFilterChanged: (filter: keyof IModsTableFilters, values: ModsTableStatus[]) => void;
   /** The user showed or hid a column. */
   onColumnToggled: (column: string, visible: boolean) => void;
   /** The user started a search; what they searched for is never sent. */
@@ -110,8 +137,10 @@ export const useModsTableAnalytics = (): IModsTableAnalytics => {
 
     return {
       onViewSelected: (view) => send(viewSelectedEvent(view)),
-      onViewChanged: (change) => send(viewChangedEvent(change)),
+      onViewChanged: (change, source) => send(viewChangedEvent(change, source)),
       onGroupingChanged: (grouping) => send(groupingChangedEvent(grouping)),
+      onFilterChanged: (filter, values) => send(filterChangedEvent(filter, values)),
+      onSortChanged: (sort) => send(sortChangedEvent(sort)),
       onColumnToggled: (column, visible) => send(columnToggledEvent(column, visible)),
       onSearchStarted: () => send(searchedEvent()),
       onMenuOpen: (target, via) => send(menuOpenedEvent(target, via)),

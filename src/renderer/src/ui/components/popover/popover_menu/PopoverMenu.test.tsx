@@ -405,6 +405,32 @@ describe("PopoverMenu", () => {
     });
   });
 
+  describe("checkbox rows", () => {
+    const checkboxes = (onClick = vi.fn()): IMenuAction[][] => [
+      [
+        { label: "Enabled", selected: true, onClick },
+        { label: "Disabled", selected: false, onClick },
+      ],
+    ];
+
+    it("makes a row with selected a checkbox, ticked as it says", async () => {
+      await openMenu(checkboxes());
+
+      const rows = screen.getAllByRole("menuitemcheckbox");
+      expect(rows.map((row) => row.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+    });
+
+    it("runs a checkbox row without dismissing the menu", async () => {
+      const onClick = vi.fn();
+      await openMenu(checkboxes(onClick));
+
+      await userEvent.click(screen.getAllByRole("menuitemcheckbox")[1]);
+
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+  });
+
   describe("a row's control", () => {
     const withControl = (onClick: () => void, onControl: () => void): IMenuAction[][] => [
       [
