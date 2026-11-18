@@ -48,6 +48,11 @@ describe("steamEntryFor", () => {
     expect(steamEntryFor(state, BANNERLORD)?.gamePath).toBe(BANNERLORD_PATH);
   });
 
+  it("finds a Tier 0 game by its tier-0 id", () => {
+    const state = stateWith({}, [{ gameId: 3174, steam: ["261550"] }]);
+    expect(steamEntryFor(state, VortexGameId("tier-0-3174"))?.gamePath).toBe(BANNERLORD_PATH);
+  });
+
   it("finds nothing for an undiscovered game the response didn't match", () => {
     expect(steamEntryFor(stateWith({}), BANNERLORD)).toBeUndefined();
   });
