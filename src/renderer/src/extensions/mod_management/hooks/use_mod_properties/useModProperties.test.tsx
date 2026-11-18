@@ -228,6 +228,49 @@ describe("useModProperties", () => {
     ]);
   });
 
+  it("lists installer choices kept as an object", () => {
+    const result = renderProperties([
+      mod("fomod", {
+        attributes: {
+          installerChoices: {
+            type: "fomod",
+            options: {
+              0: { name: "Main", groups: [{ name: "Textures", choices: [{ name: "2K" }] }] },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const installer = result.sections.find(({ id }) => id === "installer");
+    expect(installer?.properties).toMatchObject([
+      { kind: "value", label: "Textures", value: "2K" },
+    ]);
+  });
+
+  it("skips a group with no choices list", () => {
+    const result = renderProperties([
+      mod("fomod", {
+        attributes: {
+          installerChoices: {
+            type: "fomod",
+            options: [
+              {
+                name: "Main",
+                groups: [{ name: "Broken" }, { name: "Textures", choices: [{ name: "2K" }] }],
+              },
+            ],
+          },
+        },
+      }),
+    ]);
+
+    const installer = result.sections.find(({ id }) => id === "installer");
+    expect(installer?.properties).toMatchObject([
+      { kind: "value", label: "Textures", value: "2K" },
+    ]);
+  });
+
   it("puts the category and notes under the card, and the source on Advanced", () => {
     const result = renderProperties([SKYUI]);
 

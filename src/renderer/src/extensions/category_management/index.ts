@@ -11,11 +11,11 @@ import { showError } from "../../util/message";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import type { IModWithState } from "../mod_management/types/IModProps";
-import { modAttributeActions } from "../mod_management/util/mod_attribute_actions/modAttributeActions";
 import { isLoggedIn } from "../nexus_integration/selectors";
 import { loadCategories, updateCategories } from "./actions/category";
 import { categoryReducer } from "./reducers/category";
 import type { ICategoryDictionary } from "./types/ICategoryDictionary";
+import { categoryChangeActions } from "./util/category_change_actions/categoryChangeActions";
 import { categoryChoices } from "./util/category_choices/categoryChoices";
 import CategoryFilter from "./util/CategoryFilter";
 import { resolveCategoryName, resolveCategoryPath } from "./util/retrieveCategoryPath";
@@ -112,9 +112,9 @@ function init(context: IExtensionContext): boolean {
           text: label,
         })),
       ],
-      onChangeValue: (rows: IModWithState[], newValue: string | number) => {
+      onChangeValue: (rows: IModWithState[], newValue: string | number | undefined) => {
         const gameMode = activeGameId(context.api.getState());
-        modAttributeActions(gameMode, rows, "category", String(newValue)).forEach((action) =>
+        categoryChangeActions(gameMode, rows, newValue).forEach((action) =>
           context.api.store.dispatch(action),
         );
       },

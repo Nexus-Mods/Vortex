@@ -23,7 +23,7 @@ export const modAttributeActions = (
   gameId: VortexGameId,
   mods: IMod[],
   attribute: ModEditableAttribute,
-  value: string,
+  value: string | undefined,
 ): Action[] =>
   mods.map((mod) =>
     mod.state === "downloaded"

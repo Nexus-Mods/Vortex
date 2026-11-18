@@ -4,7 +4,14 @@ import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ emit: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  emit: vi.fn(),
+  // Lets a test make the game extensions' mod type code throw.
+  broken: { getPath: false, isSupported: false },
+  log: vi.fn(),
+}));
+
+vi.mock("@/util/log", () => ({ log: mocks.log }));
 
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -24,9 +31,25 @@ vi.mock("../../../gamemode_management/util/modTypeExtensions", () => {
       typeId: "bepinex",
       isSupported: () => true,
       options: {},
-      getPath: () => "/games/test/BepInEx",
+      getPath: () => {
+        if (mocks.broken.getPath) {
+          throw new Error("no documents folder");
+        }
+        return "/games/test/BepInEx";
+      },
     },
     { typeId: "other", isSupported: () => false, options: { name: "Other" }, getPath: () => "" },
+    {
+      typeId: "fragile",
+      isSupported: () => {
+        if (mocks.broken.isSupported) {
+          throw new Error("registry unreadable");
+        }
+        return true;
+      },
+      options: { name: "Fragile" },
+      getPath: () => "/games/test/Fragile",
+    },
   ];
   return {
     getModTypeExtensions: () => types,
@@ -99,7 +122,46 @@ describe("useModAdvancedEdits", () => {
       expect(modType?.kind === "select" && modType.choices).toEqual([
         { value: "dinput", label: "Engine injector" },
         { value: "bepinex", label: "bepinex" },
+        { value: "fragile", label: "Fragile" },
       ]);
+    });
+
+    it("leaves out where mods deploy when the mod type's getPath throws", () => {
+      mocks.broken.getPath = true;
+      mocks.log.mockClear();
+      try {
+        const edits = renderEdits([mod("a", { type: "bepinex" })]).edits;
+
+        expect(byId(edits, "modType")).toMatchObject({ kind: "select", value: "bepinex" });
+        expect(byId(edits, "deploysTo")).toBeUndefined();
+        expect(mocks.log).toHaveBeenCalledWith(
+          "warn",
+          expect.any(String),
+          expect.objectContaining({ modType: "bepinex", error: "no documents folder" }),
+        );
+      } finally {
+        mocks.broken.getPath = false;
+      }
+    });
+
+    it("leaves out a mod type whose isSupported throws", () => {
+      mocks.broken.isSupported = true;
+      mocks.log.mockClear();
+      try {
+        const modType = byId(renderEdits([mod("a")]).edits, "modType");
+
+        expect(modType?.kind === "select" && modType.choices).toEqual([
+          { value: "dinput", label: "Engine injector" },
+          { value: "bepinex", label: "bepinex" },
+        ]);
+        expect(mocks.log).toHaveBeenCalledWith(
+          "warn",
+          expect.any(String),
+          expect.objectContaining({ modType: "fragile", error: "registry unreadable" }),
+        );
+      } finally {
+        mocks.broken.isSupported = false;
+      }
     });
 
     it("says where a mod deploys, and its type's id to copy", () => {

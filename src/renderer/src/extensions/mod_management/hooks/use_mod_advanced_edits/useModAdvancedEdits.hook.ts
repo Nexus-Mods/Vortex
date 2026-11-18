@@ -1,4 +1,4 @@
-import { NexusGameDomain, type VortexGameId } from "@vortex/shared";
+import { getErrorMessageOrDefault, NexusGameDomain, type VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,12 +22,29 @@ import {
 } from "@/extensions/gamemode_management/util/modTypeExtensions";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
+import { log } from "@/util/log";
 import { activeGameId } from "@/util/selectors";
 
 import { setModAttribute, setModType } from "../../actions/mods";
 import type { IModWithState } from "../../types/IModProps";
 import { modsSharedValue } from "../../util/mods_shared_value/modsSharedValue";
 import type { ModProperty } from "../use_mod_properties/useModProperties.hook";
+
+/**
+ * What a game extension's mod type code gives, none if it throws: that code is the extension's, so
+ * a failure of it leaves out what it was to give, not the page.
+ */
+const fromExtension = <T>(typeId: string, what: string, read: () => T): T | undefined => {
+  try {
+    return read();
+  } catch (err) {
+    log("warn", `mod type ${what} failed`, {
+      modType: typeId,
+      error: getErrorMessageOrDefault(err),
+    });
+    return undefined;
+  }
+};
 
 /** Where the active game is installed, if it's been found. */
 const activeGamePath = (state: IState): string | undefined => currentGameDiscovery(state)?.path;
@@ -74,7 +91,9 @@ const deployPath = (gameId: VortexGameId, typeId: string, gamePath: string | und
   }
 
   const modType = getModType(typeId);
-  return modType !== undefined ? modType.getPath(game) : game.getModPaths(gamePath)[""];
+  return fromExtension(typeId, "path", () =>
+    modType !== undefined ? modType.getPath(game) : game.getModPaths(gamePath)[""],
+  );
 };
 
 /**
@@ -124,7 +143,10 @@ const modTypeProperties = (
       value: typeId,
       isVarious,
       choices: getModTypeExtensions()
-        .filter((type) => type.isSupported(gameId))
+        .filter(
+          (type) =>
+            fromExtension(type.typeId, "support check", () => type.isSupported(gameId)) === true,
+        )
         .map((type) => ({ value: type.typeId, label: type.options.name || type.typeId })),
       onChange: (value) => {
         mods.forEach(({ id }) => dispatch(setModType(gameId, id, value)));

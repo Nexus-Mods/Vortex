@@ -35,6 +35,15 @@ describe("categoryChoices, memoized", () => {
     expect(categoryChoices(state)).toBe(categoryChoices({ ...state } as IState));
   });
 
+  it("returns the same choices on every call while the game has no categories", () => {
+    const empty = {
+      ...state,
+      persistent: { ...state.persistent, categories: {} },
+    } as unknown as IState;
+
+    expect(categoryChoices(empty)).toBe(categoryChoices({ ...empty } as IState));
+  });
+
   it("leaves the top level out of a child's path where the user hides it", () => {
     const hidden = {
       ...state,

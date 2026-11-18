@@ -41,4 +41,21 @@ describe("modAttributeActions", () => {
 
     expect(actions.map(({ type }) => type)).toEqual(["SET_MOD_ATTRIBUTE", "SET_DOWNLOAD_MODINFO"]);
   });
+
+  it("passes undefined through, clearing the attribute", () => {
+    const actions = modAttributeActions(
+      GAME,
+      [makeMod({ id: "a" }), makeMod({ id: "b", state: "downloaded" })],
+      "category",
+      undefined,
+    );
+
+    expect(actions).toMatchObject([
+      { type: "SET_MOD_ATTRIBUTE", payload: { modId: "a", attribute: "category" } },
+      { type: "SET_DOWNLOAD_MODINFO", payload: { id: "b", key: "custom.category" } },
+    ]);
+    expect(
+      actions.map((action) => (action as unknown as { payload: { value: unknown } }).payload.value),
+    ).toEqual([undefined, undefined]);
+  });
 });

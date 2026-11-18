@@ -163,12 +163,13 @@ const installerChoiceLines = (attributes: IModWithState["attributes"]) => {
     return [];
   }
 
-  return (choices.options ?? []).flatMap((step) =>
+  // `options` can be a plain object (collection manifests, older data), as the legacy attribute allows.
+  return Object.values(choices.options ?? {}).flatMap((step) =>
     (step?.groups ?? [])
-      .filter((group) => group.choices.length > 0)
+      .filter((group) => (group.choices ?? []).length > 0)
       .map((group) => ({
         label: group.name,
-        value: group.choices.map(({ name }) => name).join(", "),
+        value: (group.choices ?? []).map(({ name }) => name).join(", "),
       })),
   );
 };
