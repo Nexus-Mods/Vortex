@@ -821,7 +821,6 @@ function manageTile(api: IExtensionApi, gameId: VortexGameId): Promise<void> {
 
   return registerStep
     .then(() => discoverPickedGame(api, gameId, store))
-    .then(() => Promise.resolve(checkOverridden(api, gameId)))
     .then(() => {
       const state = api.getState();
       // Mirrors the guard in manageGame: discovery can outlive the
@@ -990,27 +989,6 @@ function addDescriptionFeature() {
   });
 }
 
-function checkOverridden(api: IExtensionApi, gameId: string): PromiseBB<void> {
-  const state = api.getState();
-  const { disabled } = state.session.gameMode;
-
-  if (disabled[gameId] === undefined) {
-    return PromiseBB.resolve();
-  }
-
-  return api
-    .showDialog(
-      "question",
-      "Game disabled",
-      {
-        text: "A different game extension is currently managing that game directory.",
-        message: gameById(state, disabled[gameId]).name,
-      },
-      [{ label: "Cancel" }],
-    )
-    .then(() => PromiseBB.reject(new UserCanceled()));
-}
-
 function init(context: IExtensionContext): boolean {
   context.registerReducer(["persistent", "profiles"], profilesReducer);
   context.registerReducer(["settings", "profiles"], settingsReducer);
@@ -1112,15 +1090,11 @@ function init(context: IExtensionContext): boolean {
 
       log("info", "activate profile", profileData);
 
-      checkOverridden(context.api, gameId)
-        .then(() => {
-          activateGame(context.api.store, gameId);
-        })
-        .catch((err) => {
-          if (!(err instanceof UserCanceled)) {
-            context.api.showErrorNotification("Failed to activate game", err);
-          }
-        });
+      activateGame(context.api.store, gameId).catch((err) => {
+        if (!(err instanceof UserCanceled)) {
+          context.api.showErrorNotification("Failed to activate game", err);
+        }
+      });
     },
     (instanceIds: string[]) => activeGameId(context.api.getState()) !== instanceIds[0],
   );
