@@ -1,4 +1,5 @@
 import { z } from "../zodJitless";
+import type { IGameFolderCheckLimits } from "./gameFolderCheck";
 
 // NOTE(erri120): explicit casting with `as z.ZodType<>` required for `--isolatedDeclarations` to work
 // Prefix flags with "vortex-" to qualify it within the shared Unleash application; the name must match the toggle configured in Unleash.
@@ -17,10 +18,44 @@ export const flagVariantSchemas = {
   "vortex-tier-0-game-support": {},
   // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
   "laz-vortex-browse-mods": {},
+<<<<<<< HEAD
   // On/off gate for the planner_plan telemetry event.
   "vortex-planner-telemetry": {},
 };
 
+=======
+  // Gate for the Steam game folder check (MOD-80). The optional "config" variant
+  // overrides its defaults, so limits can change without a release.
+  "vortex-game-folder-check": {
+    config: z
+      .string()
+      .transform((s: string) => JSON.parse(s) as unknown)
+      .pipe(
+        z.object({
+          settleMs: z.number().nonnegative().optional(),
+          maxDurationMs: z.number().positive().optional(),
+          maxBytes: z.number().positive().optional(),
+          hashConcurrency: z.number().int().positive().optional(),
+          hashSampleExecutables: z.number().int().nonnegative().optional(),
+          hashSampleFiles: z.number().int().nonnegative().optional(),
+          maxUnknownPaths: z.number().int().nonnegative().optional(),
+          maxFileParts: z.number().int().nonnegative().optional(),
+          maxEventBytes: z.number().int().positive().optional(),
+          fullVerifyPercent: z.number().min(0).max(100).optional(),
+        }),
+      ) as z.ZodType<IGameFolderCheckFlagConfig>,
+  },
+};
+
+/** Overrides for the check limits sent to main, plus the renderer-side settings. */
+export interface IGameFolderCheckFlagConfig extends Partial<IGameFolderCheckLimits> {
+  settleMs?: number;
+  maxFileParts?: number;
+  maxEventBytes?: number;
+  fullVerifyPercent?: number;
+}
+
+>>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 type FlagVariantSchemas = typeof flagVariantSchemas;
 export type KnownFlagName = keyof FlagVariantSchemas;
 export const knownFlagNames: ReadonlySet<string> = new Set(Object.keys(flagVariantSchemas));

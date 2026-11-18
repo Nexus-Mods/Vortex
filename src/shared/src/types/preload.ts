@@ -18,6 +18,11 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
+<<<<<<< HEAD
+=======
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
+import type { VortexGameId } from "./ids";
+>>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
@@ -110,6 +115,12 @@ export interface Api {
   /** file hashing API (run on a main-process worker_thread) */
   hash: HashApi;
 
+<<<<<<< HEAD
+=======
+  /** Steam game folder check (MOD-80), run in main */
+  gameFolderCheck: IGameFolderCheckApi;
+
+>>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
   /** Diagnostic APIs */
   diag: Diag;
 
@@ -540,6 +551,33 @@ export interface HashApi {
   compute(algorithm: HashAlgorithm, filePath: string): Promise<{ hash: string; numBytes: number }>;
 }
 
+<<<<<<< HEAD
+=======
+export interface IGameFolderCheckApi {
+  /**
+   * Runs a check. The finished check arrives through the handler registered with
+   * `onSubmit`, so register it first. Resolves once that handler is done or the
+   * check was cancelled; rejects if the check or the handler failed.
+   */
+  start(input: IGameFolderCheckInput): Promise<void>;
+
+  /** Cancels the queued or running check for a game. Nothing is submitted for it. */
+  cancel(gameId: VortexGameId): void;
+
+  /**
+   * Registers the handler main calls with each finished check. A rejection tells
+   * main the result wasn't sent. Returns an unsubscribe function.
+   */
+  onSubmit(handler: (result: GameFolderCheckResult) => Promise<void>): () => void;
+
+  /**
+   * Development builds only: runs a check now, writes a JSON report, shows it in the
+   * file manager and resolves with its path. Sends nothing.
+   */
+  runManual(input: IGameFolderCheckInput): Promise<string>;
+}
+
+>>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 /** API for receiving feature flag updates pushed from the main process */
 export interface FeatureFlagsApi {
   /** Registers a callback invoked whenever main pushes updated flags. Returns an unsubscribe function. */

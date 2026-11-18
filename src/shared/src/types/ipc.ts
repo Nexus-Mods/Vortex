@@ -24,6 +24,11 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
+<<<<<<< HEAD
+=======
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
+import type { VortexGameId } from "./ids";
+>>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
@@ -384,6 +389,17 @@ export interface InvokeChannels {
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
 
+<<<<<<< HEAD
+=======
+  // Game folder check: run a check. The result goes through the
+  // game-folder-check:submit callback; this resolves once that is done or the
+  // check was cancelled, and rejects if the check or the submit failed
+  "game-folder-check:start": (input: IGameFolderCheckInput) => Promise<void>;
+  // Game folder check, development builds only: run now, write a JSON report,
+  // show it in the file manager and resolve with its path
+  "game-folder-check:run-manual": (input: IGameFolderCheckInput) => Promise<string>;
+
+>>>>>>> 13d6c6e98 (Merge pull request #24949 from Nexus-Mods/fix/game-folder-check-review-followup)
   // Updater: the renderer polls this (pull, like downloads and uploads). With
   // `since`, the reply also lists every snapshot recorded after that sequence
   // number, so short-lived states are seen and not sampled past.
