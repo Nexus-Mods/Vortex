@@ -1283,7 +1283,7 @@ function endorseCollectionImpl(
     return;
   }
 
-  store.dispatch(setModAttribute(gameId, mod.id, "endorsed", "pending"));
+  store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "pending"));
   const game = gameById(api.store.getState(), gameId);
   endorseCollection(nexus, nexusGameId(game), nexusCollectionId, endorsedStatus)
     .then((result: { success: boolean; endorsement: { status: string } }) => {
@@ -1335,7 +1335,7 @@ function endorseModImpl(
     return;
   }
 
-  store.dispatch(setModAttribute(gameId, mod.id, "endorsed", "pending"));
+  store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "pending"));
   const game = gameById(api.store.getState(), gameId);
   endorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {

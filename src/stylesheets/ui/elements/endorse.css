@@ -1,11 +1,11 @@
 @layer components {
-    /* An endorse button's icon box, which the burst is drawn over. */
+    /* EndorseButton's icon box, which the burst is drawn over. */
     .nxm-endorse {
         position: relative;
         display: flex;
     }
 
-    /* A mod's endorse thumb, its fill eased in and out as it's endorsed and withdrawn. */
+    /* The endorse thumb, its fill eased in and out as it's endorsed and withdrawn. */
     .nxm-endorse-thumb {
         width: 100%;
         height: 100%;
@@ -14,7 +14,7 @@
         transition-duration: var(--default-transition-duration);
     }
 
-    /* The thumb squashing and popping as the mod becomes endorsed. */
+    /* The thumb squashing and popping as it becomes endorsed. */
     .nxm-endorse-thumb-pop {
         animation: var(--animate-endorse-pop);
     }

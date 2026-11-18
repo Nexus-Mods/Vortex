@@ -1,1 +1,3 @@
-export const SITE_ID = "site";
+import { VortexGameId } from "@vortex/shared";
+
+export const SITE_ID = VortexGameId("site");
