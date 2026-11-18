@@ -69,4 +69,43 @@ describe("refreshEndorsements", () => {
 
     expect(store.dispatch).not.toHaveBeenCalled();
   });
+
+  // the update check that follows reads these values, so none may be left for later
+  test("applies every change before it resolves, however many there are", async () => {
+    const count = 2500;
+    const extensions = {};
+    const endorsements = [];
+    for (let i = 1; i <= count; ++i) {
+      extensions[`ext-${i}`] = { modId: i, endorsed: "Undecided" };
+      endorsements.push({ domain_name: "site", mod_id: i, status: "Endorsed" });
+    }
+    const state = {
+      app: { extensions },
+      persistent: { mods: {} },
+      session: { gameMode: { known: [] } },
+    };
+    const store = { getState: () => state, dispatch: vi.fn() };
+
+    await refreshEndorsements(store as never, nexusWith(endorsements));
+
+    expect(store.dispatch).toHaveBeenCalledTimes(3);
+    const applied = store.dispatch.mock.calls.flatMap(([action]) => action.payload);
+    expect(applied).toHaveLength(count);
+  });
+
+  test("still applies the other changes when one of them fails", async () => {
+    const store = makeStore(true);
+    const failing = setExtensionEndorsed("ext-other", "Endorsed");
+    store.dispatch.mockImplementation((action) => {
+      if (action.type === batch([]).type || JSON.stringify(action) === JSON.stringify(failing)) {
+        throw new Error("reducer failed");
+      }
+    });
+
+    await refreshEndorsements(store as never, nexusWith(ENDORSEMENTS));
+
+    expect(store.dispatch).toHaveBeenLastCalledWith(
+      setModAttribute("skyrimse", "mod-endorsed", "endorsed", "Abstained"),
+    );
+  });
 });
