@@ -831,6 +831,7 @@ describe("ModsTableSwitch", () => {
             name: "Endorsed",
             placement: "table",
             isToggleable: true,
+            isDefaultVisible: true,
             position: 45,
             calc: () => "Undecided",
             edit: {},
@@ -866,6 +867,7 @@ describe("ModsTableSwitch", () => {
             name: "Endorsed",
             placement: "table",
             isToggleable: true,
+            isDefaultVisible: true,
             customRenderer: () => (
               <button title="Undecided" type="button">
                 <svg />
@@ -1390,6 +1392,7 @@ describe("ModsTableSwitch", () => {
           name: "Compatibility",
           placement: "table",
           isToggleable: true,
+          isDefaultVisible: true,
           calc: (row: IModWithState) =>
             new Promise<string>((resolve) => {
               resolvers[row.id] = resolve;
