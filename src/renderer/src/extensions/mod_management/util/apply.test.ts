@@ -30,7 +30,7 @@ import {
   type StagedFiles,
 } from "./apply/apply";
 import { FIXTURE_FOLDER_TAG } from "./apply/fixtureDisk";
-import { JournalReadStatus, readJournal, type JournalStorage } from "./apply/journal";
+import { JournalPhase, JournalReadStatus, readJournal, type JournalStorage } from "./apply/journal";
 
 const ROOT = "/fixture-root";
 const GAME = `${ROOT}/game`;
@@ -204,6 +204,64 @@ describe("apply", () => {
     expect(after[inGame("a.dll")]).toBe(after[inStaging("a.dll")]);
     expectStatus(await resumeApply(optionsOn(fs, journal)), ApplyStatus.Applied);
     expect(await journalStatusOf(journal)).toBe(JournalReadStatus.None);
+  });
+
+  test("reports each step it completes, rising to the total", async () => {
+    const fs = seed({ staged: ["a.dll", "b.dll", "c.dll"] });
+    const onProgress = vi.fn<NonNullable<RunOptions["onProgress"]>>();
+
+    await apply([link("a.dll"), link("b.dll"), link("c.dll")], {
+      ...optionsOn(fs, await newJournal()),
+      backupPathOf,
+      keptPathOf,
+      stagedFiles,
+      onProgress,
+    });
+
+    expect(onProgress.mock.calls).toEqual([
+      [1, 3, JournalPhase.Applying],
+      [2, 3, JournalPhase.Applying],
+      [3, 3, JournalPhase.Applying],
+    ]);
+  });
+
+  test("reports its rollback's steps after a step fails, rising to the steps that changed the disk", async () => {
+    const fs = seed({ staged: ["a.dll", "b.dll"] });
+    const onProgress = vi.fn<NonNullable<RunOptions["onProgress"]>>();
+
+    const result = await apply([link("a.dll"), link("missing.dll"), link("b.dll")], {
+      ...optionsOn(fs, await newJournal()),
+      backupPathOf,
+      keptPathOf,
+      stagedFiles,
+      onProgress,
+    });
+
+    expectStatus(result, ApplyStatus.RolledBack);
+    expect(
+      onProgress.mock.calls.filter(([, , phase]) => phase === JournalPhase.RollingBack),
+    ).toEqual([
+      [1, 2, JournalPhase.RollingBack],
+      [2, 2, JournalPhase.RollingBack],
+    ]);
+  });
+
+  test("a progress callback that fails leaves the step it reported in place", async () => {
+    const fs = seed({ staged: ["a.dll"] });
+
+    const running = apply([link("a.dll")], {
+      ...optionsOn(fs, await newJournal()),
+      backupPathOf,
+      keptPathOf,
+      stagedFiles,
+      onProgress: () => {
+        throw new Error("the progress bar is gone");
+      },
+    });
+
+    await expect(running).rejects.toThrow("the progress bar is gone");
+    const after = await snapshot(fs);
+    expect(after[inGame("a.dll")]).toBe(after[inStaging("a.dll")]);
   });
 
   test("records its deployment from its operations once they ran, before its journal ends", async () => {
@@ -438,6 +496,32 @@ describe.each([
 });
 
 describe("resumeApply", () => {
+  test("a resumed rollback reports its progress from the steps already undone", async () => {
+    const fs = seed({ staged: ["a.dll", "b.dll"] });
+    const journal = await newJournal();
+    const writer = await startJournal(
+      journal,
+      [
+        { operation: link("a.dll"), stagedPath: inStaging("a.dll") },
+        { operation: link("b.dll"), stagedPath: inStaging("b.dll") },
+      ],
+      RUN_ID,
+    );
+    await writer.markChanging(0);
+    await writer.markChanging(1);
+    await writer.startRollback();
+    await writer.markUndone(1);
+    await writer.close();
+    const onProgress = vi.fn<NonNullable<RunOptions["onProgress"]>>();
+
+    expectStatus(
+      await resumeApply({ ...optionsOn(fs, journal), onProgress }),
+      ApplyStatus.RolledBack,
+    );
+
+    expect(onProgress.mock.calls).toEqual([[2, 2, JournalPhase.RollingBack]]);
+  });
+
   test("rolls back when a RESTORE finds its destination occupied", async () => {
     const fs = seed({
       other: { [inGame("a.dll")]: "someone else's", [backupOf("a.dll")]: "original" },
