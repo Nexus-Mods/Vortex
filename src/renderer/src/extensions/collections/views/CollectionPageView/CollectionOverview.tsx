@@ -72,8 +72,9 @@ function EndorseButton(props: IEndorseButtonProps) {
   const endorsedStatus: EndorsedStatus = isEndorsedStatus(rawEndorsedStatus)
     ? rawEndorsedStatus
     : "Undecided";
+  const isPending = rawEndorsedStatus === "pending";
   const isBlocked = collection?.viewerIsBlocked ?? false;
-  const finalStatus = isBlocked ? "Blocked" : endorsedStatus;
+  const finalStatus = isBlocked ? "Blocked" : isPending ? "pending" : endorsedStatus;
   const endorsed: boolean = mod.attributes?.endorsed === "Endorsed";
 
   const classes = `collection-ghost-button ${endorsed ? "endorse-yes" : "endorse-maybe"}`;
@@ -99,9 +100,9 @@ function EndorseButton(props: IEndorseButtonProps) {
   return (
     <tooltip.IconButton
       className={classes}
-      disabled={!voteAllowed || collection?.endorsements === undefined}
+      disabled={!voteAllowed || isPending || collection?.endorsements === undefined}
       icon={icon}
-      spin={endorsedStatus.toLowerCase() === "pending"}
+      spin={isPending}
       tooltip={toolTip}
       onClick={endorse}
     >
@@ -503,8 +504,8 @@ class CollectionOverview extends ComponentEx<ICollectionOverviewProps, { selIdx:
     if (success && showUpvoteResponse) {
       onVoteSuccess?.(collection.id, success);
 
-      // if we've already endorsed then we don't need to show the dialog
-      if (endorsedStatus === "Endorsed") return;
+      // if we've already endorsed, or Nexus is still being asked, then we don't need to show the dialog
+      if (endorsedStatus === "Endorsed" || rawEndorsedStatus === "pending") return;
 
       this.context.api
         .showDialog(
