@@ -11,6 +11,7 @@ install();
 
 import "@testing-library/jest-dom/vitest";
 import type { VortexPaths } from "@vortex/shared/ipc";
+import type * as ReactDOMModule from "react-dom";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { ApplicationData } from "./src/applicationData.js";
@@ -39,6 +40,34 @@ const failOnActWarnings = () => {
 };
 afterEach(failOnActWarnings);
 afterAll(failOnActWarnings);
+
+// A call to findDOMNode from our own code fails the test it ran in; React 19 removes it, and
+// "React warnings" in docs/testing.md says what to use instead. React's own warning can't drive
+// this: it's logged once per test file, and react-bootstrap 0.33 and react-overlays still call
+// findDOMNode themselves, so theirs would hide ours. vi.mock only reaches the modules vitest
+// transforms, our source, and not the copy of react-dom those libraries require() for themselves.
+const findDOMNodeCallers = vi.hoisted(() => new Set<string>());
+vi.mock("react-dom", async (importOriginal) => {
+  const original = await importOriginal<typeof ReactDOMModule>();
+  const findDOMNode: typeof original.findDOMNode = (instance) => {
+    // the frame below this one is whoever called findDOMNode
+    const caller = new Error().stack?.split("\n")[2]?.trim().replace(/^at /, "");
+    findDOMNodeCallers.add(caller ?? "unknown code");
+    return original.findDOMNode(instance);
+  };
+  return { ...original, findDOMNode, default: { ...original, findDOMNode } };
+});
+const failOnFindDOMNode = () => {
+  const callers = [...findDOMNodeCallers];
+  findDOMNodeCallers.clear();
+  if (callers.length > 0) {
+    throw new Error(
+      `findDOMNode was called from ${callers.join(", ")}; see "React warnings" in docs/testing.md`,
+    );
+  }
+};
+afterEach(failOnFindDOMNode);
+afterAll(failOnFindDOMNode);
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is

@@ -77,19 +77,32 @@ type TRProps = DProps<HTMLTableRowElement> & {
   domRef?: (ref: HTMLDivElement) => void;
 };
 
-export function TR(props: TRProps) {
+// Passes a ref on to its <tr> as well as domRef, so VisibilityProxy can observe the row
+// when TableRow hands it TR as its componentClass.
+export const TR = React.forwardRef<HTMLTableRowElement, TRProps>(function TR(props, ref) {
   const { className, domRef } = props;
   const classes = ["xtr"].concat((className || "").split(" "));
+  const setRef = React.useCallback(
+    (element: HTMLTableRowElement | null) => {
+      domRef?.(element as unknown as HTMLDivElement);
+      if (typeof ref === "function") {
+        ref(element);
+      } else if (ref !== null) {
+        ref.current = element;
+      }
+    },
+    [domRef, ref],
+  );
   return (
     <tr
       className={classes.join(" ")}
-      ref={domRef}
+      ref={setRef}
       {...(_.omit(props, ["className", "domRef"]) as any)}
     >
       {props.children}
     </tr>
   );
-}
+});
 
 type TDProps = DProps<HTMLTableCellElement> & {
   domRef?: (ref: HTMLDivElement) => void;

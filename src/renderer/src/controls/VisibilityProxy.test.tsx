@@ -5,7 +5,7 @@
  */
 import { render } from "@testing-library/react";
 import * as React from "react";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import VisibilityProxy from "./VisibilityProxy";
 
@@ -54,12 +54,28 @@ function Proxy(props: { container: HTMLElement | null }) {
   );
 }
 
+/** A componentClass that renders a <section> and passes its ref on to it. */
+const Section = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
+  function Section(props, ref) {
+    return <section ref={ref} {...props} />;
+  },
+);
+
+/** A componentClass whose ref is its instance, not an element. */
+class Opaque extends React.Component<{ children?: React.ReactNode }> {
+  public render() {
+    return <div>{this.props.children}</div>;
+  }
+}
+
 describe("VisibilityProxy", () => {
   it("is observed against the container it mounts with", () => {
     const scroller = document.createElement("div");
     const { getByTestId } = render(<Proxy container={scroller} />);
 
-    expect(calls).toEqual([{ op: "observe", root: scroller, target: getByTestId("entry") }]);
+    expect(calls).toEqual([
+      { op: "observe", root: scroller, target: getByTestId("entry").parentElement },
+    ]);
   });
 
   // The conflict editor passes a ref's `current`: null on the first render, where the
@@ -67,14 +83,74 @@ describe("VisibilityProxy", () => {
   // an unclipped wrapper <div> on every render after that.
   it("keeps the root it mounted with when the container changes", () => {
     const { getByTestId, rerender, unmount } = render(<Proxy container={null} />);
-    const entry = getByTestId("entry");
+    const wrapper = getByTestId("entry").parentElement;
 
     rerender(<Proxy container={document.createElement("div")} />);
     unmount();
 
     expect(calls).toEqual([
-      { op: "observe", root: null, target: entry },
-      { op: "unobserve", root: null, target: entry },
+      { op: "observe", root: null, target: wrapper },
+      { op: "unobserve", root: null, target: wrapper },
     ]);
+  });
+
+  it("observes a <div> around its content when it has no componentClass", () => {
+    const { getByTestId } = render(<Proxy container={null} />);
+
+    const wrapper = getByTestId("entry").parentElement;
+    expect(wrapper?.tagName).toBe("DIV");
+    expect(calls).toEqual([{ op: "observe", root: null, target: wrapper }]);
+  });
+
+  it("observes the element its componentClass renders", () => {
+    const { getByTestId } = render(
+      <VisibilityProxy
+        componentClass="div"
+        container={null}
+        content={() => null}
+        data-testid="row"
+        placeholder={() => null}
+        visible={false}
+        setVisible={() => undefined}
+      />,
+    );
+
+    expect(calls).toEqual([{ op: "observe", root: null, target: getByTestId("row") }]);
+  });
+
+  it("observes the element a componentClass passes its ref on to", () => {
+    const { getByTestId } = render(
+      <VisibilityProxy
+        componentClass={Section}
+        container={null}
+        content={() => null}
+        data-testid="row"
+        placeholder={() => null}
+        visible={false}
+        setVisible={() => undefined}
+      />,
+    );
+
+    expect(calls).toEqual([{ op: "observe", root: null, target: getByTestId("row") }]);
+  });
+
+  // An extension's componentClass may not give a ref to its element. The proxy can't know
+  // when that comes into view, so it shows the content rather than a placeholder forever.
+  it("shows the content when its componentClass gives no element to observe", () => {
+    const setVisible = vi.fn();
+
+    render(
+      <VisibilityProxy
+        componentClass={Opaque}
+        container={null}
+        content={() => null}
+        placeholder={() => null}
+        visible={false}
+        setVisible={setVisible}
+      />,
+    );
+
+    expect(calls).toEqual([]);
+    expect(setVisible).toHaveBeenCalledWith(true);
   });
 });

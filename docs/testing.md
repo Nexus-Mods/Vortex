@@ -101,6 +101,19 @@ The usual sources:
   testing-library's, that microtask lands outside `act()`. Re-render inside an
   async `act()`: `await act(async () => { rerender(…); })`.
 
+### findDOMNode
+
+A test also fails when our own code calls `findDOMNode`, which React 19
+removes: `findDOMNode was called from X`, naming the caller. Put a ref on the
+element instead. Where the element belongs to a react-bootstrap 0.33 component,
+which doesn't pass refs on, hand it a `componentClass` that does:
+`ButtonWithRef` in `src/renderer/src/controls/ToolbarIcon.tsx` and
+`AnchorWithRef` in `src/renderer/src/controls/ContextMenu.tsx` do this.
+
+The check catches the call, not React's warning. React logs that warning once
+per test file, and react-bootstrap and react-overlays still call `findDOMNode`
+themselves, so their warning would hide ours. Their calls don't fail a test.
+
 ### What the check can't see
 
 - `waitFor`, the `findBy…` queries and `userEvent` turn React's `act()` checks
@@ -114,11 +127,15 @@ The usual sources:
 - An update that lands after testing-library's cleanup fails the next test in
   the file, or the file's `afterAll` after its last test, rather than the test
   that caused it.
-- Only `act()` warnings fail a test. The deprecation warnings still in the log
-  (`findDOMNode`, `defaultProps`, legacy `contextTypes`) come from older code:
-  class components built on `ComponentEx` in `src/renderer/src/controls/`, and
-  old dependencies such as `react-bootstrap` 0.33. Clearing them means changing
-  that code, not the tests.
+- Only `act()` warnings and our own `findDOMNode` calls fail a test. The
+  deprecation warnings still in the log (`findDOMNode` from react-bootstrap,
+  `defaultProps`, legacy `contextTypes`) come from older code: class components
+  built on `ComponentEx` in `src/renderer/src/controls/`, and old dependencies
+  such as `react-bootstrap` 0.33. Clearing them means changing that code, not
+  the tests.
+- The `findDOMNode` check only sees code that runs in a test. The renderer
+  still has calls outside the tested paths, such as `Dropdown`,
+  `ActionDropdown` and `DraggableList`.
 
 ## Extension tests
 

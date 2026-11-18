@@ -169,9 +169,9 @@ describe("VisibilityProxy hiding", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  // Without a componentClass the proxy renders its content bare, so the node it observes is
-  // whatever the placeholder rendered. ConflictEditor (mod-dependency-manager) renders a <div>
-  // for both, which React keeps as the same node.
+  // Without a componentClass the proxy wraps its content in a <div> and observes that, so
+  // swapping the placeholder for content doesn't change the node it observes.
+  // ConflictEditor (mod-dependency-manager) uses it this way.
   describe("without a componentClass", () => {
     function renderEntry(placeholder: () => React.ReactNode, content: () => React.ReactNode) {
       const onSetVisible = vi.fn();
@@ -198,33 +198,32 @@ describe("VisibilityProxy hiding", () => {
         () => <div data-testid="entry" />,
         () => <div data-testid="entry">content</div>,
       );
-      const entry = getByTestId("entry");
+      const wrapper = getByTestId("entry").parentElement;
 
-      report(entry, true);
-      report(entry, false);
+      report(wrapper, true);
+      report(wrapper, false);
       act(() => vi.advanceTimersByTime(1000));
-      report(entry, true);
+      report(wrapper, true);
 
       expect(onSetVisible.mock.calls).toEqual([[true], [false], [true]]);
       expect(getByTestId("entry").textContent).toBe("content");
     });
 
-    // Showing the content removed the observed node, and the observer reports a removed node
-    // as out of view. Hiding on that would bring back a placeholder nothing observes, which
-    // would then never fill.
-    it("doesn't hide on a report for a node it has since replaced", () => {
+    it("hides and shows again when content and placeholder render different elements", () => {
       const { getByTestId, onSetVisible, queryByTestId } = renderEntry(
         () => <span data-testid="placeholder" />,
         () => <div data-testid="content" />,
       );
-      const placeholder = getByTestId("placeholder");
+      const wrapper = getByTestId("placeholder").parentElement;
 
-      report(placeholder, true);
-      expect(placeholder.isConnected).toBe(false);
-      report(placeholder, false);
-      act(() => vi.advanceTimersByTime(5000));
+      report(wrapper, true);
+      expect(queryByTestId("content")).not.toBeNull();
+      report(wrapper, false);
+      act(() => vi.advanceTimersByTime(1000));
+      expect(queryByTestId("placeholder")).not.toBeNull();
+      report(wrapper, true);
 
-      expect(onSetVisible.mock.calls).toEqual([[true]]);
+      expect(onSetVisible.mock.calls).toEqual([[true], [false], [true]]);
       expect(queryByTestId("content")).not.toBeNull();
     });
   });

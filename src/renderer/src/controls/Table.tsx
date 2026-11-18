@@ -49,6 +49,7 @@ import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
 import ToolbarIcon from "./ToolbarIcon";
 import { UsageAlert } from "./UsageAlert";
+import type VisibilityProxy from "./VisibilityProxy";
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -174,7 +175,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   // when the pane mounts, which is before any row renders.
   private mScrollContainer: HTMLElement | null;
   private mHeaderRef: HTMLElement;
-  private mRowRefs: { [id: string]: HTMLElement } = {};
+  private mRowRefs: { [id: string]: VisibilityProxy } = {};
   private mLastSelectOnly: number = 0;
   private mLastDetailIds: string[] = [];
   private mDetailTimer: NodeJS.Timeout = null;
@@ -625,7 +626,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private scrollTo = (id: string, mayRetry?: boolean) => {
     try {
-      const node = ReactDOM.findDOMNode(this.mRowRefs[id]) as HTMLElement;
+      const node = this.mRowRefs[id]?.element ?? null;
       if (node !== null) {
         this.scrollToItem(node, false);
       } else if (mayRetry !== false) {
@@ -1022,8 +1023,8 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         // the previously selected row might no longer be visible, which would cause
         // an exception when trying to find the associated dom node
         const lastIdx = sortedRows.indexOf(lastSelected.rowId);
-        if (lastIdx !== -1) {
-          const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected.rowId]) as Element;
+        const selectedNode = this.mRowRefs[lastSelected.rowId].element;
+        if (lastIdx !== -1 && selectedNode !== null) {
           visibleLineCount = this.rowScroller().clientHeight / selectedNode.clientHeight;
           // account for the header. quite inaccurate.
           visibleLineCount -= 2;
@@ -1054,11 +1055,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         evt.preventDefault();
         const groupId = evt.currentTarget.getAttribute("data-group") || undefined;
         const newItem = this.selectRelative(offset, groupId, evt.shiftKey);
-        if (this.mRowRefs[newItem] !== undefined && this.mMounted) {
-          this.scrollToItem(
-            ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement,
-            Math.abs(offset) > 1,
-          );
+        const newNode = this.mRowRefs[newItem]?.element ?? null;
+        if (newNode !== null && this.mMounted) {
+          this.scrollToItem(newNode, Math.abs(offset) > 1);
         }
       } else {
         const action = this.props.actions.find((iter) =>
@@ -1205,7 +1204,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mPinnedRef = ref;
   };
 
-  private setRowRef = (ref: any) => {
+  private setRowRef = (ref: VisibilityProxy | null) => {
     if (ref !== null) {
       this.mRowRefs[ref.props["data-rowid"]] = ref;
     }

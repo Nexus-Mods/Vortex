@@ -2,7 +2,6 @@ import { clearTimeout } from "timers";
 
 import * as React from "react";
 import { MenuItem } from "react-bootstrap";
-import ReactDOM from "react-dom";
 import { Portal } from "react-overlays";
 
 import type { TFunction } from "../util/i18n";
@@ -11,6 +10,17 @@ import { ComponentEx } from "./ComponentEx";
 import { HOVER_DELAY } from "./constants";
 import Dropdown from "./Dropdown";
 import Icon from "./Icon";
+
+type AnchorWithRefProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  anchorRef: React.Ref<HTMLAnchorElement>;
+};
+
+// react-bootstrap 0.33's MenuItem doesn't pass a ref on to its element. It renders an <li>
+// around its componentClass, and gives that componentClass every prop it doesn't use itself,
+// anchorRef among them.
+function AnchorWithRef({ anchorRef, ...props }: AnchorWithRefProps) {
+  return <a ref={anchorRef} {...props} />;
+}
 
 export interface IMenuActionProps {
   t: TFunction;
@@ -115,9 +125,11 @@ function MenuAction(props: IMenuActionProps) {
     }, HOVER_DELAY);
   }, [setOpen]);
 
-  const setItemRef = (ref) => {
-    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
-  };
+  // the submenu opens next to the item's <li>, the parent of its <a>
+  const setAnchorRef = React.useCallback((anchor: HTMLAnchorElement | null) => {
+    itemRef.current = anchor?.parentElement ?? undefined;
+  }, []);
+  const anchorProps = { componentClass: AnchorWithRef, anchorRef: setAnchorRef };
 
   return (
     <MenuItem
@@ -126,7 +138,7 @@ function MenuAction(props: IMenuActionProps) {
       onMouseEnter={action.subMenus !== undefined ? show : undefined}
       onMouseLeave={action.subMenus !== undefined ? hide : undefined}
       disabled={action.show !== true}
-      ref={setItemRef}
+      {...(anchorProps as object)}
       title={typeof action.show === "string" ? t(action.show) : undefined}
     >
       {action.component !== undefined ? (

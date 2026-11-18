@@ -1,9 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import * as PropTypes from "prop-types";
 import * as React from "react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ContextMenu from "./ContextMenu";
+
+// Icon loads its font set into an `#icon-sets` element the test document lacks; a submenu
+// item shows one.
+vi.mock("./Icon", () => ({ default: () => null }));
 
 // ContextMenu extends ComponentEx which reads api/menuLayer/getModifiers from
 // the legacy context; provide the minimum via a legacy-context provider.
@@ -30,7 +34,9 @@ class LegacyContextProvider extends React.Component<{
   }
 }
 
-function Harness(props: { menuLayer: HTMLElement }) {
+const testAction = { title: "Test Action", action: () => undefined, show: true } as any;
+
+function Harness(props: { menuLayer: HTMLElement; actions?: any[] }) {
   const [visible, setVisible] = React.useState(false);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
 
@@ -49,7 +55,7 @@ function Harness(props: { menuLayer: HTMLElement }) {
         onHide={onHide}
         position={position}
         instanceId="test-instance"
-        actions={[{ title: "Test Action", action: () => undefined, show: true } as any]}
+        actions={props.actions ?? [testAction]}
       />
     </LegacyContextProvider>
   );
@@ -92,5 +98,22 @@ describe("ContextMenu", () => {
     await waitFor(() => {
       expect(menuLayer.textContent).not.toContain("Test Action");
     });
+  });
+
+  it("places a submenu by the item that opens it", async () => {
+    const measured = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect");
+    const more = {
+      title: "More",
+      show: true,
+      subMenus: [{ title: "Sub Action", action: () => undefined, show: true }],
+    };
+    render(<Harness menuLayer={menuLayer} actions={[more]} />);
+    fireEvent.contextMenu(screen.getByTestId("row"), { clientX: 10, clientY: 10 });
+    const item = within(menuLayer).getByText("More").closest("li");
+
+    fireEvent.mouseEnter(item.querySelector("a"));
+
+    await waitFor(() => expect(menuLayer.textContent).toContain("Sub Action"));
+    expect(measured.mock.contexts).toContain(item);
   });
 });

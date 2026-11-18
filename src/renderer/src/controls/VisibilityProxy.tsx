@@ -1,7 +1,6 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as _ from "lodash";
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 
 import { log } from "../util/log";
 
@@ -80,22 +79,42 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   // `container` is read once, on mount; a later change is ignored. The conflict editor
   // passes a ref's `current`, null until it re-renders and then an element that doesn't
   // clip, so moving to the new container would count every entry as visible.
-  #observed: { container: HTMLElement; node: HTMLElement };
+  #observed: { container: HTMLElement; node: HTMLElement } | undefined;
+  // the element render() puts the content in: the componentClass's, or the wrapping <div>
+  #element: HTMLElement | null = null;
   #inView: boolean = false;
   #hideTimer: ReturnType<typeof setTimeout> | undefined;
 
   public componentDidMount() {
-    const node = ReactDOM.findDOMNode(this) as HTMLElement;
+    const node = this.#element;
+    if (node === null) {
+      // A componentClass that doesn't pass its ref on to an element leaves nothing to observe,
+      // so there's no telling when it comes into view. Show the content rather than a
+      // placeholder that never fills.
+      this.applyVisible(true);
+      return;
+    }
     this.#observed = { container: this.props.container, node };
     VisibilityProxy.observe(this.props.container, node, (visible: boolean) =>
-      this.onIntersection(node, visible),
+      this.onIntersection(visible),
     );
   }
 
   public componentWillUnmount() {
     clearTimeout(this.#hideTimer);
-    VisibilityProxy.unobserve(this.#observed.container, this.#observed.node);
+    if (this.#observed !== undefined) {
+      VisibilityProxy.unobserve(this.#observed.container, this.#observed.node);
+    }
   }
+
+  /** The element whose visibility this proxy tracks: the componentClass's, or its own <div>. */
+  public get element(): HTMLElement | null {
+    return this.#element;
+  }
+
+  private setElement = (ref: unknown) => {
+    this.#element = ref instanceof HTMLElement ? ref : null;
+  };
 
   // workaround: There is the situation where when an element becomes visible it
   //   changes the layout around it which in turn pushes the element somwhere where it
@@ -104,7 +123,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
   //   became visible less than a second ago. The observer is flank triggered, so it won't
   //   report the element again: a hide that arrives within that second is deferred until
   //   the second has passed, then applied if the element is still out of view.
-  private onIntersection(node: HTMLElement, visible: boolean) {
+  private onIntersection(visible: boolean) {
     this.#inView = visible;
     if (visible) {
       clearTimeout(this.#hideTimer);
@@ -121,9 +140,7 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
     } else {
       this.#hideTimer = setTimeout(() => {
         this.#hideTimer = undefined;
-        // without a componentClass, content that renders a different element replaces the
-        // observed node. A report on the detached node says nothing about the content.
-        if (!this.#inView && node.isConnected) {
+        if (!this.#inView) {
           this.applyVisible(false);
         }
       }, remaining);
@@ -154,10 +171,13 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
       : this.props.placeholder();
 
     if (Component === undefined) {
-      // return <div className='visibility-proxy-wrap' {...props}>{content}</div>;
-      return <>{content}</>;
+      return <div ref={this.setElement}>{content}</div>;
     } else {
-      return <Component {...props}>{content}</Component>;
+      return (
+        <Component {...props} ref={this.setElement}>
+          {content}
+        </Component>
+      );
     }
   }
 }

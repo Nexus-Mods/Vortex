@@ -19,13 +19,38 @@ export interface IToolbarIconProps {
   stroke?: boolean;
   hollow?: boolean;
   children?: React.ReactNode;
+  /** receives the icon's <button> element */
+  buttonRef?: React.Ref<HTMLButtonElement>;
+}
+
+type ButtonWithRefProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  buttonRef: React.Ref<HTMLButtonElement>;
+};
+
+// react-bootstrap 0.33's Button doesn't pass a ref on to its <button>, but it renders its
+// componentClass with every prop it doesn't use itself, buttonRef among them.
+function ButtonWithRef({ buttonRef, ...props }: ButtonWithRefProps) {
+  return <button ref={buttonRef} {...props} />;
 }
 
 class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
   public render(): JSX.Element {
-    const { className, id, text, tooltip, icon, iconSet, pulse, spin, stroke, hollow, disabled } =
-      this.props;
+    const {
+      buttonRef,
+      className,
+      id,
+      text,
+      tooltip,
+      icon,
+      iconSet,
+      pulse,
+      spin,
+      stroke,
+      hollow,
+      disabled,
+    } = this.props;
     const placement = this.props.placement || "bottom";
+    const refProps = buttonRef === undefined ? {} : { componentClass: ButtonWithRef, buttonRef };
     return (
       <Button
         tooltip={tooltip}
@@ -34,6 +59,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
         onClick={this.invokeAction}
         disabled={disabled}
         className={className}
+        {...(refProps as object)}
       >
         {icon !== undefined ? (
           <Icon

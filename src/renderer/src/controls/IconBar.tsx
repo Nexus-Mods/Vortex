@@ -3,7 +3,6 @@ import * as _ from "lodash";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { ButtonGroup, Dropdown, MenuItem } from "react-bootstrap";
-import ReactDOM from "react-dom";
 
 import type { IActionDefinition } from "../types/IActionDefinition";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
@@ -109,7 +108,7 @@ function IconBarIcon(props: IIconBarIconProps) {
     [setOpenMenu, icon.subMenus],
   );
 
-  const itemRef = React.useRef<HTMLElement>();
+  const itemRef = React.useRef<HTMLButtonElement>(null);
 
   const trigger = React.useCallback(() => {
     icon.action?.(instanceIds, icon.data);
@@ -128,14 +127,10 @@ function IconBarIcon(props: IIconBarIconProps) {
   const tooltip =
     typeof icon.show === "string" ? icon.show : t(icon.title, { ns: icon.options?.namespace });
 
-  const setItemRef = (ref) => {
-    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
-  };
-
   return (
     <ToolbarIcon
       key={actionId}
-      ref={setItemRef}
+      buttonRef={itemRef}
       className={actionId}
       instanceId={instanceIds}
       icon={hasIcon ? icon.icon : undefined}
