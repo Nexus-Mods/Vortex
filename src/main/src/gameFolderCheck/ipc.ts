@@ -6,7 +6,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { GameFolderCheckInput } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput } from "@vortex/shared/ipc";
 
 import { getVortexPath } from "../getVortexPath";
 import { betterIpcMain } from "../ipc";
@@ -16,7 +16,7 @@ import { GameFolderCheckService } from "./service";
 
 const SUBMIT_TIMEOUT_MS = 60_000;
 
-async function writeReport(input: GameFolderCheckInput, output: IRunOutput): Promise<string> {
+async function writeReport(input: IGameFolderCheckInput, output: IRunOutput): Promise<string> {
   const folder = path.join(getVortexPath("temp"), "game-folder-check");
   await mkdir(folder, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -45,13 +45,11 @@ export function initGameFolderCheckIpc(service = new GameFolderCheckService()): 
     service.cancel(gameId);
   });
 
-  if (process.env.NODE_ENV === "development") {
-    betterIpcMain.handle("game-folder-check:run-manual", async (_event, input) => {
-      const output = await service.schedule(input);
-      if (output === undefined) throw new Error("game folder check was cancelled");
-      const reportPath = await writeReport(input, output);
-      showItemInFolder(reportPath);
-      return reportPath;
-    });
-  }
+  betterIpcMain.handle("game-folder-check:run-manual", async (_event, input) => {
+    const output = await service.schedule(input);
+    if (output === undefined) throw new Error("game folder check was cancelled");
+    const reportPath = await writeReport(input, output);
+    showItemInFolder(reportPath);
+    return reportPath;
+  });
 }

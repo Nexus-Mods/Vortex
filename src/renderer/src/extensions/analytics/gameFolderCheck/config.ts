@@ -1,5 +1,5 @@
-import type { GameFolderCheckFlagConfig } from "@vortex/shared/flags";
-import type { GameFolderCheckLimits } from "@vortex/shared/ipc";
+import type { IGameFolderCheckFlagConfig } from "@vortex/shared/flags";
+import type { IGameFolderCheckLimits } from "@vortex/shared/ipc";
 
 import { FlagService } from "@/FlagService";
 
@@ -8,7 +8,7 @@ export const GAME_FOLDER_CHECK_FLAG = "vortex-game-folder-check";
 export interface IGameFolderCheckConfig {
   /** wait after the game is managed before checking */
   settleMs: number;
-  limits: GameFolderCheckLimits;
+  limits: IGameFolderCheckLimits;
   /** share of checks that hash every chunk of every Steam file */
   fullVerifyPercent: number;
   /** file events sent per check, each holding as many paths as fit in one; 0 sends no paths */
@@ -30,7 +30,7 @@ const DEFAULT_MAX_FILE_PARTS = 6;
 const FILE_PARTS_CEILING = 20;
 
 export function gameFolderCheckConfig(
-  overrides: GameFolderCheckFlagConfig = {},
+  overrides: IGameFolderCheckFlagConfig = {},
 ): IGameFolderCheckConfig {
   return {
     settleMs: overrides.settleMs ?? 30_000,

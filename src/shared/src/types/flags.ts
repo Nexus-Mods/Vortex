@@ -1,4 +1,5 @@
 import { z } from "../zodJitless";
+import type { IGameFolderCheckLimits } from "./gameFolderCheck";
 
 // NOTE(erri120): explicit casting with `as z.ZodType<>` required for `--isolatedDeclarations` to work
 // Prefix flags with "vortex-" to qualify it within the shared Unleash application; the name must match the toggle configured in Unleash.
@@ -36,18 +37,13 @@ export const flagVariantSchemas = {
           maxEventBytes: z.number().int().positive().optional(),
           fullVerifyPercent: z.number().min(0).max(100).optional(),
         }),
-      ) as z.ZodType<GameFolderCheckFlagConfig>,
+      ) as z.ZodType<IGameFolderCheckFlagConfig>,
   },
 };
 
-export interface GameFolderCheckFlagConfig {
+/** Overrides for the check limits sent to main, plus the renderer-side settings. */
+export interface IGameFolderCheckFlagConfig extends Partial<IGameFolderCheckLimits> {
   settleMs?: number;
-  maxDurationMs?: number;
-  maxBytes?: number;
-  hashConcurrency?: number;
-  hashSampleExecutables?: number;
-  hashSampleFiles?: number;
-  maxUnknownPaths?: number;
   maxFileParts?: number;
   maxEventBytes?: number;
   fullVerifyPercent?: number;

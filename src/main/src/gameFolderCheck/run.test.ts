@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { VortexGameId } from "@vortex/shared";
-import type { GameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "@vortex/shared/ipc";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../logging", () => ({ log: vi.fn<() => void>() }));
@@ -27,7 +27,7 @@ const STEAM_FILES = { "game.exe": "MZ the game", "Data\\main.pak": "game data" }
 /** A Steam install with one depot whose manifest lists STEAM_FILES, and a game folder. */
 function makeInstall(
   diskFiles: Record<string, string>,
-  overrides: Partial<GameFolderCheckInput> = {},
+  overrides: Partial<IGameFolderCheckInput> = {},
 ) {
   const root = mkdtempSync(path.join(tmpdir(), "gfc-run-"));
   const steamPath = path.join(root, "steam");
@@ -49,7 +49,7 @@ function makeInstall(
     mkdirSync(path.dirname(full), { recursive: true });
     writeFileSync(full, content);
   }
-  const input: GameFolderCheckInput = {
+  const input: IGameFolderCheckInput = {
     gameId: VortexGameId("game"),
     appId: 100,
     buildId: 5,
@@ -71,7 +71,7 @@ function makeInstall(
   return { input, gamePath };
 }
 
-const run = async (input: GameFolderCheckInput) =>
+const run = async (input: IGameFolderCheckInput) =>
   runGameFolderCheck(input, new AbortController().signal);
 
 function counts(result: GameFolderCheckResult) {
