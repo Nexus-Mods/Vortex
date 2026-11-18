@@ -36,22 +36,28 @@ export const MainLayout: FC<React.PropsWithChildren<unknown>> = () => {
 
   // Choose the startup page once per run, preserving the current page if it's still valid
   useEffect(() => {
-    if (startupPageChosen || mainPages.length === 0) {
+    if (mainPages.length === 0) {
       return;
     }
 
-    const onStartupPage = mainPage === sessionDefaultState.mainPage;
+    if (!startupPageChosen) {
+      const onStartupPage = mainPage === sessionDefaultState.mainPage;
 
-    if (onStartupPage && requestedGameId !== undefined && activeGameId !== requestedGameId) {
-      return;
+      if (onStartupPage && requestedGameId !== undefined && activeGameId !== requestedGameId) {
+        return;
+      }
+      startupPageChosen = true;
+
+      if (onStartupPage && activeGameId !== undefined) {
+        const modsPage = hasMods ? mainPages.find((p) => p.id === "Mods") : undefined;
+        const startPage =
+          modsPage ?? mainPages.find((p) => p.group === "dashboard") ?? mainPages[0];
+        dispatch(setOpenMainPage(startPage.id, false));
+        return;
+      }
     }
-    startupPageChosen = true;
 
-    if (onStartupPage && activeGameId !== undefined) {
-      const modsPage = hasMods ? mainPages.find((p) => p.id === "Mods") : undefined;
-      const startPage = modsPage ?? mainPages.find((p) => p.group === "dashboard") ?? mainPages[0];
-      dispatch(setOpenMainPage(startPage.id, false));
-    } else if (!mainPages.some((p) => p.id === mainPage)) {
+    if (!mainPages.some((p) => p.id === mainPage)) {
       dispatch(setOpenMainPage(mainPages[0].id, false));
     }
   }, [mainPages, mainPage, activeGameId, requestedGameId, hasMods, dispatch]);
