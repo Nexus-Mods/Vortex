@@ -141,6 +141,39 @@ describe("ModGallery", () => {
     expect(queryByRole("slider")).not.toBeInTheDocument();
   });
 
+  it("says in a thumbnail's label that it's a comparison, and only then", () => {
+    const labels = (images: IGalleryImage[]) => {
+      const { getAllByRole, unmount } = render(<ModGallery images={images} isAdult={false} />);
+      const result = getAllByRole("button", { name: /^Image/ }).map((button) =>
+        button.getAttribute("aria-label"),
+      );
+      unmount();
+      return result;
+    };
+    const [compared, plain] = labels([{ ...picture("a"), before: picture("b") }, picture("c")]);
+    const [first, second] = labels([picture("a"), picture("c")]);
+
+    expect(compared).not.toBe(first);
+    expect(plain).toBe(second);
+  });
+
+  it("names a comparison's pictures by its title, where it has one", () => {
+    const alts = (title?: string) => {
+      const { container, unmount } = render(
+        <ModGallery
+          images={[{ ...picture("after", title), before: picture("before") }]}
+          isAdult={false}
+        />,
+      );
+      const slider = container.querySelectorAll("img");
+      const result = [slider[0].alt, slider[1].alt];
+      unmount();
+      return result;
+    };
+
+    expect(alts("At night")).not.toEqual(alts());
+  });
+
   it("names its picture by the title its author gave it", () => {
     const { container } = render(
       <ModGallery images={[picture("farm", "The farm in spring")]} isAdult={false} />,

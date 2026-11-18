@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { type CSSProperties, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/ui/components/icon/Icon";
@@ -57,9 +57,16 @@ export const CompareSlider = ({
   );
 
   return (
-    <div className="nxm-compare-slider">
-      <div data-testid="compare-slider-after" style={{ clipPath: `inset(0 0 0 ${position}%)` }}>
-        {picture(after, title ? t("{{title}}, after", { title }) : t("After"))}
+    <div
+      className="nxm-compare-slider"
+      style={{ "--nxm-compare-slider-position": `${position}` } as CSSProperties}
+    >
+      <div
+        className="nxm-compare-slider-after"
+        data-testid="compare-slider-after"
+        style={{ clipPath: `inset(0 0 0 ${position}%)` }}
+      >
+        {picture(after, t(title ? "{{title}}, after" : "After", { title }))}
       </div>
 
       <div
@@ -67,7 +74,7 @@ export const CompareSlider = ({
         data-testid="compare-slider-before"
         style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
       >
-        {picture(before, title ? t("{{title}}, before", { title }) : t("Before"))}
+        {picture(before, t(title ? "{{title}}, before" : "Before", { title }))}
       </div>
 
       <input

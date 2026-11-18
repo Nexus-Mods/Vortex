@@ -132,14 +132,17 @@ export const externalSourcesPlaceholderFor = (
   sources: Array<string | undefined>,
 ): ReactElement | undefined => {
   const { externalImagePlaceholders } = (tag as IParsedTag).renderer.options;
+
+  if (!externalImagePlaceholders) {
+    return undefined;
+  }
+
   const images = sources.flatMap((src) => {
     const host = src && externalHostOf(src);
     return host ? [{ host }] : [];
   });
 
-  if (!externalImagePlaceholders || !images.length) {
-    return undefined;
-  }
-
-  return <ExternalImagePlaceholder images={images} {...externalImagePlaceholders} />;
+  return images.length ? (
+    <ExternalImagePlaceholder images={images} {...externalImagePlaceholders} />
+  ) : undefined;
 };

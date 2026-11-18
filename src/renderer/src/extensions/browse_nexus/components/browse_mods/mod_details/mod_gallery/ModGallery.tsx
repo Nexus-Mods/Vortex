@@ -177,17 +177,12 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
               >
                 {!!image && (
                   <button
-                    aria-label={
+                    aria-label={t(
                       image.before
-                        ? t("Image {{index}} of {{count}}, a before and after comparison", {
-                            index: index + 1,
-                            count: images.length,
-                          })
-                        : t("Image {{index}} of {{count}}", {
-                            index: index + 1,
-                            count: images.length,
-                          })
-                    }
+                        ? "Image {{index}} of {{count}}, a before and after comparison"
+                        : "Image {{index}} of {{count}}",
+                      { index: index + 1, count: images.length },
+                    )}
                     aria-pressed={index === picked}
                     className="block w-full animate-fade-in rounded-xs"
                     ref={(element) => (thumbnailsRef.current[index] = element)}

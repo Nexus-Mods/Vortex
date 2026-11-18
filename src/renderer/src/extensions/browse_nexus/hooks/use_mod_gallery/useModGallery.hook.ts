@@ -26,8 +26,18 @@ const withComparison = (image: IGalleryImage): IGalleryImage => {
     return image;
   }
 
-  // The path's last segment, keeping any query or fragment after it.
-  const beforeFile = (url: string) => url.replace(/[^/?#]+(?=[?#]|$)/, () => match[1]);
+  // The path's last segment swapped, keeping any query or fragment. An address that doesn't parse
+  // can't load either way, so it's left as it is.
+  const beforeFile = (src: string) => {
+    const url = URL.parse(src);
+
+    if (!url) {
+      return src;
+    }
+
+    url.pathname = url.pathname.replace(/[^/]*$/, () => match[1]);
+    return url.href;
+  };
 
   return {
     ...image,

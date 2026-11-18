@@ -21,6 +21,17 @@
             }
         }
 
+        /* A picture's spinner or broken-image icon, centred in its own side rather than the
+           frame, so the divider never clips it away. The frame is a size container, so a cqw is
+           a hundredth of its width, and the position is the divider's, from 0 to 100. */
+        & .nxm-compare-slider-after :is(.nxm-image-spinner, .nxm-image-fallback) {
+            translate: calc(var(--nxm-compare-slider-position) * 0.5cqw) 0;
+        }
+
+        & .nxm-compare-slider-before :is(.nxm-image-spinner, .nxm-image-fallback) {
+            translate: calc((var(--nxm-compare-slider-position) - 100) * 0.5cqw) 0;
+        }
+
         & .nxm-compare-slider-input {
             inset: 0;
             position: absolute;

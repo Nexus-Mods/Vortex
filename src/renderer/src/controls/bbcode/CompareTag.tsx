@@ -2,7 +2,8 @@ import { Tag } from "bbcode-to-react";
 import * as React from "react";
 
 import { CompareSlider } from "@/ui/components/compare_slider/CompareSlider";
-import { pixels, ProseImage } from "@/ui/components/prose/prose_image/ProseImage";
+import { ProseImage } from "@/ui/components/prose/prose_image/ProseImage";
+import { numberIn, pixels } from "@/ui/utils/image_size/imageSize";
 import { webImageSrc } from "@/ui/utils/web_image_src/webImageSrc";
 
 import { externalSourcesPlaceholderFor } from "./externalImages";
@@ -37,7 +38,7 @@ class CompareTag extends Tag {
       );
     }
 
-    const width = pixels(Number.parseInt(this.params.width ?? "", 10));
+    const width = pixels(numberIn(this.params.width));
 
     return (
       <div className="nxm-prose-compare">

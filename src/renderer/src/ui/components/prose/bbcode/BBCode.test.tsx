@@ -104,7 +104,9 @@ describe("BBCode", () => {
         "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
         "https://staticdelivery.nexusmods.com/mods/1704/images/before.png",
       ]);
-      expect(slider.closest<HTMLElement>("[style]")?.style.maxWidth).toBe("846px");
+      expect(slider.closest<HTMLElement>(".nxm-prose-compare-slider")?.style.maxWidth).toBe(
+        "846px",
+      );
       expect(container.querySelector(".nxm-image-styled")).toBeNull();
     });
 
@@ -113,9 +115,9 @@ describe("BBCode", () => {
         <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png width=999999]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
       );
 
-      expect(screen.getByRole("slider").closest<HTMLElement>("[style]")?.style.maxWidth).toBe(
-        "3600px",
-      );
+      const wrapper = screen.getByRole("slider").closest<HTMLElement>(".nxm-prose-compare-slider");
+
+      expect(wrapper?.style.maxWidth).toBe("3600px");
     });
 
     it("shows a comparison with an image from elsewhere as its Nexus Mods image alone", () => {
