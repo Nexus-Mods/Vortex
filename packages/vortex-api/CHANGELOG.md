@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
 - `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
+- In the Mods page's beta view, a `registerTableAttribute("mods", …)` column that leaves `isDefaultVisible` unset starts hidden, and one that leaves `isToggleable` unset can be shown or hidden by the user, so `setAttributeVisible` no longer shows or hides it there. Set either explicitly to keep the classic view's behaviour. The classic view is unchanged
 
 ## [v2.0.0]
 

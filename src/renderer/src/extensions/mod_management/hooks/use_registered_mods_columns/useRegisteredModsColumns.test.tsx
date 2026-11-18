@@ -207,6 +207,7 @@ describe("useRegisteredModsColumns", () => {
     });
 
     expect(result.current.columns).toMatchObject([{ id: "sdv", isToggleable: true }]);
+    expect(result.current.defaultShown).toEqual([]);
     expect(result.current.rowClassName(row(), () => true)).toBe("shown");
   });
 
