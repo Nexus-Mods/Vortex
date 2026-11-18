@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-11-18
+
+_Stable 2.11 release. See the beta entries below for the full list of changes since 2.10._
+
 ## [2.11.0-beta.5] - 2026-11-16
 
 ### Changed
@@ -2743,6 +2747,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.11.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0
 [2.11.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.5
 [2.11.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.4
 [2.11.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.3
