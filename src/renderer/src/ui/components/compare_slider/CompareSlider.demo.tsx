@@ -9,8 +9,9 @@ import { Typography } from "@/ui/components/typography/Typography";
 
 import { CompareSlider } from "./CompareSlider";
 
-const after = { src: "https://picsum.photos/seed/compare/1280/720" };
-const before = { src: "https://picsum.photos/seed/compare/1280/720?grayscale" };
+// A colourful picture by id, as a seed can land on one that's already black and white.
+const after = { src: "https://picsum.photos/id/1015/1280/720" };
+const before = { src: "https://picsum.photos/id/1015/1280/720?grayscale" };
 
 export const CompareSliderDemo = () => (
   <div className="space-y-8">
