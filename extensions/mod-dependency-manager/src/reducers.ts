@@ -1,11 +1,24 @@
 import { types, util } from "@nexusmods/vortex-api";
 import * as _ from "lodash";
+import type { RuleType } from "modmeta-db";
 
 import * as actions from "./actions";
+import type { IConflict } from "./types/IConflict";
+import type {
+  IConflictDialog,
+  IConnectionEnd,
+  IDependenciesSessionState,
+  IEditCycle,
+  IOverrideDialog,
+  IRuleDialog,
+} from "./types/IDependenciesState";
 
-export const settingsReducer: types.IReducerSpec = {
+export const settingsReducer: types.IPartialReducerSpec<types.ISettingsWorkarounds> = {
   reducers: {
-    [actions.setModTypeConflictsSetting as any]: (state, payload) => {
+    [actions.setModTypeConflictsSetting as any]: (
+      state: types.ISettingsWorkarounds,
+      payload: { enabled: boolean },
+    ) => {
       const { enabled } = payload;
       return util.setSafe(state, ["modTypeConflictsEnabled"], enabled);
     },
@@ -18,9 +31,9 @@ export const settingsReducer: types.IReducerSpec = {
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer: types.IReducerSpec = {
+export const sessionReducer: types.IReducerSpec<IDependenciesSessionState> = {
   reducers: {
-    [actions.setSource as any]: (state, payload) => {
+    [actions.setSource as any]: (state: IDependenciesSessionState, payload: IConnectionEnd) => {
       if (_.isEqual(payload, util.getSafe(state, ["connection", "source"], undefined))) {
         // unchanged
         return state;
@@ -34,7 +47,7 @@ export const sessionReducer: types.IReducerSpec = {
         return state;
       }
     },
-    [actions.setTarget as any]: (state, payload) => {
+    [actions.setTarget as any]: (state: IDependenciesSessionState, payload: IConnectionEnd) => {
       if (
         payload.pos !== undefined &&
         (payload.id !== null ||
@@ -50,21 +63,34 @@ export const sessionReducer: types.IReducerSpec = {
         return state;
       }
     },
-    [actions.setCreateRule as any]: (state, payload) => util.setSafe(state, ["dialog"], payload),
-    [actions.closeDialog as any]: (state) => util.setSafe(state, ["dialog"], undefined),
-    [actions.setType as any]: (state, payload) => util.setSafe(state, ["dialog", "type"], payload),
-    [actions.setConflictInfo as any]: (state, payload) =>
-      util.setSafe(state, ["conflicts"], payload),
-    [actions.setConflictDialog as any]: (state, payload) =>
-      util.setSafe(state, ["conflictDialog"], payload),
-    [actions.setFileOverrideDialog as any]: (state, payload) =>
-      util.setSafe(state, ["overrideDialog"], payload),
-    [actions.highlightConflictIcon as any]: (state, payload) =>
+    [actions.setCreateRule as any]: (state: IDependenciesSessionState, payload: IRuleDialog) =>
+      util.setSafe(state, ["dialog"], payload),
+    [actions.closeDialog as any]: (state: IDependenciesSessionState) =>
+      util.setSafe(state, ["dialog"], undefined),
+    [actions.setType as any]: (state: IDependenciesSessionState, payload: RuleType) =>
+      util.setSafe(state, ["dialog", "type"], payload),
+    [actions.setConflictInfo as any]: (
+      state: IDependenciesSessionState,
+      payload: { [modId: string]: IConflict[] },
+    ) => util.setSafe(state, ["conflicts"], payload),
+    [actions.setConflictDialog as any]: (
+      state: IDependenciesSessionState,
+      payload: IConflictDialog,
+    ) => util.setSafe(state, ["conflictDialog"], payload),
+    [actions.setFileOverrideDialog as any]: (
+      state: IDependenciesSessionState,
+      payload: IOverrideDialog,
+    ) => util.setSafe(state, ["overrideDialog"], payload),
+    [actions.highlightConflictIcon as any]: (state: IDependenciesSessionState, payload: boolean) =>
       util.setSafe(state, ["highlightConflicts"], payload),
-    [actions.setEditCycle as any]: (state, payload) => util.setSafe(state, ["editCycle"], payload),
+    [actions.setEditCycle as any]: (state: IDependenciesSessionState, payload: IEditCycle) =>
+      util.setSafe(state, ["editCycle"], payload),
     // The count is what the mods toolbar says in the Manage Rules tooltip; the boolean
     // stays derived from it for what already reads that.
-    [actions.setUnsolvedConflictsCount as any]: (state, payload) => ({
+    [actions.setUnsolvedConflictsCount as any]: (
+      state: IDependenciesSessionState,
+      payload: { count: number },
+    ): IDependenciesSessionState => ({
       ...state,
       unsolvedConflictsCount: payload.count,
       hasUnsolvedConflicts: payload.count > 0,

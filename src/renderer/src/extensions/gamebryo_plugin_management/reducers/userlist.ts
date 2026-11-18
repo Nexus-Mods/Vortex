@@ -1,15 +1,14 @@
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import type { IReducerSpec } from "../../../types/IExtensionContext";
-import {
-  addUniqueSafe,
-  deleteOrNop,
-  pushSafe,
-  removeValue,
-  removeValueIf,
-  setSafe,
-} from "../../../util/storeHelper";
 import * as actions from "../actions/userlist";
+import type { ILOOTList } from "../types/ILOOTList";
 
-type RuleType = "after" | "requires" | "incompatible";
+declare module "@/types/IState" {
+  interface IState {
+    // the user's LOOT rules, persisted to the userlist file
+    userlist: ILOOTList;
+  }
+}
 
 function listForType(type: string) {
   switch (type) {
@@ -22,129 +21,181 @@ function listForType(type: string) {
   }
 }
 
+// a list read from the state that should be an array, as an empty one when it isn't
+function asArray<T>(value: T[] | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function pluginIndex(state: ILOOTList, pluginId: string): number {
+  return state.plugins !== undefined
+    ? state.plugins.findIndex((plug) => plug.name.toUpperCase() === pluginId.toUpperCase())
+    : -1;
+}
+
+// removes the first occurrence of value from the after-list of the group at idx; the same state
+// when it isn't there
+function removeGroupAfter(state: ILOOTList, idx: number, value: string): ILOOTList {
+  const group = state.groups[idx];
+  const after = asArray(group.after);
+  const pos = after.indexOf(value);
+  if (pos === -1) {
+    return state;
+  }
+  return { ...state, groups: state.groups.with(idx, { ...group, after: after.toSpliced(pos, 1) }) };
+}
+
 /**
  * reducer for changes to settings regarding mods
  */
-const userlistReducer: IReducerSpec = {
-  reducers: {
-    ["persist/REHYDRATE"]: (state, payload) => {
-      if (payload.hasOwnProperty("userlist")) {
-        return setSafe(state, [], payload.userlist);
+const userlistSpec = actionsToReducerSpec<ILOOTList, typeof actions>(
+  { plugins: [], groups: [] },
+  actions,
+  {
+    addRule: (state, payload) => {
+      const existing = pluginIndex(state, payload.pluginId);
+      const list = listForType(payload.type);
+      if (existing !== -1) {
+        const plugin = state.plugins[existing];
+        const refs = asArray(plugin[list]);
+        if (refs.indexOf(payload.reference) !== -1) {
+          return state;
+        }
+        return {
+          ...state,
+          plugins: state.plugins.with(existing, {
+            ...plugin,
+            [list]: [...refs, payload.reference],
+          }),
+        };
+      } else {
+        return {
+          ...state,
+          plugins: [
+            ...asArray(state.plugins),
+            { name: payload.pluginId, [list]: [payload.reference] },
+          ],
+        };
+      }
+    },
+    removeRule: (state, payload) => {
+      const existing = pluginIndex(state, payload.pluginId);
+      const list = listForType(payload.type);
+      if (existing !== -1) {
+        const plugin = state.plugins[existing];
+        const remaining = (plugin[list] ?? []).filter(
+          (ref) =>
+            !(typeof ref === "string" && ref.toUpperCase() === payload.reference.toUpperCase()),
+        );
+        return {
+          ...state,
+          plugins: state.plugins.with(existing, { ...plugin, [list]: remaining }),
+        };
       } else {
         return state;
       }
     },
-    [actions.addRule as any]: (state, payload) => {
-      let existing: number = -1;
-      if (state.plugins !== undefined) {
-        existing = state.plugins.findIndex(
-          (plug) => plug.name.toUpperCase() === payload.pluginId.toUpperCase(),
-        );
-      }
-      const list = listForType(payload.type);
-      if (existing !== -1) {
-        const statePath = ["plugins", existing, list];
-        return addUniqueSafe(state, statePath, payload.reference);
-      } else {
-        const res = pushSafe(state, ["plugins"], {
-          name: payload.pluginId,
-          [list]: [payload.reference],
-        });
-        return res;
-      }
-    },
-    [actions.removeRule as any]: (state, payload) => {
-      let existing: number = -1;
-      if (state.plugins !== undefined) {
-        existing = state.plugins.findIndex(
-          (plug) => plug.name.toUpperCase() === payload.pluginId.toUpperCase(),
-        );
-      }
-      const list = listForType(payload.type);
-      if (existing !== -1) {
-        return removeValueIf(
-          state,
-          ["plugins", existing, list],
-          (ref) => ref.toUpperCase() === payload.reference.toUpperCase(),
-        );
-      } else {
-        return state;
-      }
-    },
-    [actions.addGroup as any]: (state, payload) =>
+    addGroup: (state, payload) =>
       state.groups.find((group) => group.name.toUpperCase() === payload.group.toUpperCase()) ===
       undefined
-        ? pushSafe(state, ["groups"], {
-            name: payload.group,
-            after: [],
-          })
+        ? { ...state, groups: [...state.groups, { name: payload.group, after: [] }] }
         : state,
-    [actions.removeGroup as any]: (state, payload) => {
+    removeGroup: (state, payload) => {
       // need to remove the group from all rules
       state.groups.forEach((group, idx) => {
-        state = removeValue(state, ["groups", idx, "after"], payload.group);
+        state = removeGroupAfter(state, idx, payload.group);
       });
 
-      state.plugins.forEach((plugin, idx) => {
-        if (
-          plugin.group !== undefined &&
-          payload.group !== undefined &&
-          plugin.group.toUpperCase() === payload.group.toUpperCase()
-        ) {
-          state = setSafe(state, ["plugins", idx, "group"], "default");
-        }
-      });
-
-      return removeValueIf(
-        state,
-        ["groups"],
-        (group) => group.name.toUpperCase() === payload.group.toUpperCase(),
-      );
-    },
-    [actions.setGroup as any]: (state, payload) => {
-      let existing: number = -1;
-      if (state.plugins !== undefined) {
-        existing = state.plugins.findIndex(
-          (plug) => plug.name.toUpperCase() === payload.pluginId.toUpperCase(),
-        );
+      const inGroup = (plugin: ILOOTList["plugins"][number]) =>
+        plugin.group !== undefined &&
+        payload.group !== undefined &&
+        plugin.group.toUpperCase() === payload.group.toUpperCase();
+      if (state.plugins.some(inGroup)) {
+        state = {
+          ...state,
+          plugins: state.plugins.map((plugin) =>
+            inGroup(plugin) ? { ...plugin, group: "default" } : plugin,
+          ),
+        };
       }
 
+      return {
+        ...state,
+        groups: (state.groups ?? []).filter(
+          (group) => group.name.toUpperCase() !== payload.group.toUpperCase(),
+        ),
+      };
+    },
+    setGroup: (state, payload) => {
+      const existing = pluginIndex(state, payload.pluginId);
+
       if (payload.group === undefined) {
-        return existing !== -1 ? deleteOrNop(state, ["plugins", existing, "group"]) : state;
+        if (existing === -1 || !Object.hasOwn(state.plugins[existing], "group")) {
+          return state;
+        }
+        const { group: _group, ...rest } = state.plugins[existing];
+        return { ...state, plugins: state.plugins.with(existing, rest) };
       }
 
       return existing !== -1
-        ? setSafe(state, ["plugins", existing, "group"], payload.group)
-        : pushSafe(state, ["plugins"], {
-            name: payload.pluginId,
-            group: payload.group,
-          });
+        ? {
+            ...state,
+            plugins: state.plugins.with(existing, {
+              ...state.plugins[existing],
+              group: payload.group,
+            }),
+          }
+        : {
+            ...state,
+            plugins: [...asArray(state.plugins), { name: payload.pluginId, group: payload.group }],
+          };
     },
-    [actions.addGroupRule as any]: (state, payload) => {
+    addGroupRule: (state, payload) => {
       const idx = state.groups.findIndex(
         (group) => group.name.toUpperCase() === payload.groupId.toUpperCase(),
       );
       if (idx === -1) {
-        return pushSafe(state, ["groups"], {
-          name: payload.groupId,
-          after: [payload.reference],
-        });
+        return {
+          ...state,
+          groups: [...state.groups, { name: payload.groupId, after: [payload.reference] }],
+        };
       } else {
-        return addUniqueSafe(state, ["groups", idx, "after"], payload.reference);
+        const group = state.groups[idx];
+        const after = asArray(group.after);
+        if (after.indexOf(payload.reference) !== -1) {
+          return state;
+        }
+        return {
+          ...state,
+          groups: state.groups.with(idx, { ...group, after: [...after, payload.reference] }),
+        };
       }
     },
-    [actions.clearUserlist as any]: () => ({ plugins: [], groups: [] }),
-    [actions.removeGroupRule as any]: (state, payload) => {
+    clearUserlist: () => ({ plugins: [], groups: [] }),
+    removeGroupRule: (state, payload) => {
       const idx = state.groups.findIndex(
         (group) => group.name.toUpperCase() === payload.groupId.toUpperCase(),
       );
       if (idx === -1) {
         return state;
       }
-      return removeValue(state, ["groups", idx, "after"], payload.reference);
+      return removeGroupAfter(state, idx, payload.reference);
     },
   },
-  defaults: { plugins: [], groups: [] },
+);
+
+const userlistReducer: IReducerSpec<ILOOTList> = {
+  ...userlistSpec,
+  reducers: {
+    ...userlistSpec.reducers,
+    // a full userlist handed over on rehydration replaces the current one
+    ["persist/REHYDRATE"]: (state, payload: { userlist?: ILOOTList }) => {
+      if (payload.hasOwnProperty("userlist")) {
+        return { ...payload.userlist };
+      } else {
+        return state;
+      }
+    },
+  },
 };
 
 export default userlistReducer;

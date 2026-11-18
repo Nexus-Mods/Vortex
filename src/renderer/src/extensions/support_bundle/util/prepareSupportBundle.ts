@@ -57,27 +57,31 @@ export interface IBuildManifestParams {
  * Drops what the state export must not carry once it leaves the machine: the in-flight OAuth
  * state under `session.nexus`, and the account email under `persistent.nexus.userInfo`, since a
  * bundle may well end up attached to a public forum post. Shallow copies only: the state can
- * run to tens of MB and is about to be stringified anyway.
+ * run to tens of MB and is about to be stringified anyway. Dropped fields are set to `undefined`
+ * rather than removed, which JSON.stringify leaves out all the same.
  */
 function scrubState(state: IState): IState {
   let scrubbed = state;
 
-  const sessionNexus = (state.session as { nexus?: Record<string, unknown> }).nexus;
+  const sessionNexus = state.session.nexus;
   if (sessionNexus !== undefined) {
-    const { oauthPending: _oauthPending, loginId: _loginId, ...rest } = sessionNexus;
-    scrubbed = { ...scrubbed, session: { ...state.session, nexus: rest } as IState["session"] };
+    scrubbed = {
+      ...scrubbed,
+      session: {
+        ...state.session,
+        nexus: { ...sessionNexus, oauthPending: undefined, loginId: undefined },
+      },
+    };
   }
 
-  const persistentNexus = (state.persistent as { nexus?: { userInfo?: Record<string, unknown> } })
-    .nexus;
+  const persistentNexus = state.persistent.nexus;
   if (persistentNexus?.userInfo !== undefined) {
-    const { email: _email, ...userInfo } = persistentNexus.userInfo;
     scrubbed = {
       ...scrubbed,
       persistent: {
         ...scrubbed.persistent,
-        nexus: { ...persistentNexus, userInfo },
-      } as IState["persistent"],
+        nexus: { ...persistentNexus, userInfo: { ...persistentNexus.userInfo, email: undefined } },
+      },
     };
   }
 

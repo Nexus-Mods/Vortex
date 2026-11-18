@@ -12,9 +12,12 @@ import type { IProfile } from "../types/IProfile";
  */
 export const setProfile = safeCreateAction("SET_PROFILE", (profile: IProfile) => profile);
 
-export const removeProfile = safeCreateAction("REMOVE_PROFILE", (profileId) => profileId);
+export const removeProfile = safeCreateAction("REMOVE_PROFILE", (profileId: string) => profileId);
 
-export const willRemoveProfile = safeCreateAction("WILL_REMOVE_PROFILE", (profileId) => profileId);
+export const willRemoveProfile = safeCreateAction(
+  "WILL_REMOVE_PROFILE",
+  (profileId: string) => profileId,
+);
 
 /**
  * enable or disable a mod in a profile

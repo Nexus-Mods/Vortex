@@ -1,5 +1,3 @@
-import * as reduxAct from "redux-act";
-
 import safeCreateAction from "../../../actions/safeCreateAction";
 import type { InstallPathMode } from "../../../types/api";
 
@@ -29,7 +27,10 @@ export const setActivator = safeCreateAction(
   (gameId: string, activatorId: string) => ({ gameId, activatorId }),
 );
 
-export const setShowModDropzone = safeCreateAction("SET_SHOW_MOD_DROPZONE", (show) => show);
+export const setShowModDropzone = safeCreateAction(
+  "SET_SHOW_MOD_DROPZONE",
+  (show: boolean) => show,
+);
 
 export const setConfirmPurge = safeCreateAction("SET_CONFIRM_PURGE", (confirm: boolean) => confirm);
 

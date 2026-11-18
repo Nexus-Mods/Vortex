@@ -1,10 +1,12 @@
 import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/persistent";
+import type { IGithubIssueCache } from "../IGithubIssue";
+import type { IIssuesPersistentState } from "../types";
 
-const persistentReducer: types.IReducerSpec = {
+const persistentReducer: types.IReducerSpec<IIssuesPersistentState> = {
   reducers: {
-    [actions.updateIssueList as any]: (state, payload) => {
+    [actions.updateIssueList as any]: (state: IIssuesPersistentState, payload: string[]) => {
       let cur = state;
       Object.keys(state.issues).forEach((issueId) => {
         if (payload.indexOf(issueId) === -1) {
@@ -18,8 +20,10 @@ const persistentReducer: types.IReducerSpec = {
       });
       return cur;
     },
-    [actions.setUpdateDetails as any]: (state, { issueId, details }) =>
-      util.setSafe(state, ["issues", issueId], details),
+    [actions.setUpdateDetails as any]: (
+      state: IIssuesPersistentState,
+      { issueId, details }: { issueId: string; details: IGithubIssueCache },
+    ) => util.setSafe(state, ["issues", issueId], details),
   },
   defaults: {
     issues: {},

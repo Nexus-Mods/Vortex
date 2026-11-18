@@ -12,12 +12,23 @@ export interface IStateSDV {
   mergeConfigs?: { [profileId: string]: boolean };
 }
 
+declare module "@nexusmods/vortex-api" {
+  namespace types {
+    interface ISettings {
+      SDV: IStateSDV;
+    }
+  }
+}
+
 const sdvReducers: types.IReducerSpec<IStateSDV> = {
   reducers: {
-    [actions.setRecommendations as any]: (state, payload) => {
+    [actions.setRecommendations as any]: (state: IStateSDV, payload: boolean) => {
       return util.setSafe(state, ["useRecommendations"], payload);
     },
-    [actions.setMergeConfigs as any]: (state, payload) => {
+    [actions.setMergeConfigs as any]: (
+      state: IStateSDV,
+      payload: { profileId: string; enabled: boolean },
+    ) => {
       const { profileId, enabled } = payload;
       return util.setSafe(state, ["mergeConfigs", profileId], enabled);
     },
@@ -27,6 +38,5 @@ const sdvReducers: types.IReducerSpec<IStateSDV> = {
   },
 };
 
-// Needed because the API expects the generic IReducerSpec
 /** Reducer spec mounted as `settings.SDV` by the extension bootstrap. */
-export default sdvReducers as unknown as types.IReducerSpec;
+export default sdvReducers;

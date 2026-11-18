@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { ICollectionsPersistentState } from "../../../types/IState";
 import * as actions from "../actions/persistent";
 import reducer from "./persistent";
 
@@ -7,31 +8,7 @@ import reducer from "./persistent";
 // Helpers
 // ---------------------------------------------------------------------------
 
-// the persistent reducer slices the tests exercise. The production reducer is untyped
-// (IReducerSpec defaults T to { [key: string]: any }); these entry shapes model just the cached
-// fields the tests read back (timestamp + info for collections/revisions, the rating nest written
-// by updateSuccessRate, and the pending-vote record).
-interface ICacheEntry {
-  timestamp?: number;
-  info?: {
-    name?: string;
-    number?: number;
-    metadata?: { ratingValue?: string };
-    rating?: { average: number; total: number };
-  };
-}
-
-interface IPendingVoteEntry {
-  collectionSlug: string;
-  revisionNumber: number;
-  time: number;
-}
-
-interface PersistentState {
-  collections: Record<string, ICacheEntry>;
-  revisions: Record<string, ICacheEntry>;
-  pendingVotes: Record<string, IPendingVoteEntry>;
-}
+type PersistentState = ICollectionsPersistentState;
 
 function reduce(
   state: PersistentState,
@@ -127,35 +104,35 @@ describe("persistent reducer", () => {
       const state = makeState();
       const result = reduce(state, actions.updateRevisionInfo, {
         revisionId: 42,
-        revisionInfo: { number: 3 },
+        revisionInfo: { revisionNumber: 3 },
         timestamp: 2000,
       });
 
       expect(result.revisions[42]).toEqual({
         timestamp: 2000,
-        info: { number: 3 },
+        info: { revisionNumber: 3 },
       });
     });
 
     it("overwrites existing revision info", () => {
       const state = makeState({
         revisions: {
-          42: { timestamp: 500, info: { number: 1 } },
+          42: { timestamp: 500, info: { revisionNumber: 1 } },
         },
       });
       const result = reduce(state, actions.updateRevisionInfo, {
         revisionId: 42,
-        revisionInfo: { number: 3 },
+        revisionInfo: { revisionNumber: 3 },
         timestamp: 2000,
       });
 
-      expect(result.revisions[42].info.number).toBe(3);
+      expect(result.revisions[42].info.revisionNumber).toBe(3);
     });
 
     it("deletes revision when revisionInfo is undefined", () => {
       const state = makeState({
         revisions: {
-          42: { timestamp: 500, info: { number: 1 } },
+          42: { timestamp: 500, info: { revisionNumber: 1 } },
         },
       });
       const result = reduce(state, actions.updateRevisionInfo, {

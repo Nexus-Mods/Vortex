@@ -7,5 +7,5 @@ import safeCreateAction from "../../../actions/safeCreateAction";
  */
 export const setAssociatedWithNXMURLs = safeCreateAction(
   "SET_ASSOCIATED_WITH_NXM_URLS",
-  (assoc) => assoc,
+  (assoc: boolean) => assoc,
 );

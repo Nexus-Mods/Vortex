@@ -1,32 +1,13 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
+import { actionsToPartialReducerSpec } from "../../../reducers/builder";
+import type { ISettingsMods } from "../../../types/IState";
 import * as actions from "../actions/settings";
 
 /**
- * reducer for changes to settings regarding mods
+ * reducer for changes to settings regarding mods. Partial: installer_fomod_ipc owns
+ * installerSandbox in the same slice.
  */
-export const settingsReducer: IReducerSpec = {
-  reducers: {
-    [actions.setInstallPath as any]: (state, payload) => {
-      const { gameId, path } = payload;
-      return setSafe(state, ["installPath", gameId], path);
-    },
-    [actions.setInstallPathMode as any]: (state, payload) =>
-      setSafe(state, ["installPathMode"], payload),
-    [actions.setSuggestInstallPathDirectory as any]: (state, payload) =>
-      setSafe(state, ["suggestInstallPathDirectory"], payload),
-    [actions.setActivator as any]: (state, payload) => {
-      const { gameId, activatorId } = payload;
-      return setSafe(state, ["activator", gameId], activatorId);
-    },
-    [actions.setShowModDropzone as any]: (state, payload) =>
-      setSafe(state, ["showDropzone"], payload),
-    [actions.setConfirmPurge as any]: (state, payload) => setSafe(state, ["confirmPurge"], payload),
-    [actions.setCleanupOnDeploy as any]: (state, payload) =>
-      setSafe(state, ["cleanupOnDeploy"], payload),
-    [actions.setBetaModsTable as any]: (state, payload) => setSafe(state, ["betaTable"], payload),
-  },
-  defaults: {
+export const settingsReducer = actionsToPartialReducerSpec<ISettingsMods, typeof actions>(
+  {
     installPath: {},
     installPathMode: "userData",
     suggestInstallPathDirectory: "Vortex Mods",
@@ -37,7 +18,27 @@ export const settingsReducer: IReducerSpec = {
     cleanupOnDeploy: false,
     betaTable: false,
   },
-  verifiers: {
+  actions,
+  {
+    setInstallPath: (state, payload) => ({
+      ...state,
+      installPath: { ...state.installPath, [payload.gameId]: payload.path },
+    }),
+    setInstallPathMode: (state, payload) => ({ ...state, installPathMode: payload }),
+    setSuggestInstallPathDirectory: (state, payload) => ({
+      ...state,
+      suggestInstallPathDirectory: payload,
+    }),
+    setActivator: (state, payload) => ({
+      ...state,
+      activator: { ...state.activator, [payload.gameId]: payload.activatorId },
+    }),
+    setShowModDropzone: (state, payload) => ({ ...state, showDropzone: payload }),
+    setConfirmPurge: (state, payload) => ({ ...state, confirmPurge: payload }),
+    setCleanupOnDeploy: (state, payload) => ({ ...state, cleanupOnDeploy: payload }),
+    setBetaModsTable: (state, payload) => ({ ...state, betaTable: payload }),
+  },
+  {
     installPath: {
       // shouldn't be possible
       description: () => "Severe! Invalid set of staging folders",
@@ -49,4 +50,4 @@ export const settingsReducer: IReducerSpec = {
       },
     },
   },
-};
+);

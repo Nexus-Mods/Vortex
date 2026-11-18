@@ -534,3 +534,63 @@ From 2.11 `util.steam` is `undefined` and the call throws a `TypeError`. These l
 ### Promise types
 
 `GameStoreHelper` returns Bluebird promises today; a later release moves `IGameStore` to native promises. `.then()`, `.catch()` and `await` are unaffected. Bluebird-only methods on the result (`.tap()`, `.map()`, `.reflect()`, `.return()`) would break, so prefer the standard ones.
+
+## Vortex 2.x: typed `registerReducer`
+
+`context.registerReducer(path, spec)` now checks that `spec` matches the state at `path`. Nothing changes at runtime, and builds you have already published keep working. When you rebuild against the new `@nexusmods/vortex-api`, TypeScript reports a `registerReducer` call whose path the state types don't know, or whose spec has the wrong type for that path. Plain JavaScript extensions are unaffected.
+
+### Declare your slice
+
+Add your slice to the state interfaces with module augmentation, next to your reducer. Pick the interface that holds your path: `ISettings` for `["settings", …]`, `ISessionState` for `["session", …]`, `IPersistentState` for `["persistent", …]`, and `IState` for a new top-level hive.
+
+```ts
+import { types } from "@nexusmods/vortex-api";
+
+export interface IMyExtensionSettings {
+    enabled: boolean;
+}
+
+declare module "@nexusmods/vortex-api" {
+    namespace types {
+        interface ISettings {
+            myExtension: IMyExtensionSettings;
+        }
+    }
+}
+
+const settingsReducer: types.IReducerSpec<IMyExtensionSettings> = {
+    reducers: {
+        [setEnabled as any]: (state, payload: boolean) => ({ ...state, enabled: payload }),
+    },
+    defaults: { enabled: false },
+};
+
+context.registerReducer(["settings", "myExtension"], settingsReducer);
+```
+
+This also types the slice everywhere you read it, for example in `mapStateToProps`.
+
+### Sharing a slice
+
+If you add fields to a slice that Vortex or another extension already registers, such as `["settings", "interface"]`, augment that slice's interface with only your fields and type your spec as `types.IPartialReducerSpec`. Its `defaults` covers only your fields, while its handlers receive and return the whole slice.
+
+```ts
+declare module "@nexusmods/vortex-api" {
+    namespace types {
+        interface ISettingsInterface {
+            myTheme: string;
+        }
+    }
+}
+
+const interfaceReducer: types.IPartialReducerSpec<types.ISettingsInterface> = {
+    reducers: {
+        [selectTheme as any]: (state, payload: string) => ({ ...state, myTheme: payload }),
+    },
+    defaults: { myTheme: "default" },
+};
+```
+
+### Building the path at runtime
+
+`registerReducer` needs the path as a literal, such as `["settings", "myExtension"]`, so it can look the slice up. A path held in a `string[]` variable fails the typecheck. Pass the literal at the call.

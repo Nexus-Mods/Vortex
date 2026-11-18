@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+import { setAutoDeployment } from "../actions/automation";
 import automationReducer from "./automation";
 
 describe("setAutoDeployment", () => {
@@ -11,7 +12,10 @@ describe("setAutoDeployment", () => {
       start: false,
       minimized: false,
     };
-    const result = automationReducer.reducers.SET_AUTO_DEPLOYMENT(input, true);
+    const result = automationReducer.reducers.SET_AUTO_DEPLOYMENT(
+      input,
+      setAutoDeployment(true).payload,
+    );
     expect(result).toEqual({
       deploy: true,
       install: false,

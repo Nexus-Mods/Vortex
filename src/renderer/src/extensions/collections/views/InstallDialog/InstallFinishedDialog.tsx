@@ -38,13 +38,14 @@ function nop() {
 }
 
 const emptyObject = {};
+const noUserInfo: { userId?: number } = {};
 
 function InstallFinishedDialog(props: IInstallFinishedDialogProps) {
   const { api, driver, onClone } = props;
   const { t } = useTranslation(api.NAMESPACE);
 
-  const userInfo = useSelector<IState, { userId: number }>(
-    (state) => state.persistent["nexus"]?.userInfo ?? emptyObject,
+  const userInfo = useSelector<IState, { userId?: number }>(
+    (state) => state.persistent["nexus"]?.userInfo ?? noUserInfo,
   );
 
   const forceUpdate = React.useState(0)[1];

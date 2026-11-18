@@ -1,19 +1,21 @@
 import update from "immutability-helper";
 
-import type { IReducerSpec } from "../../types/IExtensionContext";
+import { actionsToPartialReducerSpec } from "../../reducers/builder";
+import type { ISettingsWorkarounds } from "../../types/IState";
 import * as actions from "./actions";
 
 /**
- * reducer for changes to interface settings
+ * reducer for the user symlinks workaround. settings.workarounds is shared with other extensions'
+ * workarounds, so this supplies the default for userSymlinks only.
  */
-const settingsReducer: IReducerSpec = {
-  reducers: {
-    [actions.enableUserSymlinks as any]: (state, payload) =>
-      update(state, { userSymlinks: { $set: payload } }),
-  },
-  defaults: {
+const settingsReducer = actionsToPartialReducerSpec<ISettingsWorkarounds, typeof actions>(
+  {
     userSymlinks: false,
   },
-};
+  actions,
+  {
+    enableUserSymlinks: (state, payload) => update(state, { userSymlinks: { $set: payload } }),
+  },
+);
 
 export default settingsReducer;

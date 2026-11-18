@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { VortexModId } from "@vortex/shared";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
@@ -27,7 +28,10 @@ const render = ({
   rows?: IModRow[];
   search?: string;
 }) => {
-  const store = makeModsTableStore({ focusedGroupId, focusedModId });
+  const store = makeModsTableStore({
+    focusedGroupId,
+    focusedModId: focusedModId === undefined ? undefined : VortexModId(focusedModId),
+  });
   const setSearch = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>

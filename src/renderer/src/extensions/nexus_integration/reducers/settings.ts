@@ -1,16 +1,27 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
-import { setAssociatedWithNXMURLs } from "../actions/settings";
+import { actionsToReducerSpec } from "../../../reducers/builder";
+import * as actions from "../actions/settings";
+
+/** settings.nexus */
+export interface INexusSettings {
+  /** whether Vortex is registered as the handler for nxm:// links; undefined until decided */
+  associateNXM?: boolean;
+}
+
+declare module "@/types/IState" {
+  interface ISettings {
+    nexus: INexusSettings;
+  }
+}
 
 /**
  * reducer for changes to the authentication
  */
-export const settingsReducer: IReducerSpec = {
-  reducers: {
-    [setAssociatedWithNXMURLs as any]: (state, payload) =>
-      setSafe(state, ["associateNXM"], payload),
-  },
-  defaults: {
+export const settingsReducer = actionsToReducerSpec<INexusSettings, typeof actions>(
+  {
     associateNXM: undefined,
   },
-};
+  actions,
+  {
+    setAssociatedWithNXMURLs: (state, payload) => ({ ...state, associateNXM: payload }),
+  },
+);

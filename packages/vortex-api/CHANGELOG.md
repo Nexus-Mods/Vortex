@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `GameUid`, the id of a game in the Nexus Mods game catalogue, with its brander
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
 - Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
+- `IPartialReducerSpec<T>`, for a reducer that shares its state slice with other reducers at the same path: it supplies defaults only for the fields it owns
+- `StatePath`, `StateSlice<TState, P>` and `ReducerSpecFor<P>`, the types `registerReducer` uses to match a spec to the state at its path
 
 ### Removed
 
@@ -27,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
 - `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
+- `registerReducer` checks its spec against the state at its path. A path the state interfaces don't declare, or a spec whose type doesn't match the slice, now fails the typecheck. Runtime behaviour is unchanged, and already-built extensions keep working. Declare your slice by augmenting the state interfaces - see the [reducer section of the migration guide](./docs/MIGRATION.md#vortex-2x-typed-registerreducer)
+- `actions.showURL` takes all four arguments (`url`, `instructions`, `subscriber`, `skippable`); pass `undefined` for the ones you don't use. Previously only `url` was required. Runtime behaviour is unchanged
 
 ## [v2.0.0]
 

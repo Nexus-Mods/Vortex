@@ -1,13 +1,14 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
+import { actionsToPartialReducerSpec } from "../../../reducers/builder";
+import type { ISettingsMods } from "../../../types/IState";
 import * as actions from "../actions/sandbox";
 
-export const settingsReducer: IReducerSpec = {
-  reducers: {
-    [actions.setInstallerSandbox as any]: (state, payload) =>
-      setSafe(state, ["installerSandbox"], payload),
-  },
-  defaults: {
+/** Partial: mod_management owns the rest of settings.mods. */
+export const settingsReducer = actionsToPartialReducerSpec<ISettingsMods, typeof actions>(
+  {
     installerSandbox: true,
   },
-};
+  actions,
+  {
+    setInstallerSandbox: (state, payload) => ({ ...state, installerSandbox: payload }),
+  },
+);

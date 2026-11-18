@@ -31,6 +31,14 @@ Core reducers are mounted in `buildReducerTree` in
 call belongs first thing in `init`: registering anything that depends on state
 before the state is registered produces failures that are hard to trace back.
 
+`registerReducer` checks the spec against the slice at its path, so a path
+`IState` doesn't declare fails to compile. A reducer that shares its path with
+others supplies defaults only for its own fields: build it with
+`actionsToPartialReducerSpec`. An extension that keeps its reducers in a list
+(one a test harness also binds) declares each entry with `reducerBinding(path,
+spec)` and registers it with `binding.register(context)`; both live in
+`src/renderer/src/reducers/builder.ts`.
+
 An extension types its slice by augmenting `IState`'s interfaces with `declare
 module "@/types/IState"` beside its reducer, not by editing `IState.ts`;
 `src/renderer/src/extensions/file_based_loadorder/reducers/session.ts` is an
