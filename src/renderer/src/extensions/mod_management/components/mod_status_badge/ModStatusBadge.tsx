@@ -5,7 +5,7 @@ import { Icon } from "@/ui/components/icon/Icon";
 import { Typography } from "@/ui/components/typography/Typography";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
-import { type ModStatus, modStatusDisplay } from "../../../util/mod_status/modStatus";
+import { type ModStatus, modStatusDisplay } from "../../util/mod_status/modStatus";
 
 interface IModStatusBadgeProps {
   /** The status it shows. */
@@ -26,6 +26,7 @@ export const ModStatusBadge = ({ status }: IModStatusBadgeProps) => {
         "absolute top-0 left-2 z-6 flex h-6 items-center gap-x-0.5 rounded-b px-1 shadow-sm",
         status === "update" ? "bg-info-moderate" : "bg-neutral-strong",
       ])}
+      data-testid={`mod-status-${status}`}
     >
       <Icon className="text-neutral-inverted" name={icon} size="sm" />
 

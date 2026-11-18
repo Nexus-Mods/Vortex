@@ -27,6 +27,8 @@ export interface IBaseProps {
   onHide?: () => void;
   className?: string;
   canDisplayError?: boolean;
+  /** Clears an error shown when it changes, such as for content about something else. */
+  resetKey?: string;
   children?: React.ReactNode;
 }
 
@@ -105,6 +107,12 @@ class ErrorBoundary extends ComponentEx<IErrorBoundaryProps, IErrorBoundaryState
       });
     }
     this.setState({ error, errorInfo });
+  }
+
+  public componentDidUpdate(prevProps: IErrorBoundaryProps) {
+    if (this.state.error !== undefined && prevProps.resetKey !== this.props.resetKey) {
+      this.retryRender();
+    }
   }
 
   public render(): React.ReactNode {

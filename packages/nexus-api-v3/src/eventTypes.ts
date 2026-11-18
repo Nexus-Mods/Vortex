@@ -2,7 +2,9 @@ export type TelemetryEvent =
   | EventDetectedGame
   | EventStoreGameVersion
   | EventManualInstaller
-  | EventPlannerPlan;
+  | EventPlannerPlan
+  | EventGameFolderState
+  | EventGameFolderStateFiles;
 
 // https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
 export type EventDetectedGame = {
@@ -134,4 +136,135 @@ export type ManifestDiffReason =
 export type ManifestDiff = {
   verdict: "pass" | "fail";
   counts: Record<ManifestDiffReason, number>;
+};
+
+// https://github.com/Nexus-Mods/flamework/tree/master/contracts/telemetry
+// One check is a game_folder_state event with everything but the file paths, plus up to
+// max_file_parts game_folder_state_files events holding the paths.
+export type EventGameFolderState = {
+  type: "game_folder_state";
+  version: 1;
+
+  payload: GameFolderStatePayload;
+};
+
+export type EventGameFolderStateFiles = {
+  type: "game_folder_state_files";
+  version: 1;
+
+  payload: GameFolderStateFilesPayload;
+};
+
+export type GameFolderFileCount = {
+  files: number;
+  bytes: number;
+};
+
+export type GameFolderPartStatus = {
+  status: "checked" | "aborted";
+  reason: string | null;
+};
+
+export type GameFolderStatePayload = {
+  /** shared with this check's game_folder_state_files events */
+  check_id: string;
+  game_id: string;
+  /** "checked" means the folder was listed; Steam verification carries its own status */
+  status: "checked" | "no_baseline" | "aborted";
+  reason: string | null;
+  verification: GameFolderPartStatus | null;
+  /** a Vortex deployment was in the folder when the check ran */
+  deployed_before_check: boolean;
+  full_verify: boolean;
+  steam: {
+    app_id: number;
+    build_id: number;
+    depots: GameFolderDepot[];
+  };
+  managed_at: string;
+  steam_last_updated: string | null;
+  folder_created_at: string | null;
+  steam_files: {
+    /** hashed and matched */
+    verified: GameFolderFileCount;
+    /** same size as Steam's, not picked for hashing */
+    size_matched: GameFolderFileCount;
+    modified: GameFolderFileCount;
+    missing: GameFolderFileCount;
+    unreadable: GameFolderFileCount;
+    not_compared: GameFolderFileCount;
+    /** files the check stopped before reaching */
+    unchecked: GameFolderFileCount;
+  };
+  modified_by: {
+    size: number;
+    sampled_chunk: number;
+    full_hash: number;
+  };
+  /** with full_verify: modified files the chunk sample alone would have missed */
+  sample_missed: number | null;
+  /** with full_verify: modified files the file sample wouldn't have picked */
+  file_sample_missed: number | null;
+  /** files hashed: a random sample of the same-size executables and of the other files */
+  hashed_sample: { files: number; capped: boolean };
+  unknown: GameFolderFileCount;
+  /** unknown files in a folder Vortex created, or below one; included in `unknown` */
+  unknown_in_vortex_folder: GameFolderFileCount;
+  vortex: GameFolderFileCount;
+  vortex_changed_since_deploy: GameFolderFileCount;
+  /** game_folder_state_files events sent with this one; 0 when there were no paths to send */
+  file_parts: number;
+  /** the most file events a check could send when this one ran; 0 turns the paths off */
+  max_file_parts: number;
+  /** some modified or missing files were left out of the file events for lack of room */
+  files_truncated: boolean;
+  /** some unknown files were left out of the file events, past the cap or for lack of room */
+  unknown_truncated: boolean;
+  /** every unknown file, totalled by its first two folders; largest first when trimmed */
+  unknown_by_folder: GameFolderFolderCount[];
+  /** some folders were left out of `unknown_by_folder` to fit the payload limit */
+  unknown_by_folder_truncated: boolean;
+  cost: {
+    duration_ms: number;
+    files_walked: number;
+    bytes_read: number;
+  };
+};
+
+export type GameFolderStateFilesPayload = {
+  check_id: string;
+  game_id: string;
+  /** from 1 */
+  part: number;
+  /** file events in this check; its paths are complete when all of them arrived */
+  parts: number;
+  /**
+   * modified and missing files first, then unknown files, running on from the part before; each
+   * event holds as many as fit in the payload limit
+   */
+  files: GameFolderFile[];
+};
+
+export type GameFolderDepot = {
+  depot_id: number;
+  manifest_id: string;
+  manifest_created_at: string | null;
+};
+
+export type GameFolderFile = {
+  /** relative to the game folder, `/` separators */
+  path: string;
+  status: "modified" | "missing" | "unknown";
+  /** modified only */
+  detected_by?: "size" | "sampled_chunk" | "full_hash";
+  /** modified only: the original was the .vortex_backup Vortex made when deploying over it */
+  from_backup?: true;
+  /** unknown only: in a folder Vortex created, so likely written by a deployed mod at runtime */
+  in_vortex_folder?: true;
+};
+
+export type GameFolderFolderCount = {
+  folder: string;
+  files: number;
+  bytes: number;
 };

@@ -17,7 +17,13 @@ export const FilterReset = ({ label, onReset }: IFilterResetProps) => (
     <DropdownDivider className="mt-1" />
 
     <PopoverPanelGroupItem className="h-auto justify-end py-3">
-      <TypographyLink brand="info" typographyType="body-sm" variant="secondary" onClick={onReset}>
+      <TypographyLink
+        brand="info"
+        data-testid="filter-menu-reset"
+        typographyType="body-sm"
+        variant="secondary"
+        onClick={onReset}
+      >
         {label}
       </TypographyLink>
     </PopoverPanelGroupItem>
