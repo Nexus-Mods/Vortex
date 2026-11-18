@@ -610,7 +610,7 @@ function reportRedundant(api: IExtensionApi, profileId: string, overwritten: IMo
                       "These redundant mods don't do any harm except slow down " +
                       "deployment a bit.\n" +
                       "If you believe this to be a mistake, please check the file " +
-                      "conflicts [svg]conflict[/svg] for the mod in question.",
+                      "conflicts [svg]rules[/svg] for the mod in question.",
                   ),
                   checkboxes: overwritten.map(
                     (mod: IMod): ICheckbox => ({
