@@ -54,13 +54,15 @@ interface IUseModsTableViewOptions {
  * The new Mods table's views, and the open one as the user left it: its filters, sort, grouping,
  * columns and their widths, which changing saves to it. A new view starts as the open one is
  * showing, and a built-in view it's made from goes back to its default filters, as on Browse.
- * A built-in view is edited while its filters differ from its defaults, which the bar's reset
- * puts back; View options' reset puts back its grouping. The user's own views have no
- * defaults to go back to. Its filters can be suspended for the visit, as when the table is asked to
- * show a mod they hide: it shows every mod, unedited, saving nothing, until they change or the open
- * view does. A built-in view that groups keeps to its grouping, which is what it's
- * for. An open view that's no longer offered, such as Updates once there are none, gives way to
- * the first.
+ *
+ * A built-in view is edited while its filters differ from its defaults, which the bar's reset puts
+ * back. View options' reset puts back its grouping and its choice of the table's columns, keeping
+ * its sort, widths and filters. The user's own views have no defaults to go back to.
+ *
+ * Filters can be suspended for a visit, as when the table is asked to show a mod they hide: the
+ * view shows every mod, unedited, saving nothing, until they change or the open view does. A
+ * built-in view that groups keeps to its grouping, which is what it's for. An open view that's no
+ * longer offered, such as Updates once there are none, gives way to the first.
  */
 export const useModsTableView = ({ mods, defaultShown, columnIds }: IUseModsTableViewOptions) => {
   const dispatch = useDispatch();
@@ -115,7 +117,12 @@ export const useModsTableView = ({ mods, defaultShown, columnIds }: IUseModsTabl
   const changedFilters = view.isCustom ? [] : changedFilterKeys(filters, view.defaults.filters);
   const isEdited = changedFilters.length > 0;
 
-  const canReset = !view.isCustom && grouping !== view.defaults.grouping;
+  const canReset =
+    !view.isCustom &&
+    (grouping !== view.defaults.grouping ||
+      Object.entries(changes.columns ?? {}).some(
+        ([columnId, shown]) => columnIds.has(columnId) && shown !== isShownByDefault(columnId),
+      ));
 
   const select = useCallback(
     (viewId: string) => {
@@ -189,9 +196,9 @@ export const useModsTableView = ({ mods, defaultShown, columnIds }: IUseModsTabl
   const reset = useCallback(
     (source: ModsTableViewSource) => {
       analytics.onViewChanged("reset", source);
-      dispatch(resetModsTableView(view.id));
+      dispatch(resetModsTableView(view.id, [...columnIds]));
     },
-    [analytics, dispatch, view.id],
+    [analytics, columnIds, dispatch, view.id],
   );
 
   const addView = useCallback(

@@ -46,7 +46,7 @@ describe("modsTableViewsReducer", () => {
   it("forgets what changed about a view on reset, and only that view", () => {
     let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
     state = reduce(state, setModsTableViewGrouping("status", "category"));
-    state = reduce(state, resetModsTableView("all"));
+    state = reduce(state, resetModsTableView("all", []));
 
     expect(state.changes).toEqual({ status: { grouping: "category" } });
   });
@@ -62,43 +62,23 @@ describe("modsTableViewsReducer", () => {
     });
   });
 
-  it("keeps a view's sort, columns and widths on reset, forgetting its grouping", () => {
+  it("keeps a view's sort and widths on reset, forgetting the rest", () => {
     const sort = { columnId: "version", direction: "descending" } as const;
     let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
     state = reduce(state, setModsTableViewSort("all", sort));
     state = reduce(state, setModsTableViewColumn("all", "author", true));
     state = reduce(state, setModsTableViewColumnWidths("all", { author: 240 }));
-    state = reduce(state, resetModsTableView("all"));
+    state = reduce(state, resetModsTableView("all", ["author"]));
 
-    expect(state.changes).toEqual({
-      all: { sort, columns: { author: true }, widths: { author: 240 } },
-    });
+    expect(state.changes).toEqual({ all: { sort, widths: { author: 240 } } });
   });
 
-  it("keeps a view's filters to it", () => {
-    const state = reduce(EMPTY, setModsTableViewFilters("all", { status: ["enabled"] }));
+  it("forgets only the given columns' choices on reset, keeping those of columns not offered", () => {
+    let state = reduce(EMPTY, setModsTableViewColumn("all", "author", true));
+    state = reduce(state, setModsTableViewColumn("all", "dependencies", true));
+    state = reduce(state, resetModsTableView("all", ["name", "author"]));
 
-    expect(state.changes).toEqual({ all: { filters: { status: ["enabled"] } } });
-  });
-
-  it("forgets a view's filters, or the given ones", () => {
-    let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
-    state = reduce(state, setModsTableViewFilters("all", { status: ["enabled"] }));
-
-    expect(reduce(state, resetModsTableViewFilters("all", ["status"])).changes).toEqual({
-      all: { grouping: "author" },
-    });
-    expect(reduce(state, resetModsTableViewFilters("all", undefined)).changes).toEqual({
-      all: { grouping: "author" },
-    });
-  });
-
-  it("keeps filters through View options' reset", () => {
-    let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
-    state = reduce(state, setModsTableViewFilters("all", { status: ["enabled"] }));
-    state = reduce(state, resetModsTableView("all"));
-
-    expect(state.changes).toEqual({ all: { filters: { status: ["enabled"] } } });
+    expect(state.changes).toEqual({ all: { columns: { dependencies: true } } });
   });
 
   it("adds a view of the user's own, after any others, and opens it", () => {

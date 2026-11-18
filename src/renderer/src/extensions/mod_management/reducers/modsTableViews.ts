@@ -91,11 +91,17 @@ export const modsTableViewsReducer = actionsToReducerSpec(defaultState, actions,
       }
       return { ...changes, widths: next };
     }),
-  resetModsTableView: (state, viewId) => {
+  resetModsTableView: (state, { viewId, columnIds }) => {
     const { [viewId]: reset, ...changes } = state.changes;
-    const { grouping: _grouping, ...kept } = reset ?? {};
-    return Object.keys(kept).length
-      ? { ...state, changes: { ...changes, [viewId]: kept } }
+    const { grouping: _grouping, columns, ...kept }: IModsTableViewChanges = reset ?? {};
+    const otherColumns = Object.entries(columns ?? {}).filter(
+      ([columnId]) => !columnIds.includes(columnId),
+    );
+    const next: IModsTableViewChanges = otherColumns.length
+      ? { ...kept, columns: Object.fromEntries(otherColumns) }
+      : kept;
+    return Object.keys(next).length
+      ? { ...state, changes: { ...changes, [viewId]: next } }
       : { ...state, changes };
   },
   addModsTableView: (state, { viewId, name, changes }) => ({
