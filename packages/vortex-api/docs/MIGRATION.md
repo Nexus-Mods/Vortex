@@ -534,3 +534,11 @@ From 2.11 `util.steam` is `undefined` and the call throws a `TypeError`. These l
 ### Promise types
 
 `GameStoreHelper` returns Bluebird promises today; a later release moves `IGameStore` to native promises. `.then()`, `.catch()` and `await` are unaffected. Bluebird-only methods on the result (`.tap()`, `.map()`, `.reflect()`, `.return()`) would break, so prefer the standard ones.
+
+## Vortex 2.x: `IGame.overrides`
+
+`IGame.overrides` is removed as of 2.11, without the usual two-release window, because no published extension used it. It listed other game ids to block when discovered at the same path as your game.
+
+Vortex now ignores the field. A registration that still sets it registers and is managed like any other, and two games discovered at the same path can both be managed. Delete the field from your registration; if you type your game as `IGame`, the typecheck fails until you do.
+
+The `setGameDisabled` and `clearGameDisabled` actions and `session.gameMode.disabled` are gone too.

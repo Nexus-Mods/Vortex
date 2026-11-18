@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- `IGame.overrides` is removed, along with the `setGameDisabled` and `clearGameDisabled` actions and `session.gameMode.disabled`. Nothing used it, so it goes without the usual two-release window. A registration that still sets `overrides` registers and is managed like any other, and two games discovered at the same path can both be managed - see the [migration guide](./docs/MIGRATION.md#vortex-2x-igameoverrides)
 - `util.steam` and `util.epicGamesLauncher`, deprecated in 2.8, are removed as of 2.11; call `GameStoreHelper` directly. An extension that still uses either gets `undefined` and throws a `TypeError` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 - `@mdi/js` is no longer a production dependency of Vortex, so an extension that `require`d it at runtime instead of bundling its own copy will fail to load. Bundle it, or use `menuIcon` and Material Symbols
 
