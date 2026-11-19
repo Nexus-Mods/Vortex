@@ -66,28 +66,60 @@ describe("ParseFailures", () => {
   test("reports a plugin that fails to parse once, however often it is parsed", () => {
     const failures = new ParseFailures();
 
-    expect(failures.isNew("Data/One.esp", invalid())).toBe(true);
-    expect(failures.isNew("Data/One.esp", invalid())).toBe(false);
-    expect(failures.isNew("Data/Two.esp", invalid())).toBe(true);
+    expect(failures.failed("Data/One.esp", invalid())).toBe("report");
+    expect(failures.failed("Data/One.esp", invalid())).toBe("known");
+    expect(failures.failed("Data/Two.esp", invalid())).toBe("report");
   });
 
   test("reports a plugin again once it failed a different way or parsed in between", () => {
     const failures = new ParseFailures();
-    failures.isNew("Data/One.esp", invalid());
+    failures.failed("Data/One.esp", invalid());
 
-    expect(failures.isNew("Data/One.esp", fileMissing())).toBe(true);
+    expect(failures.failed("Data/One.esp", new Error("no code"))).toBe("report");
     failures.parsed("Data/One.esp");
-    expect(failures.isNew("Data/One.esp", fileMissing())).toBe(true);
+    expect(failures.failed("Data/One.esp", new Error("no code"))).toBe("report");
+  });
+
+  // a deployment or purge can take a file away after the list was built
+  test("asks for a rescan instead of a report when the file is gone", () => {
+    const failures = new ParseFailures();
+
+    expect(failures.failed("Data/One.esp", fileMissing())).toBe("stale");
+    // parsed again before the rescan ran
+    expect(failures.failed("Data/One.esp", fileMissing())).toBe("stale");
+    expect(failures.awaitingRescan()).toEqual(["Data/One.esp"]);
+  });
+
+  test("reports a missing file once when a rescan still lists it", () => {
+    const failures = new ParseFailures();
+    failures.failed("Data/One.esp", fileMissing());
+
+    failures.rescanned(failures.awaitingRescan());
+
+    expect(failures.awaitingRescan()).toEqual([]);
+    expect(failures.failed("Data/One.esp", fileMissing())).toBe("report");
+    expect(failures.failed("Data/One.esp", fileMissing())).toBe("known");
+  });
+
+  test("leaves a file that went missing during a rescan for the next one", () => {
+    const failures = new ParseFailures();
+    failures.failed("Data/One.esp", fileMissing());
+    const beforeRescan = failures.awaitingRescan();
+    failures.failed("Data/Two.esp", fileMissing());
+
+    failures.rescanned(beforeRescan);
+
+    expect(failures.awaitingRescan()).toEqual(["Data/Two.esp"]);
   });
 
   test("forgets the plugins the list no longer names", () => {
     const failures = new ParseFailures();
-    failures.isNew("Data/One.esp", invalid());
-    failures.isNew("Data/Two.esp", fileMissing());
+    failures.failed("Data/One.esp", invalid());
+    failures.failed("Data/Two.esp", fileMissing());
 
     failures.retain(["Data/One.esp"]);
 
-    expect(failures.isNew("Data/One.esp", invalid())).toBe(false);
-    expect(failures.isNew("Data/Two.esp", fileMissing())).toBe(true);
+    expect(failures.awaitingRescan()).toEqual([]);
+    expect(failures.failed("Data/One.esp", invalid())).toBe("known");
   });
 });

@@ -11,12 +11,12 @@ import Debouncer from "../../util/Debouncer";
 import { clearErrorContext } from "../../util/errorHandling";
 import { currentGameDiscovery } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
+import { isMovingModFiles } from "../mod_management/util/modActivity";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { setPluginOrder } from "./actions/loadOrder";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import { gameSupported } from "./util/gameSupport";
 import { isPluginName } from "./util/isPlugin";
-import { movingPluginFiles } from "./util/modActivity";
 import { AMBIENT_ATTRIBUTES } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 import type { makeUpdatePluginList } from "./util/updatePluginList";
@@ -89,7 +89,7 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
 
   // rescans once the Data folder has settled and nothing is moving plugin files anymore
   const refreshDebouncer: Debouncer = new Debouncer(() => {
-    if (movingPluginFiles(api.getState().session.base.activity?.["mods"])) {
+    if (isMovingModFiles(api.getState().session.base.activity?.["mods"])) {
       refreshDebouncer.schedule();
       return Promise.resolve();
     }

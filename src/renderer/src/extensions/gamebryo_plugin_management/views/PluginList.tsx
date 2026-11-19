@@ -43,6 +43,7 @@ import MainPage from "../../../views/MainPage";
 import { resolveCategoryName } from "../../category_management/util/retrieveCategoryPath";
 import { needToDeploy } from "../../mod_management/selectors";
 import type { IMod } from "../../mod_management/types/IMod";
+import { isMovingModFiles } from "../../mod_management/util/modActivity";
 import renderModName from "../../mod_management/util/modName";
 import { activeProfile } from "../../profile_management/selectors";
 /* eslint-disable */
@@ -58,7 +59,6 @@ import { IPluginCombined, IPluginLoot, IPluginParsed, IPlugins } from "../types/
 import { isGhosted } from "../util/ghost";
 import GroupFilter from "../util/GroupFilter";
 import { mergeLoadOrder } from "../util/mergeLoadOrder";
-import { movingPluginFiles } from "../util/modActivity";
 import { parseFailureAttributes, ParseFailures } from "../util/parseFailure";
 import { pluginFlags } from "../util/pluginFlags";
 import toPluginId from "../util/toPluginId";
@@ -77,6 +77,8 @@ interface IBaseProps {
   forceListUpdate: any;
   nativePlugins: string[];
   onRefreshPlugins: () => void;
+  // rescan the plugin list from disk; settles once the new list is in the store
+  rescanPlugins: () => Promise<void>;
   onSetPluginGhost: (pluginId: string, gameId: string, ghosted: boolean, enabled: boolean) => void;
   onSetPluginLight: (pluginId: string, enable: boolean) => void;
   gameSupported: (gameMode: string) => boolean;
@@ -325,6 +327,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
   private mCachedGameMode: string;
   private mUpdateId: string;
   private updateDetailsDebouncer: Debouncer;
+  private rescanDebouncer: Debouncer;
 
   private installedNative: { [name: string]: number } = {};
 
@@ -533,6 +536,27 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
           log("warn", "failed to update plugins", { error: err.message });
         });
     }, 2000);
+
+    // the safety net under the activity checks: a file can still vanish without any mod
+    // activity (deleted outside Vortex, or between a check and the read), and nothing else
+    // would rescan the list then
+    this.rescanDebouncer = new Debouncer(() => {
+      if (this.props.modActivity !== undefined && this.props.modActivity.length > 0) {
+        // whatever is moving files rescans when it is done, and may still be moving them
+        this.rescanDebouncer.schedule();
+        return Promise.resolve();
+      }
+      const listed = new Set(Object.values(this.props.plugins ?? {}).map((plug) => plug.filePath));
+      const missing = parseFailures.awaitingRescan().filter((filePath) => listed.has(filePath));
+      if (missing.length === 0) {
+        // a rescan since the parse already dropped them
+        return Promise.resolve();
+      }
+      log("info", "the plugin list names files that are gone, rescanning", {
+        count: missing.length,
+      });
+      return this.props.rescanPlugins().then(() => parseFailures.rescanned(missing));
+    }, 2000);
   }
 
   public emptyPluginParsed(): { [plugin: string]: IPluginParsed } {
@@ -598,6 +622,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
 
   public componentWillUnmount() {
     this.mMounted = false;
+    this.rescanDebouncer.clear();
   }
 
   public UNSAFE_componentWillReceiveProps(nextProps: IProps) {
@@ -812,7 +837,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
       if (updateId !== this.mUpdateId) {
         return Bluebird.reject(new ProcessCanceled("new update started"));
       }
-      if (movingPluginFiles(this.props.modActivity)) {
+      if (isMovingModFiles(this.props.modActivity)) {
         // the files of this list are being moved, so parsing now would read files that are
         // gone; this covers passes the debouncer did not start (page opened, Sort Now) and
         // passes a deployment started under. The debouncer parses again once mods are idle, by
@@ -836,11 +861,17 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         };
         parseFailures.parsed(pluginsIn[pluginName].filePath);
       } catch (err) {
-        if (parseFailures.isNew(pluginsIn[pluginName].filePath, err)) {
+        const verdict = parseFailures.failed(pluginsIn[pluginName].filePath, err);
+        if (verdict !== "known") {
           log("warn", "failed to parse esp", {
             path: pluginsIn[pluginName].filePath,
             error: getErrorMessageOrDefault(err),
           });
+        }
+        if (verdict === "stale") {
+          // the file is gone, so the list is out of date; not a plugin that fails to parse
+          this.rescanDebouncer.schedule();
+        } else if (verdict === "report") {
           // the row shows no details at all, so this is a plugin the user cannot act on
           recordErrorSpan(
             "A plugin could not be parsed",
