@@ -44,9 +44,15 @@ afterAll(failOnActWarnings);
 // "React warnings" in docs/testing.md says how to fix each. A warning is ours when the first
 // component in React's stack that has a file isn't in node_modules: react-bootstrap 0.33 logs
 // the same warnings about its own components, and those go when it does.
-const ourWarnings = [
+// `about`, when set, is the first value React fills into the message.
+const ourWarnings: { logged: string; about?: string; failure: string }[] = [
   { logged: "uses the legacy contextTypes API", failure: "reads legacy context" },
   { logged: "uses the legacy childContextTypes API", failure: "provides legacy context" },
+  {
+    logged: "declares both contextTypes and contextType",
+    failure: "declares both contextType and legacy contextTypes",
+  },
+  { logged: "Failed %s type", about: "context", failure: "fails a context type check" },
   { logged: "validateDOMNesting", failure: "nests elements HTML doesn't allow" },
   {
     logged: "Function components cannot be given refs",
@@ -63,7 +69,10 @@ console.error = (...args: unknown[]) => {
   const message = args[0];
   const warning =
     typeof message === "string"
-      ? ourWarnings.find(({ logged }) => message.includes(logged))
+      ? ourWarnings.find(
+          ({ logged, about }) =>
+            message.includes(logged) && (about === undefined || args[1] === about),
+        )
       : undefined;
   if (warning !== undefined && !legacyContextOnPurpose.includes(String(args[1]))) {
     // React passes the component stack last

@@ -19,12 +19,14 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
   private getContainer = memoizeOne(() => this.getContainerImpl());
 
   // What's inside the dialog gets its own menu layer, so a menu opened there sits above the
-  // dialog rather than behind it.
+  // dialog rather than behind it. Memoized on the values rather than the outer context object:
+  // with no provider above, that object is MainContext's fallback, which is updated in place.
   private getInnerContext = memoizeOne(
-    (outer: IComponentContext, menuLayer: HTMLDivElement): IComponentContext => ({
-      ...outer,
-      menuLayer,
-    }),
+    (
+      api: IComponentContext["api"],
+      getModifiers: IComponentContext["getModifiers"],
+      menuLayer: HTMLDivElement,
+    ): IComponentContext => ({ api, getModifiers, menuLayer }),
   );
 
   private mMenuLayer: HTMLDivElement = null;
@@ -36,7 +38,13 @@ class MyModal extends React.PureComponent<typeof Modal.prototype.props, {}> {
           <Modal {...this.props} container={this.getContainer()}>
             <div className="menu-layer" ref={this.setMenuLayer} />
             {this.mMenuLayer !== null ? (
-              <MainContext.Provider value={this.getInnerContext(this.context, this.mMenuLayer)}>
+              <MainContext.Provider
+                value={this.getInnerContext(
+                  this.context.api,
+                  this.context.getModifiers,
+                  this.mMenuLayer,
+                )}
+              >
                 <ComponentExProvider>{this.props.children}</ComponentExProvider>
               </MainContext.Provider>
             ) : null}

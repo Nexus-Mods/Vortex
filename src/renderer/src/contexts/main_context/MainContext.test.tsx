@@ -22,7 +22,12 @@ class Reader extends React.Component<{ onContext: (context: IComponentContext) =
 }
 
 afterEach(() => {
-  setMainContextFallback({ api: undefined, menuLayer: undefined, getModifiers: undefined });
+  // back to MainContext's own default
+  setMainContextFallback({
+    api: undefined,
+    menuLayer: undefined,
+    getModifiers: () => ({ alt: false, ctrl: false, shift: false }),
+  });
 });
 
 describe("MainContext", () => {

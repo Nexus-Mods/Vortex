@@ -110,6 +110,11 @@ A test also fails when React warns that our own code:
   or `useMainContext()` in a function component. `ComponentEx` already does. A
   test that renders a `ComponentEx` without the app provides it with
   `<MainContext.Provider value={…}>`.
+- **declares `contextTypes` on a class that also has `contextType`,** such as a
+  `ComponentEx` subclass. React ignores the `contextTypes`; drop them.
+- **fails a context type check** (`Failed context type`): a legacy provider,
+  such as `ComponentExProvider`, rendered without the value it requires. Render
+  it inside a `<MainContext.Provider>` that has an `api`.
 - **nests elements HTML doesn't allow** (`validateDOMNesting`), such as a `<p>`
   inside a `<p>`. Render the outer element as a `<div>` (`Typography` takes
   `as="div"`).
@@ -126,7 +131,9 @@ still read legacy context, and `FormFeedback`, which reads react-bootstrap's
 `MainContext` lives in `src/renderer/src/contexts/main_context/MainContext.ts`.
 A component that React renders as a separate root, as react-bootstrap's
 `OverlayTrigger` does with its overlay, has no provider above it, so it reads
-the app-wide values `MainProvider` fills in.
+the app-wide values `MainProvider` fills in. Our `OverlayTrigger` wraps its
+overlay in `MainContextOverlay`, which hands it the trigger's own `MainContext`,
+so a popover in a dialog gets the dialog's menu layer.
 
 ### What the check can't see
 
