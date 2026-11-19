@@ -48,22 +48,14 @@ jobs:
         with:
           ref: ${{ github.event.release.tag_name || inputs.tag }}
 
-      - name: Read Node.js version from package.json
-        id: node-version
-        run: echo "NODE_VERSION=$(jq -r .engines.node package.json)" >> "$GITHUB_OUTPUT"
-
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: ./.github/actions/setup-pnpm
 
-      - name: Use Node.js
+      # Only writes the registry .npmrc; Node.js itself comes from setup-pnpm.
+      - name: Configure npm registry
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: "pnpm"
           registry-url: "https://registry.npmjs.org"
-
-      - name: Fix pnpm node-gyp permissions
-        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig
