@@ -181,8 +181,12 @@ const timeProperty = (
   label: string,
   value: string | number | Date | undefined,
 ): ModProperty[] => {
-  const timestamp = value === undefined ? Number.NaN : new Date(value).getTime();
-  return Number.isNaN(timestamp) ? [] : [{ kind: "time", id, label, timestamp }];
+  const timestamp = value ? new Date(value).getTime() : undefined;
+  if (!timestamp) {
+    return [];
+  }
+
+  return [{ kind: "time", id, label, timestamp }];
 };
 
 /** The mod's card: its picture, status, name, summary and author. */

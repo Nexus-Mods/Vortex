@@ -104,6 +104,13 @@ describe("useModProperties", () => {
     expect(propertyById(result, "version")).toMatchObject({ value: "5.2" });
   });
 
+  // As a mod that's never been enabled keeps it, which would otherwise read as 1970.
+  it("leaves out a time of zero", () => {
+    const neverEnabled = mod("skyui", { ...SKYUI, enabledTime: 0 });
+
+    expect(propertyById(renderProperties([neverEnabled]), "enabledTime")).toBeUndefined();
+  });
+
   it("lists a Nexus mod's ID on General, to copy", () => {
     expect(propertyById(renderProperties([SKYUI]), "nexusModId")).toMatchObject({
       tab: "general",
