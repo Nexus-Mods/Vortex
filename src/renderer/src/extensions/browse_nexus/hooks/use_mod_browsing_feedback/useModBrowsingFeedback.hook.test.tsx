@@ -86,9 +86,10 @@ describe("useModBrowsingFeedback", () => {
       expect.objectContaining({
         id: "browse-mods-feedback-sent",
         type: "success",
-        displayMS: 2000,
       }),
     );
+    // Up to 5s is shown as a toast; longer goes to notifications.
+    expect(sendNotification.mock.calls[0][0].displayMS).toBeLessThanOrEqual(5000);
   });
 
   it("counts a Load more vote without a toast", async () => {
