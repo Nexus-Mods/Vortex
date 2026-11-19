@@ -39,9 +39,9 @@ interface IModPropertiesPanelProps {
 
 const TABS: ModPropertiesTab[] = ["general", "advanced"];
 
-/** Its header, which stays put, keeping the gutter its scroll area keeps so their edges line up. */
+/** Its fixed header, its gutter lined up with its scroll area's, with room for focus rings. */
 const HEADER_CLASSES =
-  "mr-1.5 flex shrink-0 scrollbar-gutter-stable overflow-hidden pr-1.5 pb-4 pl-5";
+  "-mt-1 mr-1.5 flex shrink-0 scrollbar-gutter-stable overflow-hidden pt-1 pr-1.5 pb-4 pl-5";
 
 /** Where its contents scroll and fade out at the foot, as Browse's mod details do. */
 const SCROLL_CLASSES =

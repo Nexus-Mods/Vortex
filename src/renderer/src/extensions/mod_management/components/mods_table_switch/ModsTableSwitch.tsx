@@ -684,7 +684,7 @@ export const ModsTableSwitch = ({
                 <div
                   className={joinClasses([
                     "absolute top-(--properties-top) right-0 h-[calc(100cqb-var(--properties-top))]",
-                    "overflow-x-clip bg-surface-low transition-[width]",
+                    "pointer-events-auto overflow-x-clip bg-surface-low transition-[width]",
                     "before:absolute before:inset-y-0 before:left-0 before:w-px",
                     "before:bg-[linear-gradient(to_bottom,transparent,var(--color-stroke-weak)_3rem)]",
                     showProperties ? "w-(--properties-width)" : "w-0",
@@ -698,13 +698,13 @@ export const ModsTableSwitch = ({
                 >
                   {(showProperties || panelMounted) && (
                     <ErrorBoundary
-                      className="pointer-events-auto w-(--properties-width)"
+                      className="w-(--properties-width)"
                       resetKey={selectedIds.join("\n")}
                       visible
                       onHide={() => setPropertiesOpen(false)}
                     >
                       <ModPropertiesPanel
-                        className="pointer-events-auto max-h-[calc(100%-0.5rem)] w-(--properties-width)"
+                        className="max-h-[calc(100%-0.5rem)] w-(--properties-width)"
                         memberships={memberships}
                         mods={selectedMods}
                         registered={registeredDetails}
