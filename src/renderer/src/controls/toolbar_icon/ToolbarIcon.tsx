@@ -1,8 +1,8 @@
 import * as React from "react";
 
-import Icon from "./Icon";
-import { Button } from "./TooltipControls";
-import { withDomRef } from "./with_dom_ref/withDomRef";
+import Icon from "../Icon";
+import { Button } from "../TooltipControls";
+import { withDomRef } from "../with_dom_ref/withDomRef";
 
 export interface IToolbarIconProps {
   id?: string;
@@ -20,7 +20,10 @@ export interface IToolbarIconProps {
   stroke?: boolean;
   hollow?: boolean;
   children?: React.ReactNode;
-  /** receives the icon's <button> element */
+  /**
+   * receives the icon's <button> element. react-bootstrap's Button doesn't pass a ref on, so
+   * the <button> comes back through this instead.
+   */
   domRef?: React.Ref<HTMLButtonElement>;
 }
 
@@ -43,7 +46,6 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
       disabled,
     } = this.props;
     const placement = this.props.placement || "bottom";
-    // react-bootstrap's Button doesn't pass a ref on, so the <button> comes back through domRef
     const refProps = domRef === undefined ? {} : { componentClass: ButtonWithDomRef, domRef };
     return (
       <Button

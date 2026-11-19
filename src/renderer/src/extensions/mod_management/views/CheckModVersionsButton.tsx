@@ -3,7 +3,7 @@ import * as React from "react";
 
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import type { ButtonType } from "../../../controls/IconBar";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
+import ToolbarIcon from "../../../controls/toolbar_icon/ToolbarIcon";
 import { activeGameId, activeProfile } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import type { IProfileMod } from "../../profile_management/types/IProfile";

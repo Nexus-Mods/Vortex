@@ -13,8 +13,8 @@ import ActionControl from "./ActionControl";
 import { HOVER_DELAY } from "./constants";
 import Icon from "./Icon";
 import PortalMenu from "./PortalMenu";
+import ToolbarIcon from "./toolbar_icon/ToolbarIcon";
 import ToolbarDropdown from "./ToolbarDropdown";
-import ToolbarIcon from "./ToolbarIcon";
 import { IconButton } from "./TooltipControls";
 
 export type ButtonType = "text" | "icon" | "both" | "menu";

@@ -12,8 +12,11 @@ import Dropdown from "./Dropdown";
 import Icon from "./Icon";
 import { withDomRef } from "./with_dom_ref/withDomRef";
 
-// react-bootstrap 0.33's MenuItem doesn't pass a ref on. It renders an <li> around its
-// componentClass, so the <a> comes back through domRef and the <li> is its parent.
+/**
+ * The <a> a MenuItem renders, handed back through domRef: react-bootstrap 0.33's MenuItem
+ * doesn't pass a ref on. MenuItem renders an <li> around it, and a submenu opens next to that
+ * <li>, the <a>'s parent.
+ */
 const AnchorWithDomRef = withDomRef("a");
 
 export interface IMenuActionProps {
@@ -119,7 +122,6 @@ function MenuAction(props: IMenuActionProps) {
     }, HOVER_DELAY);
   }, [setOpen]);
 
-  // the submenu opens next to the item's <li>, the parent of its <a>
   const setAnchorRef = React.useCallback((anchor: HTMLAnchorElement | null) => {
     itemRef.current = anchor?.parentElement ?? undefined;
   }, []);

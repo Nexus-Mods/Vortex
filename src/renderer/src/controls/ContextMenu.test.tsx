@@ -76,6 +76,7 @@ describe("ContextMenu", () => {
 
   afterEach(() => {
     menuLayer.remove();
+    vi.restoreAllMocks();
   });
 
   it("stays open after the right-click that opened it (React 17 delegation)", () => {
@@ -114,11 +115,11 @@ describe("ContextMenu", () => {
     };
     render(<Harness menuLayer={menuLayer} actions={[more]} />);
     fireEvent.contextMenu(screen.getByTestId("row"), { clientX: 10, clientY: 10 });
-    const item = within(menuLayer).getByText("More").closest("li");
+    const [anchor] = within(menuLayer).getAllByRole("menuitem");
 
-    fireEvent.mouseEnter(item.querySelector("a"));
+    fireEvent.mouseEnter(anchor);
 
-    await waitFor(() => expect(menuLayer.textContent).toContain("Sub Action"));
-    expect(measured.mock.contexts).toContain(item);
+    await waitFor(() => expect(within(menuLayer).getAllByRole("menuitem")).toHaveLength(2));
+    expect(measured.mock.contexts).toContain(anchor.closest("li"));
   });
 });

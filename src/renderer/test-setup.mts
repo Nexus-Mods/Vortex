@@ -20,7 +20,7 @@ import { ApplicationData } from "./src/applicationData.js";
 // says how to fix one. console.error is assigned rather than spied on so vi.restoreAllMocks()
 // leaves it be, and the check runs after testing-library's cleanup (vitest.config.mts runs hooks
 // last-registered first), so an update that lands while a test is torn down still counts.
-let componentsUpdatedOutsideAct = new Set<string>();
+const componentsUpdatedOutsideAct = new Set<string>();
 const originalConsoleError = console.error;
 console.error = (...args: unknown[]) => {
   if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
@@ -29,17 +29,6 @@ console.error = (...args: unknown[]) => {
   }
   originalConsoleError.apply(console, args);
 };
-const failOnActWarnings = () => {
-  const components = [...componentsUpdatedOutsideAct];
-  componentsUpdatedOutsideAct = new Set();
-  if (components.length > 0) {
-    throw new Error(
-      `React updated ${components.join(", ")} outside act(); see "React warnings" in docs/testing.md`,
-    );
-  }
-};
-afterEach(failOnActWarnings);
-afterAll(failOnActWarnings);
 
 // A call to findDOMNode from our own code fails the test it ran in; React 19 removes it, and
 // "React warnings" in docs/testing.md says what to use instead. React's own warning can't drive
@@ -57,17 +46,28 @@ vi.mock("react-dom", async (importOriginal) => {
   };
   return { ...original, findDOMNode, default: { ...original, findDOMNode } };
 });
-const failOnFindDOMNode = () => {
-  const callers = [...findDOMNodeCallers];
+
+/**
+ * Fails the test for both checks above at once. Vitest skips the after-hooks left to run once
+ * one throws, so with a hook each, a test failing one check would leave the other's findings
+ * to be blamed on the next test.
+ */
+const failOnReactWarnings = () => {
+  const problems: string[] = [];
+  if (componentsUpdatedOutsideAct.size > 0) {
+    problems.push(`React updated ${[...componentsUpdatedOutsideAct].join(", ")} outside act()`);
+  }
+  if (findDOMNodeCallers.size > 0) {
+    problems.push(`findDOMNode was called from ${[...findDOMNodeCallers].join(", ")}`);
+  }
+  componentsUpdatedOutsideAct.clear();
   findDOMNodeCallers.clear();
-  if (callers.length > 0) {
-    throw new Error(
-      `findDOMNode was called from ${callers.join(", ")}; see "React warnings" in docs/testing.md`,
-    );
+  if (problems.length > 0) {
+    throw new Error(`${problems.join("; ")}; see "React warnings" in docs/testing.md`);
   }
 };
-afterEach(failOnFindDOMNode);
-afterAll(failOnFindDOMNode);
+afterEach(failOnReactWarnings);
+afterAll(failOnReactWarnings);
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is

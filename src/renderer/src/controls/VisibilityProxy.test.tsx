@@ -137,29 +137,130 @@ describe("VisibilityProxy", () => {
     expect(calls).toEqual([{ op: "observe", root: null, target: getByTestId("row") }]);
   });
 
-  // An extension's componentClass may not give a ref to its element. The proxy can't know
-  // when that comes into view, so it shows the content rather than a placeholder forever.
-  it("shows the content when its componentClass gives no element to observe", () => {
+  it("is observed against the viewport when its container is undefined", () => {
+    const { getByTestId } = render(<Proxy container={undefined} />);
+
+    expect(calls).toEqual([
+      { op: "observe", root: null, target: getByTestId("entry").parentElement },
+    ]);
+  });
+
+  it("observes an SVG element its componentClass renders", () => {
+    const { getByTestId } = render(
+      <VisibilityProxy
+        componentClass="svg"
+        container={null}
+        content={() => null}
+        data-testid="row"
+        placeholder={() => null}
+        visible={false}
+        setVisible={() => undefined}
+      />,
+    );
+
+    expect(calls).toEqual([{ op: "observe", root: null, target: getByTestId("row") }]);
+  });
+
+  // e.g. a componentClass made inline, which is a new component on every render
+  it("moves to the new element when its componentClass replaces it", () => {
+    const Other = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
+      function Other(props, ref) {
+        return <article ref={ref} {...props} />;
+      },
+    );
+    const renderWith = (componentClass: React.ElementType) => (
+      <VisibilityProxy
+        componentClass={componentClass}
+        container={null}
+        content={() => null}
+        data-testid="row"
+        placeholder={() => null}
+        visible={false}
+        setVisible={() => undefined}
+      />
+    );
+    const { getByTestId, rerender } = render(renderWith(Section));
+    const before = getByTestId("row");
+
+    rerender(renderWith(Other));
+
+    expect(calls).toEqual([
+      { op: "observe", root: null, target: before },
+      { op: "unobserve", root: null, target: before },
+      { op: "observe", root: null, target: getByTestId("row") },
+    ]);
+  });
+
+  // An extension's componentClass may not give a ref to its element, so the proxy puts a <div>
+  // inside it to observe instead, and the content still loads as it scrolls into view.
+  it("observes a <div> inside a componentClass that gives no element", () => {
     const setVisible = vi.fn();
 
-    render(
+    const { getByTestId } = render(
       <VisibilityProxy
         componentClass={Opaque}
         container={null}
         content={() => null}
-        placeholder={() => null}
+        placeholder={() => <span data-testid="entry" />}
         visible={false}
         setVisible={setVisible}
       />,
     );
 
-    expect(calls).toEqual([]);
-    expect(setVisible).toHaveBeenCalledWith(true);
-    // an extension author can see why their content no longer loads lazily
+    const wrapper = getByTestId("entry").parentElement;
+    expect(wrapper?.parentElement?.tagName).toBe("DIV");
+    expect(calls).toEqual([{ op: "observe", root: null, target: wrapper }]);
+    expect(setVisible).not.toHaveBeenCalled();
+    // an extension author can see where the extra <div> comes from
     expect(log).toHaveBeenCalledWith(
       "warn",
       expect.stringContaining("doesn't pass its ref on"),
       expect.objectContaining({ componentClass: "Opaque" }),
     );
+  });
+
+  it("warns once per componentClass that gives no element, however many entries use it", () => {
+    class Item extends React.Component<{ children?: React.ReactNode }> {
+      public render() {
+        return <li>{this.props.children}</li>;
+      }
+    }
+    render(
+      <ul>
+        {[1, 2, 3].map((key) => (
+          <VisibilityProxy
+            key={key}
+            componentClass={Item}
+            container={null}
+            content={() => null}
+            placeholder={() => null}
+            visible={false}
+            setVisible={() => undefined}
+          />
+        ))}
+      </ul>,
+    );
+
+    const warnings = vi
+      .mocked(log)
+      .mock.calls.filter(
+        ([, , meta]) => (meta as { componentClass?: string })?.componentClass === "Item",
+      );
+    expect(warnings).toHaveLength(1);
+  });
+
+  // Logged once for the whole app, so this counts every proxy this file has mounted without one.
+  it("warns once about proxies without a componentClass, however many mount", () => {
+    render(
+      <>
+        <Proxy container={null} />
+        <Proxy container={null} />
+      </>,
+    );
+
+    const warnings = vi
+      .mocked(log)
+      .mock.calls.filter(([, message]) => message.includes("without a componentClass"));
+    expect(warnings).toHaveLength(1);
   });
 });

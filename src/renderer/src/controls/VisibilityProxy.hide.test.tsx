@@ -169,6 +169,42 @@ describe("VisibilityProxy hiding", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  // A componentClass made inline is a new component on every render, and Fast Refresh remounts
+  // one in development: either way the row's element is replaced while the proxy stays mounted.
+  it("keeps showing a row whose componentClass replaces its element", () => {
+    const makeRow = () =>
+      React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>((props, ref) => (
+        <div ref={ref} {...props} />
+      ));
+    const onSetVisible = vi.fn();
+    function Entry(props: { componentClass: React.ElementType }) {
+      const [visible, setVisible] = React.useState(false);
+      return (
+        <VisibilityProxy
+          componentClass={props.componentClass}
+          container={null}
+          content={() => <span data-testid="content" />}
+          data-testid="row"
+          placeholder={() => <span data-testid="placeholder" />}
+          visible={visible}
+          setVisible={(value: boolean) => {
+            onSetVisible(value);
+            setVisible(value);
+          }}
+        />
+      );
+    }
+    const { getByTestId, queryByTestId, rerender } = render(<Entry componentClass={makeRow()} />);
+    report(getByTestId("row"), true);
+
+    rerender(<Entry componentClass={makeRow()} />);
+    report(getByTestId("row"), true);
+    act(() => vi.advanceTimersByTime(5000));
+
+    expect(onSetVisible.mock.calls).toEqual([[true]]);
+    expect(queryByTestId("content")).not.toBeNull();
+  });
+
   // Without a componentClass the proxy wraps its content in a <div> and observes that, so
   // swapping the placeholder for content doesn't change the node it observes.
   // ConflictEditor (mod-dependency-manager) uses it this way.

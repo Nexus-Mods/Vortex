@@ -47,7 +47,7 @@ import { registerTableAttribute } from "./table/registerTableAttribute";
 import { scrollContainerOf } from "./table/scrollContainer";
 import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
-import ToolbarIcon from "./ToolbarIcon";
+import ToolbarIcon from "./toolbar_icon/ToolbarIcon";
 import { UsageAlert } from "./UsageAlert";
 import type VisibilityProxy from "./VisibilityProxy";
 
@@ -1265,7 +1265,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     return this.mScrollContainer ?? (document.scrollingElement as HTMLElement);
   }
 
-  private scrollToItem = (item: HTMLElement, smooth: boolean, iterations: number = 3) => {
+  private scrollToItem = (item: Element, smooth: boolean, iterations: number = 3) => {
     const scroller = this.rowScroller();
     // Measured against the scroller rather than the item's offsetParent: the page around a
     // sticky-header table holds more than the table, so the two don't share an origin.
