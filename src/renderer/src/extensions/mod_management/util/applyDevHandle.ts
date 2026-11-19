@@ -148,7 +148,7 @@ export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrc
       if (plan === undefined) {
         return undefined;
       }
-      const result = await orchestrator.apply(
+      const applied = await orchestrator.apply(
         plan,
         {
           fs: diskWith(fault),
@@ -161,7 +161,9 @@ export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrc
         },
         activatorId,
       );
-      return result === undefined ? undefined : devOutcomeOf(devOperationsOf(plan), result);
+      return applied === undefined
+        ? undefined
+        : devOutcomeOf(devOperationsOf(plan), applied.result);
     },
   };
 }

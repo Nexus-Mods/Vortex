@@ -6,6 +6,7 @@ import { QualifiedPath, type FileSystem, type StatusTime } from "@vortex/shared/
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
+import { withFileRetry } from "../../../util/fileRetry";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { mapWithConcurrency } from "../LinkingDeployment";
 import { installPathForGame, modPathsForGame } from "../selectors";
@@ -123,7 +124,7 @@ export async function manifestFilesAfter(
 
 /**
  * Saves a game's manifests for what a run's operations deployed, from the manifests there before
- * it; a mod type left without entries has its manifest removed.
+ * it, and gives the entries saved; a mod type left without entries has its manifest removed.
  */
 export async function saveAppliedManifests(
   api: IExtensionApi,
@@ -132,7 +133,7 @@ export async function saveAppliedManifests(
   operations: readonly DeployedOperation[],
   cleared: readonly string[],
   activatorId: string,
-): Promise<void> {
+): Promise<ManifestFiles> {
   const state: IState = api.getState();
   const { deployPaths, stagingPath } = deploymentFoldersOf(state, gameMode);
   const manifestFiles = await manifestFilesAfter(
@@ -144,14 +145,17 @@ export async function saveAppliedManifests(
     cleared,
   );
   for (const [typeId, deployPath] of deployPaths) {
-    await saveActivation(
-      gameMode,
-      typeId,
-      state.app.instanceId,
-      deployPath,
-      stagingPath,
-      manifestFiles.get(typeId) ?? [],
-      activatorId,
-    );
+    await withFileRetry(async () => {
+      await saveActivation(
+        gameMode,
+        typeId,
+        state.app.instanceId,
+        deployPath,
+        stagingPath,
+        manifestFiles.get(typeId) ?? [],
+        activatorId,
+      );
+    });
   }
+  return manifestFiles;
 }

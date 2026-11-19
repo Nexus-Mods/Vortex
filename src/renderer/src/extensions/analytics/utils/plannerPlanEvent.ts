@@ -63,8 +63,7 @@ export async function emitPlannerPlanEvent(
       return;
     }
     // each flag read reports an evaluation
-    const sends =
-      consented && FlagService.instance?.getFlag("vortex-planner-telemetry") !== undefined;
+    const sends = consented && FlagService.instance?.getFlag("vortex-mod-pipeline") !== undefined;
     if (!sends && !devBuild) {
       return;
     }
