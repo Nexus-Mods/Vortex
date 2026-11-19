@@ -380,6 +380,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           expanded={item.expanded}
           group={item.group}
           index={index}
+          isLast={index === items.length - 1}
           menu={
             <Toolbar className="ml-auto pl-1" tracking={groupTracking}>
               <ToolbarGroup actions={groupActions(item.group)} maxVisible={0} />
@@ -483,6 +484,18 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           gridTemplateColumns: savedTemplate,
         } as CSSProperties
       }
+      onClick={(event) => {
+        // Between and below the rows, but not the head or the aside; a portalled panel isn't in
+        // the table.
+        const target = event.target as Element;
+        if (
+          selectable &&
+          event.currentTarget.contains(target) &&
+          target.closest('[role="row"], .nxm-table-head, .nxm-table-aside') === null
+        ) {
+          selection.clear();
+        }
+      }}
     >
       <div
         aria-label={label}
@@ -490,17 +503,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         className="contents"
         role={groups === undefined ? "grid" : "treegrid"}
         onBlur={virtual.onBlur}
-        onClick={(event) => {
-          // Between and below the rows, but not the head; a portalled panel isn't in the table.
-          const target = event.target as Element;
-          if (
-            selectable &&
-            event.currentTarget.contains(target) &&
-            target.closest('[role="row"], .nxm-table-head') === null
-          ) {
-            selection.clear();
-          }
-        }}
         onFocus={virtual.onFocus}
       >
         <TableHeader

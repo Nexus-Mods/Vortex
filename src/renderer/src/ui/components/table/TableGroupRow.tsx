@@ -1,6 +1,7 @@
 import React, { type MouseEvent, type ReactNode } from "react";
 
 import { Icon } from "@/ui/components/icon/Icon";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
@@ -16,6 +17,8 @@ interface ITableGroupRowProps<T, G extends ITableGroup<T>> {
   index: number;
   /** Its place among every row, the head's included, counting from 1. */
   rowIndex: number;
+  /** Whether it's the table's last row, as a last group's heading is while the group's shut. */
+  isLast?: boolean;
   /** The group's "…", after the sticky column's group cell, or the last column's without one. */
   menu: ReactNode;
   /** Collapses or opens the group, from its button. */
@@ -34,6 +37,7 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
   expanded,
   group,
   index,
+  isLast,
   menu,
   onToggle,
   onContextMenu,
@@ -47,7 +51,7 @@ export const TableGroupRow = <T, G extends ITableGroup<T>>({
       aria-expanded={expanded}
       aria-level={1}
       aria-rowindex={rowIndex}
-      className="nxm-table-group-row"
+      className={joinClasses(["nxm-table-group-row"], { "nxm-table-row-last": isLast })}
       data-index={index}
       role="row"
       onContextMenu={(event) => {

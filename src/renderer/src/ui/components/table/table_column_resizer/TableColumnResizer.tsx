@@ -16,10 +16,19 @@ interface ITableColumnResizerProps {
   onResize: (width: number | undefined) => void;
 }
 
+/** The room the table leaves for an aside over its right edge, in px. */
+const asideWidthOf = (table: HTMLElement | null | undefined) => {
+  if (!table) {
+    return 0;
+  }
+
+  return parseFloat(getComputedStyle(table).getPropertyValue("--nxm-table-aside-width")) || 0;
+};
+
 /**
  * The handle on a resizable column's header edge, resizing it as `useResizeHandle` does: no
  * narrower than its least; dragged, as wide as wanted, but from the keyboard no wider than the
- * table's visible width, which End takes it to. Read as a separator whose value is the width
+ * table's visible width less any aside over it, which End takes it to. Read as a separator whose value is the width
  * the column's drawn at, in px.
  */
 export const TableColumnResizer = ({
@@ -39,15 +48,17 @@ export const TableColumnResizer = ({
       return undefined;
     }
 
-    const measure = () =>
+    const measure = () => {
       setSize({
         drawn: Math.round(cell.getBoundingClientRect().width),
-        table: Math.round(table?.clientWidth ?? 0),
+        table: Math.round((table?.clientWidth ?? 0) - asideWidthOf(table)),
       });
+    };
     measure();
+    table?.addEventListener("transitionend", measure);
 
     if (typeof ResizeObserver === "undefined") {
-      return undefined;
+      return () => table?.removeEventListener("transitionend", measure);
     }
 
     const observer = new ResizeObserver(measure);
@@ -55,7 +66,10 @@ export const TableColumnResizer = ({
     if (table) {
       observer.observe(table);
     }
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      table?.removeEventListener("transitionend", measure);
+    };
   }, []);
 
   const drawn = Math.max(minWidth, size.drawn);

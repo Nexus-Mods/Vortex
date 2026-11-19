@@ -523,7 +523,9 @@ describe("Table with selectable rows", () => {
 
       await userEvent.click(cell("Alpha"));
       await clickWith("Gamma", "Control");
-      await userEvent.click(screen.getByRole("grid"));
+      // On the element that lays the grid out, as a browser targets empty space: the grid adds
+      // no box of its own.
+      await userEvent.click(layoutOf(screen.getByRole("grid")));
 
       expect(selected()).toEqual([]);
     });
@@ -1069,6 +1071,22 @@ describe("Table with groups", () => {
     await userEvent.click(toggle);
 
     expect(screen.getAllByRole("row")).toHaveLength(6);
+  });
+
+  // So the sticky column's shadow runs on under it, through the room the table leaves below.
+  it("marks its last row, the last group's heading once that group's shut", async () => {
+    renderGrouped();
+    const last = () => screen.getAllByRole("row").at(-1);
+    const marked = () => document.querySelectorAll(".nxm-table-row-last");
+
+    expect(marked()).toHaveLength(1);
+    expect(last()).toHaveClass("nxm-table-row-last");
+
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+
+    expect(marked()).toHaveLength(1);
+    expect(last()).toHaveAttribute("aria-expanded", "false");
+    expect(last()).toHaveClass("nxm-table-row-last");
   });
 });
 

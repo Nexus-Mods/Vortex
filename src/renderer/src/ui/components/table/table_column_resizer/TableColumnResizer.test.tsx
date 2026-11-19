@@ -4,8 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TableColumnResizer } from "./TableColumnResizer";
 
-/** Renders the handle in a header cell drawn `drawn` px wide, in a table 1000px wide. */
-const renderResizer = (drawn = 200) => {
+/**
+ * Renders the handle in a header cell drawn `drawn` px wide, in a table 1000px wide that leaves
+ * `aside` px for an aside.
+ */
+const renderResizer = (drawn = 200, aside?: string) => {
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
     width: drawn,
   } as DOMRect);
@@ -13,7 +16,7 @@ const renderResizer = (drawn = 200) => {
   const onDrag = vi.fn();
   const onResize = vi.fn();
   render(
-    <div className="nxm-table">
+    <div className="nxm-table" style={{ ["--nxm-table-aside-width" as string]: aside }}>
       <div role="columnheader">
         <TableColumnResizer header="Size" minWidth={80} onDrag={onDrag} onResize={onResize} />
       </div>
@@ -39,6 +42,12 @@ describe("TableColumnResizer", () => {
     expect(handle).toHaveAttribute("aria-valuenow", "200");
     expect(handle).toHaveAttribute("aria-valuemax", "1000");
     expect(handle).toHaveAttribute("aria-valuetext");
+  });
+
+  it("goes no wider from the keyboard than the table leaves beside an aside", () => {
+    const { handle } = renderResizer(200, "424px");
+
+    expect(handle).toHaveAttribute("aria-valuemax", "576");
   });
 
   it("reads as its least while its column is drawn narrower", () => {
