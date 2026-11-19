@@ -196,6 +196,9 @@ function init(context: IExtensionContext): boolean {
         );
 
         analyticsLog("info", "Analytics started");
+
+        // For events that wait on the account being known, such as a login's source.
+        context.api.events.emit("analytics-started");
       } catch (err) {
         // there is no error handling anywhere invoking initializeAnalytics,
         // the results aren't even adviced, so any unhandled exception here would

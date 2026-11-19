@@ -28,7 +28,7 @@ const ignoreDismiss = () => undefined;
 export const LoginPrompt = ({ visible, onHide }: ILoginPromptProps) => {
   const { t } = useTranslation(["nexus_integration"]);
   const dispatch = useDispatch();
-  const login = useNexusLogin();
+  const login = useNexusLogin("startup_prompt");
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const rememberChoice = () => {

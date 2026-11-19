@@ -23,6 +23,7 @@ import { setUserAPIKey } from "../actions/account";
 import { setLoginId, setOauthPending } from "../actions/session";
 import { NEXUS_BASE_URL } from "../constants";
 import { OAUTH_URL } from "../constants";
+import { noteLoginCompleted } from "../hooks/loginTracker";
 import type { IValidateKeyData } from "../types/IValidateKeyData";
 import { getPageURL } from "../util/sso";
 
@@ -398,7 +399,9 @@ class LoginDialog extends ComponentEx<IProps, ILoginDialogState> {
     this.nextState.requested = true;
     this.context.api.events.emit("request-nexus-login", (err: Error) => {
       this.nextState.requested = false;
-      if (err !== null && !(err instanceof UserCanceled)) {
+      if (err === null) {
+        noteLoginCompleted(this.context.api, "login_dialog");
+      } else if (!(err instanceof UserCanceled)) {
         this.context.api.showErrorNotification("Failed to get access key", err, {
           id: "failed-get-nexus-key",
           allowReport: false,
