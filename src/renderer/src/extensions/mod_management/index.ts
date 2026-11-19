@@ -137,6 +137,7 @@ import {
 import allTypesSupported from "./util/allTypesSupported";
 import { JournalPhase } from "./util/apply/journal";
 import {
+  APPLY_RUN_FAILURE_KINDS,
   applyJournalFileFor,
   DeploymentPlanning,
   deploymentPlanningFor,
@@ -1019,7 +1020,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               api.showErrorNotification("Failed to deploy mods, please try again", err.message, {
                 allowReport: false,
               });
-            } else if (parseError(err).data.kind === "deployment:interrupted-run-unsettled") {
+            } else if (APPLY_RUN_FAILURE_KINDS.has(parseError(err).data.kind)) {
               api.showErrorNotification("Failed to deploy mods", err, { allowReport: false });
             } else if (err instanceof CycleError) {
               api.sendNotification({
@@ -1596,12 +1597,15 @@ function once(api: IExtensionApi) {
 
   api.events.on("purge-mods", (allowFallback: boolean, callback: (err: Error) => void) => {
     purgeMods(api)
-      .catch((err) =>
-        // a fallback purge would remove files the unsettled run's journal still describes
-        allowFallback && parseError(err).data.kind !== "deployment:interrupted-run-unsettled"
-          ? fallbackPurge(api)
-          : Promise.reject(err),
-      )
+      .catch(async (err) => {
+        // the disk after a failed Apply run is Apply's to settle
+        if (!allowFallback || APPLY_RUN_FAILURE_KINDS.has(parseError(err).data.kind)) {
+          throw err;
+        }
+        await fallbackPurge(api);
+        // the fallback emits no purge events
+        deployOrchestrator.forget(VortexGameId(activeGameId(api.getState())));
+      })
       .then(() => callback(null))
       .catch((err) => callback(unknownToError(err)));
   });

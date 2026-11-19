@@ -42,12 +42,14 @@ import { newJournal, unreadableJournal } from "../../../test-utils/journal";
 import { writeInto } from "../../../test-utils/tempDir";
 import type { IMergeResultByType } from "../modMerging";
 import { saveActivation } from "./activationStore";
-import type { RunOptions } from "./apply/apply";
+import { ApplyStatus, type RunOptions } from "./apply/apply";
 import { JournalPhase, type JournalStorage } from "./apply/journal";
 import {
+  ApplyRunKind,
   DeploymentPlanning,
   deploymentPlanningFor,
   planAndApplyDeployment,
+  planAndApplyPurge,
   progressBarFor,
   settleLeftoverDeployment,
 } from "./applyDeploy";
@@ -78,6 +80,10 @@ async function makeGameWithUndeployedMod() {
     };
   });
   const orchestrator = new DeployOrchestrator(game.api, hashFile, new LockfileContributions());
+  const runOptions = {
+    journalFile: JOURNAL_FILE,
+    keptFolder: path.join(game.stagingPath, "..", "kept"),
+  };
   /** Plans and applies the profile's deployment with this journal, merge result and profile. */
   const planAndApplyWith = async (
     journal: JournalStorage,
@@ -92,16 +98,44 @@ async function makeGameWithUndeployedMod() {
     } = {},
   ) =>
     planAndApplyDeployment(game.api, orchestrator, {
+      ...runOptions,
       profileId,
       mergeResult,
       journal,
-      journalFile: JOURNAL_FILE,
-      keptFolder: path.join(game.stagingPath, "..", "kept"),
       onProgress,
     });
-  const isModFileDeployed = async () =>
-    (await disk.fs.stat(QualifiedPath.fromNative(deployedPath))).exists;
-  return { game, disk, planAndApplyWith, isModFileDeployed };
+  /** Plans and applies a purge of the game's deployment with this journal. */
+  const planAndApplyPurgeWith = async (journal: JournalStorage) =>
+    planAndApplyPurge(game.api, orchestrator, {
+      ...runOptions,
+      gameMode: VortexGameId(game.gameId),
+      journal,
+    });
+  const deployedFile = QualifiedPath.fromNative(deployedPath);
+  const isModFileDeployed = async () => (await disk.fs.stat(deployedFile)).exists;
+  /** Writes `text` to mod.esp's destination. */
+  const writeDeployed = (text: string) =>
+    disk.fs.writeFile(deployedFile, new TextEncoder().encode(text));
+  const readDeployed = async () => new TextDecoder().decode(await disk.fs.readFile(deployedFile));
+  /** Makes every `op` call on the game's disk fail as busy. */
+  const failEvery = (op: "createLink" | "delete") => {
+    window.api = {
+      ...window.api,
+      fs: new ChaosFS(disk.fs, [
+        { fault: { kind: "os:generic", originalCode: "EBUSY" }, op, times: Infinity },
+      ]),
+    };
+  };
+  return {
+    game,
+    disk,
+    planAndApplyWith,
+    planAndApplyPurgeWith,
+    isModFileDeployed,
+    writeDeployed,
+    readDeployed,
+    failEvery,
+  };
 }
 
 /** The journal file the failure messages name. */
@@ -134,21 +168,24 @@ test("a deployment whose manifest another program holds for a moment still saves
 test("a deployment Apply refuses fails, naming why, and leaves the disk as it was", async () => {
   const { planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
 
-  await expect(planAndApplyWith(await unreadableJournal())).rejects.toThrow(
-    `Vortex didn't deploy, because the journal at ${JOURNAL_FILE} can't be used`,
+  const failure = parseError(
+    await planAndApplyWith(await unreadableJournal()).catch((err: unknown) => err),
   );
 
+  expect(failure.data).toEqual({
+    kind: "deployment:apply-failed",
+    runKind: ApplyRunKind.Deployment,
+    applyStatus: ApplyStatus.Refused,
+  });
+  expect(failure.message).toContain(
+    `Vortex didn't deploy, because the journal at ${JOURNAL_FILE} can't be used`,
+  );
   expect(await isModFileDeployed()).toBe(false);
 });
 
 test("a deployment Apply rolls back fails, naming the step that failed", async () => {
-  const { disk, planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
-  window.api = {
-    ...window.api,
-    fs: new ChaosFS(disk.fs, [
-      { fault: { kind: "os:generic", originalCode: "EBUSY" }, op: "createLink", times: Infinity },
-    ]),
-  };
+  const { planAndApplyWith, isModFileDeployed, failEvery } = await makeGameWithUndeployedMod();
+  failEvery("createLink");
 
   await expect(planAndApplyWith(await newJournal())).rejects.toThrow(
     /failed at step 1, LINK .*mod\.esp, .*, and was undone/,
@@ -168,15 +205,17 @@ test("a deployment whose journal can't be ended fails, naming the cause and the 
   );
 });
 
-test("a deployment with merged files fails before Apply runs", async () => {
+test("a deployment with merged files fails before Apply runs, with no Apply status", async () => {
   const { planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
 
-  await expect(
-    planAndApplyWith(await newJournal(), {
+  const failure = parseError(
+    await planAndApplyWith(await newJournal(), {
       mergeResult: { [VortexModTypeId("")]: { usedInMerge: ["mod.esp"], mergeInfluences: {} } },
-    }),
-  ).rejects.toThrow("merged");
+    }).catch((err: unknown) => err),
+  );
 
+  expect(failure.message).toContain("merged");
+  expect(Object.keys(failure.data)).not.toContain("applyStatus");
   expect(await isModFileDeployed()).toBe(false);
 });
 
@@ -210,6 +249,41 @@ test("a run stopped before its journal recorded a step is finished by settling, 
   expect(game.notifications).toContainEqual(
     expect.objectContaining({ message: "Interrupted deployment finished" }),
   );
+});
+
+test("a purge through Apply removes the deployed files and their manifest", async () => {
+  const { game, planAndApplyWith, planAndApplyPurgeWith, isModFileDeployed } =
+    await makeGameWithUndeployedMod();
+  await planAndApplyWith(await newJournal());
+
+  await planAndApplyPurgeWith(await newJournal());
+
+  expect(await isModFileDeployed()).toBe(false);
+  expect(await game.recordedFiles()).toEqual([]);
+});
+
+test("a purge through Apply puts back the game file the deployment backed up", async () => {
+  const { planAndApplyWith, planAndApplyPurgeWith, writeDeployed, readDeployed } =
+    await makeGameWithUndeployedMod();
+  await writeDeployed("original");
+  await planAndApplyWith(await newJournal());
+
+  await planAndApplyPurgeWith(await newJournal());
+
+  expect(await readDeployed()).toBe("original");
+});
+
+test("a purge Apply rolls back fails, naming the step, and leaves the deployment in place", async () => {
+  const { planAndApplyWith, planAndApplyPurgeWith, isModFileDeployed, failEvery } =
+    await makeGameWithUndeployedMod();
+  await planAndApplyWith(await newJournal());
+  failEvery("delete");
+
+  await expect(planAndApplyPurgeWith(await newJournal())).rejects.toThrow(
+    /failed at step 1, UNLINK .*mod\.esp, .*, and was undone/,
+  );
+
+  expect(await isModFileDeployed()).toBe(true);
 });
 
 test("settling reports the progress of the run it finishes", async () => {

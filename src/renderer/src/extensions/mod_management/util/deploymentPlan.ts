@@ -164,8 +164,6 @@ export async function resolveAndScan(
   diskScan: DiskScan;
   scanMs: number;
 }> {
-  const game = getGame(gameMode);
-  const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
   // TODO(MOD-144): add Vortex-generated files (plugins.txt, loadorder.txt) to both lockfiles with
   // withGeneratedFiles once Apply can write them; the plugin persistor writes them until then
   const [resolved, scanned] = await Promise.all([
@@ -174,19 +172,26 @@ export async function resolveAndScan(
       const lockfile = resolve(input);
       return { current: { lockfile, stagedFiles: stagedFilesFor(lockfile.files) } };
     }),
-    timed(() =>
-      scanDeploymentTargets(
-        Object.values(game.getModPaths(gamePath)),
-        previous.files.map(({ destinationPath }) => destinationPath),
-      ),
-    ),
+    scanDeployedDestinations(api, gameMode, previous),
   ]);
-  return {
-    ...resolved.result,
-    resolveMs: resolved.ms,
-    diskScan: scanned.result,
-    scanMs: scanned.ms,
-  };
+  return { ...resolved.result, resolveMs: resolved.ms, ...scanned };
+}
+
+/** Scans the game's mod folders and the destinations `previous` deployed to. */
+export async function scanDeployedDestinations(
+  api: IExtensionApi,
+  gameMode: VortexGameId,
+  previous: Lockfile,
+): Promise<{ diskScan: DiskScan; scanMs: number }> {
+  const game = getGame(gameMode);
+  const gamePath = api.getState().settings.gameMode.discovered[gameMode]?.path;
+  const { result, ms } = await timed(() =>
+    scanDeploymentTargets(
+      Object.values(game.getModPaths(gamePath)),
+      previous.files.map(({ destinationPath }) => destinationPath),
+    ),
+  );
+  return { diskScan: result, scanMs: ms };
 }
 
 /**

@@ -31,6 +31,7 @@ import {
   hashingOnce,
   planAndLogOperations,
   resolveAndScan,
+  scanDeployedDestinations,
   seededLockfile,
   type ApplyRun,
   type DeploymentPlan,
@@ -71,7 +72,8 @@ interface PendingDeployment {
   // TODO(MOD-134): remove with deployed()
   /** the game's manifests as they were when it was planned */
   manifestFilesBefore: ManifestFiles;
-  figures: PlannerPlanFigures;
+  /** what its plan run measured; none for a purge */
+  figures?: PlannerPlanFigures;
 }
 
 /**
@@ -165,7 +167,42 @@ export class DeployOrchestrator {
   }
 
   /**
-   * Runs the pending deployment's plan through Apply and reports its plan run. The run saves the
+   * Plans a purge of a planned game, from the lockfile its manifests seed to one with no files.
+   * Undefined for other games and on a failure, which is logged.
+   */
+  public async planPurge(gameMode: VortexGameId): Promise<DeploymentPlan | undefined> {
+    this.#pending = undefined;
+    this.#previousLockfiles.delete(gameMode);
+    if (!isGameWithPlannedDeployments(gameMode)) {
+      return undefined;
+    }
+    try {
+      const previous = await seededLockfile(this.#api, gameMode, this.#hashFile);
+      const current: StagedLockfile = {
+        lockfile: { ...previous.lockfile, files: [] },
+        stagedFiles: { pathOf: () => undefined },
+      };
+      const [{ diskScan, scanMs }, manifestFilesBefore] = await Promise.all([
+        scanDeployedDestinations(this.#api, gameMode, previous.lockfile),
+        readManifestFiles(this.#api, gameMode),
+      ]);
+      const { destinations } = planAndLogOperations(
+        gameMode,
+        current.lockfile,
+        previous.lockfile,
+        diskScan,
+        scanMs,
+      );
+      this.#pending = { gameMode, current, destinations, manifestFilesBefore };
+      return deploymentPlanOf(current, previous, destinations);
+    } catch (err) {
+      log("warn", "failed to plan purge", { gameMode, error: getErrorMessageOrDefault(err) });
+      return undefined;
+    }
+  }
+
+  /**
+   * Runs the pending plan through Apply, reporting a deployment's plan run. The run saves the
    * game's manifests from its operations, for `deploymentMethod`, before it ends; those entries
    * come back with the result. An applied run leaves its lockfile as the game's last deployed one;
    * a refused or rolled back run keeps the previous one; a run that leaves its journal keeps none,
@@ -210,11 +247,13 @@ export class DeployOrchestrator {
         return exhausted;
       }
     }
-    void emitPlannerPlanEvent(this.#api, gameMode, () => ({
-      ...figures,
-      manifest_diff: null,
-      manifest_entry_diff: null,
-    }));
+    if (figures !== undefined) {
+      void emitPlannerPlanEvent(this.#api, gameMode, () => ({
+        ...figures,
+        manifest_diff: null,
+        manifest_entry_diff: null,
+      }));
+    }
     return { result, savedManifestFiles };
   }
 
@@ -269,8 +308,13 @@ export class DeployOrchestrator {
   }
 }
 
-/** Instantiates the the DeployOrchestrator and wires up all of the listeners caller */
-/** called from mod_management/index.ts, curently called only in dev mode */
+let registeredOrchestrator: DeployOrchestrator | undefined;
+
+/** The orchestrator `registerDeployOrchestrator` made; undefined before it runs. */
+export const registeredDeployOrchestrator = (): DeployOrchestrator | undefined =>
+  registeredOrchestrator;
+
+/** Makes the DeployOrchestrator mod management uses and wires up its listeners. */
 export function registerDeployOrchestrator(
   api: IExtensionApi,
   lockfileContributions: LockfileContributions,
@@ -296,10 +340,10 @@ export function registerDeployOrchestrator(
   // Apply deploy
   api.onAsync<"will-remove-mods">("will-remove-mods", forgetGame);
   api.onAsync<"will-deploy-single-mod">("will-deploy-single-mod", forgetGame);
-  // TODO(MOD-149): remove these two listeners once purge runs through Apply; a failed purge emits
-  // only will-purge, a purge of one mod type only did-purge
+  // a failed purge emits only will-purge, a purge of one mod type only did-purge
   api.onAsync<"will-purge">("will-purge", forgetProfileGame);
   api.onAsync<"did-purge">("did-purge", forgetProfileGame);
 
+  registeredOrchestrator = orchestrator;
   return orchestrator;
 }

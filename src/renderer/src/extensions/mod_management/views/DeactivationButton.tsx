@@ -1,4 +1,4 @@
-import { getErrorCode, unknownToError } from "@vortex/shared";
+import { getErrorCode, parseError, unknownToError } from "@vortex/shared";
 import * as React from "react";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
@@ -21,6 +21,7 @@ import { activeGameId } from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { setConfirmPurge } from "../actions/settings";
 import type { IDeploymentMethod } from "../types/IDeploymentMethod";
+import { APPLY_RUN_FAILURE_KINDS } from "../util/applyDeploy";
 import { NoDeployment } from "../util/exceptions";
 
 interface IConnectedProps {
@@ -97,6 +98,11 @@ class DeactivationButton extends ComponentEx<IProps, {}> {
         }
         if (err instanceof NoDeployment) {
           onShowError("You need to select a deployment method in settings", undefined, false);
+          return;
+        }
+
+        if (APPLY_RUN_FAILURE_KINDS.has(parseError(err).data.kind)) {
+          onShowError("Failed to purge mods", err, false);
           return;
         }
 

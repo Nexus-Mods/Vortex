@@ -175,11 +175,10 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
     await game.emitAndAwait("did-deploy", profileId, {});
     return planned;
   };
-  /** Deploys the active profile through Apply on the game's disk: plans, applies, then finishes. */
-  const applyDeploy = async (journal: JournalStorage) => {
-    const planned = await plan();
+  /** Runs a plan through Apply on the game's disk with this journal. */
+  const applyPlanned = async (planned: DeploymentPlan | undefined, journal: JournalStorage) => {
     if (planned === undefined) {
-      throw new Error("the deployment has no plan");
+      throw new Error("there is no plan to apply");
     }
     const applied = await orchestrator.apply(
       planned,
@@ -191,8 +190,21 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
       },
       VortexDeploymentMethodId("hardlink_activator"),
     );
-    await game.emitAndAwait("did-deploy", activeProfileId, {});
     return applied?.result;
+  };
+  /** Deploys the active profile through Apply on the game's disk: plans, applies, then finishes. */
+  const applyDeploy = async (journal: JournalStorage) => {
+    const result = await applyPlanned(await plan(), journal);
+    await game.emitAndAwait("did-deploy", activeProfileId, {});
+    return result;
+  };
+  /** Plans a purge of the game's deployment. */
+  const planPurge = () => orchestrator.planPurge(VortexGameId(game.gameId));
+  /** Purges the game through Apply on its disk: plans the purge, applies it, then finishes. */
+  const applyPurge = async (journal: JournalStorage) => {
+    const result = await applyPlanned(await planPurge(), journal);
+    await game.emitAndAwait("did-purge", activeProfileId);
+    return result;
   };
   return {
     game,
@@ -205,6 +217,8 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
     plan,
     deploy,
     applyDeploy,
+    planPurge,
+    applyPurge,
   };
 }
 
@@ -496,6 +510,41 @@ test("a failed plan run reports the kind of its error", async () => {
   expect(figures.resolve_ms).toBeUndefined();
   expect(figures.operations).toBeUndefined();
   expect(figures.error_kind).toBeDefined();
+});
+
+test("a purge plan unlinks the files a deployment through Apply linked", async () => {
+  const { game, deployedPath, applyDeploy, planPurge } = await makeGameWithStagedMod(false);
+  setModEnabled(game, MOD_ID, true);
+  await applyDeploy(await newJournal());
+
+  expect(operationsOf(await planPurge())).toEqual([
+    { kind: OperationKind.Unlink, path: toPortablePath(deployedPath) },
+  ]);
+});
+
+test("an applied purge plan puts back the game file the deployment backed up", async () => {
+  const { disk, deployedPath, writeDeployed, applyDeploy, applyPurge } =
+    await makeGameWithStagedMod(true);
+  await writeDeployed("original");
+  await applyDeploy(await newJournal());
+
+  const result = await applyPurge(await newJournal());
+
+  expect(result?.status).toBe(ApplyStatus.Applied);
+  const contents = await disk.fs.readFile(QualifiedPath.fromNative(deployedPath));
+  expect(new TextDecoder().decode(contents)).toBe("original");
+});
+
+test("a deployment after a purge through Apply links the mod again", async () => {
+  const { game, deployedPath, applyDeploy, applyPurge, deploy } =
+    await makeGameWithStagedMod(false);
+  setModEnabled(game, MOD_ID, true);
+  await applyDeploy(await newJournal());
+  await applyPurge(await newJournal());
+
+  expect(operationsOf(await deploy())).toEqual([
+    { kind: OperationKind.Link, path: toPortablePath(deployedPath) },
+  ]);
 });
 
 test("a deployment after one Apply ran plans nothing", async () => {
