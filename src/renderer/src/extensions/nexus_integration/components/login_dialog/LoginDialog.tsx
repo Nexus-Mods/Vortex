@@ -57,7 +57,7 @@ export const LoginDialog = ({
 }: ILoginDialogProps) => {
   const { t } = useTranslation(["nexus_integration"]);
   const dispatch = useDispatch();
-  const login = useNexusLogin();
+  const login = useNexusLogin("login_dialog");
   const oauthPending = useSelector(oauthPendingSelector);
   const isOpen = visible || oauthPending !== undefined;
 

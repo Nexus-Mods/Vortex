@@ -113,7 +113,7 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   const dispatch = useDispatch();
   // Logging in is a prerequisite for the Nexus-backed checks rather than a fix for an
   // issue, so it goes through the same OAuth flow as the header's login button.
-  const requestLogin = useNexusLogin();
+  const requestLogin = useNexusLogin("health_check");
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
 

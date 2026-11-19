@@ -21,7 +21,7 @@ export const PremiumIndicator: FC<React.PropsWithChildren<unknown>> = () => {
   const showAd = useSelector(shouldShowPremiumAd);
   const premium = useSelector(isPremiumSelector);
 
-  const handleLogin = useNexusLogin();
+  const handleLogin = useNexusLogin("header");
 
   const handleGoPremium = useCallback(() => {
     window.api.shell.openUrl(
