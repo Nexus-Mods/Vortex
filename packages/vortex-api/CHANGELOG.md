@@ -27,11 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Deprecated
 
 - `IMainPageOptions.mdi` is deprecated in favour of `menuIcon: { path }`. It still works, as a `menuIcon` path
+- The `react-markdown` 6 props that 9 dropped (`transformLinkUri`, `transformImageUri`, `linkTarget`, and the ones 6 had already deprecated, such as `renderers` and `source`) log a deprecation warning. `transformLinkUri` and `transformImageUri` still run, and `plugins` runs as `remarkPlugins`, as it did in 6; the rest are ignored - see the [react-markdown section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-markdown-9)
 - A filesystem path in a game info entry with `type: "url"` is deprecated in favour of `type: "path"`. It still opens as a path, in the game info popover and the game details dialog, and logs a warning naming the provider
 
 ### Changed
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
+- `react-markdown` supplied at runtime is now 9.1.0 instead of 6.0.3. Every way of importing 6 still works. Links only open if they go to a web page or an email address, images from network shares don't load, and remark or rehype plugins made for 6 are dropped when they throw. Custom components no longer get 6's `inline`, `level`, `ordered`, `index`, `checked` or `isHeader` props - see the [react-markdown section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-markdown-9)
 - `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
 - `registerReducer` checks its spec against the state at its path. A path the state interfaces don't declare, or a spec whose type doesn't match the slice, now fails the typecheck. Runtime behaviour is unchanged, and already-built extensions keep working. Declare your slice by augmenting the state interfaces - see the [reducer section of the migration guide](./docs/MIGRATION.md#vortex-2x-typed-registerreducer)
 - `actions.showURL` takes all four arguments (`url`, `instructions`, `subscriber`, `skippable`); pass `undefined` for the ones you don't use. Previously only `url` was required. Runtime behaviour is unchanged

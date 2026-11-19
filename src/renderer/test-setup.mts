@@ -15,30 +15,50 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { ApplicationData } from "./src/applicationData.js";
 
-// A React update outside act() fails the test it happened in; "React warnings" in docs/testing.md
-// says how to fix one. console.error is assigned rather than spied on so vi.restoreAllMocks()
-// leaves it be, and the check runs after testing-library's cleanup (vitest.config.mts runs hooks
-// last-registered first), so an update that lands while a test is torn down still counts.
-let componentsUpdatedOutsideAct = new Set<string>();
+// These React warnings fail the test they're logged in; "React warnings" in docs/testing.md says
+// how to fix each. `logged` is part of the message React logs, and `failure` says what went wrong
+// given the components React named. console.error is assigned rather than spied on so
+// vi.restoreAllMocks() leaves it be, and the check runs after testing-library's cleanup
+// (vitest.config.mts runs hooks last-registered first), so a warning logged while a test is torn
+// down still counts.
+const failingWarnings: { logged: string; failure: (components: string) => string }[] = [
+  {
+    logged: "not wrapped in act",
+    failure: (components) => `React updated ${components} outside act()`,
+  },
+  {
+    // React logs one message for function components and another for memo components
+    logged: "Support for defaultProps will be removed from",
+    failure: (components) => `${components} set defaultProps on a function or memo component`,
+  },
+];
+let componentsByWarning = new Map<(typeof failingWarnings)[number], Set<string>>();
 const originalConsoleError = console.error;
 console.error = (...args: unknown[]) => {
-  if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
+  const message = args[0];
+  const warning =
+    typeof message === "string"
+      ? failingWarnings.find(({ logged }) => message.includes(logged))
+      : undefined;
+  if (warning !== undefined) {
+    const components = componentsByWarning.get(warning) ?? new Set<string>();
     // React passes the component's name after the message
-    componentsUpdatedOutsideAct.add(typeof args[1] === "string" ? args[1] : "a component");
+    components.add(typeof args[1] === "string" ? args[1] : "a component");
+    componentsByWarning.set(warning, components);
   }
   originalConsoleError.apply(console, args);
 };
-const failOnActWarnings = () => {
-  const components = [...componentsUpdatedOutsideAct];
-  componentsUpdatedOutsideAct = new Set();
-  if (components.length > 0) {
-    throw new Error(
-      `React updated ${components.join(", ")} outside act(); see "React warnings" in docs/testing.md`,
-    );
+const failOnReactWarnings = () => {
+  const failures = [...componentsByWarning].map(([warning, components]) =>
+    warning.failure([...components].join(", ")),
+  );
+  componentsByWarning = new Map();
+  if (failures.length > 0) {
+    throw new Error(`${failures.join("; ")}; see "React warnings" in docs/testing.md`);
   }
 };
-afterEach(failOnActWarnings);
-afterAll(failOnActWarnings);
+afterEach(failOnReactWarnings);
+afterAll(failOnReactWarnings);
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is

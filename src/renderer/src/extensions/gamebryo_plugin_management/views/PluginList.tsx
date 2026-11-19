@@ -11,12 +11,13 @@ import type { Message, PluginCleaningData } from "loot";
 import * as React from "react";
 import { Alert, Button, ListGroup, ListGroupItem, Panel } from "react-bootstrap";
 import { withTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
 import Select from "react-select";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 import { generate as shortid } from "shortid";
+
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import FlexLayout from "../../../controls/FlexLayout";
@@ -771,7 +772,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
     return (
       <Alert bsStyle={clean ? "success" : "warning"}>
-        {(ReactMarkdown as any)({ children: message })}
+        <ReactMarkdown>{message}</ReactMarkdown>
         {clean ? null : (
           <a href={CLEANING_GUIDE_LINK}>
             <Icon name="launch" />
@@ -1239,9 +1240,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         {filtered.map((msg: Message, idx: number) => (
           <ListGroupItem key={idx}>
             <Alert bsStyle={this.translateLootMessageType(msg.type)}>
-              {(ReactMarkdown as any)({
-                children: this.prepareMessage(msg.content, plugin),
-              })}
+              <ReactMarkdown>{this.prepareMessage(msg.content, plugin)}</ReactMarkdown>
             </Alert>
           </ListGroupItem>
         ))}

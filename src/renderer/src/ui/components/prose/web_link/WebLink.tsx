@@ -3,7 +3,7 @@ import React, { type ReactNode } from "react";
 import { webHref } from "@/ui/utils/webHref";
 
 /** A link's target, if it's an email address to write to, which only opens the user's mail app. */
-const mailHref = (href: string | undefined): string | undefined =>
+export const mailHref = (href: string | undefined): string | undefined =>
   href !== undefined && URL.parse(href)?.protocol === "mailto:" ? href : undefined;
 
 /**

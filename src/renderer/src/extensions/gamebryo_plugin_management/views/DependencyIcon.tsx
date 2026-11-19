@@ -17,8 +17,9 @@ import type {
 import { DragSource, DropTarget } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
-import ReactMarkdown from "react-markdown";
 import { connect } from "react-redux";
+
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import Advanced from "../../../controls/Advanced";
 import { ComponentEx } from "../../../controls/ComponentEx";
@@ -433,7 +434,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if (readOnly) {
       return (
         <li key={String(name)} className="rule-readonly">
-          {(ReactMarkdown as any)({ children: display || name })}
+          <ReactMarkdown>{display || name}</ReactMarkdown>
         </li>
       );
     }
