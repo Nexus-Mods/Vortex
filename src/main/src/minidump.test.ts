@@ -14,9 +14,19 @@ import { parseMinidump, summarizeMinidumpFile } from "./minidump";
 const loadFixture = (name: string): Buffer =>
   gunzipSync(readFileSync(path.join(__dirname, "__fixtures__", name)));
 
+/** The crash site alone: the stack scan has its own tests. */
+const crashSite = async (dump: Buffer): Promise<unknown> => {
+  const result = await parseMinidump(dump);
+  if (result.summary === undefined) {
+    return result;
+  }
+  const { stack: _stack, stackModules: _stackModules, ...site } = result.summary;
+  return { summary: site };
+};
+
 describe("parseMinidump", () => {
   it("parses a Windows main-process crash", async () => {
-    expect(await parseMinidump(loadFixture("windows-main.dmp.gz"))).toEqual({
+    expect(await crashSite(loadFixture("windows-main.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xc0000005",
         exceptionName: "ACCESS_VIOLATION",
@@ -32,7 +42,7 @@ describe("parseMinidump", () => {
   });
 
   it("parses a Windows renderer crash", async () => {
-    expect(await parseMinidump(loadFixture("windows-renderer.dmp.gz"))).toEqual({
+    expect(await crashSite(loadFixture("windows-renderer.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xc0000005",
         exceptionName: "ACCESS_VIOLATION",
@@ -49,7 +59,7 @@ describe("parseMinidump", () => {
 
   it("parses a Linux main-process crash with signal names", async () => {
     // null-pointer segfault: the faulting address resolves to no module
-    expect(await parseMinidump(loadFixture("linux-main.dmp.gz"))).toEqual({
+    expect(await crashSite(loadFixture("linux-main.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xb",
         exceptionName: "SIGSEGV",
@@ -61,7 +71,7 @@ describe("parseMinidump", () => {
   });
 
   it("parses a Linux renderer crash", async () => {
-    expect(await parseMinidump(loadFixture("linux-renderer.dmp.gz"))).toEqual({
+    expect(await crashSite(loadFixture("linux-renderer.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xb",
         exceptionName: "SIGSEGV",
@@ -70,6 +80,32 @@ describe("parseMinidump", () => {
         appVersion: "1.0.0",
       },
     });
+  });
+
+  it("scans the faulting thread's stack for code addresses", async () => {
+    const summary = (await parseMinidump(loadFixture("linux-main.dmp.gz"))).summary;
+    expect(summary?.stack).toHaveLength(32);
+    expect(summary?.stack?.slice(0, 3)).toEqual([
+      "electron+0x4cf927a",
+      "electron+0x558d7d2",
+      "electron+0x558d755",
+    ]);
+    expect(summary?.stackModules).toEqual(["electron|0.0.0.0|F3A63A7779CEDBDBAB5F6CC62D08AD3C0"]);
+  });
+
+  it("reports no stack when the dump holds no code addresses on it", async () => {
+    // the Windows fixtures had their captured stack memory zeroed
+    const summary = (await parseMinidump(loadFixture("windows-main.dmp.gz"))).summary;
+    expect(summary).not.toHaveProperty("stack");
+    expect(summary).not.toHaveProperty("stackModules");
+  });
+
+  it("keeps the crash site when the stack memory is cut off", async () => {
+    const dump = loadFixture("linux-main.dmp.gz");
+    // the faulting thread's stack is the last thing the parser reads from this dump
+    const result = await parseMinidump(dump.subarray(0, 133824 + 64));
+    expect(result.summary).toMatchObject({ exceptionName: "SIGSEGV", processType: "browser" });
+    expect(result.summary).not.toHaveProperty("stack");
   });
 
   it("rejects non-minidump data", async () => {
