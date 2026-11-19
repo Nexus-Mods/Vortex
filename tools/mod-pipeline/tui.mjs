@@ -4,9 +4,7 @@
  * A terminal screen for the fake Skyrim SE tool: shows whether the setup and its Vortex are there,
  * runs the tool's commands on a key press and shows what they print.
  *
- * It has its own dependencies, installed once in this folder:
- *   pnpm install --ignore-workspace
- * Then, from a terminal:
+ * Its dependencies come with the workspace's `pnpm install`. From a terminal:
  *   node tools/mod-pipeline/tui.mjs [--root dir] [--port 9222]
  * The options go to every command it runs. Without a terminal that reads keys it draws the screen
  * once and ends; the commands of fake-skyrimse.mjs work without it.

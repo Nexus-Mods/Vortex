@@ -1,10 +1,17 @@
 {
-  "name": "fake-skyrimse",
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/mod-pipeline-tools",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "The fake Skyrim SE tool's own dependencies; install with `pnpm install --ignore-workspace` in this folder",
+  "description": "Tools for developing and live-testing the mod pipeline: the fake Skyrim SE tool and its terminal screen",
   "dependencies": {
-    "ink": "5.2.1",
-    "react": "18.3.1"
+    "ink": "catalog:",
+    "react": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:tooling"
+    ]
   }
 }

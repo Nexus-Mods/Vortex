@@ -39,11 +39,10 @@ the options and the warnings to expect.
 
 `tui.mjs` shows whether the setup and its Vortex are there, runs the commands
 above on a key press and shows their checks and what they print. `j` shows the
-journals, and `o` there opens one in VS Code. It has its own dependencies,
-installed once in this folder:
+journals, and `o` there opens one in VS Code. Its dependencies come with the
+workspace's `pnpm install`:
 
 ```
-pnpm install --ignore-workspace
 node tools/mod-pipeline/tui.mjs
 ```
 
