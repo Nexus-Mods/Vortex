@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A JSON Schema for `info.json`, published as `@nexusmods/vortex-api/schemas/info.schema.json`, and an [`info.json` reference](./docs/INFO-JSON.md) covering every field, including `contributes`. Add `"$schema": "https://unpkg.com/@nexusmods/vortex-api/schemas/info.schema.json"` to your `info.json` for editor completion
 - `GameUid`, the id of a game in the Nexus Mods game catalogue, with its brander
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
 - Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
