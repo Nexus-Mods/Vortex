@@ -15,8 +15,8 @@ const loadFixture = (name: string): Buffer =>
   gunzipSync(readFileSync(path.join(__dirname, "__fixtures__", name)));
 
 describe("parseMinidump", () => {
-  it("parses a Windows main-process crash", () => {
-    expect(parseMinidump(loadFixture("windows-main.dmp.gz"))).toEqual({
+  it("parses a Windows main-process crash", async () => {
+    expect(await parseMinidump(loadFixture("windows-main.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xc0000005",
         exceptionName: "ACCESS_VIOLATION",
@@ -31,8 +31,8 @@ describe("parseMinidump", () => {
     });
   });
 
-  it("parses a Windows renderer crash", () => {
-    expect(parseMinidump(loadFixture("windows-renderer.dmp.gz"))).toEqual({
+  it("parses a Windows renderer crash", async () => {
+    expect(await parseMinidump(loadFixture("windows-renderer.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xc0000005",
         exceptionName: "ACCESS_VIOLATION",
@@ -47,9 +47,9 @@ describe("parseMinidump", () => {
     });
   });
 
-  it("parses a Linux main-process crash with signal names", () => {
+  it("parses a Linux main-process crash with signal names", async () => {
     // null-pointer segfault: the faulting address resolves to no module
-    expect(parseMinidump(loadFixture("linux-main.dmp.gz"))).toEqual({
+    expect(await parseMinidump(loadFixture("linux-main.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xb",
         exceptionName: "SIGSEGV",
@@ -60,8 +60,8 @@ describe("parseMinidump", () => {
     });
   });
 
-  it("parses a Linux renderer crash", () => {
-    expect(parseMinidump(loadFixture("linux-renderer.dmp.gz"))).toEqual({
+  it("parses a Linux renderer crash", async () => {
+    expect(await parseMinidump(loadFixture("linux-renderer.dmp.gz"))).toEqual({
       summary: {
         exceptionCode: "0xb",
         exceptionName: "SIGSEGV",
@@ -72,31 +72,35 @@ describe("parseMinidump", () => {
     });
   });
 
-  it("rejects non-minidump data", () => {
-    expect(parseMinidump(Buffer.from("not a minidump, definitely long enough"))).toEqual({
+  it("rejects non-minidump data", async () => {
+    expect(await parseMinidump(Buffer.from("not a minidump, definitely long enough"))).toEqual({
       unreadableReason: "invalid-signature",
     });
   });
 
-  it("rejects truncated dumps", () => {
+  it("rejects truncated dumps", async () => {
     const dump = loadFixture("windows-main.dmp.gz");
-    expect(parseMinidump(dump.subarray(0, 128))).toEqual({ unreadableReason: "malformed-dump" });
+    expect(await parseMinidump(dump.subarray(0, 128))).toEqual({
+      unreadableReason: "malformed-dump",
+    });
   });
 
-  it("distinguishes invalid, truncated and exception-free dumps", () => {
-    expect(parseMinidump(Buffer.alloc(32))).toEqual({ unreadableReason: "invalid-signature" });
-    expect(parseMinidump(Buffer.alloc(2))).toEqual({ unreadableReason: "malformed-dump" });
+  it("distinguishes invalid, truncated and exception-free dumps", async () => {
+    expect(await parseMinidump(Buffer.alloc(32))).toEqual({
+      unreadableReason: "invalid-signature",
+    });
+    expect(await parseMinidump(Buffer.alloc(2))).toEqual({ unreadableReason: "malformed-dump" });
     const header = Buffer.alloc(32);
     header.writeUInt32LE(0x504d444d);
-    expect(parseMinidump(header)).toEqual({ unreadableReason: "missing-exception" });
-    expect(parseMinidump(loadFixture("windows-renderer.dmp.gz").subarray(0, 128))).toEqual({
+    expect(await parseMinidump(header)).toEqual({ unreadableReason: "missing-exception" });
+    expect(await parseMinidump(loadFixture("windows-renderer.dmp.gz").subarray(0, 128))).toEqual({
       unreadableReason: "malformed-dump",
     });
   });
 });
 
 describe("summarizeMinidumpFile", () => {
-  it("reads real dumps and distinguishes size limits from file errors", async () => {
+  it("reads real dumps of any size and reports file errors", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "vortex-minidump-"));
     const file = path.join(dir, "crash.dmp");
     try {
@@ -105,8 +109,16 @@ describe("summarizeMinidumpFile", () => {
       expect(await summarizeMinidumpFile(file)).toMatchObject({
         summary: { processType: "renderer", exceptionCode: "0xc0000005" },
       });
-      await truncate(file, 64 * 1024 * 1024 + 1);
-      expect(await summarizeMinidumpFile(file)).toEqual({ unreadableReason: "file-too-large" });
+      // padded far past what would be reasonable to hold in memory
+      await truncate(file, 256 * 1024 * 1024);
+      expect(await summarizeMinidumpFile(file)).toMatchObject({
+        summary: { processType: "renderer", exceptionCode: "0xc0000005", module: "electron.exe" },
+      });
+      // a count field that would ask for gigabytes is refused, not attempted
+      const corrupt = loadFixture("windows-renderer.dmp.gz");
+      corrupt.writeUInt32LE(0xffffffff, 8);
+      await writeFile(file, corrupt);
+      expect(await summarizeMinidumpFile(file)).toEqual({ unreadableReason: "malformed-dump" });
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

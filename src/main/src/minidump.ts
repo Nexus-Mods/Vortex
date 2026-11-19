@@ -1,4 +1,5 @@
-import { readFile, stat } from "node:fs/promises";
+import type { FileHandle } from "node:fs/promises";
+import { open } from "node:fs/promises";
 import * as path from "node:path";
 
 /**
@@ -7,6 +8,10 @@ import * as path from "node:path";
  * Breakpad/Crashpad tooling. Full stackwalking needs unwind info and
  * symbols; module-level attribution is enough to cluster native crashes
  * (GPU drivers, AV injections, our own native addons).
+ *
+ * A dump is a directory of offsets into the file, so only the few records
+ * the summary needs are read, each by position. Memory use does not depend
+ * on the size of the dump.
  *
  * Format reference: MINIDUMP_HEADER and friends (minidumpapiset.h), plus
  * Crashpad's MinidumpCrashpadInfo for the process-type annotation.
@@ -49,9 +54,6 @@ const STREAM_CRASHPAD_INFO = 0x43500001;
 const MODULE_ENTRY_SIZE = 108;
 const VS_FIXEDFILEINFO_SIGNATURE = 0xfeef04bd;
 
-// Bound memory use when reading dumps, including unexpectedly large child dumps.
-const MAX_DUMP_SIZE = 64 * 1024 * 1024;
-
 const WINDOWS_EXCEPTION_NAMES: Record<number, string> = {
   0x0517a7ed: "DUMP_WITHOUT_CRASHING",
   // Crashpad's SIGABRT handler: abort(), e.g. a Node fatal error
@@ -84,9 +86,55 @@ const LINUX_SIGNAL_NAMES: Record<number, string> = {
 const MD_OS_LINUX = 0x8201;
 const MD_OS_ANDROID = 0x8202; // why not? xD
 
+// Largest single record read from a dump. Sizes and counts come from the
+// file, so a corrupt field must not be able to request an arbitrary amount.
+const MAX_READ_SIZE = 1024 * 1024;
+
 interface ILocation {
   size: number;
   rva: number;
+}
+
+/** Bytes of a dump, read by position. A read outside the data throws a
+ *  RangeError, which the parser reports as a malformed dump. */
+interface IByteSource {
+  read(offset: number, length: number): Promise<Buffer>;
+}
+
+function assertReadable(length: number): void {
+  if (!Number.isSafeInteger(length) || length < 0 || length > MAX_READ_SIZE) {
+    throw new RangeError(`refusing to read ${length} bytes from a minidump`);
+  }
+}
+
+function bufferSource(buffer: Buffer): IByteSource {
+  return {
+    read: async (offset, length) => {
+      assertReadable(length);
+      if (offset + length > buffer.length) {
+        throw new RangeError("read past the end of the minidump");
+      }
+      return buffer.subarray(offset, offset + length);
+    },
+  };
+}
+
+function fileSource(handle: FileHandle): IByteSource {
+  return {
+    read: async (offset, length) => {
+      assertReadable(length);
+      const buffer = Buffer.alloc(length);
+      let filled = 0;
+      while (filled < length) {
+        const { bytesRead } = await handle.read(buffer, filled, length - filled, offset + filled);
+        if (bytesRead === 0) {
+          throw new RangeError("read past the end of the minidump");
+        }
+        filled += bytesRead;
+      }
+      return buffer;
+    },
+  };
 }
 
 export type MinidumpResult =
@@ -94,7 +142,6 @@ export type MinidumpResult =
   | {
       summary?: never;
       unreadableReason:
-        | "file-too-large"
         | "read-failed"
         | "invalid-signature"
         | "missing-exception"
@@ -102,32 +149,40 @@ export type MinidumpResult =
     };
 
 export async function summarizeMinidumpFile(filePath: string): Promise<MinidumpResult> {
+  let handle: FileHandle | undefined;
   try {
-    if ((await stat(filePath)).size > MAX_DUMP_SIZE) {
-      return { unreadableReason: "file-too-large" };
-    }
-    return parseMinidump(await readFile(filePath));
+    handle = await open(filePath, "r");
+    return await parse(fileSource(handle));
   } catch {
     return { unreadableReason: "read-failed" };
+  } finally {
+    await handle?.close().catch(() => {
+      /* ignored */
+    });
   }
 }
 
-export function parseMinidump(buffer: Buffer): MinidumpResult {
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+export function parseMinidump(buffer: Buffer): Promise<MinidumpResult> {
+  return parse(bufferSource(buffer));
+}
+
+async function parse(source: IByteSource): Promise<MinidumpResult> {
   try {
-    if (view.getUint32(0, true) !== MINIDUMP_SIGNATURE) {
+    if ((await source.read(0, 4)).readUInt32LE(0) !== MINIDUMP_SIGNATURE) {
       return { unreadableReason: "invalid-signature" };
     }
 
-    const streamCount = view.getUint32(8, true);
-    const directoryRva = view.getUint32(12, true);
+    // MINIDUMP_HEADER: NumberOfStreams(8), StreamDirectoryRva(12)
+    const header = await source.read(8, 8);
+    const streamCount = header.readUInt32LE(0);
+    const directory = await source.read(header.readUInt32LE(4), streamCount * 12);
 
     const streams = new Map<number, ILocation>();
     for (let i = 0; i < streamCount; i++) {
-      const entry = directoryRva + i * 12;
-      streams.set(view.getUint32(entry, true), {
-        size: view.getUint32(entry + 4, true),
-        rva: view.getUint32(entry + 8, true),
+      const entry = i * 12;
+      streams.set(directory.readUInt32LE(entry), {
+        size: directory.readUInt32LE(entry + 4),
+        rva: directory.readUInt32LE(entry + 8),
       });
     }
 
@@ -139,25 +194,26 @@ export function parseMinidump(buffer: Buffer): MinidumpResult {
     // MINIDUMP_EXCEPTION_STREAM: ThreadId(0), alignment(4), then
     // MINIDUMP_EXCEPTION: ExceptionCode(8), ExceptionFlags(12),
     // ExceptionRecord(16), ExceptionAddress(24)
-    const code = view.getUint32(exception.rva + 8, true);
-    const address = Number(view.getBigUint64(exception.rva + 24, true));
+    const record = await source.read(exception.rva + 8, 24);
+    const code = record.readUInt32LE(0);
+    const address = Number(record.readBigUInt64LE(16));
 
     const summary: IMinidumpSummary = {
       exceptionCode: hex(code),
-      exceptionName: exceptionName(code, view, streams.get(STREAM_SYSTEM_INFO)),
+      exceptionName: await exceptionName(code, source, streams.get(STREAM_SYSTEM_INFO)),
       exceptionAddress: hex(address),
     };
 
-    const modules = readModules(view, streams.get(STREAM_MODULE_LIST));
+    const modules = await readModules(source, streams.get(STREAM_MODULE_LIST));
     const faulting = modules.find((m) => address >= m.base && address < m.base + m.size);
     if (faulting !== undefined) {
-      summary.module = faulting.name;
+      summary.module = path.win32.basename(await readUtf16String(source, faulting.nameRva));
       summary.moduleVersion = faulting.version;
       summary.moduleOffset = hex(address - faulting.base);
-      summary.moduleId = faulting.id;
+      summary.moduleId = await readModuleId(source, faulting.debugRecord);
     }
 
-    const annotations = readCrashpadAnnotations(view, streams.get(STREAM_CRASHPAD_INFO));
+    const annotations = await readCrashpadAnnotations(source, streams.get(STREAM_CRASHPAD_INFO));
     const processType = annotations.get("ptype") ?? annotations.get("process_type");
     if (processType !== undefined) {
       summary.processType = processType;
@@ -175,9 +231,12 @@ export function parseMinidump(buffer: Buffer): MinidumpResult {
     }
 
     return { summary };
-  } catch {
-    // truncated or malformed dump
-    return { unreadableReason: "malformed-dump" };
+  } catch (err) {
+    if (err instanceof RangeError) {
+      // truncated or malformed dump
+      return { unreadableReason: "malformed-dump" };
+    }
+    throw err;
   }
 }
 
@@ -185,13 +244,13 @@ const hex = (value: number): string => `0x${value.toString(16)}`;
 
 /** Pick the name table by dump origin: MINIDUMP_SYSTEM_INFO PlatformId(20)
  *  distinguishes NT status codes from POSIX signal numbers. */
-function exceptionName(
+async function exceptionName(
   code: number,
-  view: DataView,
+  source: IByteSource,
   systemInfo: ILocation | undefined,
-): string | undefined {
+): Promise<string | undefined> {
   if (systemInfo !== undefined) {
-    const platformId = view.getUint32(systemInfo.rva + 20, true);
+    const platformId = (await source.read(systemInfo.rva + 20, 4)).readUInt32LE(0);
     if (platformId === MD_OS_LINUX || platformId === MD_OS_ANDROID) {
       return LINUX_SIGNAL_NAMES[code];
     }
@@ -199,15 +258,20 @@ function exceptionName(
   return WINDOWS_EXCEPTION_NAMES[code];
 }
 
+/** A module as its list entry describes it. The name and debug record live
+ *  elsewhere in the file and are only read for the module that is needed. */
 interface IModule {
-  name: string;
   base: number;
   size: number;
   version?: string;
-  id?: string;
+  nameRva: number;
+  debugRecord: ILocation;
 }
 
-function readModules(view: DataView, location: ILocation | undefined): IModule[] {
+async function readModules(
+  source: IByteSource,
+  location: ILocation | undefined,
+): Promise<IModule[]> {
   if (location === undefined) {
     return [];
   }
@@ -215,27 +279,27 @@ function readModules(view: DataView, location: ILocation | undefined): IModule[]
   // MINIDUMP_MODULE_LIST: NumberOfModules(0), then MINIDUMP_MODULE[n]:
   // BaseOfImage(0), SizeOfImage(8), CheckSum(12), TimeDateStamp(16),
   // ModuleNameRva(20), VersionInfo(24, VS_FIXEDFILEINFO), CvRecord(76, LOCATION)
+  const count = (await source.read(location.rva, 4)).readUInt32LE(0);
+  const list = await source.read(location.rva + 4, count * MODULE_ENTRY_SIZE);
+
   const modules: IModule[] = [];
-  const count = view.getUint32(location.rva, true);
   for (let i = 0; i < count; i++) {
-    const entry = location.rva + 4 + i * MODULE_ENTRY_SIZE;
-    const base = Number(view.getBigUint64(entry, true));
-    const size = view.getUint32(entry + 8, true);
-    const name = readUtf16String(view, view.getUint32(entry + 20, true));
+    const entry = i * MODULE_ENTRY_SIZE;
 
     let version: string | undefined;
-    if (view.getUint32(entry + 24, true) === VS_FIXEDFILEINFO_SIGNATURE) {
-      const ms = view.getUint32(entry + 32, true);
-      const ls = view.getUint32(entry + 36, true);
+    if (list.readUInt32LE(entry + 24) === VS_FIXEDFILEINFO_SIGNATURE) {
+      const ms = list.readUInt32LE(entry + 32);
+      const ls = list.readUInt32LE(entry + 36);
       version = `${ms >>> 16}.${ms & 0xffff}.${ls >>> 16}.${ls & 0xffff}`;
     }
 
-    const id = readModuleId(view, {
-      size: view.getUint32(entry + 76, true),
-      rva: view.getUint32(entry + 80, true),
+    modules.push({
+      base: Number(list.readBigUInt64LE(entry)),
+      size: list.readUInt32LE(entry + 8),
+      version,
+      nameRva: list.readUInt32LE(entry + 20),
+      debugRecord: { size: list.readUInt32LE(entry + 76), rva: list.readUInt32LE(entry + 80) },
     });
-
-    modules.push({ name: path.win32.basename(name), base, size, version, id });
   }
 
   return modules;
@@ -244,25 +308,15 @@ function readModules(view: DataView, location: ILocation | undefined): IModule[]
 /** The module's debug identity as a symbol server spells it: CodeView
  *  "RSDS" records give PDB GUID + age, Breakpad's "LEpB" gives the ELF
  *  build id (GUID-formatted, age 0). */
-function readModuleId(view: DataView, location: ILocation): string | undefined {
+async function readModuleId(source: IByteSource, location: ILocation): Promise<string | undefined> {
   if (location.rva === 0 || location.size < 24) {
     return undefined;
   }
-  const signature = String.fromCharCode(
-    view.getUint8(location.rva),
-    view.getUint8(location.rva + 1),
-    view.getUint8(location.rva + 2),
-    view.getUint8(location.rva + 3),
-  );
-  const guid = Buffer.from(view.buffer, view.byteOffset + location.rva + 4, 16);
+  const record = await source.read(location.rva, 24);
+  const signature = record.toString("latin1", 0, 4);
+  const guid = record.subarray(4, 20);
   if (signature === "RSDS") {
-    return (
-      formatGuid(guid) +
-      view
-        .getUint32(location.rva + 20, true)
-        .toString(16)
-        .toUpperCase()
-    );
+    return formatGuid(guid) + record.readUInt32LE(20).toString(16).toUpperCase();
   }
   if (signature === "LEpB") {
     return formatGuid(guid) + "0";
@@ -286,10 +340,10 @@ function formatGuid(bytes: Buffer): string {
  * (where Chromium's crash keys such as ptype and LOG_FATAL live). The first
  * value seen for a key wins.
  */
-function readCrashpadAnnotations(
-  view: DataView,
+async function readCrashpadAnnotations(
+  source: IByteSource,
   location: ILocation | undefined,
-): Map<string, string> {
+): Promise<Map<string, string>> {
   const annotations = new Map<string, string>();
   if (location === undefined) {
     return annotations;
@@ -298,40 +352,42 @@ function readCrashpadAnnotations(
   try {
     // MinidumpCrashpadInfo: version(0), report_id(4), client_id(20),
     // simple_annotations(36, LOCATION), module_list(44, LOCATION)
-    readSimpleAnnotations(
-      view,
-      {
-        size: view.getUint32(location.rva + 36, true),
-        rva: view.getUint32(location.rva + 40, true),
-      },
+    const info = await source.read(location.rva + 36, 16);
+    await readSimpleAnnotations(
+      source,
+      { size: info.readUInt32LE(0), rva: info.readUInt32LE(4) },
       annotations,
     );
 
     // MinidumpModuleCrashpadInfoList: count(0), then entries[count]:
     // module_list_index(0), location(4, LOCATION)
-    const listRva = view.getUint32(location.rva + 48, true);
+    const listRva = info.readUInt32LE(12);
     if (listRva === 0) {
       return annotations;
     }
-    const moduleCount = view.getUint32(listRva, true);
+    const moduleCount = (await source.read(listRva, 4)).readUInt32LE(0);
+    const list = await source.read(listRva + 4, moduleCount * 12);
     for (let i = 0; i < moduleCount; i++) {
-      const entry = listRva + 4 + i * 12;
-      const infoRva = view.getUint32(entry + 8, true);
+      const infoRva = list.readUInt32LE(i * 12 + 8);
       // MinidumpModuleCrashpadInfo: version(0), list_annotations(4),
       // simple_annotations(12, LOCATION), annotation_objects(20, LOCATION)
-      readSimpleAnnotations(
-        view,
-        { size: view.getUint32(infoRva + 12, true), rva: view.getUint32(infoRva + 16, true) },
+      const moduleInfo = await source.read(infoRva + 12, 16);
+      await readSimpleAnnotations(
+        source,
+        { size: moduleInfo.readUInt32LE(0), rva: moduleInfo.readUInt32LE(4) },
         annotations,
       );
-      readAnnotationObjects(
-        view,
-        { size: view.getUint32(infoRva + 20, true), rva: view.getUint32(infoRva + 24, true) },
+      await readAnnotationObjects(
+        source,
+        { size: moduleInfo.readUInt32LE(8), rva: moduleInfo.readUInt32LE(12) },
         annotations,
       );
     }
-  } catch {
-    // annotations are best-effort
+  } catch (err) {
+    // annotations are best-effort, a failing disk is not
+    if (!(err instanceof RangeError)) {
+      throw err;
+    }
   }
 
   return annotations;
@@ -339,20 +395,20 @@ function readCrashpadAnnotations(
 
 /** MinidumpSimpleStringDictionary: count(0), then entries[count]:
  *  key_rva(0), value_rva(4) — both MinidumpUTF8String: length(0), utf8 data. */
-function readSimpleAnnotations(
-  view: DataView,
+async function readSimpleAnnotations(
+  source: IByteSource,
   location: ILocation,
   into: Map<string, string>,
-): void {
+): Promise<void> {
   if (location.rva === 0 || location.size === 0) {
     return;
   }
-  const count = view.getUint32(location.rva, true);
+  const count = (await source.read(location.rva, 4)).readUInt32LE(0);
+  const entries = await source.read(location.rva + 4, count * 8);
   for (let i = 0; i < count; i++) {
-    const entry = location.rva + 4 + i * 8;
-    const key = readUtf8String(view, view.getUint32(entry, true));
+    const key = await readUtf8String(source, entries.readUInt32LE(i * 8));
     if (!into.has(key)) {
-      into.set(key, readUtf8String(view, view.getUint32(entry + 4, true)));
+      into.set(key, await readUtf8String(source, entries.readUInt32LE(i * 8 + 4)));
     }
   }
 }
@@ -363,33 +419,40 @@ const ANNOTATION_TYPE_STRING = 1;
  *  Crashpad puts ptype and Chromium its crash keys: count(0), then
  *  entries[count] of 12 bytes: name RVA (MinidumpUTF8String), type u16,
  *  reserved u16, value RVA (MinidumpByteArray: length u32 + utf8 data). */
-function readAnnotationObjects(
-  view: DataView,
+async function readAnnotationObjects(
+  source: IByteSource,
   location: ILocation,
   into: Map<string, string>,
-): void {
+): Promise<void> {
   if (location.rva === 0 || location.size === 0) {
     return;
   }
-  const count = view.getUint32(location.rva, true);
+  const count = (await source.read(location.rva, 4)).readUInt32LE(0);
+  const entries = await source.read(location.rva + 4, count * 12);
   for (let i = 0; i < count; i++) {
-    const entry = location.rva + 4 + i * 12;
-    if (view.getUint16(entry + 4, true) !== ANNOTATION_TYPE_STRING) {
+    const entry = i * 12;
+    if (entries.readUInt16LE(entry + 4) !== ANNOTATION_TYPE_STRING) {
       continue;
     }
-    const key = readUtf8String(view, view.getUint32(entry, true));
+    const key = await readUtf8String(source, entries.readUInt32LE(entry));
     if (!into.has(key)) {
-      into.set(key, readUtf8String(view, view.getUint32(entry + 8, true)));
+      into.set(key, await readUtf8String(source, entries.readUInt32LE(entry + 8)));
     }
   }
 }
 
-function readUtf16String(view: DataView, rva: number): string {
-  const length = view.getUint32(rva, true);
-  return Buffer.from(view.buffer, view.byteOffset + rva + 4, length).toString("utf16le");
+/** A length-prefixed string: byte length(0), then the data. */
+async function readSizedString(
+  source: IByteSource,
+  rva: number,
+  encoding: BufferEncoding,
+): Promise<string> {
+  const length = (await source.read(rva, 4)).readUInt32LE(0);
+  return (await source.read(rva + 4, length)).toString(encoding);
 }
 
-function readUtf8String(view: DataView, rva: number): string {
-  const length = view.getUint32(rva, true);
-  return Buffer.from(view.buffer, view.byteOffset + rva + 4, length).toString("utf8");
-}
+const readUtf16String = (source: IByteSource, rva: number): Promise<string> =>
+  readSizedString(source, rva, "utf16le");
+
+const readUtf8String = (source: IByteSource, rva: number): Promise<string> =>
+  readSizedString(source, rva, "utf8");
