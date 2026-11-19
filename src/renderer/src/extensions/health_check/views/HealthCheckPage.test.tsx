@@ -9,6 +9,10 @@ vi.mock("react-redux", () => ({
   useSelector: () => undefined,
 }));
 
+vi.mock("@/views/components/Header/premium/useNexusLogin.hook", () => ({
+  useNexusLogin: () => vi.fn(),
+}));
+
 vi.mock("../hooks/healthCheckTracker", () => ({
   createHealthCheckTracker: () => new Proxy({}, { get: () => vi.fn() }),
 }));

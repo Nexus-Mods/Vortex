@@ -76,7 +76,8 @@ describe("PremiumIndicator", () => {
       render(<PremiumIndicator />);
       await userEvent.click(screen.getByRole("button", { name: "Log in" }));
 
-      expect(dispatch).toHaveBeenCalled();
+      // The new login dialog opens on its own once the login is under way, so nothing opens it here.
+      expect(dispatch).not.toHaveBeenCalled();
       expect(emit).toHaveBeenCalledWith("request-nexus-login", expect.any(Function));
     });
   });
