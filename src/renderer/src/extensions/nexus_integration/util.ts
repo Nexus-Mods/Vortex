@@ -88,7 +88,7 @@ import {
 } from "./util/convertGameId";
 import { endorseCollection, endorseMod } from "./util/endorseMod";
 import { FULL_REVISION_INFO, MOD_FILE_INFO } from "./util/graphQueries";
-import { nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
+import { nexusModPageUrlOf } from "./util/nexus_urls/nexusUrls";
 import type { ITokenReply } from "./util/oauth";
 import OAuth from "./util/oauth";
 import { refuseLogin, tokenProviderFor } from "./util/oauthSession";
@@ -1387,17 +1387,6 @@ function processInstallError(
   }
 }
 
-function nexusLink(state: IState, mod: IMod, gameMode: string) {
-  const vortexGameId = getSafe(mod.attributes, ["downloadGame"], undefined) || gameMode;
-  const domain = nexusGameId(gameById(state, vortexGameId), vortexGameId);
-  if (mod.attributes?.collectionSlug !== undefined) {
-    return `https://www.nexusmods.com/${domain}/mods/${mod.attributes?.collectionSlug}`;
-  } else {
-    const nexusModId: number = parseInt(getSafe(mod.attributes, ["modId"], undefined), 10);
-    return nexusModPageUrl(domain, nexusModId);
-  }
-}
-
 export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
   return BluebirdPromise.resolve(nexus.getEndorsements()).then((endorsements) => {
     const endorseMap: {
@@ -1577,7 +1566,7 @@ export function checkForCollectionUpdates(
         })
         .catch((err) => {
           const name = modName(mod, { version: true });
-          const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
+          const nameLink = `[url=${nexusModPageUrlOf(store.getState(), mod, gameId)}]${name}[/url]`;
           return `${nameLink}:<br/>${getErrorMessageOrDefault(err)}`;
         });
     }),
@@ -1712,7 +1701,7 @@ function checkForModUpdatesImpl(
           }
 
           const name = modName(mod, { version: true });
-          const nameLink = `[url=${nexusLink(store.getState(), mod, gameId)}]${name}[/url]`;
+          const nameLink = `[url=${nexusModPageUrlOf(store.getState(), mod, gameId)}]${name}[/url]`;
 
           return detail.Servermessage !== undefined
             ? `${nameLink}:<br/>${detail.message}<br/>Server said: "${detail.Servermessage}"<br/>`

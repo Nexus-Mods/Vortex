@@ -43,8 +43,14 @@ const SKYUI = mod("skyui", {
 });
 
 const KNOWN = [
-  { id: "game", name: "Test Game", nexus: { gameDomain: "testgame" } },
-  { id: "skyrimse", name: "Skyrim Special Edition", nexus: { gameDomain: "skyrimspecialedition" } },
+  { id: "game", name: "Test Game", details: { nexusPageId: "testgame" } },
+  {
+    id: "skyrimse",
+    name: "Skyrim Special Edition",
+    details: { nexusPageId: "skyrimspecialedition" },
+  },
+  // As Stardew Valley's is, its id doubling as its domain on the site.
+  { id: "stardewvalley", name: "Stardew Valley" },
 ];
 
 const collection = (name: string) => ({ id: name, attributes: { name } }) as unknown as IMod;
@@ -101,6 +107,16 @@ describe("useModProperties", () => {
 
     expect(renderProperties([fromSkyrimSE]).card?.pageUrl).toBe(
       `${NEXUS_BASE_URL}/skyrimspecialedition/mods/12604`,
+    );
+  });
+
+  it("links to the game's own id on the site when its extension names no page", () => {
+    const fromStardew = mod("skyui", {
+      attributes: { ...SKYUI.attributes, downloadGame: "stardewvalley" },
+    });
+
+    expect(renderProperties([fromStardew]).card?.pageUrl).toBe(
+      `${NEXUS_BASE_URL}/stardewvalley/mods/12604`,
     );
   });
 
