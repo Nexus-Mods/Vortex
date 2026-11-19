@@ -49,25 +49,34 @@ const safeUrl = (url: string | null | undefined, key: string): string | undefine
 };
 
 /**
+ * The options with links rendered as `WebLink` unless `components.a` says otherwise, and every URL
+ * going through `safeUrl` after the caller's own `urlTransform`, rather than that replacing it.
+ */
+const withSafeUrls = (options: ReactMarkdownProps): ReactMarkdownProps => {
+  const { components, urlTransform } = options;
+  return {
+    ...options,
+    components: { a: WebLink, ...components },
+    urlTransform: (url, key, node) =>
+      safeUrl(urlTransform ? urlTransform(url, key, node) : url, key),
+  };
+};
+
+/**
  * Renders the markdown passed as its children, for the older call sites styled by their own SCSS.
  * New UI uses `Markdown` (`ui/components/prose/markdown`), which also styles it and filters images.
  *
  * Links render as `WebLink` unless `components.a` says otherwise. A `urlTransform` runs before
  * `safeUrl`, rather than replacing it.
  */
-export const ReactMarkdown = ({ components, urlTransform, ...props }: ReactMarkdownProps) => (
-  <reactMarkdown.default
-    {...props}
-    components={{ a: WebLink, ...components }}
-    urlTransform={(url, key, node) =>
-      safeUrl(urlTransform ? urlTransform(url, key, node) : url, key)
-    }
-  />
+export const ReactMarkdown = (props: ReactMarkdownProps) => (
+  <reactMarkdown.default {...withSafeUrls(props)} />
 );
 
 /**
- * Props react-markdown 6 took that 9 doesn't, and what replaces each in 9, if anything. The ones
- * from `renderers` on, 6 had already deprecated: it warned about them and ignored them.
+ * Props react-markdown 6 took that 9 doesn't, and what replaces each in 9, if anything. 6 still
+ * ran `plugins`, as `remarkPlugins`, so the extension shim passes it on as that. The ones from
+ * `renderers` on, 6 had already deprecated: it warned about them and ignored them.
  */
 const removedProps: Record<string, string | undefined> = {
   transformLinkUri: "urlTransform",
@@ -76,9 +85,9 @@ const removedProps: Record<string, string | undefined> = {
   includeElementIndex: undefined,
   rawSourcePos: undefined,
   sourcePos: undefined,
+  plugins: "remarkPlugins",
   renderers: "components",
   source: "children",
-  plugins: "remarkPlugins",
   allowedTypes: "allowedElements",
   disallowedTypes: "disallowedElements",
   allowNode: "allowElement",
@@ -116,53 +125,114 @@ const withRemovedTransforms = (
   };
 };
 
-interface IDropPluginsOnErrorProps {
-  markdownProps: ReactMarkdownProps;
-  onDrop: (error: unknown) => void;
+type Plugins = ReactMarkdownProps["remarkPlugins"];
+
+interface IPluginCheck {
+  children: ReactMarkdownProps["children"];
+  remarkPlugins: Plugins;
+  rehypePlugins: Plugins;
+  /** What the plugins threw, if they did and the markdown renders without them. */
+  error?: { thrown: unknown };
 }
+
+/** What rendering these options throws, if anything. It only builds elements: no component runs. */
+const renderError = (options: ReactMarkdownProps): { thrown: unknown } | undefined => {
+  try {
+    reactMarkdown.default(options);
+    return undefined;
+  } catch (thrown) {
+    return { thrown };
+  }
+};
 
 /**
- * Renders an extension's markdown, and again without its remark and rehype plugins if rendering
- * throws. Plugins made for 6, such as remark-gfm 1, throw under 9, which would otherwise unmount
- * the extension's UI. If it throws without them too, the error goes on up.
+ * Runs the extension's remark and rehype plugins on its markdown, on their own: without its
+ * components or any other option, so only an error the plugins cause counts against them. If the
+ * markdown throws without the plugins too, they aren't to blame, and the error is left to the
+ * real render.
  */
-class DropPluginsOnError extends React.Component<IDropPluginsOnErrorProps, { failed: boolean }> {
-  public state = { failed: false };
+const checkPlugins = ({ children, remarkPlugins, rehypePlugins }: ReactMarkdownProps) => {
+  const check: IPluginCheck = { children, remarkPlugins, rehypePlugins };
+  if (remarkPlugins === undefined && rehypePlugins === undefined) {
+    return check;
+  }
+  const withPlugins = renderError({ children, remarkPlugins, rehypePlugins });
+  if (withPlugins !== undefined && renderError({ children }) === undefined) {
+    check.error = withPlugins;
+  }
+  return check;
+};
 
-  public static getDerivedStateFromError() {
-    return { failed: true };
+/** Whether two plugin entries are the same plugin with the same options, element by element. */
+const samePluggable = (a: unknown, b: unknown): boolean =>
+  Object.is(a, b) ||
+  (Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((item, index) => Object.is(item, b[index])));
+
+/**
+ * Whether two plugin lists hold the same plugins. Extensions pass inline arrays, which are new on
+ * every render, so the lists are compared element by element rather than by identity.
+ */
+const samePlugins = (a: Plugins, b: Plugins): boolean =>
+  Object.is(a, b) ||
+  (Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((plugin, index) => samePluggable(plugin, b[index])));
+
+/**
+ * Whether the extension's plugins can be used on this markdown. Plugins made for 6, such as
+ * remark-gfm 1, throw under 9, which would otherwise unmount the extension's UI. Checked again
+ * whenever the markdown or the plugins change, and `onDrop` hears about each check that fails.
+ */
+const usePluginsWork = (
+  props: ReactMarkdownProps,
+  onDrop: (check: IPluginCheck & { error: { thrown: unknown } }) => void,
+): boolean => {
+  const [check, setCheck] = React.useState(() => checkPlugins(props));
+  let current = check;
+  if (
+    !Object.is(check.children, props.children) ||
+    !samePlugins(check.remarkPlugins, props.remarkPlugins) ||
+    !samePlugins(check.rehypePlugins, props.rehypePlugins)
+  ) {
+    current = checkPlugins(props);
+    setCheck(current);
   }
 
-  public componentDidCatch(error: unknown) {
-    this.props.onDrop(error);
-  }
+  React.useEffect(() => {
+    if (current.error !== undefined) {
+      onDrop({ ...current, error: current.error });
+    }
+  }, [current, onDrop]);
 
-  public render() {
-    const { remarkPlugins, rehypePlugins, ...withoutPlugins } = this.props.markdownProps;
-    return <ReactMarkdown {...(this.state.failed ? withoutPlugins : this.props.markdownProps)} />;
-  }
-}
+  return current.error === undefined;
+};
 
 /**
  * What an extension gets for `require("react-markdown")`. Extensions were built against 6, a
  * CommonJS module that was the component itself, but require() of 9 returns the ES module's
  * namespace, which React can't render. So this is the component, carrying itself as `default` and
  * the module's other exports, which every way of importing 6 or 9 resolves to, plus 6's
- * `uriTransformer`. 9 ignores 6's removed props, or throws on them in a development build, so
- * they're dropped and `report`ed instead, apart from the two URL transforms, which 9's
- * `urlTransform` still runs.
+ * `uriTransformer`. `MarkdownHooks` and `MarkdownAsync` filter URLs as the component does.
+ *
+ * 9 ignores 6's removed props, or throws on them in a development build, so they're dropped and
+ * `report`ed instead, apart from the two URL transforms, which 9's `urlTransform` still runs, and
+ * `plugins`, which goes on as `remarkPlugins`.
  */
 export const makeExtensionReactMarkdown = (
   report: (method: string, replacement?: string) => void,
 ) => {
-  const reportPlugins = (props: ReactMarkdownProps, error: unknown) => {
+  const reportPlugins = (check: IPluginCheck & { error: { thrown: unknown } }) => {
     for (const name of ["remarkPlugins", "rehypePlugins"] as const) {
-      if (props[name] !== undefined) {
+      if (check[name] !== undefined) {
         report(`react-markdown.${name}`, "a version of the plugin made for react-markdown 9");
       }
     }
     log("warn", "react-markdown plugins threw, so the markdown is shown without them", {
-      error: getErrorMessageOrDefault(error),
+      error: getErrorMessageOrDefault(check.error.thrown),
     });
   };
 
@@ -177,19 +247,27 @@ export const makeExtensionReactMarkdown = (
         kept[name] = value;
       }
     }
+    kept.remarkPlugins ??= props.plugins as Plugins;
     kept.urlTransform = withRemovedTransforms(
       props.urlTransform,
       props.transformLinkUri,
       props.transformImageUri,
     );
 
-    if (kept.remarkPlugins === undefined && kept.rehypePlugins === undefined) {
+    const pluginsWork = usePluginsWork(kept, reportPlugins);
+    if (pluginsWork) {
       return <ReactMarkdown {...kept} />;
     }
-    return (
-      <DropPluginsOnError markdownProps={kept} onDrop={(error) => reportPlugins(kept, error)} />
-    );
+    const { remarkPlugins, rehypePlugins, ...withoutPlugins } = kept;
+    return <ReactMarkdown {...withoutPlugins} />;
   };
+
+  const MarkdownHooks = (props: ReactMarkdownProps) => (
+    <reactMarkdown.MarkdownHooks {...withSafeUrls(props)} />
+  );
+
+  const MarkdownAsync = (options: ReactMarkdownProps) =>
+    reactMarkdown.MarkdownAsync(withSafeUrls(options));
 
   const uriTransformer = (url: string) => {
     report("react-markdown.uriTransformer", "defaultUrlTransform");
@@ -203,6 +281,8 @@ export const makeExtensionReactMarkdown = (
 
   return Object.assign(ExtensionReactMarkdown, otherExports, {
     default: ExtensionReactMarkdown,
+    MarkdownHooks,
+    MarkdownAsync,
     uriTransformer,
   });
 };

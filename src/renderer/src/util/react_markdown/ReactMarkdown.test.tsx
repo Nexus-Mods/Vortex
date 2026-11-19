@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,28 @@ import { makeExtensionReactMarkdown, ReactMarkdown } from "./ReactMarkdown";
 const PlainLink = ({ href, children }: { href?: string; children?: React.ReactNode }) => (
   <a href={href}>{children}</a>
 );
+
+interface ITextNode {
+  type: string;
+  value?: string;
+  children?: ITextNode[];
+}
+
+/** A remark plugin that upper-cases every piece of text, so it's plain to see that it ran. */
+const uppercase = () => (tree: ITextNode) => {
+  const walk = (node: ITextNode) => {
+    if (node.type === "text" && node.value !== undefined) {
+      node.value = node.value.toUpperCase();
+    }
+    node.children?.forEach(walk);
+  };
+  walk(tree);
+};
+
+/** A remark plugin that throws as remark-gfm 1, made for react-markdown 6, does under 9. */
+const brokenPlugin = () => {
+  throw new Error("this.setData is not a function");
+};
 
 describe("ReactMarkdown", () => {
   it("renders markdown as HTML", () => {
@@ -149,23 +171,108 @@ describe("makeExtensionReactMarkdown", () => {
   it("renders without the extension's plugins if they throw, and reports them", () => {
     const report = vi.fn();
     const ExtensionReactMarkdown = makeExtensionReactMarkdown(report);
-    const brokenPlugin = () => {
-      throw new Error("this.setData is not a function");
-    };
-    // React logs the error the boundary catches.
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const { container } = render(
       <ExtensionReactMarkdown remarkPlugins={[brokenPlugin]}>
         {"Some **bold** text"}
       </ExtensionReactMarkdown>,
     );
-    consoleError.mockRestore();
 
     expect(container.querySelector("strong")).not.toBeNull();
     expect(report).toHaveBeenCalledWith(
       "react-markdown.remarkPlugins",
       "a version of the plugin made for react-markdown 9",
     );
+  });
+
+  it("runs plugins passed as plugins, as react-markdown 6 did, and reports them", () => {
+    const report = vi.fn();
+    const ExtensionReactMarkdown = makeExtensionReactMarkdown(report);
+
+    const { container } = render(
+      <ExtensionReactMarkdown {...{ plugins: [uppercase] }}>{"some text"}</ExtensionReactMarkdown>,
+    );
+
+    expect(container).toHaveTextContent("SOME TEXT");
+    expect(report).toHaveBeenCalledWith("react-markdown.plugins", "remarkPlugins");
+  });
+
+  it("lets an error from the extension's own components go up, and keeps its plugins", () => {
+    const report = vi.fn();
+    const ExtensionReactMarkdown = makeExtensionReactMarkdown(report);
+    // Throws only on what the plugin made, so the markdown would render without the plugin.
+    const ShoutingFails = ({ children }: { children?: React.ReactNode }) => {
+      if (typeof children === "string" && children === children.toUpperCase()) {
+        throw new Error("component broke");
+      }
+      return <p>{children}</p>;
+    };
+    // React logs the error it rethrows.
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(() =>
+      render(
+        <ExtensionReactMarkdown components={{ p: ShoutingFails }} remarkPlugins={[uppercase]}>
+          {"some text"}
+        </ExtensionReactMarkdown>,
+      ),
+    ).toThrow("component broke");
+    consoleError.mockRestore();
+
+    expect(report).not.toHaveBeenCalled();
+  });
+
+  it("uses the plugins again once they change, after one set threw", () => {
+    const ExtensionReactMarkdown = makeExtensionReactMarkdown(() => undefined);
+
+    const { container, rerender } = render(
+      <ExtensionReactMarkdown remarkPlugins={[brokenPlugin]}>
+        {"first text"}
+      </ExtensionReactMarkdown>,
+    );
+    rerender(
+      <ExtensionReactMarkdown remarkPlugins={[uppercase]}>{"second text"}</ExtensionReactMarkdown>,
+    );
+
+    expect(container).toHaveTextContent("SECOND TEXT");
+  });
+
+  it("reports plugins that throw once, however often it renders", () => {
+    const report = vi.fn();
+    const ExtensionReactMarkdown = makeExtensionReactMarkdown(report);
+
+    const { rerender } = render(
+      <ExtensionReactMarkdown remarkPlugins={[brokenPlugin]}>{"text"}</ExtensionReactMarkdown>,
+    );
+    rerender(
+      <ExtensionReactMarkdown remarkPlugins={[brokenPlugin]}>{"text"}</ExtensionReactMarkdown>,
+    );
+
+    expect(report).toHaveBeenCalledTimes(1);
+  });
+
+  const unsafeMarkdown = "[a](steam://run/1) [b](//server/share/x.exe) ![i](//host/share/x.png)";
+
+  it("filters URLs in MarkdownHooks as the component does", async () => {
+    const { MarkdownHooks } = makeExtensionReactMarkdown(() => undefined);
+
+    const { container } = render(<MarkdownHooks>{unsafeMarkdown}</MarkdownHooks>);
+
+    await waitFor(() => expect(container.querySelectorAll("a")).toHaveLength(2));
+    for (const link of container.querySelectorAll("a")) {
+      expect(link).not.toHaveAttribute("href");
+    }
+    expect(container.querySelector("img")).not.toHaveAttribute("src");
+  });
+
+  it("filters URLs in MarkdownAsync as the component does", async () => {
+    const { MarkdownAsync } = makeExtensionReactMarkdown(() => undefined);
+
+    const { container } = render(await MarkdownAsync({ children: unsafeMarkdown }));
+
+    for (const link of container.querySelectorAll("a")) {
+      expect(link).not.toHaveAttribute("href");
+    }
+    expect(container.querySelector("img")).not.toHaveAttribute("src");
   });
 });

@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Deprecated
 
 - `IMainPageOptions.mdi` is deprecated in favour of `menuIcon: { path }`. It still works, as a `menuIcon` path
-- The `react-markdown` 6 props that 9 dropped (`transformLinkUri`, `transformImageUri`, `linkTarget`, and the ones 6 had already deprecated, such as `renderers` and `source`) log a deprecation warning. `transformLinkUri` and `transformImageUri` still run; the rest are ignored - see the [react-markdown section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-markdown-9)
+- The `react-markdown` 6 props that 9 dropped (`transformLinkUri`, `transformImageUri`, `linkTarget`, and the ones 6 had already deprecated, such as `renderers` and `source`) log a deprecation warning. `transformLinkUri` and `transformImageUri` still run, and `plugins` runs as `remarkPlugins`, as it did in 6; the rest are ignored - see the [react-markdown section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-markdown-9)
 - A filesystem path in a game info entry with `type: "url"` is deprecated in favour of `type: "path"`. It still opens as a path, in the game info popover and the game details dialog, and logs a warning naming the provider
 
 ### Changed
