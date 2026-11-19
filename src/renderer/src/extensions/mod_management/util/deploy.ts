@@ -1,5 +1,6 @@
 import {
   getErrorCode,
+  VortexDeploymentMethodId,
   VortexGameId,
   VortexModStagingFolder,
   VortexProfileId,
@@ -40,9 +41,17 @@ import {
   savePurgeLeftovers,
   withActivationLock,
 } from "./activationStore";
-import { settleLeftoverDeployment } from "./applyDeploy";
+import { JournalPhase } from "./apply/journal";
+import {
+  DeploymentPlanning,
+  deploymentPlanningFor,
+  planAndApplyPurge,
+  progressBarFor,
+  settleLeftoverDeployment,
+} from "./applyDeploy";
 import BlacklistSet, { fileOverrideEntries, skipListEntries } from "./BlacklistSet";
 import { getActivator, getCurrentActivator } from "./deploymentMethods";
+import { registeredDeployOrchestrator } from "./DeployOrchestrator";
 import { NoDeployment } from "./exceptions";
 import { dealWithExternalChanges } from "./externalChanges";
 export interface ISingleModActivation {
@@ -295,17 +304,36 @@ async function purgeModsImpl(
         );
         onProgress(25, "Removing links");
 
-        for (const [idx, typeId] of modTypes.entries()) {
-          const cover = 50 / modTypes.length;
-          const progressType = (num: number, total: number) => {
-            onProgress(25 + idx * cover + Math.floor((num * cover) / total), "Removing links");
-          };
-          await activator.purge(stagingPath, modPaths[typeId], gameId, progressType);
+        const purgingVortexGameId = VortexGameId(gameId);
+        const orchestrator = registeredDeployOrchestrator();
+        const isPurgeThroughApply =
+          orchestrator !== undefined &&
+          deploymentPlanningFor(purgingVortexGameId, VortexDeploymentMethodId(activator.id)) ===
+            DeploymentPlanning.ThroughApply;
+        if (isPurgeThroughApply) {
+          await planAndApplyPurge(api, orchestrator, {
+            gameMode: purgingVortexGameId,
+            onProgress: progressBarFor(
+              (label, percent) => onProgress(percent, label),
+              {
+                [JournalPhase.Applying]: "Removing links",
+                [JournalPhase.RollingBack]: "Undoing the purge",
+              },
+              25,
+              75,
+            ),
+          });
+        } else {
+          for (const [idx, typeId] of modTypes.entries()) {
+            const cover = 50 / modTypes.length;
+            const progressType = (num: number, total: number) => {
+              onProgress(25 + idx * cover + Math.floor((num * cover) / total), "Removing links");
+            };
+            await activator.purge(stagingPath, modPaths[typeId], gameId, progressType);
+          }
+          onProgress(75, "Saving updated manifest");
+          await saveLeftovers(lastDeployment);
         }
-
-        onProgress(75, "Saving updated manifest");
-
-        await saveLeftovers(lastDeployment);
       } catch (err: unknown) {
         if (lastDeployment !== undefined) {
           await saveLeftovers(lastDeployment);
