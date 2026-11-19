@@ -3,7 +3,6 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "typescript.tsdk": "./node_modules/typescript/lib",
   "typescript.preferences.quoteStyle": "single",
   "tailwindCSS.experimental.configFile": "./src/stylesheets/tailwind-v4.css",
   "oxc.fmt.configPath": ".oxfmtrc.json",

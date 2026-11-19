@@ -254,7 +254,9 @@ catalog:
   tsdown: 0.22.3
   tsx: 4.23.0
   turbowalk: github:Nexus-Mods/node-turbowalk#c8d9be07cc658aecdca63af2508df929990cd583
-  typescript: 6.0.3
+  # TS 7. Packages that peer on `typescript` get TS 6 instead, through
+  # .pnpmfile.cjs. See docs/typescript.md.
+  typescript: 7.1.0-beta
   typescript-eslint: 8.62.1
   universal-analytics: 0.4.23
   uuid: 3.4.0
