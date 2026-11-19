@@ -139,7 +139,8 @@ export class ComponentEx<P, S extends object> extends React.Component<
   S
 > {
   // Both set up by keepLegacyContextWorking below; declared here so extensions can still use them
-  declare public static contextType: React.Context<IComponentContext> | null;
+  // Typed like React.Component's own so extensions compile against it; the getter can still return null
+  declare public static contextType: React.Context<any> | undefined;
   declare public static contextTypes: React.ValidationMap<unknown> | undefined;
 
   declare public context: IComponentContext;
@@ -160,7 +161,8 @@ export class PureComponentEx<P, S extends object> extends React.PureComponent<
   S
 > {
   // Both set up by keepLegacyContextWorking below; declared here so extensions can still use them
-  declare public static contextType: React.Context<IComponentContext> | null;
+  // Typed like React.Component's own so extensions compile against it; the getter can still return null
+  declare public static contextType: React.Context<any> | undefined;
   declare public static contextTypes: React.ValidationMap<unknown> | undefined;
 
   declare public context: IComponentContext;
