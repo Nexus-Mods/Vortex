@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "./actions";
 import type { IFNISSettings } from "./types";
@@ -6,7 +6,10 @@ import type { IFNISSettings } from "./types";
 /**
  * reducer for changes to ephemeral session state
  */
-const settingsReducer = util.actionsToReducerSpec<IFNISSettings, typeof actions>(
+const settingsReducer: types.IReducerSpec<IFNISSettings> = util.actionsToReducerSpec<
+  IFNISSettings,
+  typeof actions
+>(
   {
     autoRun: false,
     patches: {},

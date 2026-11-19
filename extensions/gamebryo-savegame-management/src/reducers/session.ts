@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 
 import * as actions from "../actions/session";
@@ -7,7 +7,10 @@ import type { IStateSavegame } from "../types/IStateSavegame";
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer = util.actionsToReducerSpec<IStateSavegame, typeof actions>(
+export const sessionReducer: types.IReducerSpec<IStateSavegame> = util.actionsToReducerSpec<
+  IStateSavegame,
+  typeof actions
+>(
   {
     saves: {},
     savesTruncated: false,

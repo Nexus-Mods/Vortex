@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
 import type { IFeedbackSessionState } from "../types/state";
@@ -6,7 +6,10 @@ import type { IFeedbackSessionState } from "../types/state";
 /**
  * reducer for changes to the feedback files
  */
-export const sessionReducer = util.actionsToReducerSpec<IFeedbackSessionState, typeof actions>(
+export const sessionReducer: types.IReducerSpec<IFeedbackSessionState> = util.actionsToReducerSpec<
+  IFeedbackSessionState,
+  typeof actions
+>(
   {
     feedbackType: undefined,
     feedbackTopic: undefined,

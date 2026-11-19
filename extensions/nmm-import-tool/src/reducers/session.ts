@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
 import type { IModImportSessionState } from "../types/state";
@@ -11,7 +11,7 @@ const sessionActions = {
   selectImportFolder: actions.selectImportFolder,
 };
 
-export const sessionReducer = util.actionsToReducerSpec<
+export const sessionReducer: types.IReducerSpec<IModImportSessionState> = util.actionsToReducerSpec<
   IModImportSessionState,
   typeof sessionActions
 >(

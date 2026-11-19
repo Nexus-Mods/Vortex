@@ -1,9 +1,12 @@
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
 import type { IIssuesSessionState } from "../types";
 
-const sessionReducer = util.actionsToReducerSpec<IIssuesSessionState, typeof actions>(
+const sessionReducer: types.IReducerSpec<IIssuesSessionState> = util.actionsToReducerSpec<
+  IIssuesSessionState,
+  typeof actions
+>(
   {
     feedbackResponderOpen: false,
     oustandingIssues: null,

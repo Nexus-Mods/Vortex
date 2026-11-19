@@ -1,4 +1,4 @@
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
 import type { ITutorialsSessionState } from "../types/state";
@@ -6,7 +6,10 @@ import type { ITutorialsSessionState } from "../types/state";
 // reducer for changes to ephemeral session state
 const INVALID_TUTORIAL_ID: number = -1;
 
-const sessionReducer = util.actionsToReducerSpec<ITutorialsSessionState, typeof actions>(
+const sessionReducer: types.IReducerSpec<ITutorialsSessionState> = util.actionsToReducerSpec<
+  ITutorialsSessionState,
+  typeof actions
+>(
   {
     currentTutorial: {
       tutorialId: INVALID_TUTORIAL_ID,
