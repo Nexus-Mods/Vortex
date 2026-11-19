@@ -772,7 +772,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
     });
     return (
       <Alert bsStyle={clean ? "success" : "warning"}>
-        {(ReactMarkdown as any)({ children: message })}
+        <ReactMarkdown>{message}</ReactMarkdown>
         {clean ? null : (
           <a href={CLEANING_GUIDE_LINK}>
             <Icon name="launch" />
@@ -1240,9 +1240,7 @@ class PluginList extends ComponentEx<IProps, IComponentState> {
         {filtered.map((msg: Message, idx: number) => (
           <ListGroupItem key={idx}>
             <Alert bsStyle={this.translateLootMessageType(msg.type)}>
-              {(ReactMarkdown as any)({
-                children: this.prepareMessage(msg.content, plugin),
-              })}
+              <ReactMarkdown>{this.prepareMessage(msg.content, plugin)}</ReactMarkdown>
             </Alert>
           </ListGroupItem>
         ))}

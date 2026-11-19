@@ -434,7 +434,7 @@ class DependencyIcon extends ComponentEx<IProps, IComponentState> {
     if (readOnly) {
       return (
         <li key={String(name)} className="rule-readonly">
-          {(ReactMarkdown as any)({ children: display || name })}
+          <ReactMarkdown>{display || name}</ReactMarkdown>
         </li>
       );
     }

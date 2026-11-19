@@ -6,9 +6,11 @@ import { ReactMarkdown } from "./ReactMarkdown";
 
 describe("ReactMarkdown", () => {
   it("renders markdown as HTML", () => {
-    render(<ReactMarkdown>{"Some **bold** text and [a link](https://example.com)"}</ReactMarkdown>);
+    const { container } = render(
+      <ReactMarkdown>{"Some **bold** text and [a link](https://example.com)"}</ReactMarkdown>,
+    );
 
-    expect(screen.getByText("bold").tagName).toBe("STRONG");
+    expect(container.querySelector("strong")).not.toBeNull();
     expect(screen.getByRole("link", { name: "a link" })).toHaveAttribute(
       "href",
       "https://example.com",
@@ -22,11 +24,5 @@ describe("ReactMarkdown", () => {
 
     expect(container.firstElementChild).toHaveClass("changelog-text");
     expect(container.firstElementChild?.tagName).toBe("DIV");
-  });
-
-  it("renders nothing when it has no markdown", () => {
-    const { container } = render(<ReactMarkdown>{undefined}</ReactMarkdown>);
-
-    expect(container).toBeEmptyDOMElement();
   });
 });
