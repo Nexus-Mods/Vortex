@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import * as PropTypes from "prop-types";
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -25,6 +25,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // This hook runs before testing-library's own cleanup (after-hooks run last-registered
+  // first), so unmount the dialog here, while the host it's mounted in is still attached.
+  cleanup();
   overlays.remove();
 });
 

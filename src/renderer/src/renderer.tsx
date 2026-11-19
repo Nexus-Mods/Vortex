@@ -59,8 +59,6 @@ const REACT_DEPRECATION_WARNINGS = [
   "ReactDOM.render is no longer supported",
   "uses the legacy contextTypes API",
   "uses the legacy childContextTypes API",
-  // an extension's ComponentEx subclass that still declares contextTypes of its own
-  "declares both contextTypes and contextType",
   // emitted by legacy deps (react-bootstrap 0.33, react-i18next 11) on 18
   "findDOMNode is deprecated",
   "renderSubtreeIntoContainer() is no longer supported",

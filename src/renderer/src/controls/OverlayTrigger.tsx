@@ -1,11 +1,9 @@
 import * as _ from "lodash";
 import * as React from "react";
-import { OverlayTrigger } from "react-bootstrap";
+import type { OverlayTrigger } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 
-import { MainContext } from "../contexts/main_context/MainContext";
-import type { IComponentContext } from "../types/IComponentContext";
-import { MainContextOverlay } from "./main_context_overlay/MainContextOverlay";
+import { MainContextOverlayTrigger } from "./main_context_overlay/MainContextOverlay";
 
 export interface IBaseProps {
   triggerRef?: (ref: HTMLElement) => void;
@@ -34,9 +32,6 @@ export type IProps = IBaseProps & typeof OverlayTrigger.prototype.props;
  * @extends {React.Component<any, { placement: string }>}
  */
 class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
-  public static contextType = MainContext;
-  declare public context: IComponentContext;
-
   private mNode: Element;
 
   constructor(props) {
@@ -55,26 +50,14 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
     const { placement } = this.state;
     const relayProps: any = _.omit(this.props, ["getBounds", "placement", "onEnter", "triggerRef"]);
     return (
-      <OverlayTrigger
+      <MainContextOverlayTrigger
         placement={placement}
         onEnter={this.onEnter}
         ref={this.props.triggerRef}
         {...relayProps}
-        overlay={this.renderOverlay()}
       >
         {this.props.children}
-      </OverlayTrigger>
-    );
-  }
-
-  // The overlay is drawn as a separate React root, so it's handed this trigger's MainContext
-  // explicitly; inside a dialog that carries the dialog's menu layer.
-  private renderOverlay() {
-    const { overlay } = this.props;
-    return React.isValidElement(overlay) ? (
-      <MainContextOverlay context={this.context} overlay={overlay} />
-    ) : (
-      overlay
+      </MainContextOverlayTrigger>
     );
   }
 

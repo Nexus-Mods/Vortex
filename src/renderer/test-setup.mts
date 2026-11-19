@@ -19,7 +19,7 @@ import { ApplicationData } from "./src/applicationData.js";
 // says how to fix one. console.error is assigned rather than spied on so vi.restoreAllMocks()
 // leaves it be, and the check runs after testing-library's cleanup (vitest.config.mts runs hooks
 // last-registered first), so an update that lands while a test is torn down still counts.
-let componentsUpdatedOutsideAct = new Set<string>();
+const componentsUpdatedOutsideAct = new Set<string>();
 const originalConsoleError = console.error;
 console.error = (...args: unknown[]) => {
   if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
@@ -28,17 +28,6 @@ console.error = (...args: unknown[]) => {
   }
   originalConsoleError.apply(console, args);
 };
-const failOnActWarnings = () => {
-  const components = [...componentsUpdatedOutsideAct];
-  componentsUpdatedOutsideAct = new Set();
-  if (components.length > 0) {
-    throw new Error(
-      `React updated ${components.join(", ")} outside act(); see "React warnings" in docs/testing.md`,
-    );
-  }
-};
-afterEach(failOnActWarnings);
-afterAll(failOnActWarnings);
 
 // React warnings about our own code fail the test they're logged in, as act() warnings do above;
 // "React warnings" in docs/testing.md says how to fix each. A warning is ours when the first
@@ -53,6 +42,11 @@ const ourWarnings: { logged: string; about?: string; failure: string }[] = [
     failure: "declares both contextType and legacy contextTypes",
   },
   { logged: "Failed %s type", about: "context", failure: "fails a context type check" },
+  {
+    logged: "Failed %s type",
+    about: "child context",
+    failure: "fails a child context type check",
+  },
   { logged: "validateDOMNesting", failure: "nests elements HTML doesn't allow" },
   {
     logged: "Function components cannot be given refs",
@@ -63,7 +57,7 @@ const ourWarnings: { logged: string; about?: string; failure: string }[] = [
 // read legacy context, LegacyContextExtension is the tests' stand-in for one of those, and
 // FormFeedback reads react-bootstrap's FormGroup, which only has legacy context.
 const legacyContextOnPurpose = ["ComponentExProvider", "LegacyContextExtension", "FormFeedback"];
-let ourWarningsLogged = new Set<string>();
+const ourWarningsLogged = new Set<string>();
 const consoleErrorBeforeOurWarnings = console.error;
 console.error = (...args: unknown[]) => {
   const message = args[0];
@@ -86,15 +80,26 @@ console.error = (...args: unknown[]) => {
   }
   consoleErrorBeforeOurWarnings.apply(console, args);
 };
-const failOnOurWarnings = () => {
-  const failures = [...ourWarningsLogged];
-  ourWarningsLogged = new Set();
-  if (failures.length > 0) {
-    throw new Error(`${failures.join("; ")}; see "React warnings" in docs/testing.md`);
+
+/**
+ * Fails the test for both checks above at once. Vitest skips the after-hooks left to run once
+ * one throws, so with a hook each, a test failing one check would leave the other's findings
+ * to be blamed on the next test.
+ */
+const failOnReactWarnings = () => {
+  const problems: string[] = [];
+  if (componentsUpdatedOutsideAct.size > 0) {
+    problems.push(`React updated ${[...componentsUpdatedOutsideAct].join(", ")} outside act()`);
+  }
+  problems.push(...ourWarningsLogged);
+  componentsUpdatedOutsideAct.clear();
+  ourWarningsLogged.clear();
+  if (problems.length > 0) {
+    throw new Error(`${problems.join("; ")}; see "React warnings" in docs/testing.md`);
   }
 };
-afterEach(failOnOurWarnings);
-afterAll(failOnOurWarnings);
+afterEach(failOnReactWarnings);
+afterAll(failOnReactWarnings);
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is

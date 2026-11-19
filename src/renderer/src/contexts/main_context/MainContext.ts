@@ -23,6 +23,16 @@ export function setMainContextFallback(value: Partial<IComponentContext>): void 
   Object.assign(fallback, value);
 }
 
+/**
+ * The legacy context keys ComponentExProvider provides, which are the ones ComponentEx declared
+ * before it read MainContext.
+ */
+export const legacyContextTypes: ValidationMap<unknown> = {
+  api: PropTypes.object.isRequired,
+  menuLayer: PropTypes.object,
+  getModifiers: PropTypes.func,
+};
+
 interface IComponentExProviderProps {
   children: ReactNode;
 }
@@ -35,11 +45,7 @@ export class ComponentExProvider extends Component<IComponentExProviderProps> {
   public static contextType = MainContext;
   declare public context: IComponentContext;
 
-  public static childContextTypes: ValidationMap<unknown> = {
-    api: PropTypes.object.isRequired,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
+  public static childContextTypes = legacyContextTypes;
 
   // eslint-disable-next-line @eslint-react/no-unused-class-component-members
   public getChildContext(): IComponentContext {

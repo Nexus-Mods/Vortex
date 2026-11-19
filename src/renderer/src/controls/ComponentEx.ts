@@ -4,7 +4,7 @@ import * as React from "react";
 import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 
-import { MainContext } from "../contexts/main_context/MainContext";
+import { legacyContextTypes, MainContext } from "../contexts/main_context/MainContext";
 import type { IComponentContext } from "../types/IComponentContext";
 import { deleteOrNop, setSafe } from "../util/storeHelper";
 import { truthy } from "../util/util";
@@ -138,7 +138,9 @@ export class ComponentEx<P, S extends object> extends React.Component<
   P & Partial<WithTranslation>,
   S
 > {
-  public static contextType = MainContext;
+  // Both set up by keepLegacyContextWorking below; declared here so extensions can still use them
+  declare public static contextType: React.Context<IComponentContext> | null;
+  declare public static contextTypes: React.ValidationMap<unknown> | undefined;
 
   declare public context: IComponentContext;
 
@@ -157,7 +159,9 @@ export class PureComponentEx<P, S extends object> extends React.PureComponent<
   P & Partial<WithTranslation>,
   S
 > {
-  public static contextType = MainContext;
+  // Both set up by keepLegacyContextWorking below; declared here so extensions can still use them
+  declare public static contextType: React.Context<IComponentContext> | null;
+  declare public static contextTypes: React.ValidationMap<unknown> | undefined;
 
   declare public context: IComponentContext;
 
@@ -171,3 +175,58 @@ export class PureComponentEx<P, S extends object> extends React.PureComponent<
     this.nextState = new Proxy<S>(value, proxyHandler);
   }
 }
+
+/**
+ * Sets `base` up to read MainContext while keeping community extensions written against its old
+ * legacy context working. React reads `contextType` and `contextTypes` off the class it renders,
+ * which inherits them from `base`, so both are accessors that answer for that class:
+ *
+ * - A subclass that declares contextTypes of its own reads legacy context, as it did before,
+ *   instead of MainContext, which would leave any key MainContext lacks undefined.
+ * - `ComponentEx.contextTypes` is still the old map, for extensions that copy it onto a plain
+ *   React.Component. Subclasses don't inherit it: React would ignore it and warn.
+ *
+ * The setters let a subclass assign either static, as code compiled with assignment-style class
+ * fields does, instead of failing on a getter with no setter.
+ */
+function keepLegacyContextWorking(base: abstract new (...args: never[]) => unknown): void {
+  const defineOwn = (target: object, key: string, value: unknown) =>
+    Object.defineProperty(target, key, {
+      value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  const declaresContextTypes = (cls: object): boolean => {
+    for (let current = cls; current !== base; current = Object.getPrototypeOf(current)) {
+      if (Object.hasOwn(current, "contextTypes")) {
+        return true;
+      }
+    }
+    return false;
+  };
+  Object.defineProperties(base, {
+    contextType: {
+      configurable: true,
+      // null rather than undefined: React warns about a contextType that is undefined
+      get(this: object) {
+        return declaresContextTypes(this) ? null : MainContext;
+      },
+      set(this: object, value: unknown) {
+        defineOwn(this, "contextType", value);
+      },
+    },
+    contextTypes: {
+      configurable: true,
+      get(this: object) {
+        return this === base ? legacyContextTypes : undefined;
+      },
+      set(this: object, value: unknown) {
+        defineOwn(this, "contextTypes", value);
+      },
+    },
+  });
+}
+
+keepLegacyContextWorking(ComponentEx);
+keepLegacyContextWorking(PureComponentEx);

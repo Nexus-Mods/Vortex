@@ -1,11 +1,11 @@
-import { render } from "@testing-library/react";
-import React, { Component, type ReactElement } from "react";
+import { render, screen } from "@testing-library/react";
+import React, { Component, type ComponentType, type ReactElement } from "react";
 import { OverlayTrigger, Popover } from "react-bootstrap";
 import { describe, expect, it } from "vitest";
 
 import { MainContext } from "../../contexts/main_context/MainContext";
 import type { IComponentContext } from "../../types/IComponentContext";
-import { MainContextOverlay } from "./MainContextOverlay";
+import { MainContextOverlayTrigger } from "./MainContextOverlay";
 
 const dialogLayer = document.createElement("div");
 const dialogContext: IComponentContext = {
@@ -26,54 +26,62 @@ class Reader extends Component<{ onContext: (context: IComponentContext) => void
   }
 }
 
-/** Shows `overlay` the way react-bootstrap's OverlayTrigger does: as a separate React root. */
-function renderShownOverlay(wrap: (overlay: ReactElement) => ReactElement) {
-  let seen: IComponentContext;
-  const overlay = (
-    <Popover id="popover">
-      <Reader onContext={(context) => (seen = context)} />
-    </Popover>
-  );
-
+/** Renders `Trigger` inside a dialog's MainContext, with `overlay` already shown. */
+function renderShownOverlay(
+  Trigger: ComponentType<OverlayTrigger.OverlayTriggerProps>,
+  overlay: ReactElement,
+) {
   render(
     <MainContext.Provider value={dialogContext}>
-      <OverlayTrigger
-        animation={false}
-        defaultOverlayShown
-        placement="right"
-        overlay={wrap(overlay)}
-      >
+      <Trigger animation={false} defaultOverlayShown placement="right" overlay={overlay}>
         <button type="button" />
-      </OverlayTrigger>
+      </Trigger>
     </MainContext.Provider>,
   );
+}
 
+function contextSeenInOverlay(Trigger: ComponentType<OverlayTrigger.OverlayTriggerProps>) {
+  let seen: IComponentContext;
+  renderShownOverlay(
+    Trigger,
+    <Popover id="popover">
+      <Reader onContext={(context) => (seen = context)} />
+    </Popover>,
+  );
   return seen;
 }
 
 // A popover inside a dialog has to open its menus on the dialog's menu layer, or they sit
 // behind the dialog.
-describe("MainContextOverlay", () => {
+describe("MainContextOverlayTrigger", () => {
   it("gives the overlay the trigger's MainContext", () => {
-    const seen = renderShownOverlay((overlay) => (
-      <MainContextOverlay context={dialogContext} overlay={overlay} />
-    ));
+    const seen = contextSeenInOverlay(MainContextOverlayTrigger);
 
     expect(seen.menuLayer).toBe(dialogLayer);
     expect(seen.api).toBe(dialogContext.api);
   });
 
-  it("is needed: without it the overlay doesn't see the trigger's provider", () => {
-    const seen = renderShownOverlay((overlay) => overlay);
+  it("is needed: react-bootstrap's own trigger doesn't pass the provider on", () => {
+    const seen = contextSeenInOverlay(OverlayTrigger);
 
     expect(seen.menuLayer).not.toBe(dialogLayer);
   });
 
-  it("passes react-bootstrap's positioning on to the overlay", () => {
-    renderShownOverlay((overlay) => (
-      <MainContextOverlay context={dialogContext} overlay={overlay} />
-    ));
+  it("keeps the overlay's own className and style alongside react-bootstrap's", () => {
+    renderShownOverlay(
+      MainContextOverlayTrigger,
+      <Popover id="popover" className="my-popover" style={{ maxWidth: 600 }} />,
+    );
 
-    expect(document.querySelector("#popover")).toHaveClass("right");
+    const popover = document.querySelector("#popover") as HTMLElement;
+    // "right" is the placement react-bootstrap passes on
+    expect(popover).toHaveClass("my-popover", "right");
+    expect(popover.style.maxWidth).toBe("600px");
+  });
+
+  it("points the trigger's aria-describedby at the overlay", () => {
+    renderShownOverlay(MainContextOverlayTrigger, <Popover id="popover" />);
+
+    expect(screen.getByRole("button")).toHaveAttribute("aria-describedby", "popover");
   });
 });

@@ -109,12 +109,13 @@ A test also fails when React warns that our own code:
   Read `MainContext` instead, with `static contextType = MainContext` in a class
   or `useMainContext()` in a function component. `ComponentEx` already does. A
   test that renders a `ComponentEx` without the app provides it with
-  `<MainContext.Provider value={…}>`.
-- **declares `contextTypes` on a class that also has `contextType`,** such as a
-  `ComponentEx` subclass. React ignores the `contextTypes`; drop them.
-- **fails a context type check** (`Failed context type`): a legacy provider,
-  such as `ComponentExProvider`, rendered without the value it requires. Render
-  it inside a `<MainContext.Provider>` that has an `api`.
+  `<MainContext.Provider value={…}>`. A `ComponentEx` subclass that declares
+  `contextTypes` of its own reads legacy context instead, so drop them.
+- **declares `contextTypes` on a class that also has `contextType`.** React
+  ignores the `contextTypes`; drop them.
+- **fails a context type check,** such as `ComponentExProvider` rendered
+  without the `api` it requires (`Failed child context type`). Render it inside
+  a `<MainContext.Provider>` that has an `api`.
 - **nests elements HTML doesn't allow** (`validateDOMNesting`), such as a `<p>`
   inside a `<p>`. Render the outer element as a `<div>` (`Typography` takes
   `as="div"`).
@@ -131,9 +132,11 @@ still read legacy context, and `FormFeedback`, which reads react-bootstrap's
 `MainContext` lives in `src/renderer/src/contexts/main_context/MainContext.ts`.
 A component that React renders as a separate root, as react-bootstrap's
 `OverlayTrigger` does with its overlay, has no provider above it, so it reads
-the app-wide values `MainProvider` fills in. Our `OverlayTrigger` wraps its
-overlay in `MainContextOverlay`, which hands it the trigger's own `MainContext`,
-so a popover in a dialog gets the dialog's menu layer.
+the app-wide values `MainProvider` fills in. Use `MainContextOverlayTrigger`
+(`src/renderer/src/controls/main_context_overlay/`) in place of react-bootstrap's
+`OverlayTrigger`: it hands the overlay the trigger's own `MainContext`, so a
+popover in a dialog gets the dialog's menu layer. Our `OverlayTrigger` control
+and `TooltipControls` use it.
 
 ### What the check can't see
 
