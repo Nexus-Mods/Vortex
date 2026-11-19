@@ -18,6 +18,8 @@ interface IDeleteModFilesModalProps {
   modName: string;
   /** The files the user has of the mod; unset, the modal isn't showing. */
   files?: OwnedModFile[];
+  /** Whether "Also delete downloaded files" starts ticked, as for Delete rather than Uninstall. */
+  deletesDownloads?: boolean;
   /** Removes the chosen files, deleting their downloads too when `deleteDownloads` is set. */
   onDelete: (files: OwnedModFile[], deleteDownloads: boolean) => void;
   /** Keeps them. */
@@ -31,17 +33,26 @@ interface IDeleteModFilesBodyProps extends Omit<IDeleteModFilesModalProps, "file
 
 /**
  * The modal's contents, mounted while it shows so each opening starts afresh: every file ticked
- * and downloads kept. With nothing installed there's only deleting, so it's forced on. Downloads
+ * and downloads deleted only if `deletesDownloads`. With nothing installed there's only deleting,
+ * so it's forced on. Downloads
  * only count, and can only be changed, while their deletion is on; until then they show unticked.
  */
-const DeleteModFilesBody = ({ modName, files, onDelete, onClose }: IDeleteModFilesBodyProps) => {
+const DeleteModFilesBody = ({
+  modName,
+  files,
+  deletesDownloads = false,
+  onDelete,
+  onClose,
+}: IDeleteModFilesBodyProps) => {
   const { t } = useTranslation();
   const isSingle = files.length === 1;
   const isDeleteForced = !files.some((file) => file.kind === "installed");
   const hasUninstalled = files.some((file) => file.kind === "downloaded");
   /** Whether any file has a download to delete; without one, the option would do nothing. */
   const hasDownloads = files.some((file) => file.kind === "downloaded" || file.hasDownload);
-  const [deleteDownloads, setDeleteDownloads] = useState(isDeleteForced);
+  const [deleteDownloads, setDeleteDownloads] = useState(
+    isDeleteForced || (deletesDownloads && hasDownloads),
+  );
   const [chosen, setChosen] = useState(() => new Set(files.map(ownedFileKey)));
   const isSelectable = (file: OwnedModFile) => file.kind === "installed" || deleteDownloads;
   const chosenFiles = files.filter((file) => chosen.has(ownedFileKey(file)) && isSelectable(file));
@@ -218,10 +229,10 @@ const DeleteModFilesBody = ({ modName, files, onDelete, onClose }: IDeleteModFil
 
 /**
  * Asks which of the files the user has of a mod to remove, each with pills saying whether it's
- * installed, its download is missing, or it's only downloaded. Removing uninstalls by default,
- * keeping downloads to reinstall from; "Also delete downloaded files" deletes them too, and is
- * what lets downloads be chosen. One file is just confirmed, by its name and version, with no list,
- * so an optional file doesn't read as the whole mod.
+ * installed, its download is missing, or it's only downloaded. Removing uninstalls unless opened
+ * to delete, keeping downloads to reinstall from; "Also delete downloaded files" deletes them too,
+ * and is what lets downloads be chosen. One file is just confirmed, by its name and version, with
+ * no list, so an optional file doesn't read as the whole mod.
  */
 export const DeleteModFilesModal = ({ files, ...props }: IDeleteModFilesModalProps) => {
   const { t } = useTranslation();

@@ -5,6 +5,7 @@ const { emit } = vi.hoisted(() => ({ emit: vi.fn() }));
 
 vi.mock("@/contexts", () => ({ useMainContext: () => ({ api: { events: { emit } } }) }));
 
+import { NEW_VIEW_DEFAULTS } from "../../util/mods_table_views/modsTableViews";
 import { useModsTableAnalytics } from "./useModsTableAnalytics.hook";
 
 // --- Helpers ---
@@ -19,7 +20,7 @@ const sent = () => {
   return event;
 };
 
-const VIEW = { id: "all", label: "All mods", defaults: { grouping: "none", columns: [] } };
+const VIEW = { id: "all", label: "All mods", defaults: { ...NEW_VIEW_DEFAULTS, columns: [] } };
 
 // --- Tests ---
 
@@ -78,6 +79,15 @@ describe("useModsTableAnalytics", () => {
     analytics().onSearchStarted();
 
     expect(sent()).toEqual({ eventName: "app_mods_table_searched", properties: {} });
+  });
+
+  it("reports opening Properties by double-click", () => {
+    analytics().onPropertiesOpened("double_click");
+
+    expect(sent()).toEqual({
+      eventName: "app_mods_table_properties_opened",
+      properties: { via: "double_click" },
+    });
   });
 
   it("reports a context menu opening, on what and from where", () => {

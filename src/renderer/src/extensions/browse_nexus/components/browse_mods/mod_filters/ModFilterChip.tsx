@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { SplitButton, SplitButtonAction } from "@/ui/components/split_button/SplitButton";
+import { FilterChip } from "@/ui/components/filters/filter_chip/FilterChip";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 import type { IAdultContentAccess, IModFilter } from "../../../util/mod_filters/modFilter.types";
@@ -30,19 +30,15 @@ export const ModFilterChip = ({ filter, onRemove, ...props }: IModFilterChipProp
   const locked = filter.lockedReason?.(t, props);
 
   const chip = (
-    <SplitButton
-      action={<SplitButtonAction icon="close" label={filter.removeLabel(t)} onClick={onRemove} />}
-      appearance="subdued"
-      brand="neutral"
+    <FilterChip
       className={locked ? "pointer-events-none" : undefined}
+      icon={filter.icon}
       isDisabled={!!locked}
-      leftIcon={filter.icon}
+      label={choice?.short ?? ""}
       panel={({ close }) => <ModFilterMenu {...props} filter={filter} onSelect={close} />}
-      panelRole="menu"
-      size="sm"
-    >
-      {choice?.short}
-    </SplitButton>
+      removeLabel={filter.removeLabel(t)}
+      onRemove={onRemove}
+    />
   );
 
   if (!locked) {

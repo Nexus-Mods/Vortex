@@ -10,8 +10,10 @@ import { AlertDemo } from "@/ui/components/alert/Alert.demo";
 import { BadgesDemo } from "@/ui/components/badges/Badges.demo";
 import { BulletDemo } from "@/ui/components/bullet/Bullet.demo";
 import { ButtonDemo } from "@/ui/components/button/Button.demo";
+import { CompareSliderDemo } from "@/ui/components/compare_slider/CompareSlider.demo";
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { EndorseButtonDemo } from "@/ui/components/endorse_button/EndorseButton.demo";
 import { FeedbackModalDemo } from "@/ui/components/feedback_modal/FeedbackModal.demo";
 import { FileTreeDemo } from "@/ui/components/file_tree/FileTree.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
@@ -79,6 +81,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
       { id: "split-button", name: "Split button", Demo: SplitButtonDemo },
       { id: "view-picker", name: "View picker", Demo: ViewPickerDemo },
       { id: "toolbar", name: "Toolbar", Demo: ToolbarDemo },
+      { id: "endorse-button", name: "Endorse button", Demo: EndorseButtonDemo },
     ],
   },
   {
@@ -130,6 +133,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
     id: "media",
     name: "Media",
     demos: [
+      { id: "compare-slider", name: "Compare slider", Demo: CompareSliderDemo },
       { id: "icon", name: "Icon", Demo: IconDemo },
       { id: "image", name: "Image", Demo: ImageDemo },
     ],

@@ -30,6 +30,8 @@ const BBCODE = [
   "[/list]",
   `[img width=200]${NEXUS_IMAGE}[/img]`,
   "[spoiler]Hidden until opened.[/spoiler]",
+  "A before and after comparison:",
+  `[compare before=${NEXUS_IMAGE} width=400]https://staticdelivery.nexusmods.com/Images/games/4_3/tile_3333.jpg[/compare]`,
   '[img alt="Lanterns of the North banner"]https://i.imgur.com/banner.png[/img]',
   "Some text, then a run of screenshots:",
   "[img]https://i.imgur.com/a.png[/img]",

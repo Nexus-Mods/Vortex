@@ -130,6 +130,19 @@
         }
     }
 
+    /* A before/after comparison in bbcode, a little clear of the lines around it. Its slider sits
+       on a line of its own as an image does, so it follows that line's alignment, as `[center]`
+       asks, as wide as the line or the width the comparison gives, whichever is less. */
+    .nxm-prose-compare {
+        margin-block: calc(var(--spacing) * 2);
+
+        & > .nxm-prose-compare-slider {
+            display: inline-block;
+            width: 100%;
+            vertical-align: top;
+        }
+    }
+
     /* Small prose, as in a popover. Where a size's headings should stand apart by size too,
        that's set here, per size. */
     .nxm-prose-sm {

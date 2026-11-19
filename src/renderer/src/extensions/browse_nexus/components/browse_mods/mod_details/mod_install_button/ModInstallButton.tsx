@@ -92,7 +92,7 @@ interface IModInstallButtonProps {
 }
 
 /**
- * The details' button for what the user has of a mod: View installed mod once it's installed,
+ * The details' button for what the user has of a mod: Manage mod once it's installed,
  * Update while the Mods page's update check offers one, Install for a download, and otherwise
  * 1-click install of its main file, which only downloads if the user's settings don't install
  * once downloaded. Non-Premium users get the 1-click upsell for an update as for an install, its
@@ -100,10 +100,10 @@ interface IModInstallButtonProps {
  *
  * A mod with several Main files and no primary has them fetched on click, for the picker; with
  * one, it's installed as a primary is. v3 giving it no file at all means it isn't available
- * through Vortex. Once the user has a mod, its button splits, its menu deleting it and, for a mod
- * with several Main files and no primary, reaching the picker again; with several of those files
- * downloaded or installed, a Premium user's main action opens the picker too. It spins while any
- * of the mod's files is uninstalling, so nothing is started on them twice.
+ * through Vortex. Once the user has a mod, its button splits, its menu uninstalling or deleting it
+ * and, for a mod with several Main files and no primary, reaching the picker again; with several
+ * of those files downloaded or installed, a Premium user's main action opens the picker too. It
+ * spins while any of the mod's files is uninstalling, so nothing is started on them twice.
  */
 export const ModInstallButton = ({
   api,
@@ -122,6 +122,7 @@ export const ModInstallButton = ({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const mainButtonRef = useRef<HTMLButtonElement>(null);
   const {
+    uninstallAction,
     deleteAction,
     modal: deleteModal,
     isDeleting,
@@ -320,16 +321,24 @@ export const ModInstallButton = ({
     },
   };
 
-  /** The split button for what the user has, its menu deleting it and reaching the picker. */
-  const split = (look: IModOptionsSplitLook, onClick: () => void) => (
-    <ModOptionsSplitButton
-      {...look}
-      actions={choosesFile ? [[viewAllFiles], [deleteAction]] : [[deleteAction]]}
-      isLoading={loadModFiles.isPending || isDeleting}
-      mainRef={mainButtonRef}
-      onClick={onClick}
-    />
-  );
+  /**
+   * The split button for what the user has, its menu reaching the picker, and uninstalling or
+   * deleting it; a mod that's only downloaded has nothing to uninstall.
+   */
+  const split = (look: IModOptionsSplitLook, onClick: () => void) => {
+    const removeActions =
+      installState.kind === "installed" ? [uninstallAction, deleteAction] : [deleteAction];
+
+    return (
+      <ModOptionsSplitButton
+        {...look}
+        actions={choosesFile ? [[viewAllFiles], removeActions] : [removeActions]}
+        isLoading={loadModFiles.isPending || isDeleting}
+        mainRef={mainButtonRef}
+        onClick={onClick}
+      />
+    );
+  };
 
   /**
    * The button for what the user has of the mod; the upsell beside it stays put as it changes.
@@ -359,7 +368,7 @@ export const ModInstallButton = ({
     if (installState.kind === "installed" && !installState.update) {
       const modId = VortexModId(installState.mod.id);
       const look: IModOptionsSplitLook = {
-        label: t("View installed mod"),
+        label: t("Manage mod"),
         brand: "neutral",
         leftIcon: { path: nxmModOutline },
         testId: "mod-install-view-installed",
