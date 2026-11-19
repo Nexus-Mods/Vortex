@@ -172,6 +172,9 @@ const nop = () => undefined;
  * the filters hide is deselected while rendering, however it comes to be hidden, so nothing acts on
  * a mod out of sight. With no rows to show, it says the search found nothing only when the filters
  * left some for it, and otherwise that nothing matches the filters.
+ *
+ * The Properties panel is the new table's aside, pinned over its right edge; the columns scroll
+ * sideways clear of it when both don't fit. One title tooltip serves extension controls in both.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -575,7 +578,7 @@ export const ModsTableSwitch = ({
     onGroupFocused,
     focusRowId: focusModId,
     onRowFocused: onModFocused,
-    className: "mb-2 min-w-0 flex-1",
+    className: "min-w-0 flex-1 [--nxm-table-end-padding:--spacing(2)]",
     toolbar: (
       <ModsTableToolbar
         changedFilters={changedFilters}
@@ -609,9 +612,7 @@ export const ModsTableSwitch = ({
     // The table selects the row alone first, so the panel shows just it.
     onRowDoubleClick: () => openProperties("double_click"),
     onHeaderOffsetChange: setHeaderOffset,
-    // Over the panel too, as one bar for the page, so its toggle sits above the panel's edge; as
-    // wide as the panel is, as it slides.
-    toolbarOverhang: showProperties ? PROPERTIES_WIDTH : undefined,
+    asideWidth: showProperties ? PROPERTIES_WIDTH : undefined,
     rowMenu: ({ mod, name }: IModRow, close: () => void) =>
       multiSelected ? (
         <>
@@ -661,13 +662,6 @@ export const ModsTableSwitch = ({
 
   return (
     <>
-      {/*
-        The panel beside the table, sliding in from the right as the table makes room for it; the
-        toolbar spans both. A rule down its left from the table's header row, where it starts,
-        under the toolbar, fading in at its top as no rule across meets it there; it sticks there
-        as the rows scroll, as the header does, no taller than the page's scroller. It slides as
-        fast as the app's transitions, so not with reduced motion.
-      */}
       <div
         className="flex flex-1 items-stretch"
         style={
@@ -678,47 +672,44 @@ export const ModsTableSwitch = ({
         }
       >
         <RegisteredModsInputsProvider value={registered.inputs}>
-          {/*
-            One for every extension control's titles, in the table and the panel, as only one
-            shows at a time; it adds no box of its own, so the two stay the page's flex items.
-          */}
           <LegacyTitleTooltips>
-            <Table {...tableProps} {...data} />
-
-            <div
-              className={joinClasses([
-                "relative mt-(--properties-top) mb-2 shrink-0 overflow-x-clip transition-[width]",
-                "before:absolute before:inset-y-0 before:left-0 before:w-px",
-                "before:bg-[linear-gradient(to_bottom,transparent,var(--color-stroke-weak)_3rem)]",
-                showProperties ? "w-(--properties-width)" : "w-0",
-              ])}
-              data-testid="mod-properties-slot"
-              // Its content goes once it's slid shut.
-              onTransitionEnd={(event) => {
-                if (event.target === event.currentTarget && !showProperties) {
-                  setPanelMounted(false);
-                }
-              }}
-            >
-              {(showProperties || panelMounted) && (
-                // Around the panel, as the hooks that work out its contents run in its own render.
-                // Its error goes as the selection changes, as it may be only one mod's.
-                <ErrorBoundary
-                  className="sticky top-(--properties-top) w-(--properties-width)"
-                  resetKey={selectedIds.join("\n")}
-                  visible
-                  onHide={() => setPropertiesOpen(false)}
+            <Table
+              {...tableProps}
+              {...data}
+              aside={
+                <div
+                  className={joinClasses([
+                    "absolute top-(--properties-top) right-0 h-[calc(100cqb-var(--properties-top))]",
+                    "pointer-events-auto overflow-x-clip bg-surface-low transition-[width]",
+                    "before:absolute before:inset-y-0 before:left-0 before:w-px",
+                    "before:bg-[linear-gradient(to_bottom,transparent,var(--color-stroke-weak)_3rem)]",
+                    showProperties ? "w-(--properties-width)" : "w-0",
+                  ])}
+                  data-testid="mod-properties-slot"
+                  onTransitionEnd={(event) => {
+                    if (event.target === event.currentTarget && !showProperties) {
+                      setPanelMounted(false);
+                    }
+                  }}
                 >
-                  <ModPropertiesPanel
-                    className="sticky top-(--properties-top) max-h-[calc(100cqh-var(--properties-top)-0.5rem)] w-(--properties-width)"
-                    memberships={memberships}
-                    mods={selectedMods}
-                    registered={registeredDetails}
-                    onClose={() => setPropertiesOpen(false)}
-                  />
-                </ErrorBoundary>
-              )}
-            </div>
+                  {(showProperties || panelMounted) && (
+                    <ErrorBoundary
+                      className="w-(--properties-width)"
+                      resetKey={selectedIds.join("\n")}
+                      visible
+                      onHide={() => setPropertiesOpen(false)}
+                    >
+                      <ModPropertiesPanel
+                        className="max-h-[calc(100%-0.5rem)] w-(--properties-width)"
+                        memberships={memberships}
+                        mods={selectedMods}
+                        registered={registeredDetails}
+                      />
+                    </ErrorBoundary>
+                  )}
+                </div>
+              }
+            />
           </LegacyTitleTooltips>
         </RegisteredModsInputsProvider>
       </div>

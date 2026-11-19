@@ -36,6 +36,7 @@ import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
+import { useScrollableRight } from "./use_scrollable_right/useScrollableRight.hook";
 import { useTableSelection } from "./useTableSelection.hook";
 import { useTableSort } from "./useTableSort.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
@@ -69,6 +70,9 @@ const GROUP_ROW_GAP = 4;
  * Given `focusGroupId`, it opens that group and scrolls it to the top once it has it; the group
  * opens while rendering, so its rows are counted before it's scrolled to. `focusRowId` does the
  * same for a row, opening the first group it's in, then selecting it alone.
+ *
+ * The grid role sits on a `display: contents` wrapper, so an `aside` shares the layout but not
+ * the grid. A click on its empty space, not the head or the aside, clears the selection.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -77,7 +81,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   getRowId,
   label,
   toolbar,
-  toolbarOverhang,
+  aside,
+  asideWidth,
   footer,
   empty,
   defaultSort,
@@ -224,6 +229,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     getItemSize,
     stickyIndexes,
   });
+  useScrollableRight(virtual.scroller, virtual.tableRef);
 
   const hasFocusGroup = !!focusGroupId && !!groups?.some((group) => group.id === focusGroupId);
 
@@ -276,7 +282,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     onRowFocused?.();
   }, [focusRowId, getRowId, items, onRowFocused, onSelectedIdsChange, ready, scrollToIndex]);
 
-  const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
+  const stickyEnd = columns.find((column) => column.sticky === "end");
+  const revealWidth = stickyEnd?.revealWidth;
 
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
@@ -324,7 +331,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     [
       "var(--nxm-table-gutter-start)",
       ...columnTracks(columns, (columnId) => widths[columnId], resizes),
-      "var(--nxm-table-gutter)",
+      "calc(var(--nxm-table-gutter) + var(--nxm-table-aside-width))",
     ].join(" ");
 
   const savedTemplate = template(columnWidths ?? {});
@@ -458,13 +465,12 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
 
   return (
     <div
-      aria-label={label}
-      aria-rowcount={bodyRows + headRows + (footer ? 1 : 0)}
       className={joinClasses(["nxm-table", className])}
+      data-aside={asideWidth ? "" : undefined}
+      data-grouped={groups ? "" : undefined}
       data-sticky-reveal={revealWidth ? "" : undefined}
       data-toolbar={toolbar ? "" : undefined}
       ref={virtual.tableRef}
-      role={groups === undefined ? "grid" : "treegrid"}
       style={
         {
           "--nxm-table-row-height": `${ROW_HEIGHT}px`,
@@ -472,144 +478,154 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           "--nxm-table-group-row-gap": `${GROUP_ROW_GAP}px`,
           "--nxm-table-sticky-reveal": revealWidth,
           "--nxm-table-toolbar-height": toolbarHeight ? `${toolbarHeight}px` : undefined,
-          "--nxm-table-toolbar-overhang": toolbarOverhang,
+          "--nxm-table-aside-width": asideWidth,
           gridTemplateColumns: savedTemplate,
         } as CSSProperties
       }
-      onBlur={virtual.onBlur}
       onClick={(event) => {
-        // Between and below the rows, but not the head; a portalled panel isn't in the table.
         const target = event.target as Element;
         if (
           selectable &&
           event.currentTarget.contains(target) &&
-          target.closest('[role="row"], .nxm-table-head') === null
+          target.closest('[role="row"], .nxm-table-head, .nxm-table-aside') === null
         ) {
           selection.clear();
         }
       }}
-      onFocus={virtual.onFocus}
     >
-      <TableHeader
-        checkbox={selectable ? selection.header : undefined}
-        columns={columns}
-        sort={sort}
-        toolbar={toolbar}
-        toolbarRef={toolbarRef}
-        onColumnDrag={(columnId, width) => {
-          const element = tableRef.current;
-          if (width === undefined) {
-            dragWidthsRef.current = undefined;
-            if (element) {
-              element.style.gridTemplateColumns = savedTemplate;
-            }
-            return;
-          }
-
-          dragWidthsRef.current = {
-            ...(dragWidthsRef.current ?? sharedWidths(columnId)),
-            [columnId]: width,
-          };
-          if (element) {
-            element.style.gridTemplateColumns = template({
-              ...columnWidths,
-              ...dragWidthsRef.current,
-            });
-          }
-        }}
-        onColumnResize={
-          onColumnWidthsChange &&
-          ((columnId, width) => {
-            const column = columns.find(({ id }) => id === columnId);
-            if (!column) {
-              return;
-            }
+      <div
+        aria-label={label}
+        aria-rowcount={bodyRows + headRows + (footer ? 1 : 0)}
+        className="contents"
+        role={groups === undefined ? "grid" : "treegrid"}
+        onBlur={virtual.onBlur}
+        onFocus={virtual.onFocus}
+      >
+        <TableHeader
+          checkbox={selectable ? selection.header : undefined}
+          columns={columns}
+          sort={sort}
+          toolbar={toolbar}
+          toolbarRef={toolbarRef}
+          onColumnDrag={(columnId, width) => {
+            const element = tableRef.current;
             if (width === undefined) {
-              onColumnWidthsChange({ [columnId]: undefined });
+              dragWidthsRef.current = undefined;
+              if (element) {
+                element.style.gridTemplateColumns = savedTemplate;
+              }
               return;
             }
-            const { [columnId]: _dragged, ...held } =
-              dragWidthsRef.current ?? sharedWidths(columnId);
-            onColumnWidthsChange({ ...held, [columnId]: keptWidth(column, width) });
-          })
-        }
-        onSort={toggleSort}
-      />
 
-      {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
-      <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
+            dragWidthsRef.current = {
+              ...(dragWidthsRef.current ?? sharedWidths(columnId)),
+              [columnId]: width,
+            };
+            if (element) {
+              element.style.gridTemplateColumns = template({
+                ...columnWidths,
+                ...dragWidthsRef.current,
+              });
+            }
+          }}
+          onColumnResize={
+            onColumnWidthsChange &&
+            ((columnId, width) => {
+              const column = columns.find(({ id }) => id === columnId);
+              if (!column) {
+                return;
+              }
+              if (width === undefined) {
+                onColumnWidthsChange({ [columnId]: undefined });
+                return;
+              }
+              const { [columnId]: _dragged, ...held } =
+                dragWidthsRef.current ?? sharedWidths(columnId);
+              onColumnWidthsChange({ ...held, [columnId]: keptWidth(column, width) });
+            })
+          }
+          onSort={toggleSort}
+        />
 
-      {!groups &&
-        virtual.items.map(({ gap, index }) => (
-          <Fragment key={items[index].key}>
-            {/* Rows out of view, before a focused row kept far from the rest too. */}
-            <TableSpacer height={gap} />
+        {/* Always rendered, at the top of the rows: where the virtualiser measures from. */}
+        <div className="nxm-table-spacer" ref={virtual.startRef} role="presentation" />
 
-            {renderItem(index)}
-          </Fragment>
-        ))}
-
-      {!!groups &&
-        blocks.blocks.map(({ endGap, gap, heading, rows: blockRows }) => {
-          const item = items[heading];
-
-          return (
-            <Fragment key={`block:${item.key}`}>
+        {!groups &&
+          virtual.items.map(({ gap, index }) => (
+            <Fragment key={items[index].key}>
+              {/* Rows out of view, before a focused row kept far from the rest too. */}
               <TableSpacer height={gap} />
 
-              <TableGroup image={item.kind === "group" ? item.group.image : undefined}>
-                {blockRows.map((row) => (
-                  <Fragment key={items[row.index].key}>
-                    <TableSpacer height={row.gap} />
-
-                    {renderItem(row.index)}
-                  </Fragment>
-                ))}
-
-                <TableSpacer height={endGap} />
-              </TableGroup>
+              {renderItem(index)}
             </Fragment>
-          );
-        })}
+          ))}
 
-      <TableSpacer height={groups ? blocks.endGap : virtual.endGap} />
-
-      {showsEmpty && (
-        <div aria-rowindex={headRows + 1} className="nxm-table-empty" role="row">
-          <div aria-colspan={columns.length} className="nxm-table-empty-cell" role="gridcell">
-            {empty}
-          </div>
-        </div>
-      )}
-
-      <ContextMenu position={menu?.position} onClose={() => setMenu(undefined)}>
-        {(close) => {
-          if (menu?.kind === "group") {
-            if (!menuGroup) {
-              return null;
-            }
+        {!!groups &&
+          blocks.blocks.map(({ endGap, gap, heading, rows: blockRows }) => {
+            const item = items[heading];
 
             return (
-              <ToolbarMenu
-                actions={groupActions(menuGroup)}
-                label={t("{{name}} group actions", { name: menuGroup.label })}
-                tracking={groupTracking}
-                onSelect={close}
-              />
+              <Fragment key={`block:${item.key}`}>
+                <TableSpacer height={gap} />
+
+                <TableGroup image={item.kind === "group" ? item.group.image : undefined}>
+                  {blockRows.map((row) => (
+                    <Fragment key={items[row.index].key}>
+                      <TableSpacer height={row.gap} />
+
+                      {renderItem(row.index)}
+                    </Fragment>
+                  ))}
+
+                  <TableSpacer height={endGap} />
+                </TableGroup>
+              </Fragment>
             );
-          }
+          })}
 
-          return menuRow === undefined ? null : rowMenu?.(menuRow, close);
-        }}
-      </ContextMenu>
+        <TableSpacer height={groups ? blocks.endGap : virtual.endGap} />
 
-      {!!footer && (
-        <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">
-          <div aria-colspan={columns.length} className="nxm-table-footer-cell" role="gridcell">
-            {footer}
+        {showsEmpty && (
+          <div aria-rowindex={headRows + 1} className="nxm-table-empty" role="row">
+            <div aria-colspan={columns.length} className="nxm-table-empty-cell" role="gridcell">
+              {empty}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        <ContextMenu position={menu?.position} onClose={() => setMenu(undefined)}>
+          {(close) => {
+            if (menu?.kind === "group") {
+              if (!menuGroup) {
+                return null;
+              }
+
+              return (
+                <ToolbarMenu
+                  actions={groupActions(menuGroup)}
+                  label={t("{{name}} group actions", { name: menuGroup.label })}
+                  tracking={groupTracking}
+                  onSelect={close}
+                />
+              );
+            }
+
+            return menuRow === undefined ? null : rowMenu?.(menuRow, close);
+          }}
+        </ContextMenu>
+
+        {!!footer && (
+          <div aria-rowindex={bodyRows + headRows + 1} className="nxm-table-footer" role="row">
+            <div aria-colspan={columns.length} className="nxm-table-footer-cell" role="gridcell">
+              {footer}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!!stickyEnd && <div aria-hidden className="nxm-table-end" />}
+
+      {!!aside && <div className="nxm-table-aside">{aside}</div>}
     </div>
   );
 };

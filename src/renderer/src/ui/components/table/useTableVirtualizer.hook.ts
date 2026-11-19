@@ -202,6 +202,7 @@ export const useTableVirtualizer = ({
     onBlur,
     onFocus,
     ready: scroller !== undefined,
+    scroller,
     scrollToIndex,
     startRef,
     tableRef,

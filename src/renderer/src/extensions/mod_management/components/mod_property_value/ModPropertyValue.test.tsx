@@ -28,6 +28,15 @@ describe("ModPropertyValue", () => {
     expect(screen.getByTestId("mod-property-nexusModId")).toHaveTextContent("1234");
   });
 
+  it("names its copy button in a tooltip, not a title", async () => {
+    renderValue();
+    const copy = screen.getByTestId("mod-property-copy-nexusModId");
+
+    expect(copy).not.toHaveAttribute("title");
+    await userEvent.hover(copy);
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
+  });
+
   it("offers no copy where it isn't copyable", () => {
     renderValue(false);
 

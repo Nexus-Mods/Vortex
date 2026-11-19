@@ -41,16 +41,49 @@ describe("ModPropertiesCard", () => {
     expect(screen.getByTestId("mod-properties-card-footer")).toBeInTheDocument();
   });
 
-  it("shows its whole description a click away", async () => {
+  it("shows its whole description in a modal a click away", async () => {
     renderCard({ name: "SkyUI", isAdult: false, description: "[b]An interface[/b]" });
-    expect(screen.queryByTestId("mod-properties-description")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
 
     await userEvent.click(screen.getByTestId("mod-properties-description-toggle"));
 
-    expect(screen.getByTestId("mod-properties-description")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toContainElement(screen.getByTestId("mod-properties-description"));
     expect(
       screen.getByTestId("mod-properties-description").querySelector("b, strong"),
     ).not.toBeNull();
+  });
+
+  it("closes the description's modal", async () => {
+    renderCard({ name: "SkyUI", isAdult: false, description: "An interface" });
+    await userEvent.click(screen.getByTestId("mod-properties-description-toggle"));
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("stands in for images from outside Nexus Mods where the mod has a page", async () => {
+    renderCard({
+      name: "SkyUI",
+      isAdult: false,
+      description: "[img]https://i.imgur.com/a.png[/img]",
+      pageUrl: "https://www.nexusmods.com/skyrimspecialedition/mods/12604",
+    });
+    await userEvent.click(screen.getByTestId("mod-properties-description-toggle"));
+
+    expect(screen.getByTestId("external-image-placeholder")).toBeInTheDocument();
+  });
+
+  it("leaves out images from outside Nexus Mods where the mod has no page", async () => {
+    renderCard({
+      name: "SkyUI",
+      isAdult: false,
+      description: "[img]https://i.imgur.com/a.png[/img]",
+    });
+    await userEvent.click(screen.getByTestId("mod-properties-description-toggle"));
+
+    expect(screen.queryByTestId("external-image-placeholder")).toBeNull();
   });
 
   it("offers no description where it has none", () => {
