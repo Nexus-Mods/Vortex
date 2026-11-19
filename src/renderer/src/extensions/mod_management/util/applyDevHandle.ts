@@ -10,7 +10,7 @@ import { ApplyStatus, type ApplyResult, type FailedStep } from "./apply/apply";
 import { getCurrentActivator } from "./deploymentMethods";
 import { operationsInApplyOrder, type DeploymentPlan } from "./deploymentPlan";
 import type { DeployOrchestrator } from "./DeployOrchestrator";
-import { journalStorageAt } from "./journalStorage";
+import { journalStorageAt, journalStorageKeeping } from "./journalStorage";
 import { toPortablePath } from "./resolverInput";
 
 /** An operation of a plan, as a tool sees it. */
@@ -32,6 +32,8 @@ interface DevApplyRequest {
   journalFile: string;
   /** absolute and native, on the game's drive */
   keptFolder: string;
+  /** absolute and native; where a copy of the run's journal stays once the run ends */
+  journalCopyFile?: string;
   fault?: DevFault;
 }
 
@@ -133,7 +135,7 @@ export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrc
       const plan = await orchestrator.plan(VortexProfileId(profileId));
       return plan === undefined ? undefined : devOperationsOf(plan);
     },
-    apply: async ({ profileId: rawProfileId, journalFile, keptFolder, fault }) => {
+    apply: async ({ profileId: rawProfileId, journalFile, keptFolder, journalCopyFile, fault }) => {
       const profileId = VortexProfileId(rawProfileId);
       const state = api.getState();
       const gameId = gameIdOfProfile(state, profileId);
@@ -150,7 +152,10 @@ export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrc
         plan,
         {
           fs: diskWith(fault),
-          journal: journalStorageAt(journalFile),
+          journal:
+            journalCopyFile === undefined
+              ? journalStorageAt(journalFile)
+              : journalStorageKeeping(journalFile, journalCopyFile),
           keptPathOf: (_destinationPath, runId, entryIndex) =>
             toPortablePath(path.join(keptFolder, runId, String(entryIndex))),
         },

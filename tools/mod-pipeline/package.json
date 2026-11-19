@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.schemastore.org/package.json",
+  "name": "@vortex/mod-pipeline-tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tools for developing and live-testing the mod pipeline: the fake Skyrim SE tool and its terminal screen",
+  "dependencies": {
+    "ink": "catalog:",
+    "react": "catalog:"
+  },
+  "nx": {
+    "tags": [
+      "vortex:tooling"
+    ]
+  }
+}

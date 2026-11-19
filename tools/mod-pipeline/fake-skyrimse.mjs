@@ -8,6 +8,7 @@
  *   node tools/mod-pipeline/fake-skyrimse.mjs tamper [--root dir]
  *   node tools/mod-pipeline/fake-skyrimse.mjs rollback [--root dir] [--port 9222] [--profile id] [--fail-at path] [--call name]
  *   node tools/mod-pipeline/fake-skyrimse.mjs manifests [--root dir] [--port 9222]
+ *   node tools/mod-pipeline/fake-skyrimse.mjs journal [--root dir]
  *
  * setup deletes what an earlier run made, so every run starts fresh. It then builds <root>/game,
  * <root>/staging and <root>/userData, starts dev Vortex (build it first:
@@ -36,6 +37,10 @@
  * does, on a Vortex that setup started and whose "Edge cases" profile today's deployment deployed
  * last. It keeps both, runs Apply to "Other" and back, and compares every file in the game and
  * staging folders (content, file id, link count) and every manifest entry.
+ *
+ * journal prints the latest Apply run's journal: how the run ended and how far each operation got.
+ * Finished runs' journals are kept under <root>/work/journals; a run that didn't end leaves its
+ * journal at <root>/work/apply-journal.ndjson, listed last.
  *
  * Skyrim's ini files and plugin lists live outside <root>: the game is registered as an Epic
  * install, so Vortex uses "Skyrim Special Edition EPIC" under Documents/My Games (ini files) and
@@ -66,7 +71,7 @@
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { chmod, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -634,11 +639,18 @@ async function snapshotOf(folder) {
     if (entry.isDirectory()) {
       entries.set(relPath, "folder");
     } else {
-      const status = await stat(entryPath, { bigint: true });
-      const hash = createHash("sha1")
-        .update(await readFile(entryPath))
-        .digest("hex");
-      entries.set(relPath, `${hash}, file id ${status.ino}, ${status.nlink} links`);
+      try {
+        const status = await stat(entryPath, { bigint: true });
+        const hash = createHash("sha1")
+          .update(await readFile(entryPath))
+          .digest("hex");
+        entries.set(relPath, `${hash}, file id ${status.ino}, ${status.nlink} links`);
+      } catch (err) {
+        // a file Vortex made and removed while the folder was listed, such as its write probe
+        if (err?.code !== "ENOENT") {
+          throw err;
+        }
+      }
     }
   }
   return entries;
@@ -698,6 +710,103 @@ async function seedCount() {
 
 const journalFile = path.join(root, "work", "apply-journal.ndjson");
 const keptFolder = path.join(root, "work", "kept");
+const journalsFolder = path.join(root, "work", "journals");
+
+/** This tool's Apply runs' journals, oldest first, then any a run left in place. */
+export async function keptJournals() {
+  const names = await readdir(journalsFolder).catch(() => []);
+  return [
+    ...names.toSorted().map((name) => path.join(journalsFolder, name)),
+    ...(existsSync(journalFile) ? [journalFile] : []),
+  ];
+}
+
+/** A step's state from its journal lines, the last of which counts. */
+const STEP_STATES = { changing: "started", done: "done", undone: "undone" };
+
+/** A path below the game folder, or as it is when it is outside it. */
+const belowGame = (filePath) => {
+  const relative = path.relative(gamePath, filePath);
+  return relative.startsWith("..") ? filePath : relative;
+};
+
+/** A journal as a tool shows it: how its run ended, and each operation's progress and notes. */
+export async function describeJournal(file) {
+  const parse = (line) => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      return undefined;
+    }
+  };
+  // as Apply reads it: a header, its count of entries, then progress, whose last line may be torn
+  const lines = (await readFile(file, "utf8")).split("\n").slice(0, -1);
+  const header = parse(lines[0] ?? "");
+  const entries = header?.type === "header" ? lines.slice(1, 1 + header.count).map(parse) : [];
+  if (entries.length !== header?.count || entries.some((entry) => entry?.operation === undefined)) {
+    throw new Error(`${file} is not a readable Apply journal`);
+  }
+  const operations = entries.map(({ operation }, index) => ({
+    index,
+    kind: operation.kind,
+    destination: belowGame(operation.file?.destinationPath ?? operation.destinationPath),
+    state: "not run",
+    notes: [],
+  }));
+  let rolledBack = false;
+  for (const line of lines
+    .slice(1 + operations.length)
+    .map(parse)
+    .filter(Boolean)) {
+    const step = operations[line.index];
+    if (line.type === "phase") {
+      rolledBack = line.phase === "rolling-back";
+    } else if (step === undefined) {
+      continue;
+    } else if (line.type === "folder") {
+      step.notes.push(`made ${belowGame(line.path)}`);
+    } else if (line.type === "removed-folder") {
+      step.notes.push("removed an empty folder there");
+    } else {
+      step.state = STEP_STATES[line.type] ?? step.state;
+      if (line.kept === true) {
+        step.notes.push("set its file aside");
+      }
+    }
+  }
+  // a kept copy is of a run that ended; the journal left in place is of one that didn't
+  const ended = file !== journalFile;
+  return {
+    file,
+    runId: header.runId,
+    outcome: ended
+      ? rolledBack
+        ? "rolled back"
+        : "applied"
+      : rolledBack
+        ? "rollback stopped"
+        : "unfinished",
+    operations,
+  };
+}
+
+/** Prints the latest journal, one line per operation. */
+async function journal() {
+  const journalFiles = await keptJournals();
+  const latest = journalFiles.at(-1);
+  if (latest === undefined) {
+    throw new Error("no Apply run of this setup has a journal yet; run rollback or manifests");
+  }
+  const { runId, outcome, operations } = await describeJournal(latest);
+  console.log(`journal ${journalFiles.length} of ${journalFiles.length}: ${latest}`);
+  console.log(`run ${runId}, ${operations.length} operations, ${outcome}`);
+  for (const { index, kind, destination, state, notes } of operations) {
+    console.log(
+      `${String(index).padStart(3)}  ${kind.padEnd(7)} ${state.padEnd(8)} ${destination}` +
+        (notes.length > 0 ? `  (${notes.join("; ")})` : ""),
+    );
+  }
+}
 
 /** A session on a running Vortex that has the Apply dev handle. */
 async function connectToApplyHandle() {
@@ -715,6 +824,11 @@ async function applyProfile(session, { profileId, fault }) {
     profileId,
     journalFile,
     keptFolder,
+    // named so the copies sort by when their run started
+    journalCopyFile: path.join(
+      journalsFolder,
+      `${new Date().toISOString().replaceAll(":", "-")}_${profileId}.ndjson`,
+    ),
     fault,
   });
   if (outcome === undefined) {
@@ -745,6 +859,49 @@ async function manifestSnapshot() {
   return entries;
 }
 
+const CheckState = { Running: "running", Passed: "passed", Failed: "failed" };
+
+/** Sends a check's state to a front end that started this script with a process channel. */
+const tellFrontEnd = (name, state, problems = []) =>
+  new Promise((resolve) => {
+    if (process.send === undefined) {
+      resolve();
+    } else {
+      process.send({ type: "check", name, state, problems }, () => resolve());
+    }
+  });
+
+let failedChecks = 0;
+
+/** Runs one check of a proof; problems `run` returns fail it, an error it throws ends the proof. */
+async function check(name, run) {
+  await tellFrontEnd(name, CheckState.Running);
+  let problems;
+  try {
+    problems = (await run()) ?? [];
+  } catch (err) {
+    console.log(`✗ ${name}`);
+    await tellFrontEnd(name, CheckState.Failed, [err instanceof Error ? err.message : String(err)]);
+    throw err;
+  }
+  if (problems.length > 0) {
+    failedChecks += 1;
+  }
+  console.log(`${problems.length === 0 ? "✓" : "✗"} ${name}`);
+  for (const problem of problems) {
+    console.log(`    ${problem}`);
+  }
+  await tellFrontEnd(name, problems.length === 0 ? CheckState.Passed : CheckState.Failed, problems);
+}
+
+/** Ends a proof: prints what it proved, or fails when a check did. */
+function endProof(proven) {
+  if (failedChecks > 0) {
+    throw new Error(`${failedChecks} ${failedChecks === 1 ? "check" : "checks"} failed`);
+  }
+  console.log(proven);
+}
+
 /** A disk snapshot's files without the manifests and their staging copies, which carry a save time. */
 // TODO(MOD-147): compare folders too once Apply removes the ones it empties
 const deployedFilesIn = (snapshot) =>
@@ -764,31 +921,30 @@ async function manifests() {
   try {
     const fromTodaysDeploy = await manifestSnapshot();
     const filesFromTodaysDeploy = (await snapshotAll()).map(deployedFilesIn);
-    const manifestsAfterApplying = async (profileId) => {
+    const applyTo = async (profileId) => {
       const outcome = await applyProfile(session, { profileId });
       if (outcome.status !== "applied") {
         throw new Error(`Apply ended ${outcome.status} for "${profileId}": ${reportOf(outcome)}`);
       }
-      return manifestSnapshot();
     };
-    // a run that saves nothing leaves today's manifests in place
-    const forOther = await manifestsAfterApplying(PROFILE_OTHER);
-    if (differencesBetween(fromTodaysDeploy, forOther).length === 0) {
-      throw new Error(`Apply saved no manifests for "${PROFILE_OTHER}"`);
-    }
-    const fromApply = await manifestsAfterApplying(PROFILE_EDGE_CASES);
+    await check(`Apply deploys "${PROFILE_OTHER}"`, () => applyTo(PROFILE_OTHER));
+    // a run that saves nothing leaves today's manifests in place, so the later checks prove nothing
+    await check("that run saved its manifests", async () => {
+      if (differencesBetween(fromTodaysDeploy, await manifestSnapshot()).length === 0) {
+        throw new Error("the manifests are as today's deployment left them");
+      }
+    });
+    await check(`Apply deploys "${PROFILE_EDGE_CASES}" again`, () => applyTo(PROFILE_EDGE_CASES));
+    const fromApply = await manifestSnapshot();
     const filesFromApply = (await snapshotAll()).map(deployedFilesIn);
-    const differences = [
-      ...differencesBetween(fromTodaysDeploy, fromApply).map((line) => `manifests ${line}`),
-      ...folderDifferences(filesFromTodaysDeploy, filesFromApply),
-    ];
-    if (differences.length > 0) {
-      throw new Error(
-        `Apply's deployment differs from today's deployment's:\n  ${differences.join("\n  ")}`,
-      );
-    }
+    await check("its manifests are the ones today's deployment saved", () =>
+      differencesBetween(fromTodaysDeploy, fromApply),
+    );
+    await check("its files are the ones today's deployment left", () =>
+      folderDifferences(filesFromTodaysDeploy, filesFromApply),
+    );
     const [gameFiles] = filesFromApply;
-    console.log(
+    endProof(
       `manifests proven: Apply left the ${gameFiles.size} game folder files and saved the ` +
         `${fromApply.size} manifest entries today's deployment did`,
     );
@@ -816,68 +972,83 @@ async function rollback() {
   }
 
   const session = await connectToApplyHandle();
-  const failures = [];
   try {
     const before = await snapshotAll();
-    const outcome = await applyProfile(session, { profileId, fault });
-    const { operations, status, failedAt } = outcome;
-    if (status !== "rolled-back") {
-      throw new Error(
-        `planned ${operations.length} operations for "${profileId}" and expected a rollback, ` +
-          `but Apply ended ${status}; the fault (${fault.call} on ${fault.path}) may match no ` +
-          `step: ${reportOf(outcome)}`,
+    let operations;
+    await check(`Apply rolls back a run of "${profileId}" whose ${fault.call} fails`, async () => {
+      const outcome = await applyProfile(session, { profileId, fault });
+      const { status, failedAt } = outcome;
+      ({ operations } = outcome);
+      if (status !== "rolled-back") {
+        throw new Error(
+          `planned ${operations.length} operations for "${profileId}" and expected a rollback, ` +
+            `but Apply ended ${status}; the fault (${fault.call} on ${fault.path}) may match no ` +
+            `step: ${reportOf(outcome)}`,
+        );
+      }
+      console.log(
+        `planned ${operations.length} operations for "${profileId}"; Apply rolled back at step ` +
+          `${failedAt?.index} (${failedAt?.operation?.kind} ` +
+          `${failedAt?.operation?.destinationPath}): ${failedAt?.error}`,
       );
-    }
-    console.log(
-      `planned ${operations.length} operations for "${profileId}"; Apply rolled back at step ` +
-        `${failedAt?.index} (${failedAt?.operation?.kind} ` +
-        `${failedAt?.operation?.destinationPath}): ${failedAt?.error}`,
-    );
-    if ((failedAt?.index ?? 0) === 0) {
-      failures.push("the run failed at its first step, so the rollback had nothing to undo");
-    }
+      return (failedAt?.index ?? 0) === 0
+        ? ["the run failed at its first step, so the rollback had nothing to undo"]
+        : [];
+    });
 
     const after = await snapshotAll();
-    failures.push(...folderDifferences(before, after));
-    if (existsSync(journalFile)) {
-      failures.push(`the journal is still there: ${journalFile}`);
-    }
-    if (existsSync(keptFolder) && (await readdir(keptFolder)).length > 0) {
-      failures.push(`files were set aside in ${keptFolder}`);
-    }
-
-    const seedsBeforeReplan = await seedCount();
-    if (seedsBeforeReplan === 0) {
-      failures.push("Vortex's log has no seed line, so a reseed couldn't be told from none");
-    }
-    const replanned = await session.evaluate(planThroughDevHandle, profileId);
-    if (JSON.stringify(replanned) !== JSON.stringify(operations)) {
-      failures.push("the plan made after the rollback differs from the one rolled back");
-    }
-    if ((await seedCount()) !== seedsBeforeReplan) {
-      failures.push("the plan made after the rollback seeded its previous lockfile again");
-    }
-    console.log(
-      `checked ${snapshotFolders.map(([name], index) => `${after[index].size} ${name} entries`).join(" and ")}`,
+    await check(
+      `the ${snapshotFolders.map(([name], index) => `${after[index].size} ${name} entries`).join(" and ")} are as they were`,
+      () => folderDifferences(before, after),
     );
+    await check("no journal or set-aside file is left", async () => [
+      ...(existsSync(journalFile) ? [`the journal is still there: ${journalFile}`] : []),
+      ...(existsSync(keptFolder) && (await readdir(keptFolder)).length > 0
+        ? [`files were set aside in ${keptFolder}`]
+        : []),
+    ]);
+    await check("the next plan is the same plan, made without reseeding", async () => {
+      const seedsBeforeReplan = await seedCount();
+      const replanned = await session.evaluate(planThroughDevHandle, profileId);
+      return [
+        ...(seedsBeforeReplan === 0
+          ? ["Vortex's log has no seed line, so a reseed couldn't be told from none"]
+          : []),
+        ...(JSON.stringify(replanned) !== JSON.stringify(operations)
+          ? ["the plan made after the rollback differs from the one rolled back"]
+          : []),
+        ...((await seedCount()) !== seedsBeforeReplan
+          ? ["the plan made after the rollback seeded its previous lockfile again"]
+          : []),
+      ];
+    });
   } finally {
     session.close();
   }
-
-  if (failures.length > 0) {
-    throw new Error(`the rollback left differences:\n  ${failures.join("\n  ")}`);
-  }
-  console.log(
-    "rollback proven: the disk is as it was, nothing is left behind, the plan is the same",
-  );
+  endProof("rollback proven: the disk is as it was, nothing is left behind, the plan is the same");
 }
 
-const commands = { setup, tamper, rollback, manifests };
-if (commands[command] === undefined) {
-  console.error(`unknown command "${command}"; use setup, tamper, rollback or manifests`);
-  process.exit(1);
-}
-commands[command]().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
+/** Where the setup goes, whether it and its Vortex are there, and how many journals are kept. */
+export const status = async () => ({
+  root,
+  port,
+  isSetUp: existsSync(path.join(root, MARKER)),
+  vortexAnswers: await vortexAnswers(),
+  journalCount: (await keptJournals()).length,
 });
+
+const commands = { setup, tamper, rollback, manifests, journal };
+// only when run as a script; real paths, since the module's URL resolves links
+const scriptPath = process.argv[1] === undefined ? "" : realpathSync(process.argv[1]);
+if (scriptPath === fileURLToPath(import.meta.url)) {
+  if (commands[command] === undefined) {
+    console.error(`unknown command "${command}"; use ${Object.keys(commands).join(", ")}`);
+    process.exit(1);
+  }
+  commands[command]().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    // lets what was printed and sent reach a front end before the process ends
+    process.exitCode = 1;
+    setTimeout(() => process.exit(1), 2000).unref();
+  });
+}
