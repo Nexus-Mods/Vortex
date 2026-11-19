@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unpkg.com/@nexusmods/vortex-api/schemas/info.schema.json",
+  "title": "Vortex extension info.json",
+  "description": "The info.json file at the top level of a Vortex extension. The schema describes shape only: types, required keys and structure. Rules about values are written in each field's description. Vortex checks them and falls back to its legacy behaviour when `contributes` breaks one. Unknown keys are allowed everywhere.",
+  "type": "object",
+  "required": ["name", "version"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Points editors at this schema for completion and field docs. Vortex ignores it."
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the extension."
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of the extension, as a semver string such as `1.2.0`."
+    },
+    "author": {
+      "type": "string",
+      "description": "Display name of the extension's author. Shown as `<unknown>` when missing."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what the extension does. Shown as `<missing>` when missing."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier for the extension, used when other extensions require it with `requireExtension`. Pick one and keep it across versions."
+    },
+    "namespace": {
+      "type": "string",
+      "description": "i18next namespace for the extension's translations."
+    },
+    "contributes": {
+      "$ref": "#/$defs/contributes"
+    },
+    "gameId": {
+      "type": ["integer", "string"],
+      "deprecated": true,
+      "description": "Deprecated: use `contributes.games` instead. Vortex doesn't read it, but the Nexus Mods data platform still does. A number or a string of digits is the Nexus Mods game id (`2304`). Any other string without whitespace is the game's domain on Nexus Mods (`skyrimspecialedition`). Anything else is ignored."
+    }
+  },
+  "examples": [
+    {
+      "name": "Skyrim Support",
+      "version": "1.0.0",
+      "contributes": {
+        "games": {
+          "skyrimse": {
+            "nexusGameId": 1704,
+            "name": "Skyrim Special Edition"
+          },
+          "skyrimvr": {
+            "nexusGameId": 1704,
+            "gameUid": "d88c5de7-353b-5d60-87be-bec5caa6244a",
+            "name": "Skyrim VR"
+          }
+        }
+      }
+    },
+    {
+      "name": "Fallout New Vegas Sanity Checks",
+      "version": "1.0.0",
+      "contributes": {
+        "gameEnhancements": [{ "nexusGameId": 130 }]
+      }
+    }
+  ],
+  "$defs": {
+    "contributes": {
+      "type": "object",
+      "description": "What the extension contributes, readable without running it. Every field is optional. Vortex reads it only when it is valid. One invalid field makes all of `contributes` invalid, and the extension then loads as if it had none, with a warning. Older Vortex versions ignore this key.",
+      "properties": {
+        "games": {
+          "type": "object",
+          "description": "The games the extension registers, keyed by the id it passes to `registerGame`. Keys must be non-empty and must not start with `tier-0-`, which is reserved. Registering an id that isn't listed is an error. An empty object for a game declares the game and nothing else.",
+          "additionalProperties": {
+            "$ref": "#/$defs/game"
+          }
+        },
+        "gameEnhancements": {
+          "type": "array",
+          "description": "Games the extension is relevant to without registering them, for example a tool or a mod type that works with several games. Advisory.",
+          "items": {
+            "$ref": "#/$defs/gameEnhancement"
+          }
+        }
+      }
+    },
+    "game": {
+      "type": "object",
+      "properties": {
+        "nexusGameId": {
+          "type": "integer",
+          "description": "The Nexus Mods game this game's mods are published on. Must be a positive integer, and `null` isn't allowed. Leave it out when the game has no page on Nexus Mods. Several games may declare the same one: Skyrim Special Edition and Skyrim VR both publish on 1704."
+        },
+        "gameUid": {
+          "type": "string",
+          "description": "The game's id in the Nexus Mods game catalogue, found on NexusDB (https://nexusdb.nexusmods.com). Must be non-empty. Required when the game isn't the one its `nexusGameId` belongs to (Skyrim VR on 1704), or when it isn't on Nexus Mods. Any case is accepted, Vortex lowercases it."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name for listings that can't run the extension. Must be non-empty. Vortex itself shows the name passed to `registerGame`."
+        }
+      }
+    },
+    "gameEnhancement": {
+      "type": "object",
+      "description": "Sets exactly one of `gameUid` and `nexusGameId`. Setting both, or neither, makes `contributes` invalid.",
+      "properties": {
+        "gameUid": {
+          "type": "string",
+          "description": "Enhances exactly this game. Same rules as `gameUid` on a game."
+        },
+        "nexusGameId": {
+          "type": "integer",
+          "description": "Enhances every game whose mods are published on this Nexus Mods game. Same rules as `nexusGameId` on a game."
+        }
+      }
+    }
+  }
+}
