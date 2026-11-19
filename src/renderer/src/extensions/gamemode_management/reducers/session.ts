@@ -10,7 +10,6 @@ import type { IGameStored } from "../types/IGameStored";
 
 type DefaultState = {
   known: IGameStored[];
-  disabled: Record<string, string>;
   showHidden: boolean;
   detectedGames: IDetectedGame[];
   /** Unset before any request, or once there's nothing to say about the last one. */
@@ -37,7 +36,6 @@ declare module "@/types/IState" {
 
 const defaultState: DefaultState = {
   known: [],
-  disabled: {},
   showHidden: false,
   detectedGames: [],
   favouriteGames: [],
@@ -50,17 +48,6 @@ export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
   setKnownGames: (state, payload) => ({
     ...state,
     known: payload,
-  }),
-  setGameDisabled: (state, payload) => ({
-    ...state,
-    disabled: {
-      ...state.disabled,
-      [payload.gameId]: payload.disabledBy,
-    },
-  }),
-  clearGameDisabled: (state) => ({
-    ...state,
-    disabled: {},
   }),
   setShowHiddenGames: (state, payload) => ({
     ...state,

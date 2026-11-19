@@ -181,13 +181,42 @@ describe("useRegisteredModsColumns", () => {
     expect(columns.map(({ width }) => width)).toEqual(["96px", "96px"]);
   });
 
-  // As the legacy table shows a game's Compatibility column, which says nothing of toggling.
-  it("always shows a column the user can't toggle, if it's shown by default", () => {
-    registered.attributes = [attribute({ id: "sdv-compatibility", isToggleable: undefined })];
+  // As a game's Compatibility column, which says nothing of toggling but asks to be shown.
+  it("lets the user toggle a column that doesn't say whether they can", () => {
+    registered.attributes = [
+      attribute({ id: "sdv-compatibility", isToggleable: undefined, isDefaultVisible: true }),
+    ];
 
     const { columns, defaultShown } = renderRegistered();
 
-    expect(columns).toMatchObject([{ id: "sdv-compatibility", isToggleable: false }]);
+    expect(columns).toMatchObject([{ id: "sdv-compatibility", isToggleable: true }]);
+    expect(defaultShown).toEqual(["sdv-compatibility"]);
+  });
+
+  // So an extension hiding it on the legacy table, with `setAttributeVisible`, doesn't hide it
+  // here.
+  it("follows the view, not the legacy table, for a column with isToggleable unset", () => {
+    const cssClass = vi.fn((_mod: IModWithState, enabled: boolean) => (enabled ? "shown" : ""));
+    registered.attributes = [attribute({ id: "sdv", isToggleable: undefined, cssClass })];
+    const store = makeModsTableStore({
+      tables: { mods: { attributes: { sdv: { enabled: false } } } },
+    });
+
+    const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      wrapper: storeWrapper(store),
+    });
+
+    expect(result.current.columns).toMatchObject([{ id: "sdv", isToggleable: true }]);
+    expect(result.current.defaultShown).toEqual([]);
+    expect(result.current.rowClassName(row(), () => true)).toBe("shown");
+  });
+
+  it("always shows a column the user can't toggle, if it's shown by default", () => {
+    registered.attributes = [attribute({ id: "fixed", isToggleable: false })];
+
+    const { columns, defaultShown } = renderRegistered();
+
+    expect(columns).toMatchObject([{ id: "fixed", isToggleable: false }]);
     expect(defaultShown).toEqual([]);
   });
 
@@ -252,18 +281,18 @@ describe("useRegisteredModsColumns", () => {
     expect(result.current.columns).toEqual([]);
   });
 
-  // As in the legacy table, a column is shown unless it says not to be.
+  // Unlike the legacy table, a column is hidden unless it asks to be shown.
   it("names the columns to show until the user hides them", () => {
     registered.attributes = [
       attribute({ id: "endorsed" }),
       attribute({ id: "tracked", isDefaultVisible: false }),
       attribute({ id: "content", isDefaultVisible: true }),
-      attribute({ id: "category" }),
+      attribute({ id: "category", isDefaultVisible: true }),
     ];
 
     const { defaultShown } = renderRegistered(new Set(["category"]));
 
-    expect(defaultShown).toEqual(["endorsed", "content"]);
+    expect(defaultShown).toEqual(["content"]);
   });
 
   // As the legacy table asks every attribute, the table's own columns and those not in it too.
@@ -359,7 +388,8 @@ describe("useRegisteredModsColumns", () => {
     expect(calc).toHaveBeenCalledTimes(2);
   });
 
-  // Some extensions keep only the last listener, so one for no column would take theirs.
+  // Some extensions keep only the last listener, so one for nothing shown would take theirs.
+  // The Properties panel listens to its own fields' while it's open, so they redraw only it.
   it("listens for changes only to the data of the columns it offers", () => {
     const externalData = vi.fn();
     registered.attributes = [
@@ -375,6 +405,79 @@ describe("useRegisteredModsColumns", () => {
     });
 
     expect(externalData).toHaveBeenCalledTimes(1);
+  });
+
+  // Its own fields, such as Category, the panel doesn't draw from their values, so needn't hear of.
+  it("leaves the panel to listen only for details it draws from their values that aren't columns", () => {
+    registered.attributes = [
+      attribute({ id: "column", placement: "both", calc: () => "" }),
+      attribute({ id: "drawn", placement: "detail", calc: () => "" }),
+      attribute({ id: "rendered", placement: "detail", customRenderer: () => null }),
+      attribute({ id: "category-detail", placement: "detail", calc: () => "" }),
+      attribute({ id: "nothingToDraw", placement: "detail" }),
+    ];
+
+    expect(renderRegistered().detailsOnly.map(({ id }) => id)).toEqual(["drawn", "rendered"]);
+  });
+
+  // Extensions give no way to stop listening, so each call would add a listener for good.
+  it("calls externalData once across column toggles", () => {
+    const externalData = vi.fn();
+    registered.attributes = [attribute({ id: "shown", externalData })];
+    const store = makeModsTableStore();
+    renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      wrapper: storeWrapper(store),
+    });
+
+    for (let toggle = 0; toggle < 10; toggle += 1) {
+      act(() => {
+        store.dispatch(setAttributeVisible("mods", "other", toggle % 2 === 0));
+      });
+    }
+
+    expect(externalData).toHaveBeenCalledTimes(1);
+  });
+
+  // As the legacy table takes the listener of an extension that keeps only the last one, such as
+  // Tracked's.
+  it("listens again once it's back from the legacy table", () => {
+    let changed = () => {};
+    const externalData = vi.fn((onChanged: () => void) => {
+      changed = onChanged;
+    });
+    registered.attributes = [attribute({ id: "tracked", calc: () => "x", externalData })];
+    let isNewTable = true;
+    const { result, rerender } = renderHook(
+      () => useRegisteredModsColumns(NO_IDS, NO_MODS, isNewTable),
+      { wrapper: storeWrapper() },
+    );
+
+    isNewTable = false;
+    rerender();
+    // The legacy table's own.
+    externalData(() => {});
+    isNewTable = true;
+    rerender();
+    const before = result.current.inputs;
+    act(() => changed());
+
+    expect(externalData).toHaveBeenCalledTimes(3);
+    expect(result.current.inputs.versions).not.toEqual(before.versions);
+  });
+
+  // As the classic layout shows the legacy table without it.
+  it("listens again once it's mounted again", () => {
+    const externalData = vi.fn();
+    registered.attributes = [attribute({ id: "tracked", externalData })];
+    const mount = () =>
+      renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+        wrapper: storeWrapper(),
+      });
+
+    mount().unmount();
+    mount();
+
+    expect(externalData).toHaveBeenCalledTimes(2);
   });
 
   describe("search", () => {

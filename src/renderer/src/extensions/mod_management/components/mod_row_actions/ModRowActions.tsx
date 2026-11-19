@@ -18,8 +18,8 @@ import { activeGameId } from "@/util/selectors";
 import { INSTALLING_ACTIVITY } from "../../hooks/use_install_mods/useInstallMods.hook";
 import { MOD_ROW_PINNING_ID } from "../../hooks/use_mod_actions/useModActions.hook";
 import { MODS_TABLE_TOOLBARS } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
-import { UNINSTALLING_ACTIVITY } from "../../hooks/use_uninstall_mods/useUninstallMods.hook";
 import type { IModWithState } from "../../types/IModProps";
+import { UNINSTALLING_ACTIVITY } from "../../util/uninstall_mods/uninstallMods";
 
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
 

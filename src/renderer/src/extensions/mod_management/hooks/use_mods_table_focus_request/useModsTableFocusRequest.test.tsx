@@ -21,29 +21,44 @@ const render = ({
   groups,
   rows = [],
   search = "",
+  hidden = [],
 }: {
   focusedGroupId?: string;
   focusedModId?: string;
   groups: IModGroup[] | undefined;
   rows?: IModRow[];
   search?: string;
+  hidden?: string[];
 }) => {
   const store = makeModsTableStore({
     focusedGroupId,
     focusedModId: focusedModId === undefined ? undefined : VortexModId(focusedModId),
   });
   const setSearch = vi.fn();
+  const clearFilters = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  const hook = renderHook(() => useModsTableFocusRequest({ groups, rows, search, setSearch }), {
-    wrapper,
-  });
+  const hook = renderHook(
+    () =>
+      useModsTableFocusRequest({
+        groups,
+        rows,
+        search,
+        setSearch,
+        isFilteredOut: (modId) => hidden.includes(modId),
+        clearFilters,
+      }),
+    {
+      wrapper,
+    },
+  );
 
   return {
     ...hook,
     store,
     setSearch,
+    clearFilters,
     requested: () => store.getState().session.mods.focusedGroupId,
     requestedMod: () => store.getState().session.mods.focusedModId,
   };
@@ -121,6 +136,28 @@ describe("useModsTableFocusRequest", () => {
       });
 
       expect(setSearch).toHaveBeenCalledWith("");
+    });
+
+    it("clears the filters for a mod they hide, keeping the request", () => {
+      const { clearFilters, requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+        hidden: ["skyui"],
+      });
+
+      expect(clearFilters).toHaveBeenCalledOnce();
+      expect(requestedMod()).toBe("skyui");
+    });
+
+    it("leaves the filters for a mod they show", () => {
+      const { clearFilters } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+      });
+
+      expect(clearFilters).not.toHaveBeenCalled();
     });
 
     it("drops a request for a mod the table doesn't have", () => {

@@ -28,6 +28,8 @@ import { test as driverTest } from "../../../test-utils/driverTest";
 import type { IDriverHarness, IDriverHarnessState } from "../../../test-utils/harnessTypes";
 import type { CollectionModStatus } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
+import type * as ErrorHandling from "../../../util/errorHandling";
+import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import type { IDownload } from "../../download_management/types/IDownload";
 import { setPendingPluginSort } from "../../mod_management/actions/transactions";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
@@ -41,6 +43,14 @@ import { deterministicReferenceTag } from "./deterministicReferenceTag";
 // at that boundary lets the member install-spec path run without touching disk while we still
 // assert it is invoked with the rule's patch info.
 vi.mock("./binaryPatching", () => ({ applyPatches: vi.fn() }));
+
+// The error context is process-wide state read by every error span. Spying on its two writers
+// shows what the driver asks for without leaking a collection into other tests.
+vi.mock("../../../util/errorHandling", async (importOriginal) => ({
+  ...(await importOriginal<typeof ErrorHandling>()),
+  setErrorContext: vi.fn(),
+  clearErrorContext: vi.fn(),
+}));
 
 const GAME_ID = "skyrimse";
 
@@ -701,6 +711,56 @@ describe("InstallDriver health-check suppression", () => {
 
     expect(h.dialogCalls.map((call) => call.title)).toContain("Game version mismatch");
     await vi.waitFor(() => expect(held).toBe(0));
+  });
+});
+
+describe("InstallDriver error context", () => {
+  // a collection from the site: its slug and revision are on the download, with the collection and
+  // revision info cached so start() fetches nothing
+  const siteDownload = makeDownload({
+    ...defaultFixture.download,
+    modInfo: {
+      ...defaultFixture.download.modInfo,
+      nexus: {
+        ...defaultFixture.download.modInfo.nexus,
+        ids: {
+          ...defaultFixture.download.modInfo.nexus.ids,
+          collectionSlug: "abc123",
+          revisionNumber: 7,
+        },
+        collectionInfo: { slug: "abc123" },
+        revisionInfo: { modFiles: [], gameVersions: [] },
+      },
+    },
+  });
+  const siteState = {
+    mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+    downloads: { [siteDownload.id]: siteDownload },
+    profiles: { [profile.id]: profile },
+  };
+
+  test("names the collection on errors while it installs", async ({ makeDriver }) => {
+    const h = makeDriver(siteState);
+
+    await h.driver.start(profile, defaultFixture.collection);
+
+    expect(setErrorContext).toHaveBeenCalledWith("installingCollection", "abc123@7");
+  });
+
+  test("stops naming the collection once the install is cancelled", async ({ makeDriver }) => {
+    const h = makeDriver(siteState);
+    await h.driver.start(profile, defaultFixture.collection);
+    vi.mocked(clearErrorContext).mockClear();
+
+    h.driver.cancel();
+
+    expect(clearErrorContext).toHaveBeenCalledWith("installingCollection");
+  });
+
+  test("names nothing for a collection that has no site slug", async ({ startCollection }) => {
+    await startCollection(defaultFixture);
+
+    expect(setErrorContext).not.toHaveBeenCalled();
   });
 });
 

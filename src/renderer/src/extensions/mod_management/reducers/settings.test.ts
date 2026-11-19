@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 
 import type { ISettingsMods } from "../../../types/IState";
-import { setActivator, setBetaModsTable, setInstallPath } from "../actions/settings";
+import {
+  setActivator,
+  setBetaModsTable,
+  setInstallPath,
+  setModsTablePropertiesOpen,
+} from "../actions/settings";
 import { settingsReducer } from "./settings";
 
 const defaults: ISettingsMods = {
@@ -15,6 +20,7 @@ const defaults: ISettingsMods = {
   cleanupOnDeploy: false,
   installerSandbox: true,
   betaTable: false,
+  propertiesOpen: false,
 };
 
 describe("setInstallPath", () => {
@@ -101,5 +107,26 @@ describe("setBetaModsTable", () => {
 
   it("is off by default", () => {
     expect(settingsReducer.defaults.betaTable).toBe(false);
+  });
+});
+
+describe("setModsTablePropertiesOpen", () => {
+  it("remembers whether the Properties panel is open", () => {
+    const open = settingsReducer.reducers.SET_MODS_TABLE_PROPERTIES_OPEN(
+      { ...defaults, propertiesOpen: false },
+      setModsTablePropertiesOpen(true).payload,
+    );
+    expect(open).toEqual({ ...defaults, propertiesOpen: true });
+
+    expect(
+      settingsReducer.reducers.SET_MODS_TABLE_PROPERTIES_OPEN(
+        open,
+        setModsTablePropertiesOpen(false).payload,
+      ),
+    ).toEqual({ ...defaults, propertiesOpen: false });
+  });
+
+  it("is closed by default", () => {
+    expect(settingsReducer.defaults.propertiesOpen).toBe(false);
   });
 });

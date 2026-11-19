@@ -1,15 +1,20 @@
-import { PopoverButton as HeadlessPopoverButton } from "@headlessui/react";
 import type { IFileInfo } from "@nexusmods/nexus-api";
 import { useIsMutating, useMutation, useQueryClient } from "@tanstack/react-query";
-import { NexusGameDomain, VortexGameId, VortexModId } from "@vortex/shared";
+import { VortexGameId, VortexModId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { MainFilePicker } from "@/extensions/browse_nexus/components/browse_mods/mod_details/main_file_picker/MainFilePicker";
+import {
+  type IModOptionsSplitLook,
+  ModOptionsSplitButton,
+} from "@/extensions/browse_nexus/components/browse_mods/mod_details/mod_install_button/mod_options_split_button/ModOptionsSplitButton";
 import type { FilePickerSource } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useDeleteModFiles } from "@/extensions/browse_nexus/hooks/use_delete_mod_files/useDeleteModFiles.hook";
+import { useModUpsell } from "@/extensions/browse_nexus/hooks/use_mod_upsell/useModUpsell.hook";
 import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
 import {
   installNexusFile,
@@ -24,23 +29,17 @@ import {
 } from "@/extensions/browse_nexus/util/one_click_install/oneClickInstall";
 import { showModOnModsPage } from "@/extensions/mod_management/util/show_mod_on_mods_page/showModOnModsPage";
 import { updateMod } from "@/extensions/mod_management/util/update_mod/updateMod";
-import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
 import type { ModMainFileVersion } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import { modFilesQuery } from "@/extensions/nexus_integration/queries/mod_files/modFiles.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { isPremium } from "@/extensions/nexus_integration/selectors";
-import { nexusModFilesUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Button } from "@/ui/components/button/Button";
-import { Popover } from "@/ui/components/popover/Popover";
-import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
-import { PopoverPanel } from "@/ui/components/popover/PopoverPanel";
-import { SplitButton, SplitButtonAction } from "@/ui/components/split_button/SplitButton";
+import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { nxmModOutline } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
-import { Content } from "@/util/util";
 
 /** The files the picker opens on: the mod's Main files, and all of its files. */
 interface IPickerFiles {
@@ -80,48 +79,6 @@ const unavailableReason = (
   return undefined;
 };
 
-/**
- * What 1-click and its Premium upsell say: worded for an update when the user has the mod with one,
- * and otherwise for installing it. The upsell's Premium button keeps its own label for an install.
- */
-const oneClickText = (t: TFunction, isUpdate: boolean) =>
-  isUpdate
-    ? {
-        button: t("1-click update"),
-        title: t("Skip the website and update instantly."),
-        description: t(
-          "1-click in app updates are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
-        ),
-        fallbackLabel: t("Update via mod page (free)"),
-        unlockLabel: t("Unlock 1-click updates"),
-      }
-    : {
-        button: t("1-click install"),
-        title: t("Skip the website and install instantly."),
-        description: t(
-          "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
-        ),
-        fallbackLabel: t("Install via mod page (free)"),
-        unlockLabel: undefined,
-      };
-
-/** What an upsell is tracked as: View all main files, an update, or what 1-click would do. */
-const upsellActionOf = (
-  isMenu: boolean,
-  hasUpdate: boolean,
-  action: "install" | "download",
-): "view_files" | "update" | "install" | "download" => {
-  if (isMenu) {
-    return "view_files";
-  }
-
-  if (hasUpdate) {
-    return "update";
-  }
-
-  return action;
-};
-
 interface IModInstallButtonProps {
   api: IExtensionApi;
   /** The mod to download, and install. */
@@ -135,7 +92,7 @@ interface IModInstallButtonProps {
 }
 
 /**
- * The details' button for what the user has of a mod: View installed mod once it's installed,
+ * The details' button for what the user has of a mod: Manage mod once it's installed,
  * Update while the Mods page's update check offers one, Install for a download, and otherwise
  * 1-click install of its main file, which only downloads if the user's settings don't install
  * once downloaded. Non-Premium users get the 1-click upsell for an update as for an install, its
@@ -143,9 +100,10 @@ interface IModInstallButtonProps {
  *
  * A mod with several Main files and no primary has them fetched on click, for the picker; with
  * one, it's installed as a primary is. v3 giving it no file at all means it isn't available
- * through Vortex. Once the user has a mod with several, its button splits, its menu reaching the
- * picker again; with several of its files downloaded or installed, a Premium user's main action
- * opens the picker too.
+ * through Vortex. Once the user has a mod, its button splits, its menu uninstalling or deleting it
+ * and, for a mod with several Main files and no primary, reaching the picker again; with several
+ * of those files downloaded or installed, a Premium user's main action opens the picker too. It
+ * spins while any of the mod's files is uninstalling, so nothing is started on them twice.
  */
 export const ModInstallButton = ({
   api,
@@ -159,25 +117,25 @@ export const ModInstallButton = ({
   const isPremiumUser = useSelector(isPremium);
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
-  const [upsellFor, setUpsellFor] = useState<"one-click" | "menu">();
   const queryClient = useQueryClient();
   const [pickerFiles, setPickerFiles] = useState<IPickerFiles>(NO_PICKER_FILES);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const mainButtonRef = useRef<HTMLButtonElement>(null);
+  const {
+    uninstallAction,
+    deleteAction,
+    modal: deleteModal,
+    isDeleting,
+  } = useDeleteModFiles(api, mod, mainButtonRef);
   const installKey = oneClickInstallKey(mod.id);
   const isOneClicking = useIsMutating({ mutationKey: installKey }) > 0;
   const isCardInstalling = useIsMutating({ mutationKey: oneClickFileInstallsKey(mod.id) }) > 0;
   const isInstalling = isOneClicking || isCardInstalling;
-  const domain = NexusGameDomain(mod.game.domain_name);
   const action = shouldInstall ? "install" : "download";
   const hasUpdate = installState.kind === "installed" && !!installState.update;
   const isLoadingFile = !hasUpdate && mainFile === undefined && !isError;
   /** v3 gives a mod with no primary its newest Main file; `count` says if there are others. */
   const choosesFile = mainFile?.is_primary === false && mainFile.count > 1;
-  const { button: oneClickLabel, ...upsellText } = oneClickText(t, hasUpdate);
-  const isMenuUpsell = upsellFor === "menu";
-  const upsellAction = upsellActionOf(isMenuUpsell, hasUpdate, action);
-  const upsellTitle = isMenuUpsell ? t("Choose a file to install with Premium.") : upsellText.title;
 
   const install = useMutation({
     mutationKey: installKey,
@@ -279,6 +237,35 @@ export const ModInstallButton = ({
     void updateMod(api, installState.mod, game);
   };
 
+  const {
+    oneClickLabel,
+    open: openUpsell,
+    modal: upsellModal,
+  } = useModUpsell(api, mod, {
+    hasUpdate,
+    action,
+    onUnlocked: (source) => {
+      if (source === "menu") {
+        chooseFile("split_menu");
+        return;
+      }
+
+      if (installState.kind === "installed") {
+        runUpdate();
+        return;
+      }
+
+      if (choosesFile) {
+        chooseFile("one_click");
+        return;
+      }
+
+      if (mainFile && gameId) {
+        install.mutate({ file: mainFile, gameId });
+      }
+    },
+  });
+
   /**
    * 1-click install, which keeps showing its progress until its install is done. A free user with
    * an update sees it as 1-click update, and its upsell says update too.
@@ -300,7 +287,7 @@ export const ModInstallButton = ({
           }
 
           if (!isPremiumUser) {
-            setUpsellFor("one-click");
+            openUpsell("one-click");
             return;
           }
 
@@ -319,62 +306,39 @@ export const ModInstallButton = ({
     </Tooltip>
   );
 
-  /**
-   * What the user has of a mod with no primary file, as a split button whose menu opens the picker
-   * on its Main files, after the Premium upsell for a free user. Picking from the menu leaves focus
-   * on the main part, for the picker to return to; it spins while the files load.
-   */
-  const split = (label: string, onClick: () => void, look: "installed" | "downloaded") => (
-    <SplitButton
-      action={
-        <Popover className="flex">
-          <HeadlessPopoverButton
-            as={SplitButtonAction}
-            data-testid="mod-install-options"
-            icon="keyboard_arrow_down"
-            label={t("Install options")}
-          />
-
-          <PopoverPanel
-            anchor={{ gap: 4, to: "bottom end" }}
-            className="nxm-popover-panel-dropdown"
-          >
-            {({ close }) => (
-              <PopoverMenu
-                actions={[
-                  [
-                    {
-                      label: t("View all main files"),
-                      icon: "list",
-                      testId: "mod-install-view-all-files",
-                      onClick: () => {
-                        if (!isPremiumUser) {
-                          setUpsellFor("menu");
-                          return;
-                        }
-
-                        chooseFile("split_menu");
-                      },
-                    },
-                  ],
-                ]}
-                label={t("Install options")}
-                onSelect={() => close(mainButtonRef)}
-              />
-            )}
-          </PopoverPanel>
-        </Popover>
+  /** View all main files, for a mod with several and no primary, after the upsell for a free user. */
+  const viewAllFiles: IMenuAction = {
+    label: t("View all main files"),
+    icon: "list",
+    testId: "mod-install-view-all-files",
+    onClick: () => {
+      if (!isPremiumUser) {
+        openUpsell("menu");
+        return;
       }
-      brand={look === "installed" ? "neutral" : undefined}
-      data-testid="mod-install-main"
-      isLoading={loadModFiles.isPending}
-      leftIcon={look === "installed" ? { path: nxmModOutline } : "add"}
-      ref={mainButtonRef}
-      onClick={onClick}
-    >
-      {label}
-    </SplitButton>
-  );
+
+      chooseFile("split_menu");
+    },
+  };
+
+  /**
+   * The split button for what the user has, its menu reaching the picker, and uninstalling or
+   * deleting it; a mod that's only downloaded has nothing to uninstall.
+   */
+  const split = (look: IModOptionsSplitLook, onClick: () => void) => {
+    const removeActions =
+      installState.kind === "installed" ? [uninstallAction, deleteAction] : [deleteAction];
+
+    return (
+      <ModOptionsSplitButton
+        {...look}
+        actions={choosesFile ? [[viewAllFiles], removeActions] : [removeActions]}
+        isLoading={loadModFiles.isPending || isDeleting}
+        mainRef={mainButtonRef}
+        onClick={onClick}
+      />
+    );
+  };
 
   /**
    * The button for what the user has of the mod; the upsell beside it stays put as it changes.
@@ -390,9 +354,9 @@ export const ModInstallButton = ({
     if (installState.kind === "installing") {
       return (
         <Button
-          data-testid="mod-install-install"
           disabled
           isLoading
+          data-testid="mod-install-install"
           leftIcon="add"
           ref={mainButtonRef}
         >
@@ -403,67 +367,65 @@ export const ModInstallButton = ({
 
     if (installState.kind === "installed" && !installState.update) {
       const modId = VortexModId(installState.mod.id);
-      const viewInstalled = () => {
-        tracker.trackViewInstalledClicked({ mod_uid: mod.id });
-        showModOnModsPage(api, modId);
+      const look: IModOptionsSplitLook = {
+        label: t("Manage mod"),
+        brand: "neutral",
+        leftIcon: { path: nxmModOutline },
+        testId: "mod-install-view-installed",
       };
 
       if (choosesFile && installState.installedCount > 1 && isPremiumUser) {
-        return split(t("View installed mod"), () => chooseFile("split_button"), "installed");
+        return split(look, () => chooseFile("split_button"));
       }
 
-      if (choosesFile) {
-        return split(t("View installed mod"), viewInstalled, "installed");
-      }
-
-      return (
-        <Button
-          brand="neutral"
-          data-testid="mod-install-view-installed"
-          leftIcon={{ path: nxmModOutline }}
-          onClick={viewInstalled}
-        >
-          {t("View installed mod")}
-        </Button>
-      );
+      return split(look, () => {
+        tracker.trackViewInstalledClicked({ mod_uid: mod.id });
+        showModOnModsPage(api, modId);
+      });
     }
 
     if (installState.kind === "installed" && isPremiumUser) {
-      return (
-        <Button
-          brand="info"
-          data-testid="mod-install-update"
-          leftIcon="download"
-          onClick={() => {
-            tracker.trackUpdateClicked({ mod_uid: mod.id });
-            runUpdate();
-          }}
-        >
-          {t("Update")}
-        </Button>
-      );
+      const look: IModOptionsSplitLook = {
+        label: t("Update"),
+        brand: "info",
+        leftIcon: "download",
+        testId: "mod-install-update",
+      };
+
+      return split(look, () => {
+        tracker.trackUpdateClicked({ mod_uid: mod.id });
+        runUpdate();
+      });
+    }
+
+    if (installState.kind === "installed") {
+      const look: IModOptionsSplitLook = {
+        label: oneClickLabel,
+        brand: "neutral",
+        leftIcon: "install_desktop",
+        rightIcon: <PremiumBadge />,
+        testId: "mod-install-one-click",
+      };
+
+      return split(look, () => openUpsell("one-click"));
     }
 
     if (installState.kind === "downloaded") {
       const { downloadId, downloadCount } = installState;
-      const installDownload = () => {
-        tracker.trackInstallClicked({ mod_uid: mod.id });
-        api.events.emit("start-install-download", downloadId);
+      const look: IModOptionsSplitLook = {
+        label: t("Install"),
+        leftIcon: "add",
+        testId: "mod-install-install",
       };
 
       if (choosesFile && downloadCount > 1 && isPremiumUser) {
-        return split(t("Install"), () => chooseFile("split_button"), "downloaded");
+        return split(look, () => chooseFile("split_button"));
       }
 
-      if (choosesFile) {
-        return split(t("Install"), installDownload, "downloaded");
-      }
-
-      return (
-        <Button data-testid="mod-install-install" leftIcon="add" onClick={installDownload}>
-          {t("Install")}
-        </Button>
-      );
+      return split(look, () => {
+        tracker.trackInstallClicked({ mod_uid: mod.id });
+        api.events.emit("start-install-download", downloadId);
+      });
     }
 
     return oneClick();
@@ -476,57 +438,18 @@ export const ModInstallButton = ({
       <MainFilePicker
         api={api}
         files={pickerFiles.main}
-        modFiles={pickerFiles.all}
         isOpen={isPickerOpen}
         mod={mod}
+        modFiles={pickerFiles.all}
         onClose={() => {
           setIsPickerOpen(false);
           mainButtonRef.current?.focus();
         }}
       />
 
-      <PremiumUpsellModal
-        {...upsellText}
-        api={api}
-        title={upsellTitle}
-        content={Content.BrowseModsAd}
-        fallbackIcon="open_in_new"
-        isOpen={!!upsellFor}
-        onClose={() => setUpsellFor(undefined)}
-        onDismissed={() =>
-          tracker.trackPremiumModalDismissed({ mod_uid: mod.id, action: upsellAction })
-        }
-        onFallback={() => {
-          tracker.trackPremiumModalFallbackClicked({ mod_uid: mod.id, action: upsellAction });
-          setUpsellFor(undefined);
+      {deleteModal}
 
-          window.api.shell.openUrl(nexusModFilesUrl(domain, mod.game_scoped_id));
-        }}
-        onPremiumUnlocked={() => {
-          if (upsellFor === "menu") {
-            chooseFile("split_menu");
-            return;
-          }
-
-          if (installState.kind === "installed") {
-            runUpdate();
-            return;
-          }
-
-          if (choosesFile) {
-            chooseFile("one_click");
-            return;
-          }
-
-          if (mainFile && gameId) {
-            install.mutate({ file: mainFile, gameId });
-          }
-        }}
-        onShown={() => tracker.trackPremiumModalShown({ mod_uid: mod.id, action: upsellAction })}
-        onUnlockClicked={() =>
-          tracker.trackPremiumModalUnlockClicked({ mod_uid: mod.id, action: upsellAction })
-        }
-      />
+      {upsellModal}
     </>
   );
 };

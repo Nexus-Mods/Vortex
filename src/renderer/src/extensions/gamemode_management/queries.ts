@@ -1,7 +1,8 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { NexusGameDomain, NexusGameId, VortexError, VortexGameId } from "@vortex/shared";
+import { GameUid, NexusGameDomain, NexusGameId, VortexError, VortexGameId } from "@vortex/shared";
+import type { RecordedGameUid } from "@vortex/shared";
 
-import type { IGameStored, ITierZeroGame } from "@/types/IState";
+import type { IGameStored, IGameUidRetirement, ITierZeroGame } from "@/types/IState";
 
 import { tierZeroGameId } from "./tiered/tierZeroGameId";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
@@ -17,8 +18,89 @@ export interface IGameData {
   /** `persistent.gameMode.tier0` */
   tier0: Readonly<Record<NexusGameId, ITierZeroGame>>;
 
+  /** `persistent.gameMode.gameUidHistory`, oldest first */
+  gameUidHistory: readonly IGameUidRetirement[];
+
   /** The Nexus Mods games list, which links every `NexusGameId` to its domain */
   nexusGames: readonly IGameListEntry[];
+}
+
+interface IGameUidResolution {
+  /** the newest entry per retired uid */
+  next: Map<GameUid, GameUid>;
+  /** chains by starting uid */
+  chains: Map<string, readonly GameUid[]>;
+}
+
+/**
+ * Keyed by the history array, which an append replaces, so a resolution is recomputed only when
+ * the history changes.
+ */
+const resolutions = new WeakMap<readonly IGameUidRetirement[], IGameUidResolution>();
+
+function resolution(history: readonly IGameUidRetirement[]): IGameUidResolution {
+  let res = resolutions.get(history);
+  if (res === undefined) {
+    // later entries overwrite earlier ones: the newest entry for a retired uid wins
+    res = {
+      next: new Map(history.map((entry) => [entry.retired, entry.current])),
+      chains: new Map(),
+    };
+    resolutions.set(history, res);
+  }
+  return res;
+}
+
+/**
+ * The uids a stored uid has been retired through, oldest first, starting with the stored uid
+ * itself and ending with its current uid. For logs and diagnostics.
+ *
+ * @throws {@link VortexError} with kind `data-invalid` if the history loops. A loop means the
+ * history is corrupt, and any uid picked from it could be wrong, so no answer is returned.
+ *
+ * This and {@link currentGameUid} are the only way from a {@link RecordedGameUid} to a
+ * {@link GameUid}.
+ */
+export function gameUidChain(
+  data: Pick<IGameData, "gameUidHistory">,
+  uid: RecordedGameUid,
+): readonly GameUid[] {
+  const res = resolution(data.gameUidHistory);
+  const cached = res.chains.get(uid);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const chain: GameUid[] = [GameUid(uid)];
+  const visited = new Set<GameUid>(chain);
+  for (let next = res.next.get(chain[0]); next !== undefined; next = res.next.get(next)) {
+    if (visited.has(next)) {
+      throw new VortexError(
+        `The game uid history loops: ${[...chain, next].join(" -> ")} (resolving ${uid})`,
+        { kind: "data-invalid", field: "gameUidHistory" },
+      );
+    }
+    visited.add(next);
+    chain.push(next);
+  }
+
+  res.chains.set(uid, chain);
+  return chain;
+}
+
+/**
+ * The current uid of a stored uid, which the catalogue may since have retired. A uid without a
+ * history entry is its own current uid.
+ *
+ * @throws {@link VortexError} with kind `data-invalid` if the history loops, see
+ * {@link gameUidChain}.
+ */
+export function currentGameUid(
+  data: Pick<IGameData, "gameUidHistory">,
+  uid: RecordedGameUid,
+): GameUid {
+  const chain = gameUidChain(data, uid);
+  return chain[chain.length - 1];
 }
 
 /**
@@ -103,6 +185,30 @@ export function nexusGameData(
   return listed === undefined
     ? undefined
     : { gameId: NexusGameId(listed.id), gameDomain: declared };
+}
+
+/**
+ * What to look up the game a stored string names by, where it may be either a Vortex game id or,
+ * for a game no extension registers, a Nexus Mods domain, as a mod's `downloadGame` is kept.
+ * Branded by what the data says it is: a known game's id first, else a domain the site lists.
+ * `undefined` where it's neither.
+ */
+export function storedGameQuery(
+  data: Pick<IGameData, "known" | "nexusGames" | "tier0">,
+  stored: string,
+): { vortexGameId: VortexGameId } | { gameDomain: NexusGameDomain } | undefined {
+  const game = data.known.find(({ id }) => id === stored);
+  if (game !== undefined) {
+    return { vortexGameId: VortexGameId(game.id) };
+  }
+
+  const tierZero = Object.values(data.tier0).find(({ domain }) => domain === stored);
+  if (tierZero !== undefined) {
+    return { gameDomain: tierZero.domain };
+  }
+
+  const listed = data.nexusGames.find(({ domain_name }) => domain_name === stored);
+  return listed === undefined ? undefined : { gameDomain: NexusGameDomain(listed.domain_name) };
 }
 
 function unsupportedQuery(query: unknown): never {

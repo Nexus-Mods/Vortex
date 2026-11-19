@@ -12,6 +12,8 @@ interface IToolbarSearchProps {
   value: string;
   /** Takes the text as it's typed, and "" once it's cleared. */
   onChange: (value: string) => void;
+  /** A `data-testid` for its button; its field gets the same with `-input`. */
+  testId?: string;
 }
 
 /**
@@ -19,7 +21,7 @@ interface IToolbarSearchProps {
  * beside it, so the toolbar keeps its layout. Open, the button closes it, clearing the text;
  * Escape clears the text, then closes it; so does leaving it empty. Open while it holds text.
  */
-export const ToolbarSearch = ({ label, value, onChange }: IToolbarSearchProps) => {
+export const ToolbarSearch = ({ label, value, onChange, testId }: IToolbarSearchProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(value !== "");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +74,7 @@ export const ToolbarSearch = ({ label, value, onChange }: IToolbarSearchProps) =
 
           <Input
             aria-label={label}
+            data-testid={testId ? `${testId}-input` : undefined}
             placeholder={label}
             ref={inputRef}
             value={value}
@@ -86,6 +89,7 @@ export const ToolbarSearch = ({ label, value, onChange }: IToolbarSearchProps) =
         appearance="weak"
         aria-expanded={isOpen}
         brand="neutral"
+        data-testid={testId}
         label={isOpen ? t("Close search") : label}
         leftIcon={isOpen ? "close" : "search"}
         ref={buttonRef}

@@ -43,6 +43,13 @@ function createCategoryDetailPath(
   }
 }
 
+/** A category's full path among a game's categories, its top level left out where asked. */
+export const categoryPathIn = (
+  categories: ICategoryDictionary,
+  categoryId: string,
+  hideTopLevel: boolean,
+) => createCategoryDetailPath(categories, categoryId, "", hideTopLevel, new Set<string>());
+
 /**
  * retrieve the Category from the Store returning the full category path.
  *
@@ -73,13 +80,7 @@ export function resolveCategoryPath(category: string | number, state: IState) {
     false,
   );
   if (categories[categoryId] !== undefined) {
-    completePath = createCategoryDetailPath(
-      categories,
-      categoryId,
-      "",
-      hideTopLevel,
-      new Set<string>(),
-    );
+    completePath = categoryPathIn(categories, categoryId, hideTopLevel);
   }
   return completePath;
 }

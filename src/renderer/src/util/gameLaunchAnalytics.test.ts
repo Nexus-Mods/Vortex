@@ -84,7 +84,7 @@ describe("game launch analytics", () => {
   it("carries the support tier from the launch to its paired exit event", () => {
     const h = harness();
     h.base.setState((draft) => {
-      draft.persistent.gameMode ??= { gameInfo: {}, tier0: {} };
+      draft.persistent.gameMode ??= { gameInfo: {}, gameUidHistory: [], tier0: {} };
       draft.persistent.gameMode.tier0[NexusGameId(1704)] = {
         gameId: NexusGameId(1704),
         domain: NexusGameDomain("skyrimspecialedition"),

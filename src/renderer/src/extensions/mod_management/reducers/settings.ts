@@ -1,42 +1,60 @@
+import type { ISettingsMods } from "@/types/IState";
+
 import { actionsToPartialReducerSpec } from "../../../reducers/builder";
-import type { ISettingsMods } from "../../../types/IState";
 import * as actions from "../actions/settings";
+
+declare module "@/types/IState" {
+  interface ISettingsMods {
+    /** Whether the Properties panel shows beside the new Mods table. */
+    propertiesOpen: boolean;
+  }
+}
+
+/**
+ * What this reducer keeps under `settings.mods`: all of it but the FOMOD installer's sandbox
+ * switch, which that installer's own reducer keeps there.
+ */
+type ModsSettingsState = Omit<ISettingsMods, "installerSandbox">;
+
+const defaultState: ModsSettingsState = {
+  installPath: {},
+  installPathMode: "userData",
+  suggestInstallPathDirectory: "Vortex Mods",
+  modlistState: {},
+  activator: {},
+  showDropzone: true,
+  confirmPurge: true,
+  cleanupOnDeploy: false,
+  betaTable: false,
+  propertiesOpen: false,
+};
 
 /**
  * reducer for changes to settings regarding mods. Partial: installer_fomod_ipc owns
  * installerSandbox in the same slice.
  */
 export const settingsReducer = actionsToPartialReducerSpec<ISettingsMods, typeof actions>(
-  {
-    installPath: {},
-    installPathMode: "userData",
-    suggestInstallPathDirectory: "Vortex Mods",
-    modlistState: {},
-    activator: {},
-    showDropzone: true,
-    confirmPurge: true,
-    cleanupOnDeploy: false,
-    betaTable: false,
-  },
+  defaultState,
   actions,
   {
-    setInstallPath: (state, payload) => ({
+    setInstallPath: (state, { gameId, path }) => ({
       ...state,
-      installPath: { ...state.installPath, [payload.gameId]: payload.path },
+      installPath: { ...state.installPath, [gameId]: path },
     }),
-    setInstallPathMode: (state, payload) => ({ ...state, installPathMode: payload }),
-    setSuggestInstallPathDirectory: (state, payload) => ({
+    setInstallPathMode: (state, mode) => ({ ...state, installPathMode: mode }),
+    setSuggestInstallPathDirectory: (state, path) => ({
       ...state,
-      suggestInstallPathDirectory: payload,
+      suggestInstallPathDirectory: path,
     }),
-    setActivator: (state, payload) => ({
+    setActivator: (state, { gameId, activatorId }) => ({
       ...state,
-      activator: { ...state.activator, [payload.gameId]: payload.activatorId },
+      activator: { ...state.activator, [gameId]: activatorId },
     }),
-    setShowModDropzone: (state, payload) => ({ ...state, showDropzone: payload }),
-    setConfirmPurge: (state, payload) => ({ ...state, confirmPurge: payload }),
-    setCleanupOnDeploy: (state, payload) => ({ ...state, cleanupOnDeploy: payload }),
-    setBetaModsTable: (state, payload) => ({ ...state, betaTable: payload }),
+    setShowModDropzone: (state, show) => ({ ...state, showDropzone: show }),
+    setConfirmPurge: (state, confirm) => ({ ...state, confirmPurge: confirm }),
+    setCleanupOnDeploy: (state, cleanup) => ({ ...state, cleanupOnDeploy: cleanup }),
+    setBetaModsTable: (state, beta) => ({ ...state, betaTable: beta }),
+    setModsTablePropertiesOpen: (state, open) => ({ ...state, propertiesOpen: open }),
   },
   {
     installPath: {

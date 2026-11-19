@@ -7,8 +7,8 @@ import type { IGameData } from "./queries";
 import { knownGames } from "./selectors";
 
 /**
- * The collections `findGame` and `convertId` join over, assembled from the state and the
- * Nexus Mods games list. The result is only replaced when one of the three is, so it can
+ * The collections the game queries join over, assembled from the state and the
+ * Nexus Mods games list. The result is only replaced when one of them is, so it can
  * be used as a dependency of other selectors and hooks.
  *
  * The games list is a module-level cache and not part of the state, it is empty until it
@@ -17,6 +17,12 @@ import { knownGames } from "./selectors";
 export const gameData = createSelector(
   knownGames,
   (state: IState) => state.persistent.gameMode.tier0,
+  (state: IState) => state.persistent.gameMode.gameUidHistory,
   () => nexusGames(),
-  (known, tier0, games): IGameData => ({ known, tier0, nexusGames: games }),
+  (known, tier0, gameUidHistory, games): IGameData => ({
+    known,
+    tier0,
+    gameUidHistory,
+    nexusGames: games,
+  }),
 );

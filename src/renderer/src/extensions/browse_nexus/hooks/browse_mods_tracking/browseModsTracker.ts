@@ -48,6 +48,9 @@ export type ISearchEventProps = {
  */
 export type FilePickerSource = "one_click" | "split_button" | "split_menu";
 
+/** Which of the split button's options opened the removal modal: Uninstall or Delete. */
+export type RemoveMenuOption = "uninstall" | "delete";
+
 /** Where a search was cleared from: the search box, or an empty state's Clear search. */
 export type SearchClearSource = "box" | "empty_state";
 
@@ -183,6 +186,33 @@ export const createBrowseModsTracker = (api: IExtensionApi) => {
       file_count: number;
       source: FilePickerSource;
     }) => track("browse_mods_file_picker_opened", props),
+
+    // The split button's Uninstall or Delete picked, as `menu_option`; `file_count` is how many
+    // of the mod's files the modal lists, 0 when there were none to remove and it said so instead.
+    trackRemoveClicked: (props: {
+      mod_uid: string;
+      file_count: number;
+      menu_option: RemoveMenuOption;
+    }) => track("browse_mods_remove_clicked", props),
+
+    // The removal modal's main action: how many of the chosen files went for good, and how many
+    // were uninstalled keeping a download to reinstall from, as its button said, and whether the
+    // user asked for downloads to be deleted too, whichever `menu_option` opened it.
+    trackRemoveConfirmed: (props: {
+      mod_uid: string;
+      menu_option: RemoveMenuOption;
+      deleted_count: number;
+      uninstalled_count: number;
+      deletes_downloads: boolean;
+    }) => track("browse_mods_remove_confirmed", props),
+
+    // The removal modal closed without removing anything; `file_count` and `menu_option` as on
+    // its opening.
+    trackRemoveCancelled: (props: {
+      mod_uid: string;
+      file_count: number;
+      menu_option: RemoveMenuOption;
+    }) => track("browse_mods_remove_cancelled", props),
 
     trackModPageOpened: (props: { mod_uid: string }) => track("browse_mods_mod_page_opened", props),
 

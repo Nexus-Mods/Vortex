@@ -37,6 +37,12 @@ export const setConfirmPurge = safeCreateAction("SET_CONFIRM_PURGE", (confirm: b
 /** Shows the new Mods table, in beta, in place of the classic one. */
 export const setBetaModsTable = safeCreateAction("SET_BETA_MODS_TABLE", (beta: boolean) => beta);
 
+/** Opens or closes the Properties panel beside the new Mods table. */
+export const setModsTablePropertiesOpen = safeCreateAction(
+  "SET_MODS_TABLE_PROPERTIES_OPEN",
+  (open: boolean) => open,
+);
+
 export const setCleanupOnDeploy = safeCreateAction(
   "SET_CLEANUP_ON_DEPLOY",
   (cleanup: boolean) => cleanup,

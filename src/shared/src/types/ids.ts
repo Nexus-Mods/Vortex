@@ -37,6 +37,23 @@ export type GameUid = Brand<string, "GameUid">;
 export const GameUid: Brander<GameUid> = make<GameUid>(validateNonEmptyString);
 
 /**
+ * A {@link GameUid} as it was written, which the catalogue may since have retired. Declared uids
+ * (a manifest's `contributes`) parse into it, and it is the type of every uid Vortex stores: a
+ * stored uid is never rewritten, a query resolves it.
+ *
+ * @public */
+export type RecordedGameUid = Brand<string, "RecordedGameUid">;
+
+/**
+ * Brands a string as a {@link RecordedGameUid}.
+ *
+ * @throws {@link VortexError} with kind `argument-invalid` for an empty string.
+ *
+ * @public */
+export const RecordedGameUid: Brander<RecordedGameUid> =
+  make<RecordedGameUid>(validateNonEmptyString);
+
+/**
  * The id Vortex gives a game internally: the key of `session.gameMode.known`,
  * `settings.gameMode.discovered`, the game registry ($ .extensionGames) and
  * `persistent.profiles[...].gameId`. For extension-backed games this is the

@@ -1,6 +1,7 @@
 import type { StoreGameVersionPayload } from "@vortex/nexus-api-v3";
 
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
+import { normPath } from "@/util/normPath";
 
 import type { IDiscoveryResult } from "../../types/IDiscoveryResult";
 import { getGame, getGameStoresSafe } from "../getGame";
@@ -19,13 +20,6 @@ export interface InstallRecord {
   install: InstallBlock | null;
   failureReason: string | null;
 }
-
-/** Windows and POSIX disagree about separators and case; matches either way. */
-const normPath = (value: string): string =>
-  value
-    .replace(/[/\\]+/g, "/")
-    .replace(/\/$/, "")
-    .toLowerCase();
 
 const inFolder = (entry: IGameStoreEntry, folder: string): boolean =>
   entry.gamePath !== undefined && normPath(entry.gamePath) === normPath(folder);
