@@ -2,6 +2,7 @@ import * as path from "node:path";
 
 import { describe, expect, onTestFinished, vi } from "vitest";
 
+import { startActivity, stopActivity } from "../../actions/session";
 import { settle } from "../../test-utils/async";
 import { makeFakePersistor, makePlugin } from "../../test-utils/builders";
 import {
@@ -105,6 +106,20 @@ describe("makePluginSync", () => {
     await settle(PAST_DEBOUNCE_MS);
 
     expect(updatePluginList).not.toHaveBeenCalled();
+  });
+
+  test("holds a scheduled rescan until a mod removal stops moving plugin files", async ({
+    makeGamebryo,
+  }) => {
+    const { harness, updatePluginList, sync } = await arrange(makeGamebryo);
+    harness.api.store.dispatch(startActivity("mods", "removing_some-mod"));
+
+    sync.scheduleRefresh();
+    await settle(PAST_DEBOUNCE_MS);
+    expect(updatePluginList).not.toHaveBeenCalled();
+
+    harness.api.store.dispatch(stopActivity("mods", "removing_some-mod"));
+    await vi.waitFor(() => expect(updatePluginList).toHaveBeenCalledTimes(1), { timeout: 3000 });
   });
 
   test("ignores files in the Data folder that are not plugins", async ({ makeGamebryo }) => {

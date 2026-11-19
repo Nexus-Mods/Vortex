@@ -16,6 +16,7 @@ import { setPluginOrder } from "./actions/loadOrder";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import { gameSupported } from "./util/gameSupport";
 import { isPluginName } from "./util/isPlugin";
+import { movingPluginFiles } from "./util/modActivity";
 import { AMBIENT_ATTRIBUTES } from "./util/spanAttributes";
 import toPluginId from "./util/toPluginId";
 import type { makeUpdatePluginList } from "./util/updatePluginList";
@@ -49,6 +50,11 @@ export interface IPluginSync {
   stop: () => Promise<void>;
   /** Rescans the active profile's plugins and waits for their details. */
   refresh: () => Promise<void>;
+  /**
+   * Rescans once the Data folder has been quiet for a moment and no deployment, purge or mod
+   * removal is moving plugin files.
+   */
+  scheduleRefresh: () => void;
 }
 
 /**
@@ -81,8 +87,14 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
     });
   };
 
-  // rescans once the Data folder has settled
-  const refreshDebouncer = new Debouncer(refresh, deps.refreshDelayMs ?? REFRESH_DELAY_MS);
+  // rescans once the Data folder has settled and nothing is moving plugin files anymore
+  const refreshDebouncer: Debouncer = new Debouncer(() => {
+    if (movingPluginFiles(api.getState().session.base.activity?.["mods"])) {
+      refreshDebouncer.schedule();
+      return Promise.resolve();
+    }
+    return refresh();
+  }, deps.refreshDelayMs ?? REFRESH_DELAY_MS);
 
   const stop = (): Promise<void> => {
     if (watcher !== undefined) {
@@ -172,5 +184,5 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
     }
   };
 
-  return { start, stop, refresh };
+  return { start, stop, refresh, scheduleRefresh: () => refreshDebouncer.schedule() };
 }
