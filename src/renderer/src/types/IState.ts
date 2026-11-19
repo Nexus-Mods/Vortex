@@ -1,5 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { GameUid, NexusGameDomain, NexusGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -165,7 +165,7 @@ export interface IExtensionState {
   /** Nexus Mods file ID for this specific version of the extension. */
   fileId?: number;
   /** The Nexus Mods game the extension is for, as the extension catalog names it. Game extensions only. */
-  nexus?: { gameId: GameId; gameDomain: GameDomain };
+  nexus?: { gameId: NexusGameId; gameDomain: NexusGameDomain };
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;
   /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
@@ -237,6 +237,7 @@ export interface ISettingsInterface {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   alwaysCompactHeaders: boolean;
+  showGameArt: boolean;
   reduceMotion?: boolean;
   dashboardLayout: string[];
   foregroundDL: boolean;
@@ -374,9 +375,9 @@ export interface IGameInfoEntry {
 
 export interface ITierZeroGame {
   /** numeric Nexus Mods game id (e.g. 1303) */
-  gameId: GameId;
+  gameId: NexusGameId;
   /** the nexus domain the game is managed under; the synthesized game's id */
-  domain: GameDomain;
+  domain: NexusGameDomain;
   name: string;
   storeIDs: {
     steam: string[];
@@ -394,6 +395,17 @@ export interface IManualInstallerPreferences {
   dontAskAgain?: boolean;
 }
 
+/**
+ * One retirement the catalogue made: `retired` was merged into `current`. Entries are only ever
+ * appended, a wrong mapping is fixed by appending a correction.
+ */
+export interface IGameUidRetirement {
+  retired: GameUid;
+  current: GameUid;
+  /** when Vortex learned of the retirement, ms since epoch */
+  recordedAt: number;
+}
+
 export interface IStateGameMode {
   gameInfo: {
     [gameId: string]: {
@@ -401,9 +413,15 @@ export interface IStateGameMode {
     };
   };
 
+  /**
+   * Every uid retirement Vortex has learned of, oldest first. Append-only: stored uids are never
+   * rewritten, `currentGameUid` resolves them through this list.
+   */
+  gameUidHistory: IGameUidRetirement[];
+
   /** games managed without a game extension, keyed by numeric nexus game id
    * (immutable across domain renames; the entry also carries the domain) */
-  tier0: Record<GameId, ITierZeroGame>;
+  tier0: Record<NexusGameId, ITierZeroGame>;
 }
 
 export interface IBrowserState {

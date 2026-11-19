@@ -2,7 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
-import { createBrowseModsTracker } from "./browseModsTracker";
+import { createBrowseModsTracker, type ISearchEventProps } from "./browseModsTracker";
+
+/** A search, as the search events send it. */
+const SEARCHED: ISearchEventProps = {
+  view: "trending",
+  sort_field: "endorsements",
+  sort_direction: "desc",
+  has_search: false,
+  time_range: "7",
+  adult: "exclude",
+};
 
 /** A tracker on a spied bus. */
 const trackerOnSpy = () => {
@@ -27,6 +37,39 @@ describe("createBrowseModsTracker", () => {
     expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
       eventName: "browse_mods_mod_selected",
       properties: { mod_uid: "7340033", view: "trending", position: 3, input: "pointer" },
+    });
+  });
+
+  it("sends the file picker opening with its mod, how many files it lists, and from where", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFilePickerOpened({ mod_uid: "7340033", file_count: 3, source: "split_menu" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_file_picker_opened",
+      properties: { mod_uid: "7340033", file_count: 3, source: "split_menu" },
+    });
+  });
+
+  it("counts a picker opened from the split button with several files, as such", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFilePickerOpened({ mod_uid: "7340033", file_count: 2, source: "split_button" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_file_picker_opened",
+      properties: { mod_uid: "7340033", file_count: 2, source: "split_button" },
+    });
+  });
+
+  it("counts View all main files' upsell by its own action", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackPremiumModalShown({ mod_uid: "7340033", action: "view_files" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_premium_modal_shown",
+      properties: { mod_uid: "7340033", action: "view_files" },
     });
   });
 
@@ -119,6 +162,71 @@ describe("createBrowseModsTracker", () => {
     expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
       eventName,
       properties: { mod_uid: "1704-1" },
+    });
+  });
+
+  it("counts another of the details' tabs picked, with the one it left", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackDetailsTabSelected({
+      mod_uid: "1704-1",
+      tab: "comments",
+      previous_tab: "details",
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_details_tab_selected",
+      properties: { mod_uid: "1704-1", tab: "comments", previous_tab: "details" },
+    });
+  });
+
+  it("counts opening a mod's comments on the website", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackCommentsOpened({ mod_uid: "1704-1" });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_comments_opened",
+      properties: { mod_uid: "1704-1" },
+    });
+  });
+
+  it("counts feedback skipped, with no reasons", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFeedbackGiven({
+      ...SEARCHED,
+      pages_loaded: 1,
+      sentiment: "positive",
+      source: "toolbar",
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_feedback_given",
+      properties: { ...SEARCHED, pages_loaded: 1, sentiment: "positive", source: "toolbar" },
+    });
+  });
+
+  it("counts feedback sent, with its reasons", () => {
+    const { emit, tracker } = trackerOnSpy();
+
+    tracker.trackFeedbackGiven({
+      ...SEARCHED,
+      pages_loaded: 3,
+      sentiment: "negative",
+      source: "load_more",
+      reasons: ["slow"],
+    });
+
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "browse_mods_feedback_given",
+      properties: {
+        ...SEARCHED,
+        pages_loaded: 3,
+        sentiment: "negative",
+        source: "load_more",
+        reasons: ["slow"],
+      },
     });
   });
 });

@@ -45,6 +45,23 @@ describe("Table", () => {
     expect(within(grid).getAllByRole("columnheader")).toHaveLength(COLUMNS.length);
   });
 
+  it("adds an item's own classes to its row", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowClassName={(row) => (row.size > 1 ? "large" : undefined)}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const [, alpha, beta] = screen.getAllByRole("row");
+    expect(alpha).toHaveClass("nxm-table-row");
+    expect(alpha).not.toHaveClass("large");
+    expect(beta).toHaveClass("nxm-table-row", "large");
+  });
+
   it("makes its tracks from the column widths, between the gutters", () => {
     renderTable();
 
@@ -235,6 +252,44 @@ describe("Table sorted by a column", () => {
     expect(names()).toEqual(["Beta", "Alpha"]);
   });
 
+  it("sorts by the sort it's given, and reports a header click without sorting itself", async () => {
+    const onSortChange = vi.fn();
+    render(
+      <Table
+        columns={SORTABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        sort={{ columnId: "name", direction: "descending" }}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    expect(names()).toEqual(["Beta", "Alpha"]);
+
+    await userEvent.click(within(screen.getAllByRole("columnheader")[0]).getByRole("button"));
+
+    expect(onSortChange).toHaveBeenCalledWith({ columnId: "name", direction: "ascending" });
+    expect(names()).toEqual(["Beta", "Alpha"]);
+  });
+
+  it("keeps the rows in their given order when sorted by a column it doesn't have", () => {
+    render(
+      <Table
+        columns={SORTABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={[ROWS[1], ROWS[0]]}
+        sort={{ columnId: "missing", direction: "ascending" }}
+        onSortChange={vi.fn()}
+      />,
+    );
+
+    const [nameHeader] = screen.getAllByRole("columnheader");
+    expect(names()).toEqual(["Beta", "Alpha"]);
+    expect(nameHeader).toHaveAttribute("aria-sort", "none");
+  });
+
   it("sorts each group's rows, leaving the groups in their order", () => {
     render(
       <Table
@@ -322,7 +377,7 @@ describe("Table with selectable rows", () => {
       },
     ];
 
-    const renderFive = () =>
+    const renderFive = (onRowDoubleClick?: (row: IRow) => void) =>
       render(
         <Table
           selectable
@@ -331,6 +386,7 @@ describe("Table with selectable rows", () => {
           getRowLabel={(row) => row.name}
           label="Files"
           rows={FIVE}
+          onRowDoubleClick={onRowDoubleClick}
         />,
       );
 
@@ -495,6 +551,106 @@ describe("Table with selectable rows", () => {
       await userEvent.click(screen.getByText("Name"));
 
       expect(selected()).toEqual(["Alpha"]);
+    });
+
+    describe("double-clicked", () => {
+      // FIVE's rows come after the header row.
+      const rowOf = (index: number) => screen.getAllByRole("row")[index + 1];
+
+      it("reports a row's double-click, leaving only that row selected", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.click(rowOf(0));
+        await clickWith("Gamma", "Control");
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onRowDoubleClick).toHaveBeenCalledTimes(1);
+        expect(onRowDoubleClick).toHaveBeenCalledWith(FIVE[1]);
+        expect(selected()).toEqual(["Beta"]);
+      });
+
+      it("keeps a row that was the only one selected, though its first click deselects it", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.click(rowOf(1));
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onRowDoubleClick).toHaveBeenCalledWith(FIVE[1]);
+        expect(selected()).toEqual(["Beta"]);
+      });
+
+      it("never empties the selection on its second click", async () => {
+        const onSelectedIdsChange = vi.fn();
+        render(
+          <Table
+            selectable
+            columns={WITH_CONTROL}
+            getRowId={(row) => row.id}
+            label="Files"
+            rows={FIVE}
+            onRowDoubleClick={vi.fn()}
+            onSelectedIdsChange={onSelectedIdsChange}
+          />,
+        );
+
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onSelectedIdsChange).not.toHaveBeenCalledWith(new Set());
+        expect(onSelectedIdsChange).toHaveBeenLastCalledWith(new Set(["beta"]));
+      });
+
+      it("Ctrl+clicking a row twice quickly toggles it twice and opens nothing", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+        await userEvent.click(rowOf(0));
+
+        fireEvent.click(rowOf(1), { ctrlKey: true, detail: 1 });
+        expect(selected()).toEqual(["Alpha", "Beta"]);
+        fireEvent.click(rowOf(1), { ctrlKey: true, detail: 2 });
+        fireEvent.doubleClick(rowOf(1), { ctrlKey: true });
+
+        expect(selected()).toEqual(["Alpha"]);
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+      });
+
+      it("Shift+double-click opens nothing", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+        await userEvent.click(rowOf(0));
+
+        fireEvent.doubleClick(rowOf(2), { shiftKey: true });
+
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+        expect(selected()).toEqual(["Alpha"]);
+      });
+
+      it("ignores a double-click on a control in the row", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.dblClick(screen.getByRole("button", { name: "Open Beta" }));
+
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+      });
+
+      it("doesn't select the word under it", () => {
+        renderFive(vi.fn());
+
+        // fireEvent says false once the default, selecting the word, is prevented.
+        expect(fireEvent.mouseDown(rowOf(1), { detail: 2 })).toBe(false);
+        expect(fireEvent.mouseDown(rowOf(1), { detail: 1 })).toBe(true);
+      });
+
+      it("still deselects the only selected row on two slow clicks", async () => {
+        renderFive(vi.fn());
+
+        await userEvent.click(rowOf(0));
+        await userEvent.click(rowOf(0));
+
+        expect(selected()).toEqual([]);
+      });
     });
   });
 });
@@ -681,6 +837,51 @@ describe("Table with a toolbar", () => {
     expect(header).toHaveAttribute("aria-rowindex", "2");
     expect(first).toHaveAttribute("aria-rowindex", "3");
     expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+
+  it("lets its toolbar reach past its right edge by the overhang it's given", () => {
+    const renderWith = (toolbarOverhang?: `${number}rem`) => (
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+        toolbarOverhang={toolbarOverhang}
+      />
+    );
+    const { rerender } = render(renderWith("27rem"));
+
+    const overhang = () =>
+      screen.getByRole("grid").style.getPropertyValue("--nxm-table-toolbar-overhang");
+    expect(overhang()).toBe("27rem");
+
+    rerender(renderWith());
+    expect(overhang()).toBe("");
+  });
+
+  it("tells how far below its top the header row starts, under the toolbar", () => {
+    // Nothing is laid out here, so the head is at 0 and the header row where the toolbar ends.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { top: this.classList.contains("nxm-table-header") ? 52 : 0 } as DOMRect;
+      });
+    const onHeaderOffsetChange = vi.fn();
+
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+        onHeaderOffsetChange={onHeaderOffsetChange}
+      />,
+    );
+    rect.mockRestore();
+
+    expect(onHeaderOffsetChange).toHaveBeenLastCalledWith(52);
   });
 });
 
@@ -1350,7 +1551,7 @@ describe("Table's context menus", () => {
     it("opens from the keyboard under the focused control, handing focus back to it", async () => {
       renderWithMenu();
       const control = checkbox("Alpha");
-      control.focus();
+      act(() => control.focus());
 
       fireEvent.contextMenu(control, { button: -1 });
       expect(
@@ -1494,6 +1695,7 @@ describe("Table's focused group", () => {
     expect(onGroupFocused).toHaveBeenCalledTimes(1);
     await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
     expect(scrollIntoView.mock.contexts[0]).toBe(groupRow("Second"));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", container: "nearest" });
   });
 
   it("waits for a group it doesn't have yet", () => {

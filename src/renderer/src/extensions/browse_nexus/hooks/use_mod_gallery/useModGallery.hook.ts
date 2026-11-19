@@ -8,8 +8,54 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IGalleryImage } from "../../components/browse_mods/mod_details/mod_gallery/ModGallery";
 
 /**
- * A mod's images in the authors' order, led by its primary image when they don't include it, or
- * the search's thumbnail until the mod's own query has them, standing in for every size.
+ * A before/after comparison's after image starts its title with `[compare:<before id>:<before
+ * path>]`, and the API leaves the before image out of the gallery, so the site reads the pair from
+ * the title. shortcut: parsed here until the v3 API sends the pair as a field (LAZ-1675).
+ */
+const COMPARE_PREFIX = /^\[compare:\d+:(?:[^\]]*\/)?([^/\]]+)\]/;
+
+/**
+ * A gallery image with its comparison's before image, in each size, when it's a comparison's
+ * after image. Both are in the same folder, so each size's URL names the before file instead.
+ */
+const withComparison = (image: IGalleryImage): IGalleryImage => {
+  const title = image.title ?? "";
+  const match = COMPARE_PREFIX.exec(title);
+
+  if (!match) {
+    return image;
+  }
+
+  // The path's last segment swapped, keeping any query or fragment. An address that doesn't parse
+  // can't load either way, so it's left as it is.
+  const beforeFile = (src: string) => {
+    const url = URL.parse(src);
+
+    if (!url) {
+      return src;
+    }
+
+    url.pathname = url.pathname.replace(/[^/]*$/, () => match[1]);
+    return url.href;
+  };
+
+  return {
+    ...image,
+    title: title.slice(match[0].length).trim(),
+    before: {
+      url: beforeFile(image.url),
+      thumbnail_url: beforeFile(image.thumbnail_url),
+      large_thumbnail_url: beforeFile(image.large_thumbnail_url),
+      blurred_thumbnail_url: beforeFile(image.blurred_thumbnail_url),
+      blurred_large_thumbnail_url: beforeFile(image.blurred_large_thumbnail_url),
+    },
+  };
+};
+
+/**
+ * A mod's images in the authors' order, led by its primary image when they don't include it, as
+ * a picture or a comparison's before picture, or the search's thumbnail until the mod's own query
+ * has them, standing in for every size.
  */
 const getGalleryImages = (summary: ModSummary, mod?: Mod): IGalleryImage[] => {
   if (!mod) {
@@ -29,12 +75,13 @@ const getGalleryImages = (summary: ModSummary, mod?: Mod): IGalleryImage[] => {
   }
 
   const primary = mod.primary_image;
+  const gallery = mod.gallery_images.map(withComparison);
 
-  if (!primary || mod.gallery_images.some(({ url }) => url === primary.url)) {
-    return [...mod.gallery_images];
+  if (!primary || gallery.some(({ url, before }) => [url, before?.url].includes(primary.url))) {
+    return gallery;
   }
 
-  return [primary, ...mod.gallery_images];
+  return [primary, ...gallery];
 };
 
 /**

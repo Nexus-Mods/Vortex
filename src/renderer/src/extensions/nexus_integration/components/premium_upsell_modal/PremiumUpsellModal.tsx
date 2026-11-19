@@ -140,6 +140,7 @@ export const PremiumUpsellModal = ({
           appearance="moderate"
           brand="neutral"
           className="w-full"
+          data-testid="premium-upsell-fallback"
           leftIcon={fallbackIcon}
           onClick={onFallback}
         >

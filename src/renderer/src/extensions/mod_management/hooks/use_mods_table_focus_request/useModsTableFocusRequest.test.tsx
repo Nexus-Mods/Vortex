@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
@@ -20,26 +20,41 @@ const render = ({
   groups,
   rows = [],
   search = "",
+  hidden = [],
 }: {
   focusedGroupId?: string;
   focusedModId?: string;
   groups: IModGroup[] | undefined;
   rows?: IModRow[];
   search?: string;
+  hidden?: string[];
 }) => {
   const store = makeModsTableStore({ focusedGroupId, focusedModId });
   const setSearch = vi.fn();
+  const clearFilters = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  const hook = renderHook(() => useModsTableFocusRequest({ groups, rows, search, setSearch }), {
-    wrapper,
-  });
+  const hook = renderHook(
+    () =>
+      useModsTableFocusRequest({
+        groups,
+        rows,
+        search,
+        setSearch,
+        isFilteredOut: (modId) => hidden.includes(modId),
+        clearFilters,
+      }),
+    {
+      wrapper,
+    },
+  );
 
   return {
     ...hook,
     store,
     setSearch,
+    clearFilters,
     requested: () => store.getState().session.mods.focusedGroupId,
     requestedMod: () => store.getState().session.mods.focusedModId,
   };
@@ -57,7 +72,7 @@ describe("useModsTableFocusRequest", () => {
   it("drops the request once the group has been shown", () => {
     const { result, requested } = render({ focusedGroupId: "a", groups: [group("a")] });
 
-    result.current.onGroupFocused();
+    act(() => result.current.onGroupFocused());
 
     expect(requested()).toBeUndefined();
   });
@@ -103,7 +118,7 @@ describe("useModsTableFocusRequest", () => {
 
       expect(result.current.focusModId).toBe("skyui");
 
-      result.current.onModFocused();
+      act(() => result.current.onModFocused());
 
       expect(requestedMod()).toBeUndefined();
     });
@@ -117,6 +132,28 @@ describe("useModsTableFocusRequest", () => {
       });
 
       expect(setSearch).toHaveBeenCalledWith("");
+    });
+
+    it("clears the filters for a mod they hide, keeping the request", () => {
+      const { clearFilters, requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+        hidden: ["skyui"],
+      });
+
+      expect(clearFilters).toHaveBeenCalledOnce();
+      expect(requestedMod()).toBe("skyui");
+    });
+
+    it("leaves the filters for a mod they show", () => {
+      const { clearFilters } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+      });
+
+      expect(clearFilters).not.toHaveBeenCalled();
     });
 
     it("drops a request for a mod the table doesn't have", () => {

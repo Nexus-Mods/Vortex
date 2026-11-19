@@ -1,12 +1,16 @@
 import type { TFunction } from "i18next";
 
-import type { ITableGroup } from "@/ui/components/table/Table.types";
+import type { ITableGroup, ITableSort } from "@/ui/components/table/Table.types";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import { modHasUpdate } from "../mod_has_update/modHasUpdate";
 import modName from "../modName";
+import {
+  type IModsTableFilters,
+  NO_MODS_TABLE_FILTERS,
+} from "../mods_table_filters/modsTableFilters";
 import { uploaderAvatar } from "../uploaderAvatar";
 
 export interface IModRow {
@@ -42,6 +46,10 @@ export interface IModsTableGroupingColumn {
 
 /** How a view starts out, before the user changes it. */
 export interface IModsTableViewDefaults {
+  /** How its mods are sorted. */
+  sort: ITableSort;
+  /** Which mods it shows. */
+  filters: IModsTableFilters;
   /** What its mods are grouped by. */
   grouping: ModsTableGrouping;
   /** The toggleable columns it shows, by id; the rest are hidden. */
@@ -66,8 +74,13 @@ interface IBuiltInModsTableView extends IModsTableView {
 
 const BASE_COLUMNS = ["version", "installTime"];
 
+/** By name, A to Z: how every view sorts until the user sorts it otherwise. */
+export const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
+
 /** How a view the user makes starts out. */
 export const NEW_VIEW_DEFAULTS: IModsTableViewDefaults = {
+  sort: BY_NAME,
+  filters: NO_MODS_TABLE_FILTERS,
   grouping: "none",
   columns: BASE_COLUMNS,
 };
@@ -77,29 +90,54 @@ export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
   {
     id: "all",
     label: "modsTable::views::all",
-    defaults: { grouping: "none", columns: BASE_COLUMNS },
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "none",
+      columns: BASE_COLUMNS,
+    },
   },
   {
     id: "status",
     label: "modsTable::views::status",
-    defaults: { grouping: "status", columns: BASE_COLUMNS },
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "status",
+      columns: BASE_COLUMNS,
+    },
   },
   {
     id: "updates",
     label: "modsTable::views::updates",
-    defaults: { grouping: "version", columns: BASE_COLUMNS },
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "version",
+      columns: BASE_COLUMNS,
+    },
     isAvailable: (mods) =>
       Object.values(mods).some((mod) => mod.state === "installed" && modHasUpdate(mod)),
   },
   {
     id: "categories",
     label: "modsTable::views::categories",
-    defaults: { grouping: "category", columns: BASE_COLUMNS },
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "category",
+      columns: BASE_COLUMNS,
+    },
   },
   {
     id: "collections",
     label: "modsTable::views::collections",
-    defaults: { grouping: "collection", columns: ["version", "collection", "installTime"] },
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "collection",
+      columns: ["version", "collection", "installTime"],
+    },
     isAvailable: (mods) => Object.values(mods).some((mod) => mod.type === COLLECTION_TYPE),
   },
 ];

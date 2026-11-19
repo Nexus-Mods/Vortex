@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-11-18
+
+_Stable 2.11 release. See the beta entries below for the full list of changes since 2.10._
+
+## [2.11.0-beta.5] - 2026-11-16
+
+### Changed
+
+- Renamed the extension API's `GameId` and `GameDomain` to `NexusGameId` and `NexusGameDomain` ([#24911](https://github.com/Nexus-Mods/Vortex/pull/24911))
+
+### Fixed
+
+- Declined optional collection mods installing anyway ([#24904](https://github.com/Nexus-Mods/Vortex/pull/24904))
+- Adding a collection or downloading a tool requirement failing with "File already downloaded" when its archive was already on disk ([#24854](https://github.com/Nexus-Mods/Vortex/pull/24854))
+- Deploy and conflict detection failing on mod records missing their `id` ([#24853](https://github.com/Nexus-Mods/Vortex/pull/24853))
+- Bethesda load orders: an empty `plugins.txt` wiping the load order; "Too many open files" when writing load order files during move deployment; and leftover `bundledPlugins` folders loading old extensions after an update ([#24852](https://github.com/Nexus-Mods/Vortex/pull/24852))
+- Collection installs failing mods that weren't stuck and installing the same mod twice ([#24850](https://github.com/Nexus-Mods/Vortex/pull/24850))
+
+## [2.11.0-beta.4] - 2026-11-11
+
+### Fixed
+
+- Stubbed game picked from a store not going on to its extension download ([#24827](https://github.com/Nexus-Mods/Vortex/pull/24827))
+
+## [2.11.0-beta.3] - 2026-11-10
+
+### Added
+
+- `VortexGameId`, `VortexProfileId`, `NexusGameId`, `NexusGameDomain` and `GameUid` id types exposed to extensions ([#24817](https://github.com/Nexus-Mods/Vortex/pull/24817))
+
+### Fixed
+
+- Collection binary patches failing for large files ([#24815](https://github.com/Nexus-Mods/Vortex/pull/24815))
+
+## [2.11.0-beta.2] - 2026-11-09
+
+### Fixed
+
+- Legacy UI's window controls not clickable over the toolbar's drag region ([#24790](https://github.com/Nexus-Mods/Vortex/pull/24790))
+- Load order header actions getting no instance id for an unnamed load order ([#24768](https://github.com/Nexus-Mods/Vortex/pull/24768))
+- Default launchers not selected after late discovery ([#24737](https://github.com/Nexus-Mods/Vortex/pull/24737))
+- Mods page not scrolling to a plugin's mod from its Mod link ([#24736](https://github.com/Nexus-Mods/Vortex/pull/24736))
+- File inode comparisons wrong on ReFS drives ([#24707](https://github.com/Nexus-Mods/Vortex/pull/24707))
+- Game registered by a stub extension, so its community extension was no longer offered ([#24702](https://github.com/Nexus-Mods/Vortex/pull/24702))
+- Redownloading a file starting a new download or renaming over an existing one ([#24692](https://github.com/Nexus-Mods/Vortex/pull/24692))
+
 ## [2.11.0-beta.1] - 2026-11-04
 
 _First beta of the 2.11 release._
@@ -2694,6 +2740,11 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.11.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0
+[2.11.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.5
+[2.11.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.4
+[2.11.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.3
+[2.11.0-beta.2]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.2
 [2.11.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.1
 [2.10.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0
 [2.10.0-beta.3]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.10.0-beta.3

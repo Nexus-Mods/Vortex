@@ -38,6 +38,17 @@ describe("setAlwaysCompactHeaders", () => {
   });
 });
 
+describe("setShowGameArt", () => {
+  it("sets the game art preference", () => {
+    const result = settingsReducer.reducers.SET_SHOW_GAME_ART({ showGameArt: true }, false);
+    expect(result).toEqual({ showGameArt: false });
+  });
+
+  it("shows game art by default", () => {
+    expect(settingsReducer.defaults.showGameArt).toBe(true);
+  });
+});
+
 describe("setReduceMotion", () => {
   it("records the choice", () => {
     const result = settingsReducer.reducers.SET_REDUCE_MOTION({}, true);

@@ -30,7 +30,8 @@ export interface ITableRowClick {
  * two groups is there twice, and a range runs from the place it was clicked in.
  *
  * A right-click selects just the row it's on, unless that's selected already, so a menu
- * opened there is for what's selected; `add` and `remove` change the selection by rows.
+ * opened there is for what's selected; `only` selects just one row, as a double-click on it
+ * does; `add` and `remove` change the selection by rows.
  *
  * Kept here unless `controlled` is given, with `onChange` to take each change.
  */
@@ -125,6 +126,14 @@ export const useTableSelection = (
     setSelected(new Set());
   }, [setSelected]);
 
+  const only = useCallback(
+    (row: ITableSelectionRow) => {
+      anchorRef.current = row.key;
+      setSelected(new Set([row.id]));
+    },
+    [setSelected],
+  );
+
   const contextClick = useCallback(
     (row: ITableSelectionRow) => {
       if (!selected.has(row.id)) {
@@ -145,5 +154,5 @@ export const useTableSelection = (
     [selected, setSelected],
   );
 
-  return { header, checkbox, click, clear, contextClick, add, remove, selected };
+  return { header, checkbox, click, clear, contextClick, only, add, remove, selected };
 };

@@ -75,7 +75,7 @@ describe("EntryActions feedback analytics", () => {
     fireEvent.click(screen.getByTestId("health-check-feedback-not-helpful"));
     expect(events).toHaveLength(0);
 
-    fireEvent.click(screen.getByTestId("health-check-feedback-confirm"));
+    fireEvent.click(screen.getByTestId("feedback-modal-send"));
 
     expect(events).toHaveLength(1);
     expect(events[0].eventName).toBe("health_check_feedback_not_helpful");
@@ -90,7 +90,7 @@ describe("EntryActions feedback analytics", () => {
     const { events, onNotHelpful } = renderActions();
 
     fireEvent.click(screen.getByTestId("health-check-feedback-not-helpful"));
-    fireEvent.click(screen.getByTestId("health-check-feedback-cancel"));
+    fireEvent.click(screen.getByTestId("feedback-modal-skip"));
 
     expect(events).toHaveLength(1);
     expect(events[0].eventName).toBe("health_check_feedback_dismissed");

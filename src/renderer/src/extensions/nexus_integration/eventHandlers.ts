@@ -25,33 +25,39 @@ import type {
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, TimeoutError } from "@nexusmods/nexus-api";
-import { GameDomain, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import {
+  NexusGameDomain,
+  getErrorMessageOrDefault,
+  parseError,
+  unknownToError,
+} from "@vortex/shared";
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import * as semver from "semver";
 
-import { setDownloadModInfo } from "../../actions";
-import { log } from "../../logging";
-import type { IExtensionApi, StateChangeCallback } from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
-import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import { calcDuration, showError } from "../../util/message";
+import { setDownloadModInfo } from "@/actions";
+import { resolveCategoryName } from "@/extensions/category_management";
+import { SITE_ID } from "@/extensions/gamemode_management/constants";
+import type { IGameStoredExt } from "@/extensions/gamemode_management/types/IGameStored";
+import { setUpdatingMods } from "@/extensions/mod_management/actions/session";
+import type { IModListItem } from "@/extensions/news_dashlet/types";
+import { log } from "@/logging";
+import type { IExtensionApi, StateChangeCallback } from "@/types/IExtensionContext";
+import type { IDownload, IMod, IModTable, IState } from "@/types/IState";
+import { DataInvalid, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
+import Debouncer from "@/util/Debouncer";
+import * as fs from "@/util/fs";
+import { calcDuration, showError } from "@/util/message";
 import {
   activeGameId,
   currentGame,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
-import { resolveCategoryName } from "../category_management";
-import { SITE_ID } from "../gamemode_management/constants";
-import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
-import { setUpdatingMods } from "../mod_management/actions/session";
-import type { IModListItem } from "../news_dashlet/types";
+} from "@/util/selectors";
+import { getSafe } from "@/util/storeHelper";
+import { batchDispatch, truthy } from "@/util/util";
+
 import { setUserInfo } from "./actions/persistent";
 import { NEXUS_GAMES_URL } from "./constants";
 import { ensureFreshMembership, refreshMembership } from "./membership";
@@ -855,6 +861,13 @@ export function onGetModFiles(
   };
 }
 
+/** Like `onGetModFiles`, but rejects when the files can't be fetched. */
+export function onFetchModFiles(
+  nexus: Nexus,
+): (domain: NexusGameDomain, modId: number) => Promise<IFileInfo[]> {
+  return async (domain, modId) => (await nexus.getModFiles(modId, domain)).files;
+}
+
 export function onModFileContents(
   api: IExtensionApi,
   nexus: Nexus,
@@ -1219,7 +1232,7 @@ function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): I
     category: resolveCategoryName(input.category_id.toString(), state),
     summary: input.summary,
     imageUrl: input.picture_url,
-    link: nexusModPageUrl(GameDomain(input.domain_name), input.mod_id),
+    link: nexusModPageUrl(NexusGameDomain(input.domain_name), input.mod_id),
     extra: [
       { id: "endorsements", value: input.endorsement_count },
       { id: "downloads", value: input.mod_downloads },

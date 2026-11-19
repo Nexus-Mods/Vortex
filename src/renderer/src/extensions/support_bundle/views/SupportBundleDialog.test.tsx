@@ -6,6 +6,8 @@ import { Provider } from "react-redux";
 import type { Store } from "redux";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
+
 import type { IState } from "../../../types/IState";
 import type { ISupportBundle } from "../util/prepareSupportBundle";
 import { SUPPORT_DISCORD_URL, SUPPORT_FORUM_URL, SupportBundleDialog } from "./SupportBundleDialog";
@@ -88,12 +90,14 @@ describe("SupportBundleDialog", () => {
     expect(prepareMock).not.toHaveBeenCalled();
   });
 
-  it("shows the status line and disables Open while preparing", () => {
+  it("shows the status line and disables Open while preparing", async () => {
     renderDialog(vi.fn());
 
     expect(prepareMock).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("support-bundle-status")).toBeInTheDocument();
     expect(screen.getByTestId("support-bundle-open")).toBeDisabled();
+
+    await settleTransitions();
   });
 
   it("opens the forum and Discord links in the system browser", async () => {
@@ -168,6 +172,8 @@ describe("SupportBundleDialog", () => {
       </Provider>,
     );
     expect(cleanupMock).not.toHaveBeenCalled();
+
+    await settleTransitions();
   });
 
   it("keeps the archive when closed after it is ready without opening it", async () => {
@@ -187,6 +193,8 @@ describe("SupportBundleDialog", () => {
 
     expect(cleanupMock).not.toHaveBeenCalled();
     expect(shell().showItemInFolder).not.toHaveBeenCalled();
+
+    await settleTransitions();
   });
 
   it("keeps the archive when dismissed by Escape after it is ready", async () => {
@@ -204,6 +212,8 @@ describe("SupportBundleDialog", () => {
     );
 
     expect(cleanupMock).not.toHaveBeenCalled();
+
+    await settleTransitions();
   });
 
   it("aborts the build when cancelled while preparing", async () => {
@@ -221,6 +231,8 @@ describe("SupportBundleDialog", () => {
     );
 
     expect(capturedSignal?.aborted).toBe(true);
+
+    await settleTransitions();
   });
 
   it("hides on Escape", async () => {
@@ -232,7 +244,7 @@ describe("SupportBundleDialog", () => {
     await waitFor(() => expect(onHide).toHaveBeenCalledTimes(1));
   });
 
-  it("aborts the build when it is hidden mid-build", () => {
+  it("aborts the build when it is hidden mid-build", async () => {
     const { rerender } = renderDialog(vi.fn());
 
     rerender(
@@ -242,6 +254,8 @@ describe("SupportBundleDialog", () => {
     );
 
     expect(capturedSignal?.aborted).toBe(true);
+
+    await settleTransitions();
   });
 
   it("reports a failure and rebuilds on Try again", async () => {

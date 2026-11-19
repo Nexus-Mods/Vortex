@@ -1,11 +1,26 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
-import { describe, expect, it } from "vitest";
+import {
+  GameUid,
+  NexusGameDomain,
+  NexusGameId,
+  RecordedGameUid,
+  VortexError,
+  VortexGameId,
+} from "@vortex/shared";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { IGameStored, ITierZeroGame } from "@/types/IState";
+import type { IGameStored, IGameUidRetirement, ITierZeroGame } from "@/types/IState";
 
 import { makeGameStored } from "../../test-utils/builders";
-import { convertId, findGame, type IGameData, nexusGameData } from "./queries";
+import {
+  convertId,
+  currentGameUid,
+  findGame,
+  gameUidChain,
+  type IGameData,
+  nexusGameData,
+  storedGameQuery,
+} from "./queries";
 import type { IDiscoveryResult } from "./types/IDiscoveryResult";
 
 // Dummy games. A and B are extension games, the tier zero game is managed without an
@@ -16,20 +31,21 @@ const tierZeroGame = VortexGameId("tier-0-1001");
 const sharedA = VortexGameId("shared-a");
 const sharedB = VortexGameId("shared-b");
 
-const domainA = GameDomain("domain-a");
-const domainB = GameDomain("domain-b");
-const tierZeroDomain = GameDomain("tier-zero-domain");
-const sharedDomain = GameDomain("shared-domain");
+const domainA = NexusGameDomain("domain-a");
+const domainB = NexusGameDomain("domain-b");
+const tierZeroDomain = NexusGameDomain("tier-zero-domain");
+const sharedDomain = NexusGameDomain("shared-domain");
 
 // The numeric Nexus Mods ids of the dummy games, in the same order.
-const numericA = GameId(1);
-const numericB = GameId(2);
-const numericTierZero = GameId(1001);
-const numericShared = GameId(3);
+const numericA = NexusGameId(1);
+const numericB = NexusGameId(2);
+const numericTierZero = NexusGameId(1001);
+const numericShared = NexusGameId(3);
 
 const gameData = (overrides: Partial<IGameData> = {}): IGameData => ({
   known: [],
   tier0: {},
+  gameUidHistory: [],
   nexusGames: [],
   ...overrides,
 });
@@ -52,7 +68,7 @@ const knownGames = (...ids: VortexGameId[]): IGameData =>
 const installed = (...ids: VortexGameId[]): Record<VortexGameId, IDiscoveryResult> =>
   Object.fromEntries(ids.map((id) => [id, { path: `C:/Games/${id}` }]));
 
-const listed = (id: GameId, domain: GameDomain): IGameListEntry => ({
+const listed = (id: NexusGameId, domain: NexusGameDomain): IGameListEntry => ({
   id,
   domain_name: domain,
   name: domain,
@@ -67,7 +83,7 @@ const listed = (id: GameId, domain: GameDomain): IGameListEntry => ({
   collections: 0,
 });
 
-const tierZeroEntry = (gameId: GameId, domain: GameDomain): ITierZeroGame => ({
+const tierZeroEntry = (gameId: NexusGameId, domain: NexusGameDomain): ITierZeroGame => ({
   gameId,
   domain,
   name: domain,
@@ -133,7 +149,9 @@ describe("findGame", () => {
     it("does not match on the domain's case", () => {
       const known = [game(gameA, nexusA)];
 
-      expect(findGame(gameData({ known }), { gameDomain: GameDomain("DOMAIN-A") })).toBeUndefined();
+      expect(
+        findGame(gameData({ known }), { gameDomain: NexusGameDomain("DOMAIN-A") }),
+      ).toBeUndefined();
     });
 
     describe("when games share the domain", () => {
@@ -270,11 +288,11 @@ describe("convertId", () => {
       expect(convertId(data, { vortexGameId: tierZeroGame }, "gameDomain")).toBeUndefined();
     });
 
-    it("converts a GameId through the games list", () => {
+    it("converts a NexusGameId through the games list", () => {
       expect(convertId(data, { gameId: numericB }, "gameDomain")).toBe(domainB);
     });
 
-    it("converts the GameId of a Tier 0 entry without the games list", () => {
+    it("converts the NexusGameId of a Tier 0 entry without the games list", () => {
       const tierZero = gameData({
         tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
       });
@@ -291,7 +309,7 @@ describe("convertId", () => {
       expect(convertId(renamed, { gameId: numericA }, "gameDomain")).toBe(domainB);
     });
 
-    it("is undefined for a GameId neither a Tier 0 entry nor the games list has", () => {
+    it("is undefined for a NexusGameId neither a Tier 0 entry nor the games list has", () => {
       expect(convertId(data, { gameId: numericTierZero }, "gameDomain")).toBeUndefined();
     });
   });
@@ -309,7 +327,7 @@ describe("convertId", () => {
       expect(convertId(tierZero, { gameDomain: tierZeroDomain }, "gameId")).toBe(numericTierZero);
     });
 
-    it("prefers the GameId a Tier 0 entry is managed under to the games list's", () => {
+    it("prefers the NexusGameId a Tier 0 entry is managed under to the games list's", () => {
       const renumbered = gameData({
         tier0: { [numericB]: tierZeroEntry(numericB, domainA) },
         nexusGames: [listed(numericA, domainA)],
@@ -386,5 +404,102 @@ describe("nexusGameData", () => {
     const data = gameData({ nexusGames: [listed(numericA, domainA)] });
 
     expect(nexusGameData(data, VortexGameId("domain-a"))).toBeUndefined();
+  });
+});
+
+describe("storedGameQuery", () => {
+  it("is a known game's Vortex id", () => {
+    expect(storedGameQuery(knownGames(gameA), "game-a")).toEqual({ vortexGameId: gameA });
+  });
+
+  it("is a domain the site lists, for a game no extension registers", () => {
+    const data = gameData({ nexusGames: [listed(numericB, domainB)] });
+
+    expect(storedGameQuery(data, "domain-b")).toEqual({ gameDomain: domainB });
+  });
+
+  it("is a Tier 0 game's domain", () => {
+    const data = gameData({
+      tier0: { [numericTierZero]: tierZeroEntry(numericTierZero, tierZeroDomain) },
+    });
+
+    expect(storedGameQuery(data, "tier-zero-domain")).toEqual({ gameDomain: tierZeroDomain });
+  });
+
+  it("takes a known game's id first, where a domain is spelled the same", () => {
+    const data = gameData({
+      known: [game(gameA)],
+      nexusGames: [listed(numericA, NexusGameDomain("game-a"))],
+    });
+
+    expect(storedGameQuery(data, "game-a")).toEqual({ vortexGameId: gameA });
+  });
+
+  it("is undefined for neither", () => {
+    expect(storedGameQuery(knownGames(gameA), "unknown")).toBeUndefined();
+  });
+});
+
+describe("game uid history", () => {
+  const retirement = (retired: string, current: string): IGameUidRetirement => ({
+    retired: GameUid(retired),
+    current: GameUid(current),
+    recordedAt: 1,
+  });
+  const history = (...entries: IGameUidRetirement[]) => gameData({ gameUidHistory: entries });
+  const x = RecordedGameUid("x");
+
+  it("resolves a uid without an entry to itself", () => {
+    expect(currentGameUid(history(), x)).toBe("x");
+    expect(gameUidChain(history(), x)).toEqual(["x"]);
+    expect(currentGameUid(history(retirement("a", "b")), x)).toBe("x");
+  });
+
+  it("follows one retirement", () => {
+    const data = history(retirement("x", "y"));
+
+    expect(currentGameUid(data, x)).toBe("y");
+    expect(gameUidChain(data, x)).toEqual(["x", "y"]);
+  });
+
+  it("follows a chain of two, oldest first", () => {
+    const data = history(retirement("x", "y"), retirement("y", "z"));
+
+    expect(gameUidChain(data, x)).toEqual(["x", "y", "z"]);
+    expect(currentGameUid(data, x)).toBe("z");
+    expect(currentGameUid(data, RecordedGameUid("y"))).toBe("z");
+  });
+
+  it("lets the newest entry for a retired uid win", () => {
+    const data = history(retirement("x", "wrong"), retirement("x", "y"));
+
+    expect(currentGameUid(data, x)).toBe("y");
+  });
+
+  it("throws instead of answering when the history loops", () => {
+    const data = history(retirement("x", "y"), retirement("y", "x"));
+
+    expect(() => gameUidChain(data, x)).toThrow(/loops: x -> y -> x/);
+    expect(() => currentGameUid(data, x)).toThrow(VortexError);
+    // a uid outside the loop still resolves
+    expect(currentGameUid(data, RecordedGameUid("other"))).toBe("other");
+  });
+
+  it("recomputes only for a new history", () => {
+    const entries = [retirement("x", "y")];
+    const before = gameUidChain(gameData({ gameUidHistory: entries }), x);
+
+    expect(gameUidChain(gameData({ gameUidHistory: entries }), x)).toBe(before);
+    expect(
+      gameUidChain(gameData({ gameUidHistory: [...entries, retirement("y", "z")] }), x),
+    ).toEqual(["x", "y", "z"]);
+  });
+
+  it("does not let a stored uid stand in for a current one", () => {
+    expectTypeOf<RecordedGameUid>().not.toExtend<GameUid>();
+    expectTypeOf<GameUid>().not.toExtend<RecordedGameUid>();
+    expectTypeOf(currentGameUid).returns.toEqualTypeOf<GameUid>();
+    // @ts-expect-error a stored uid cannot be compared with a current one without the query
+    void (RecordedGameUid("x") === GameUid("x"));
   });
 });

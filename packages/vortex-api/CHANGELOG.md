@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `GameUid`, the id of a game in the Nexus Mods game catalogue, with its brander
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
 - Game info entries from `registerGameInfoProvider` accept `type: "path"`, shown as a link that opens the file or folder. The built-in `game-path` entry uses it
 
 ### Removed
 
+- `IGame.overrides` is removed, along with the `setGameDisabled` and `clearGameDisabled` actions and `session.gameMode.disabled`. Nothing used it, so it goes without the usual two-release window. A registration that still sets `overrides` registers and is managed like any other, and two games discovered at the same path can both be managed - see the [migration guide](./docs/MIGRATION.md#vortex-2x-igameoverrides)
 - `util.steam` and `util.epicGamesLauncher`, deprecated in 2.8, are removed as of 2.11; call `GameStoreHelper` directly. An extension that still uses either gets `undefined` and throws a `TypeError` - see the [game store section of the migration guide](./docs/MIGRATION.md#vortex-2x-utilsteam-and-utilepicgameslauncher)
 - `@mdi/js` is no longer a production dependency of Vortex, so an extension that `require`d it at runtime instead of bundling its own copy will fail to load. Bundle it, or use `menuIcon` and Material Symbols
 
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - React peer dependency upgraded to 18.3.1; `@types/react` and `@types/react-dom` peer dependencies are now 18. Extension source may need type-level fixes on next rebuild (explicit `children` props, removed type aliases) - see the [React 18 section of the migration guide](./docs/MIGRATION.md#vortex-2x-react-18)
 - `IExtensionContext` registration surfaces and `IMainPage` now use `React.FC` instead of the removed `React.StatelessComponent` (source-compatible)
+- In the Mods page's beta view, a `registerTableAttribute("mods", …)` column that leaves `isDefaultVisible` unset starts hidden, and one that leaves `isToggleable` unset can be shown or hidden by the user, so `setAttributeVisible` no longer shows or hides it there. To keep the classic view's behaviour, set whichever flag you left unset: `isToggleable: false` on a column the classic view doesn't let the user hide, so it stays unhideable and `setAttributeVisible` shows or hides it, or `isDefaultVisible: true` on one they can, so it starts shown. `isDefaultVisible: true` alone on a column that leaves `isToggleable` unset starts it shown, but the user can still hide it and `setAttributeVisible` doesn't reach it. The classic view is unchanged
 
 ## [v2.0.0]
 

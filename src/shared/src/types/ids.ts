@@ -3,22 +3,55 @@ import { type Brand, type Brander, make, validateNonEmptyString } from "./brand"
 /** Numeric Nexus Mods game identifier.
  * @public
  * */
-export type GameId = Brand<number, "GameId">;
+export type NexusGameId = Brand<number, "NexusGameId">;
 
-/** Brands {@link GameId}
+/** Brands {@link NexusGameId}
  * @public
  * */
-export const GameId: Brander<GameId> = make<GameId>();
+export const NexusGameId: Brander<NexusGameId> = make<NexusGameId>();
 
 /** Nexus Mods game domain name.
  * @public
  * */
-export type GameDomain = Brand<string, "GameDomain">;
+export type NexusGameDomain = Brand<string, "NexusGameDomain">;
 
-/** Brands {@link GameDomain}
+/** Brands {@link NexusGameDomain}
  * @public
  * */
-export const GameDomain: Brander<GameDomain> = make<GameDomain>(validateNonEmptyString);
+export const NexusGameDomain: Brander<NexusGameDomain> =
+  make<NexusGameDomain>(validateNonEmptyString);
+
+/**
+ * The game's id in the Nexus Mods game catalogue (`game_uid`). Opaque: compare it, never parse it,
+ * and don't validate it as a UUID.
+ *
+ * @public */
+export type GameUid = Brand<string, "GameUid">;
+
+/**
+ * Brands a string as a {@link GameUid}.
+ *
+ * @throws {@link VortexError} with kind `argument-invalid` for an empty string.
+ *
+ * @public */
+export const GameUid: Brander<GameUid> = make<GameUid>(validateNonEmptyString);
+
+/**
+ * A {@link GameUid} as it was written, which the catalogue may since have retired. Declared uids
+ * (a manifest's `contributes`) parse into it, and it is the type of every uid Vortex stores: a
+ * stored uid is never rewritten, a query resolves it.
+ *
+ * @public */
+export type RecordedGameUid = Brand<string, "RecordedGameUid">;
+
+/**
+ * Brands a string as a {@link RecordedGameUid}.
+ *
+ * @throws {@link VortexError} with kind `argument-invalid` for an empty string.
+ *
+ * @public */
+export const RecordedGameUid: Brander<RecordedGameUid> =
+  make<RecordedGameUid>(validateNonEmptyString);
 
 /**
  * The id Vortex gives a game internally: the key of `session.gameMode.known`,
@@ -27,12 +60,12 @@ export const GameDomain: Brander<GameDomain> = make<GameDomain>(validateNonEmpty
  * extension's game id (e.g. "skyrimse"); for games managed without an
  * extension it is the nexus domain.
  *
- * This is neither {@link GameId} (the numeric Nexus Mods identifier, e.g.
- * 1303) nor necessarily {@link GameDomain} (the nexus domain name): the two
+ * This is neither {@link NexusGameId} (the numeric Nexus Mods identifier, e.g.
+ * 1303) nor necessarily {@link NexusGameDomain} (the nexus domain name): the two
  * often coincide as strings but are different concepts - "skyrimvr" is a
  * VortexGameId whose nexus domain is "skyrimspecialedition", and converting
- * between a VortexGameId and a GameDomain requires the game's details or the
- * games list (`nexusGameId`), while converting to a GameId requires the games
+ * between a VortexGameId and a NexusGameDomain requires the game's details or the
+ * games list (`nexusGameId`), while converting to a NexusGameId requires the games
  * list only.
  *
  * @public */

@@ -64,6 +64,13 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   label: string;
   /** Controls above the header row, in the sticky head: a page's tabs and actions. */
   toolbar?: ReactNode;
+  /**
+   * How far the toolbar reaches past the table's right edge, over a panel the page lays beside
+   * the table under it, so its controls end where the panel does. Unset, it ends with the table.
+   * It changes as fast as the app's transitions, so a panel sliding in at that speed keeps the
+   * toolbar's width the same throughout.
+   */
+  toolbarOverhang?: `${number}rem`;
   /** Along the bottom of the view, below the rows: a bar for the selected rows. */
   footer?: ReactNode;
   /** In place of the rows while there are none: what a search that matched nothing says. */
@@ -74,8 +81,14 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   onColumnWidthsChange?: (widths: { [columnId: string]: number | undefined }) => void;
   /** The sort to start with; unset, the rows keep the order they're given in. */
   defaultSort?: ITableSort;
+  /** The sort, when the page keeps it; the table then sorts by it and doesn't keep its own. */
+  sort?: ITableSort;
+  /** Takes the sort a header click asks for, when the page keeps it. */
+  onSortChange?: (sort: ITableSort) => void;
   /** Classes for the table's grid element. */
   className?: string;
+  /** Classes for an item's row, beside its own; unset or `undefined`, none. */
+  getRowClassName?: (row: T) => string | undefined;
   /** Lets rows be selected, each from a checkbox at its start, every row from the header's. */
   selectable?: boolean;
   /** A row's name, for its checkbox. */
@@ -84,6 +97,11 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   selectedIds?: ReadonlySet<string>;
   /** Takes the selection the user changes it to, with `selectedIds`. */
   onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  /**
+   * A double-click on a row, not on a control in it, to open what it shows. A selectable table
+   * selects just that row first, and its second click doesn't deselect it.
+   */
+  onRowDoubleClick?: (row: T) => void;
   /** A row's context menu, given the way to close it; unset, rows have none. */
   rowMenu?: (row: T, close: () => void) => ReactNode;
   /** A group heading's own actions, after the built-ins in its "…" and right-click menu. */
@@ -98,6 +116,11 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   focusRowId?: string;
   /** Told once `focusRowId`'s row is being scrolled to and selected, so it can be dropped. */
   onRowFocused?: () => void;
+  /**
+   * Told how far below the table's top its header row starts, in px, and again whenever the
+   * toolbar above it grows or shrinks: for something over or beside the table to line up with it.
+   */
+  onHeaderOffsetChange?: (offset: number) => void;
   /** Told when a context menu opens, on what, and whether from the pointer or keyboard. */
   onMenuOpen?: (target: TableMenuTarget, via: "pointer" | "keyboard") => void;
 } & (

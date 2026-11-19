@@ -11,23 +11,51 @@ install();
 
 import "@testing-library/jest-dom/vitest";
 import type { VortexPaths } from "@vortex/shared/ipc";
-import { beforeAll, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { ApplicationData } from "./src/applicationData.js";
+
+// A React update outside act() fails the test it happened in; "React warnings" in docs/testing.md
+// says how to fix one. console.error is assigned rather than spied on so vi.restoreAllMocks()
+// leaves it be, and the check runs after testing-library's cleanup (vitest.config.mts runs hooks
+// last-registered first), so an update that lands while a test is torn down still counts.
+let componentsUpdatedOutsideAct = new Set<string>();
+const originalConsoleError = console.error;
+console.error = (...args: unknown[]) => {
+  if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
+    // React passes the component's name after the message
+    componentsUpdatedOutsideAct.add(typeof args[1] === "string" ? args[1] : "a component");
+  }
+  originalConsoleError.apply(console, args);
+};
+const failOnActWarnings = () => {
+  const components = [...componentsUpdatedOutsideAct];
+  componentsUpdatedOutsideAct = new Set();
+  if (components.length > 0) {
+    throw new Error(
+      `React updated ${components.join(", ")} outside act(); see "React warnings" in docs/testing.md`,
+    );
+  }
+};
+afterEach(failOnActWarnings);
+afterAll(failOnActWarnings);
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is
 // already what the assertions read — this just makes it the stated behaviour instead of a
 // side effect, and drops the warning. A test that needs real translations mocks over this.
+const { t, i18n } = vi.hoisted(() => ({
+  t: (key: string) => key,
+  i18n: { language: "en" },
+}));
+
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   // react-i18next hands back an array that also carries the same values as properties, so
   // both `const { t } = useTranslation()` and `const [t] = useTranslation()` work. The repo
-  // uses both, so the stub keeps that shape.
-  useTranslation: () => {
-    const t = (key: string) => key;
-    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
-  },
+  // uses both, so the stub keeps that shape. The same `t` and `i18n` each time, as the app's
+  // are until the language changes, so a memo keyed on them holds across renders.
+  useTranslation: () => Object.assign([t, undefined, true], { t, i18n, ready: true }),
 }));
 
 // Every path keyed off a single absolute test root so getVortexPath-backed selectors

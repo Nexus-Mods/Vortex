@@ -1,5 +1,7 @@
 import React, { type HTMLAttributes, type MouseEvent, type ReactNode, useState } from "react";
 
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 import type { ITableColumn, ITableGroup } from "./Table.types";
 import { TableCell } from "./TableCell";
 import { type ITableCheckboxProps, TableCheckbox } from "./TableCheckbox";
@@ -7,10 +9,14 @@ import { TableRowEngagedContext } from "./TableRow.context";
 import type { ITableRowClick } from "./useTableSelection.hook";
 
 interface ITableRowProps<T, G extends ITableGroup<T>> {
+  /** Classes for the row, beside its own. */
+  className?: string;
   /** The table's columns, each rendering one of the row's cells. */
   columns: Array<ITableColumn<T, G>>;
   /** Its place among the table's rows, under the head. */
   index: number;
+  /** Its item's id, which its `data-testid` is made from. */
+  rowId: string;
   /** Its place among every row, the head's included, counting from 1. */
   rowIndex: number;
   /** The row's depth in a treegrid: 2 under a group. Unset in a flat grid. */
@@ -23,6 +29,8 @@ interface ITableRowProps<T, G extends ITableGroup<T>> {
   sortedColumnId?: string;
   /** A click on the row, not on a control in it, with the keys held. */
   onClick?: (click: ITableRowClick) => void;
+  /** A double-click on the row, not on a control in it; its second click isn't an `onClick`. */
+  onDoubleClick?: () => void;
   /** Opens the row's context menu, from a right-click or the keyboard's menu key. */
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
 }
@@ -38,6 +46,10 @@ const isRowClick = (event: MouseEvent<HTMLDivElement>) => {
   const target = event.target as Element;
   return event.currentTarget.contains(target) && target.closest(CONTROL) === null;
 };
+
+/** Whether Ctrl, Cmd or Shift is held, which makes a click change the selection, not open it. */
+const isModified = (event: MouseEvent<HTMLDivElement>) =>
+  event.ctrlKey || event.metaKey || event.shiftKey;
 
 /**
  * The row's element, which notes once it's pointed at or focused, and counts as engaged while
@@ -66,26 +78,33 @@ const EngagingRow = ({
  * it's been pointed at or focused, through `useTableRowEngaged`.
  */
 export const TableRow = <T, G extends ITableGroup<T>>({
+  className,
   columns,
   index,
   level,
   row,
+  rowId,
   rowIndex,
   checkbox,
   sortedColumnId,
   onClick,
+  onDoubleClick,
   onContextMenu,
 }: ITableRowProps<T, G>) => (
   <EngagingRow
     aria-level={level}
     aria-rowindex={rowIndex}
     aria-selected={checkbox?.checked}
-    className="nxm-table-row"
+    className={joinClasses(["nxm-table-row", className])}
     data-index={index}
+    data-testid={`table-row-${rowId}`}
     selected={!!checkbox?.checked}
     role="row"
     onClick={(event) => {
-      if (onClick !== undefined && isRowClick(event)) {
+      // A double-click's second click, which would deselect the row it's opening. A modified
+      // click never opens the row, so each one is its own toggle or range.
+      const isRepeat = onDoubleClick !== undefined && event.detail > 1 && !isModified(event);
+      if (onClick !== undefined && !isRepeat && isRowClick(event)) {
         onClick({ toggle: event.ctrlKey || event.metaKey, range: event.shiftKey });
       }
     }}
@@ -94,9 +113,18 @@ export const TableRow = <T, G extends ITableGroup<T>>({
         onContextMenu(event);
       }
     }}
-    // Shift and Ctrl would otherwise select the text between this click and the last.
+    onDoubleClick={(event) => {
+      if (onDoubleClick !== undefined && !isModified(event) && isRowClick(event)) {
+        onDoubleClick();
+      }
+    }}
+    // Shift and Ctrl would otherwise select the text between this click and the last, and a
+    // double-click the word under it.
     onMouseDown={(event) => {
-      if (onClick !== undefined && (event.shiftKey || event.ctrlKey) && isRowClick(event)) {
+      const selectsText =
+        (onClick !== undefined && (event.shiftKey || event.ctrlKey)) ||
+        (onDoubleClick !== undefined && event.detail > 1);
+      if (selectsText && isRowClick(event)) {
         event.preventDefault();
       }
     }}

@@ -23,8 +23,8 @@ import type {
 import type Nexus from "@nexusmods/nexus-api";
 import { GraphError, NexusError, TimeoutError } from "@nexusmods/nexus-api";
 import {
-  GameDomain,
-  GameId,
+  NexusGameDomain,
+  NexusGameId,
   getErrorCode,
   getErrorMessage,
   getErrorMessageOrDefault,
@@ -1163,6 +1163,21 @@ const IGNORE_ERRORS = [
   "ESOCKETTIMEDOUT",
 ];
 
+/**
+ * Puts back a mod's endorsement from before a request that failed, unless something has written
+ * over its pending step since, such as a refresh with Nexus's answer.
+ */
+function restoreEndorsement(
+  api: IExtensionApi,
+  gameMode: string,
+  modId: string,
+  endorsedStatus: string,
+) {
+  if (api.getState().persistent.mods[gameMode]?.[modId]?.attributes?.endorsed === "pending") {
+    api.store.dispatch(setModAttribute(gameMode, modId, "endorsed", endorsedStatus));
+  }
+}
+
 function reportEndorseError(
   api: IExtensionApi,
   err: Error,
@@ -1283,7 +1298,7 @@ function endorseCollectionImpl(
     return;
   }
 
-  store.dispatch(setModAttribute(gameId, mod.id, "endorsed", "pending"));
+  store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "pending"));
   const game = gameById(api.store.getState(), gameId);
   endorseCollection(nexus, nexusGameId(game), nexusCollectionId, endorsedStatus)
     .then((result: { success: boolean; endorsement: { status: string } }) => {
@@ -1297,7 +1312,7 @@ function endorseCollectionImpl(
       );
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "Undecided"));
+      restoreEndorsement(api, gameMode, mod.id, endorsedStatus);
       reportEndorseError(api, err, "collection", gameId, nexusCollectionId);
     });
 }
@@ -1335,14 +1350,14 @@ function endorseModImpl(
     return;
   }
 
-  store.dispatch(setModAttribute(gameId, mod.id, "endorsed", "pending"));
+  store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "pending"));
   const game = gameById(api.store.getState(), gameId);
   endorseMod(nexus, nexusGameId(game), nexusModId, version, endorsedStatus)
     .then((endorsed: string) => {
       store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", endorsed));
     })
     .catch((err: Error | NexusError) => {
-      store.dispatch(setModAttribute(gameMode, mod.id, "endorsed", "Undecided"));
+      restoreEndorsement(api, gameMode, mod.id, endorsedStatus);
       reportEndorseError(api, err, "mod", gameId, nexusModId, version);
     });
 }
@@ -2185,14 +2200,14 @@ export function nexusGamesProm(): BluebirdPromise<IGameListEntry[]> {
   return cachePromise.then(() => nexusGamesCache);
 }
 
-export function numericGameIdToDomainName(gameId: GameId): GameDomain | undefined {
+export function numericGameIdToDomainName(gameId: NexusGameId): NexusGameDomain | undefined {
   const domain = nexusGamesCache.find((g) => g.id === gameId)?.domain_name;
   if (domain === undefined) return undefined;
-  return GameDomain(domain);
+  return NexusGameDomain(domain);
 }
 
-export function domainToNumericGameId(domain: GameDomain): GameId | undefined {
+export function domainToNumericGameId(domain: NexusGameDomain): NexusGameId | undefined {
   const lowered = domain.toLowerCase();
   const id = nexusGamesCache.find((g) => g.domain_name.toLowerCase() === lowered)?.id;
-  return id === undefined ? undefined : GameId(id);
+  return id === undefined ? undefined : NexusGameId(id);
 }

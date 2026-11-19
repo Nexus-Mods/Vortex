@@ -1,4 +1,4 @@
-import type { GameId } from "@vortex/shared";
+import type { NexusGameId } from "@vortex/shared";
 
 import type { MixpanelEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
 import type { IExtensionApi } from "@/types/IExtensionContext";
@@ -88,7 +88,7 @@ export const createGamesPageTracker = (api: IExtensionApi) => {
       layout: TileLayout;
       placement: TileActionPlacement;
       action: string;
-      game_id: GameId | null;
+      game_id: NexusGameId | null;
       game_store: string | null;
     }) => track("app_game_tile_action_clicked", props),
   };

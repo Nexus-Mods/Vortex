@@ -46,7 +46,7 @@ import {
   type IBrowseModsView,
   type IBrowseModsViewsState,
 } from "../../reducers/mods_views/modsViews";
-import { type IBrowseSessionState, sessionReducer } from "../../reducers/session";
+import { type IBrowseSessionState, sessionReducer } from "../../reducers/session/session";
 import { MODS_PER_PAGE, useModSearch } from "./useModSearch.hook";
 
 /** The time the tests start at, which the first time range counts back from. */
@@ -184,6 +184,7 @@ describe("useModSearch", () => {
       filters: {
         games: ["skyrimspecialedition"],
         supports_mod_managers: true,
+        exclude_requirements: ["mod", "external"],
         created_at: { gte: daysBack(7) },
       },
       sort: { field: "endorsements", direction: "desc" },
@@ -202,6 +203,16 @@ describe("useModSearch", () => {
 
     for (const request of mocks.pending) {
       expect(request.search.filters.supports_mod_managers).toBe(true);
+    }
+  });
+
+  it("asks to leave out mods that require another mod or something external, for the list and its total", async () => {
+    render();
+    await waitFor(() => expect(mocks.pending).toHaveLength(2));
+
+    for (const request of mocks.pending) {
+      expect(request.search.filters.requirements).toBeUndefined();
+      expect(request.search.filters.exclude_requirements).toEqual(["mod", "external"]);
     }
   });
 
@@ -426,7 +437,7 @@ describe("useModSearch", () => {
     await respond("downloads", 12);
     vi.setSystemTime(NOW + 5 * MINUTE_MS);
 
-    act(() => result.current.selectView("popular"));
+    act(() => result.current.selectView("trending"));
 
     await waitFor(() => expect(mocks.pending).toHaveLength(1));
     expect(mocks.pending[0].search.filters).toMatchObject({
@@ -785,6 +796,7 @@ describe("useModSearch's views", () => {
         filters: {
           games: ["skyrimspecialedition"],
           supports_mod_managers: true,
+          exclude_requirements: ["mod", "external"],
           created_at: { gte: daysBack(28) },
         },
         sort: { field: "downloads", direction: "desc" },

@@ -1,12 +1,13 @@
 import React, { type RefObject, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { EditedViewStrip } from "@/ui/components/edited_view_strip/EditedViewStrip";
 import type { IToolbarPanelHandle } from "@/ui/components/toolbar/ToolbarPanelButton";
 import { DeleteViewModal } from "@/ui/components/view_picker/delete_view_modal/DeleteViewModal";
 import { ViewNameModal } from "@/ui/components/view_picker/view_name_modal/ViewNameModal";
 import { type IViewPickerView, ViewPicker } from "@/ui/components/view_picker/ViewPicker";
+import { PageContent } from "@/views/components/Page/PageContent";
 
-import { EditedViewStrip } from "../../components/browse_mods/edited_view_strip/EditedViewStrip";
 import type { IBrowseModsView } from "../../reducers/mods_views/modsViews";
 import { isPreset, type ModPreset, trackedViewOf } from "../../util/mod_views/modViews";
 import { useBrowseModsTracker } from "../browse_mods_tracking/BrowseModsTracking.context";
@@ -153,14 +154,20 @@ export const useBrowseModsViews = (search: IModSearch, panelRefs: IBrowseModsPan
   );
 
   const editedViewStrip = search.isEdited && isPreset(view) && (
-    <EditedViewStrip
-      viewLabel={presetLabels[view]}
-      onReset={() => {
-        search.resetView();
-        tracker.trackViewReset({ view });
-      }}
-      onSave={() => setNaming({ kind: "new", source: "edited_strip" })}
-    />
+    <div className="border-b border-stroke-weak bg-surface-mid pr-scrollbar">
+      <PageContent isFullWidth className="px-6 py-3">
+        <EditedViewStrip
+          resetHint={t("Discards your changes and returns this view to its defaults.")}
+          saveHint={t("Saves your current filters and sorting as a view you can return to.")}
+          viewLabel={presetLabels[view]}
+          onReset={() => {
+            search.resetView();
+            tracker.trackViewReset({ view });
+          }}
+          onSave={() => setNaming({ kind: "new", source: "edited_strip" })}
+        />
+      </PageContent>
+    </div>
   );
 
   return { viewPicker, editedViewStrip };

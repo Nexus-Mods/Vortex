@@ -8,7 +8,10 @@ import {
   selectModsTableView,
   setModsTableViewColumn,
   setModsTableViewColumnWidths,
+  resetModsTableViewFilters,
+  setModsTableViewFilters,
   setModsTableViewGrouping,
+  setModsTableViewSort,
 } from "../actions/modsTableViews";
 import { type IModsTableViewsState, modsTableViewsReducer } from "./modsTableViews";
 
@@ -33,10 +36,17 @@ describe("modsTableViewsReducer", () => {
     });
   });
 
+  it("keeps a view's sort to it", () => {
+    const sort = { columnId: "version", direction: "descending" } as const;
+    const state = reduce(EMPTY, setModsTableViewSort("all", sort));
+
+    expect(state.changes).toEqual({ all: { sort } });
+  });
+
   it("forgets what changed about a view on reset, and only that view", () => {
     let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
     state = reduce(state, setModsTableViewGrouping("status", "category"));
-    state = reduce(state, resetModsTableView("all"));
+    state = reduce(state, resetModsTableView("all", []));
 
     expect(state.changes).toEqual({ status: { grouping: "category" } });
   });
@@ -52,17 +62,28 @@ describe("modsTableViewsReducer", () => {
     });
   });
 
-  it("keeps a view's widths on reset, forgetting the rest", () => {
+  it("keeps a view's sort and widths on reset, forgetting the rest", () => {
+    const sort = { columnId: "version", direction: "descending" } as const;
     let state = reduce(EMPTY, setModsTableViewGrouping("all", "author"));
+    state = reduce(state, setModsTableViewSort("all", sort));
+    state = reduce(state, setModsTableViewColumn("all", "author", true));
     state = reduce(state, setModsTableViewColumnWidths("all", { author: 240 }));
-    state = reduce(state, resetModsTableView("all"));
+    state = reduce(state, resetModsTableView("all", ["author"]));
 
-    expect(state.changes).toEqual({ all: { widths: { author: 240 } } });
+    expect(state.changes).toEqual({ all: { sort, widths: { author: 240 } } });
+  });
+
+  it("forgets only the given columns' choices on reset, keeping those of columns not offered", () => {
+    let state = reduce(EMPTY, setModsTableViewColumn("all", "author", true));
+    state = reduce(state, setModsTableViewColumn("all", "dependencies", true));
+    state = reduce(state, resetModsTableView("all", ["name", "author"]));
+
+    expect(state.changes).toEqual({ all: { columns: { dependencies: true } } });
   });
 
   it("adds a view of the user's own, after any others, and opens it", () => {
-    let state = reduce(EMPTY, addModsTableView("custom-1", "First"));
-    state = reduce(state, addModsTableView("custom-2", "Second"));
+    let state = reduce(EMPTY, addModsTableView("custom-1", "First", {}));
+    state = reduce(state, addModsTableView("custom-2", "Second", {}));
 
     expect(state.custom).toEqual([
       { id: "custom-1", name: "First" },
@@ -71,9 +92,21 @@ describe("modsTableViewsReducer", () => {
     expect(state.selected).toBe("custom-2");
   });
 
+  it("starts a view of the user's own with the changes it's made from", () => {
+    const changes = {
+      grouping: "author",
+      columns: { version: false },
+      sort: { columnId: "version", direction: "descending" } as const,
+      widths: { name: 300 },
+    };
+    const state = reduce(EMPTY, addModsTableView("custom-1", "First", changes));
+
+    expect(state.changes).toEqual({ "custom-1": changes });
+  });
+
   it("renames a view of the user's own", () => {
     const state = reduce(
-      reduce(EMPTY, addModsTableView("custom-1", "First")),
+      reduce(EMPTY, addModsTableView("custom-1", "First", {})),
       renameModsTableView("custom-1", "Renamed"),
     );
 
@@ -81,7 +114,7 @@ describe("modsTableViewsReducer", () => {
   });
 
   it("deletes a view of the user's own with its changes, back to the first view if it was open", () => {
-    let state = reduce(EMPTY, addModsTableView("custom-1", "First"));
+    let state = reduce(EMPTY, addModsTableView("custom-1", "First", {}));
     state = reduce(state, setModsTableViewGrouping("custom-1", "author"));
     state = reduce(state, removeModsTableView("custom-1"));
 

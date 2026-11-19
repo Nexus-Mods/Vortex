@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 
 import type { ModImage } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import { Button } from "@/ui/components/button/Button";
+import { CompareSlider } from "@/ui/components/compare_slider/CompareSlider";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
+import { Pill } from "@/ui/components/pill/Pill";
 import { joinClasses } from "@/ui/utils/joinClasses";
 
 import type {
@@ -11,8 +13,11 @@ import type {
   SelectionInput,
 } from "../../../../hooks/browse_mods_tracking/browseModsTracker";
 
-/** One picture in a mod's gallery, as the API sends it, with its title where it has one. */
-export type IGalleryImage = ModImage & { title?: string };
+/**
+ * One picture in a mod's gallery, as the API sends it, with its title where it has one, and the
+ * picture before the mod where it's the after picture of a before/after comparison.
+ */
+export type IGalleryImage = ModImage & { title?: string; before?: ModImage };
 
 /** How many thumbnails the strip fits; fewer pictures are made up with placeholders. */
 const STRIP_LENGTH = 5;
@@ -42,9 +47,10 @@ interface IModGalleryProps {
  * strip, picks it. The strip always holds at least five slots, each a placeholder until its
  * thumbnail fades in over it, one after another; the empty ones pulse while more pictures load.
  * For a user who blurs adult content, an adult mod's pictures are the server's blurred ones,
- * through `AdultAwareImage`, so the unblurred ones are never fetched. The large picture is never a
- * scroll anchor: a new one sits higher or lower in its 16:9 frame, and the browser would scroll
- * the details to follow it.
+ * through `AdultAwareImage`, so the unblurred ones are never fetched. A before/after comparison,
+ * under its after picture's thumbnail, shows large as a {@link CompareSlider}. The large picture
+ * is never a scroll anchor: a new one sits higher or lower in its 16:9 frame, and the browser
+ * would scroll the details to follow it.
  */
 export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModGalleryProps) => {
   const { t } = useTranslation();
@@ -116,7 +122,15 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
 
   return (
     <div className="flex flex-col gap-y-2">
-      {shown ? (
+      {shown?.before && !isLoading ? (
+        <CompareSlider
+          after={{ src: shown.url, blurredSrc: shown.blurred_large_thumbnail_url }}
+          before={{ src: shown.before.url, blurredSrc: shown.before.blurred_large_thumbnail_url }}
+          isAdult={isAdult}
+          key={shown.url}
+          title={shown.title}
+        />
+      ) : shown ? (
         <AdultAwareImage
           alt={shown.title ?? ""}
           blurredSrc={isLoading ? undefined : shown.blurred_large_thumbnail_url}
@@ -154,7 +168,7 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
                 className={joinClasses(
                   [
                     THUMBNAIL_WIDTH,
-                    "aspect-mod shrink-0 snap-start rounded-xs bg-surface-translucent-mid",
+                    "relative aspect-mod shrink-0 snap-start rounded-xs bg-surface-translucent-mid",
                   ],
                   { "animate-pulse": isLoading && !image },
                 )}
@@ -163,10 +177,12 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
               >
                 {!!image && (
                   <button
-                    aria-label={t("Image {{index}} of {{count}}", {
-                      index: index + 1,
-                      count: images.length,
-                    })}
+                    aria-label={t(
+                      image.before
+                        ? "Image {{index}} of {{count}}, a before and after comparison"
+                        : "Image {{index}} of {{count}}",
+                      { index: index + 1, count: images.length },
+                    )}
                     aria-pressed={index === picked}
                     className="block w-full animate-fade-in rounded-xs"
                     ref={(element) => (thumbnailsRef.current[index] = element)}
@@ -188,6 +204,17 @@ export const ModGallery = ({ images, isAdult, isLoading, onPick, onPage }: IModG
                       src={image.thumbnail_url}
                     />
                   </button>
+                )}
+
+                {!!image?.before && (
+                  <Pill
+                    appearance="scrim"
+                    aria-hidden
+                    className="pointer-events-none absolute top-1 left-1"
+                    data-testid="mod-gallery-compare-pill"
+                  >
+                    {t("Compare")}
+                  </Pill>
                 )}
               </div>
             );

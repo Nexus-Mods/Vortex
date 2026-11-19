@@ -1,4 +1,4 @@
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 
 import { getGame } from "../../gamemode_management/util/getGame";
 import { nexusGames } from "../../nexus_integration/util";
@@ -8,11 +8,11 @@ import { nexusGameId } from "../../nexus_integration/util/convertGameId";
  * Numeric Nexus game id for an internal game id, so every analytics event carries game_id in the
  * same form. null when the game isn't a Nexus game or the games cache hasn't loaded.
  */
-export function numericNexusGameId(internalGameId: string): GameId | null {
+export function numericNexusGameId(internalGameId: string): NexusGameId | null {
   // TODO: change internalGameId from string to branded VortexGameId type
   const domain = nexusGameId(getGame(internalGameId), internalGameId);
   const result = nexusGames().find((game) => game.domain_name === domain)?.id ?? null;
 
   if (result === null) return null;
-  return GameId(result);
+  return NexusGameId(result);
 }

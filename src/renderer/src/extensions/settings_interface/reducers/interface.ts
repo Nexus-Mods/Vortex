@@ -27,6 +27,8 @@ const settingsReducer: IReducerSpec = {
       update(state, { foregroundDL: { $set: payload } }),
     [actions.setAlwaysCompactHeaders as any]: (state, payload) =>
       update(state, { alwaysCompactHeaders: { $set: payload } }),
+    [actions.setShowGameArt as any]: (state, payload) =>
+      update(state, { showGameArt: { $set: payload } }),
     // Deliberately absent from the defaults below: unset means "follow the OS".
     [actions.setReduceMotion as any]: (state, payload) =>
       update(state, { reduceMotion: { $set: payload } }),
@@ -40,6 +42,7 @@ const settingsReducer: IReducerSpec = {
     relativeTimes: true,
     foregroundDL: true,
     alwaysCompactHeaders: false,
+    showGameArt: true,
     usage: {},
   },
 };

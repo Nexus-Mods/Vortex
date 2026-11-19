@@ -1,13 +1,19 @@
 import { actionsToReducerSpec } from "@/reducers/builder";
+import type { ITableSort } from "@/ui/components/table/Table.types";
 
 import * as actions from "../actions/modsTableViews";
+import type { IModsTableFilters } from "../util/mods_table_filters/modsTableFilters";
 
 /** What a user changed about a view, over its defaults; unset, it's as its defaults have it. */
 export interface IModsTableViewChanges {
+  /** The column the mods are sorted by, and which way. */
+  sort?: ITableSort;
   /** A column's id, or "none". */
   grouping?: string;
   /** Whether each column the user toggled shows, by id. */
   columns?: { [columnId: string]: boolean };
+  /** The filters the user set; unset ones are as the view's defaults have them. */
+  filters?: Partial<IModsTableFilters>;
   /** The width in px of each column the user resized, by id; a reset keeps them. */
   widths?: { [columnId: string]: number };
 }
@@ -52,6 +58,22 @@ export const modsTableViewsReducer = actionsToReducerSpec(defaultState, actions,
   selectModsTableView: (state, viewId) => ({ ...state, selected: viewId }),
   setModsTableViewGrouping: (state, { viewId, grouping }) =>
     withChanges(state, viewId, (changes) => ({ ...changes, grouping })),
+  setModsTableViewSort: (state, { viewId, sort }) =>
+    withChanges(state, viewId, (changes) => ({ ...changes, sort })),
+  setModsTableViewFilters: (state, { viewId, filters }) =>
+    withChanges(state, viewId, (changes) => ({
+      ...changes,
+      filters: { ...changes.filters, ...filters },
+    })),
+  resetModsTableViewFilters: (state, { viewId, keys }) =>
+    withChanges(state, viewId, ({ filters, ...changes }) => {
+      const kept = Object.fromEntries(
+        Object.entries(filters ?? {}).filter(
+          ([key]) => !!keys && !keys.includes(key as keyof IModsTableFilters),
+        ),
+      );
+      return Object.keys(kept).length ? { ...changes, filters: kept } : changes;
+    }),
   setModsTableViewColumn: (state, { viewId, columnId, visible }) =>
     withChanges(state, viewId, (changes) => ({
       ...changes,
@@ -69,17 +91,23 @@ export const modsTableViewsReducer = actionsToReducerSpec(defaultState, actions,
       }
       return { ...changes, widths: next };
     }),
-  resetModsTableView: (state, viewId) => {
+  resetModsTableView: (state, { viewId, columnIds }) => {
     const { [viewId]: reset, ...changes } = state.changes;
-    const widths = reset?.widths;
-    if (!widths || !Object.keys(widths).length) {
-      return { ...state, changes };
-    }
-    return { ...state, changes: { ...changes, [viewId]: { widths } } };
+    const { grouping: _grouping, columns, ...kept }: IModsTableViewChanges = reset ?? {};
+    const otherColumns = Object.entries(columns ?? {}).filter(
+      ([columnId]) => !columnIds.includes(columnId),
+    );
+    const next: IModsTableViewChanges = otherColumns.length
+      ? { ...kept, columns: Object.fromEntries(otherColumns) }
+      : kept;
+    return Object.keys(next).length
+      ? { ...state, changes: { ...changes, [viewId]: next } }
+      : { ...state, changes };
   },
-  addModsTableView: (state, { viewId, name }) => ({
+  addModsTableView: (state, { viewId, name, changes }) => ({
     ...state,
     selected: viewId,
+    changes: { ...state.changes, [viewId]: changes },
     custom: [...state.custom, { id: viewId, name }],
   }),
   renameModsTableView: (state, { viewId, name }) => ({

@@ -64,8 +64,8 @@ while you are in an old reducer, converting the helpers in the parts you touch
 
 ## Looking up games and converting game IDs
 
-A game has three IDs that are different things: `VortexGameId`, `GameDomain` and
-`GameId` (`src/shared/src/types/ids.ts`). Look a game up and convert between them with
+A game has three IDs that are different things: `VortexGameId`, `NexusGameDomain` and
+`NexusGameId` (`src/shared/src/types/ids.ts`). Look a game up and convert between them with
 `findGame` and `convertId` from
 `src/renderer/src/extensions/gamemode_management/queries.ts`, on the data `gameData(state)`
 builds:
@@ -84,12 +84,12 @@ catalog fills the extension's, including for extensions installed before it exis
 `GameModeManager` copies it to the game when it stores the game, and again when the
 catalog or the Nexus Mods games list arrives late. The queries read `nexus`; a game without
 one (a bundled game that declares no `details.nexusPageId`, an extension with no Nexus Mods
-link) has no domain or `GameId`.
+link) has no domain or `NexusGameId`.
 
 Do:
 
 - Treat `undefined` as "not found". There is no fallback.
-- Read a game's domain or `GameId` with `convertId`, not from `details.nexusPageId`.
+- Read a game's domain or `NexusGameId` with `convertId`, not from `details.nexusPageId`.
 - Pass `discovered` when games can share a domain (Skyrim SE and VR), so the installed
   one is preferred.
 - Add a missing join to `queries.ts`.
@@ -98,10 +98,26 @@ Don't:
 
 - Cast between the IDs, or treat a game's ID as its domain. A guess looks like a real
   answer and is wrong for every game whose ID differs from its domain. Tier 0 games are
-  registered as `tier-0-{GameId}` so theirs never happens to match.
+  registered as `tier-0-{NexusGameId}` so theirs never happens to match.
 - Write your own `known.find(...)` over the games list.
 - Add callers of `nexusGameId`, `convertGameIdReverse` or `convertNXMIdReverse`. They
   predate this and still guess in places.
+
+## Stored game uids
+
+The catalogue retires a `GameUid` when it merges two entries, so a uid Vortex stored may no
+longer match the uids the backend sends. Every persisted uid is a `RecordedGameUid`, and a
+stored uid is never rewritten. Each retirement is appended to `persistent.gameMode.gameUidHistory`
+(`appendGameUidRetirements`, the only write; nothing edits or removes an entry, a wrong mapping is
+fixed by appending a correction). Resolve a stored uid with the queries in `queries.ts`:
+
+```ts
+const current = currentGameUid(gameData(state), recorded); // GameUid
+const chain = gameUidChain(gameData(state), recorded); // oldest first, for logs
+```
+
+A uid without an entry is its own current uid, and the newest entry for a retired uid wins. Don't
+compare a `RecordedGameUid` with a `GameUid` yourself: it is a type error on purpose.
 
 ## Default game launcher
 
@@ -131,6 +147,6 @@ when no selected tool has an executable. Selecting a launcher does not launch it
 | `src/renderer/src/reducers/verify.ts`                         | Verifier evaluation                                  |
 | `src/renderer/src/store/persistDiffMiddleware.ts`             | Which hives persist, and the diff written to LevelDB |
 | `src/renderer/src/util/storeHelper.ts`                        | The deprecated path helpers                          |
-| `src/renderer/src/extensions/gamemode_management/queries.ts`  | `findGame`, `convertId`                              |
+| `src/renderer/src/extensions/gamemode_management/queries.ts`  | `findGame`, `convertId`, `currentGameUid`            |
 | `src/renderer/src/extensions/gamemode_management/gameData.ts` | `gameData(state)`                                    |
 | `src/renderer/src/types/IExtensionContext.ts`                 | `IReducerSpec`, `IStateVerifier`, `registerReducer`  |

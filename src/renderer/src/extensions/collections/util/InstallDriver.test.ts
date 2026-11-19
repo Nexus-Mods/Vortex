@@ -25,12 +25,15 @@ import {
   makeRule,
 } from "../../../test-utils/builders";
 import { test as driverTest } from "../../../test-utils/driverTest";
-import type { IDriverHarness } from "../../../test-utils/harnessTypes";
+import type { IDriverHarness, IDriverHarnessState } from "../../../test-utils/harnessTypes";
 import type { CollectionModStatus } from "../../../types/collections/ICollectionInstallSession";
 import { modRuleId } from "../../../util/collectionInstallSession";
+import type * as ErrorHandling from "../../../util/errorHandling";
+import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import type { IDownload } from "../../download_management/types/IDownload";
 import { setPendingPluginSort } from "../../mod_management/actions/transactions";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
+import { selectedOptionalRules } from "../../mod_management/util/dependencies";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { MOD_TYPE } from "../constants";
 import { applyPatches } from "./binaryPatching";
@@ -40,6 +43,14 @@ import { deterministicReferenceTag } from "./deterministicReferenceTag";
 // at that boundary lets the member install-spec path run without touching disk while we still
 // assert it is invoked with the rule's patch info.
 vi.mock("./binaryPatching", () => ({ applyPatches: vi.fn() }));
+
+// The error context is process-wide state read by every error span. Spying on its two writers
+// shows what the driver asks for without leaking a collection into other tests.
+vi.mock("../../../util/errorHandling", async (importOriginal) => ({
+  ...(await importOriginal<typeof ErrorHandling>()),
+  setErrorContext: vi.fn(),
+  clearErrorContext: vi.fn(),
+}));
 
 const GAME_ID = "skyrimse";
 
@@ -212,15 +223,169 @@ describe("InstallDriver optional default-skip", () => {
     expect(rules.find((r) => r.reference.tag === "req-a")?.ignored).toBeUndefined();
   });
 
-  test("does not re-default an optional the user already selected (ignored:false)", async ({
+  // the 1000+ rule updates run through the real reducer, which is slow on a loaded CI runner
+  test(
+    "stores the optional skips on a collection too large for one dispatch",
+    { timeout: 30_000 },
+    async ({ makeDriver }) => {
+      // over 1000 members, the file name updates are dispatched later, in chunks
+      const nexusRepo = (id: number) => ({
+        repository: "nexus",
+        gameId: "skyrimspecialedition",
+        modId: String(id),
+        fileId: String(id),
+      });
+      const requiredRules = Array.from({ length: 1000 }, (_, index) =>
+        makeRule({
+          type: "requires",
+          reference: makeReference({ tag: `req-${index}`, repo: nexusRepo(index) }),
+        }),
+      );
+      const undecidedOpt = makeRule({
+        type: "recommends",
+        reference: makeReference({ tag: "opt-undecided", repo: nexusRepo(1000) }),
+      });
+      const leftoverOpt = makeRule({
+        type: "recommends",
+        reference: makeReference({ tag: "opt-leftover", repo: nexusRepo(1001) }),
+        ignored: false,
+      });
+      const memberRules = [...requiredRules, undecidedOpt, leftoverOpt];
+      const fixture = buildCollectionFixture("col-large", memberRules);
+      const modFiles = memberRules.map((rule) => ({
+        file: {
+          modId: Number(rule.reference.repo?.modId),
+          fileId: Number(rule.reference.repo?.fileId),
+          uri: `${rule.reference.tag}.7z`,
+        },
+      }));
+      const download = makeDownload({
+        ...fixture.download,
+        modInfo: {
+          ...fixture.download.modInfo,
+          nexus: {
+            ...fixture.download.modInfo.nexus,
+            revisionInfo: { modFiles, gameVersions: [] },
+          },
+        },
+      });
+      const h = makeDriver({
+        mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
+        downloads: { [download.id]: download },
+        profiles: { [profile.id]: profile },
+      });
+      await startWith(h, fixture);
+
+      const liveRule = (tag: string) =>
+        h
+          .getState()
+          .persistent.mods[GAME_ID]["col-large"].rules?.find((r) => r.reference.tag === tag);
+      await vi.waitFor(() =>
+        expect(liveRule("opt-leftover")?.extra?.fileName).toBe("opt-leftover.7z"),
+      );
+      expect(liveRule("opt-undecided")?.ignored).toBe(true);
+      expect(liveRule("opt-leftover")?.ignored).toBe(true);
+    },
+  );
+
+  // the selection is the durable ignored:false left on the collection mod by an earlier "install
+  // optional mods" - the flag is shared by every profile and outlives that install
+  const selectedOpt = makeRule({
+    type: "recommends",
+    reference: makeReference({ tag: "opt-sel" }),
+    ignored: false,
+  });
+
+  const startSelected = async (
+    makeDriver: (state: Partial<IDriverHarnessState>) => IDriverHarness,
+    collectionAttributes: Record<string, unknown> = {},
+    extraMods: Record<string, IMod> = {},
+  ) => {
+    const fixture = buildCollectionFixture("col-sel", [reqRule, selectedOpt]);
+    const collection = {
+      ...fixture.collection,
+      attributes: { ...fixture.collection.attributes, ...collectionAttributes },
+    };
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [collection.id]: collection, ...extraMods } },
+      downloads: { [fixture.download.id]: fixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    await startWith(h, { ...fixture, collection });
+    const rules = h.getState().persistent.mods[GAME_ID]["col-sel"].rules ?? [];
+    const session = h.getState().session.collections.activeSession;
+    return {
+      ignored: rules.find((r) => r.reference.tag === "opt-sel")?.ignored,
+      status: session?.mods[modRuleId(selectedOpt)].status,
+    };
+  };
+
+  test("resets a selection left over from an earlier install on a fresh install", async ({
     makeDriver,
   }) => {
-    const selectedOpt = makeRule({
+    // otherwise the old "yes" installs the optional before the prompt, and a "no" can't undo it
+    const { ignored, status } = await startSelected(makeDriver);
+
+    expect(ignored).toBe(true);
+    expect(status).toBe("ignored");
+  });
+
+  test("keeps this install's selection when resuming it", async ({ makeDriver }) => {
+    // installStartedAt is the durable marker of a started but unfinished install
+    const { ignored, status } = await startSelected(makeDriver, { installStartedAt: 1 });
+
+    expect(ignored).toBe(false);
+    expect(status).not.toBe("ignored");
+  });
+
+  test("keeps the selection of an optional that is already installed", async ({ makeDriver }) => {
+    const installedOpt = makeMod({ id: "installed-opt", attributes: { referenceTag: "opt-sel" } });
+    const { ignored, status } = await startSelected(
+      makeDriver,
+      {},
+      { [installedOpt.id]: installedOpt },
+    );
+
+    expect(ignored).toBe(false);
+    expect(status).toBe("installed");
+  });
+
+  // Gate to Sovngarde (revisions 109-118) carries two optionals from different mods whose Nexus
+  // logical file name is the generic "Main File". The default-skip matches loosely (tag OR md5 OR
+  // logicalFileName, first member wins), so skipping the second one settles the first instead and
+  // leaves the second undecided - which every consumer reads as selected, so it installs unprompted.
+  test("defaults every optional to skipped when two share a logical file name", async ({
+    makeDriver,
+  }) => {
+    const brumaGoblins = makeRule({
       type: "recommends",
-      reference: makeReference({ tag: "opt-sel" }),
-      ignored: false,
+      reference: makeReference({
+        tag: "tZaXA5v7ds",
+        fileMD5: "f38b54b2a455aff8b6fa5203d795b22c",
+        logicalFileName: "Main File",
+        repo: {
+          repository: "nexus",
+          gameId: "skyrimspecialedition",
+          modId: "50840",
+          fileId: "207903",
+        },
+      }),
     });
-    const fixture = buildCollectionFixture("col-sel", [reqRule, selectedOpt]);
+    const ayleidArmor = makeRule({
+      type: "recommends",
+      reference: makeReference({
+        tag: "fp7Clvl73Vg",
+        fileMD5: "36f9eb72cc6cc6ab66475ea0858d6744",
+        logicalFileName: "Main File",
+        repo: {
+          repository: "nexus",
+          gameId: "skyrimspecialedition",
+          modId: "109330",
+          fileId: "461599",
+        },
+      }),
+    });
+    const fixture = buildCollectionFixture("col-gts", [reqRule, brumaGoblins, ayleidArmor]);
     const h = makeDriver({
       mods: { [GAME_ID]: { [fixture.collection.id]: fixture.collection } },
       downloads: { [fixture.download.id]: fixture.download },
@@ -228,11 +393,14 @@ describe("InstallDriver optional default-skip", () => {
     });
     await startWith(h, fixture);
 
-    // a defined ignored wins: the prior selection is preserved, not reset to skipped
-    const rules = h.getState().persistent.mods[GAME_ID]["col-sel"].rules ?? [];
-    expect(rules.find((r) => r.reference.tag === "opt-sel")?.ignored).toBe(false);
     const session = h.getState().session.collections.activeSession;
-    expect(session?.mods[modRuleId(selectedOpt)].status).not.toBe("ignored");
+    expect(session?.mods[modRuleId(brumaGoblins)].status).toBe("ignored");
+    expect(session?.mods[modRuleId(ayleidArmor)].status).toBe("ignored");
+    const rules = h.getState().persistent.mods[GAME_ID]["col-gts"].rules ?? [];
+    expect(rules.find((r) => r.reference.tag === "tZaXA5v7ds")?.ignored).toBe(true);
+    expect(rules.find((r) => r.reference.tag === "fp7Clvl73Vg")?.ignored).toBe(true);
+    // what driveSelectedOptionals would download and install without asking
+    expect(selectedOptionalRules(rules, {})).toEqual([]);
   });
 });
 
@@ -546,6 +714,56 @@ describe("InstallDriver health-check suppression", () => {
   });
 });
 
+describe("InstallDriver error context", () => {
+  // a collection from the site: its slug and revision are on the download, with the collection and
+  // revision info cached so start() fetches nothing
+  const siteDownload = makeDownload({
+    ...defaultFixture.download,
+    modInfo: {
+      ...defaultFixture.download.modInfo,
+      nexus: {
+        ...defaultFixture.download.modInfo.nexus,
+        ids: {
+          ...defaultFixture.download.modInfo.nexus.ids,
+          collectionSlug: "abc123",
+          revisionNumber: 7,
+        },
+        collectionInfo: { slug: "abc123" },
+        revisionInfo: { modFiles: [], gameVersions: [] },
+      },
+    },
+  });
+  const siteState = {
+    mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+    downloads: { [siteDownload.id]: siteDownload },
+    profiles: { [profile.id]: profile },
+  };
+
+  test("names the collection on errors while it installs", async ({ makeDriver }) => {
+    const h = makeDriver(siteState);
+
+    await h.driver.start(profile, defaultFixture.collection);
+
+    expect(setErrorContext).toHaveBeenCalledWith("installingCollection", "abc123@7");
+  });
+
+  test("stops naming the collection once the install is cancelled", async ({ makeDriver }) => {
+    const h = makeDriver(siteState);
+    await h.driver.start(profile, defaultFixture.collection);
+    vi.mocked(clearErrorContext).mockClear();
+
+    h.driver.cancel();
+
+    expect(clearErrorContext).toHaveBeenCalledWith("installingCollection");
+  });
+
+  test("names nothing for a collection that has no site slug", async ({ startCollection }) => {
+    await startCollection(defaultFixture);
+
+    expect(setErrorContext).not.toHaveBeenCalled();
+  });
+});
+
 describe("InstallDriver installRecommended", () => {
   // "Install optional mods" (dialog) clears the durable skip on the optional members and re-runs the
   // NORMAL collection dependency install (the same install-dependencies event begin() uses) rather
@@ -578,6 +796,28 @@ describe("InstallDriver installRecommended", () => {
 
     // the finished dialog hides (step leaves review) while the phase engine installs the optionals
     expect(h.driver.step).toBe("installing");
+  });
+
+  test("selects the optionals from the collection's live rules", async ({ startCollection }) => {
+    const h = await startCollection(makeCollectionFixture({ id: "col-opt", rule: optionalRule }));
+    const liveRule = () =>
+      h
+        .getState()
+        .persistent.mods[GAME_ID]["col-opt"].rules?.find((r) => r.reference.tag === "opt-a");
+    // changed after the driver last read the collection
+    h.setState((draft) => {
+      const rule = draft.persistent.mods[GAME_ID]["col-opt"].rules?.find(
+        (r) => r.reference.tag === "opt-a",
+      );
+      if (rule !== undefined) {
+        rule.extra = { ...rule.extra, fileName: "opt-a.7z" };
+      }
+    });
+
+    h.driver.installRecommended();
+
+    expect(liveRule()?.ignored).toBe(false);
+    expect(liveRule()?.extra?.fileName).toBe("opt-a.7z");
   });
 });
 

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Mod } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
@@ -103,6 +103,10 @@ const renderComponent = (mod = summary, onFocusList = vi.fn(), gallery: IGallery
 describe("ModDetails", () => {
   beforeEach(() => {
     mocks.pending = [];
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("shows what the search returned while the mod loads", () => {
@@ -238,24 +242,17 @@ describe("ModDetails", () => {
 
   it("keeps its tabs and buttons above the part that scrolls, so they stay put", () => {
     renderComponent();
-    const scrollArea = screen
-      .getByRole("region", { name: "Mod details" })
-      .querySelector<HTMLElement>('[tabindex="-1"]');
+    const scrollArea = screen.getByTestId("mod-details-scroll-area");
 
     expect(scrollArea).toHaveClass("overflow-y-auto");
-    expect(scrollArea).not.toContainElement(screen.getByRole("tab", { name: "Details" }));
+    expect(scrollArea).not.toContainElement(screen.getByTestId("mod-details-tab-details"));
     expect(scrollArea).not.toContainElement(screen.getByRole("button", { name: "Open mod page" }));
   });
 
   it("asks to move focus back to the list on Left from the pane itself", async () => {
     const onFocusList = vi.fn();
     renderComponent(summary, onFocusList);
-    act(() =>
-      screen
-        .getByRole("region", { name: "Mod details" })
-        .querySelector<HTMLElement>('[tabindex="-1"]')!
-        .focus(),
-    );
+    act(() => screen.getByTestId("mod-details-scroll-area").focus());
 
     await userEvent.keyboard("{ArrowLeft}");
 
@@ -266,7 +263,7 @@ describe("ModDetails", () => {
     [
       "from the tabs, which use it",
       "{ArrowLeft}",
-      () => screen.getByRole("tab", { name: "Details" }),
+      () => screen.getByTestId("mod-details-tab-details"),
     ],
     [
       "with a modifier held",
@@ -292,7 +289,33 @@ describe("ModDetails", () => {
 
     expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/1");
     expect(propertiesOf("browse_mods_mod_page_opened")).toEqual([{ mod_uid: "1704-1" }]);
-    vi.unstubAllGlobals();
+  });
+
+  it("counts sending the user to the mod's comments on the website from the Comments tab", async () => {
+    const openUrl = vi.fn();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+    renderComponent();
+
+    await userEvent.click(screen.getByTestId("mod-details-tab-comments"));
+    await userEvent.click(screen.getByTestId("mod-comments-website"));
+
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=posts",
+    );
+    expect(propertiesOf("browse_mods_comments_opened")).toEqual([{ mod_uid: "1704-1" }]);
+  });
+
+  it("counts each change of tab once, with the tab it left, not a click on the open one", async () => {
+    renderComponent();
+
+    await userEvent.click(screen.getByTestId("mod-details-tab-comments"));
+    await userEvent.click(screen.getByTestId("mod-details-tab-comments"));
+    await userEvent.click(screen.getByTestId("mod-details-tab-details"));
+
+    expect(propertiesOf("browse_mods_details_tab_selected")).toEqual([
+      { mod_uid: "1704-1", tab: "comments", previous_tab: "details" },
+      { mod_uid: "1704-1", tab: "details", previous_tab: "comments" },
+    ]);
   });
 
   it("counts picking a picture in the gallery", async () => {

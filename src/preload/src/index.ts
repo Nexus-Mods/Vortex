@@ -77,18 +77,6 @@ try {
         betterIpcRenderer.send("extensions:init-all-main", installType),
     },
 
-    adaptors: {
-      list: () => betterIpcRenderer.invoke("adaptors:list"),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      listWithInfoSync: () => ipcRenderer.sendSync("adaptors:list-with-info"),
-      call: (adaptorName: string, serviceUri: string, method: string, args: unknown[]) =>
-        betterIpcRenderer.invoke("adaptors:call", adaptorName, serviceUri, method, args),
-      buildSnapshot: (store: string, gamePath: string) =>
-        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
-      detectVersion: (source: { type: string; path: { value: string }; regex?: string }) =>
-        betterIpcRenderer.invoke("adaptors:detect-version", source),
-    },
-
     updater: {
       getStatus: (since?: number) => betterIpcRenderer.invoke("updater:get-status", since),
       getUpdateChangelog: (channel: string) =>
@@ -272,6 +260,16 @@ try {
     hash: {
       compute: (algorithm, filePath) =>
         betterIpcRenderer.invoke("hash:compute", algorithm, filePath),
+    },
+
+    gameFolderCheck: {
+      start: (input) => betterIpcRenderer.invoke("game-folder-check:start", input),
+      cancel: (gameId) => betterIpcRenderer.send("game-folder-check:cancel", gameId),
+      onSubmit: (handler) =>
+        betterIpcRenderer.callback("game-folder-check:submit", (_collationId, result) =>
+          handler(result),
+        ),
+      runManual: (input) => betterIpcRenderer.invoke("game-folder-check:run-manual", input),
     },
 
     diag: {

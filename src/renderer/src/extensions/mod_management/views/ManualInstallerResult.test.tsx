@@ -1,5 +1,5 @@
 import { relativePath } from "@nexusmods/paths";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { VortexModStagingFolder } from "@vortex/shared";
 import { type InMemoryFS, QualifiedPath } from "@vortex/shared/filesystem";
 import React from "react";
@@ -138,8 +138,9 @@ describe("ManualInstallerResult", () => {
   it("marks nothing until what other mods deployed is known", async () => {
     renderResult({ deployed: undefined, skipTopFolder: true });
 
-    // let the read of the game folder finish
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    // let the read of the game folder finish; nothing on screen says when it has, so wait under
+    // act() for its update to land
+    await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
 
     for (const row of rows()) {
       expect(row).not.toHaveAttribute("data-status");

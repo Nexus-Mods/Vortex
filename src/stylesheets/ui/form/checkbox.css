@@ -84,6 +84,14 @@
             }
         }
 
+        /* A hint lines up under its label, past the checkbox, in body-sm. */
+        .nxm-field-description {
+            padding-left: calc(var(--spacing) * 6);
+            font-size: var(--text-body-sm);
+            line-height: var(--text-body-sm--line-height);
+            letter-spacing: var(--text-body-sm--letter-spacing);
+        }
+
         /* the whole row is the click target, so it all hovers together. A link in the label isn't
            part of that: clicking it doesn't tick the checkbox, so it doesn't light it either. */
         .nxm-field-control:hover:not(:has(.nxm-field-label a[href]:hover)) {

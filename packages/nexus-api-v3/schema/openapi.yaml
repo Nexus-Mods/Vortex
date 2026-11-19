@@ -22,9 +22,12 @@ info:
     and migration guidance.\n\n**Beta endpoints:** Changes will be marked as `deprecated`
     with a minimum **10-day\ndeprecation period** and migration guidance.\n\nDeprecated
     fields continue to function during the deprecation period.\n\n### Upcoming Changes\n\n|
-    Date | Change |\n| ---- | ------ |\n| 2026-12-01 | `md5` becomes required on [create
-    upload](#tag/uploads/operation/createUpload). Single-part uploads that omit it
-    will be rejected. |\n"
+    Date | Change |\n| ---- | ------ |\n| 2026-11-23 | `description` is limited to
+    255 characters on [create mod file](#tag/mod-files/operation/createModFile) and
+    [create a new mod file version](#tag/mod-files/operation/createModFileVersion).
+    Longer descriptions will be rejected. |\n| 2026-12-01 | `md5` becomes required
+    on [create upload](#tag/uploads/operation/createUpload). Single-part uploads that
+    omit it will be rejected. |\n"
   contact:
     name: Nexus Mods
     url: https://nexusmods.com
@@ -34,6 +37,8 @@ info:
 tags:
   - name: collections
     description: Collection management
+  - name: content-settings
+    description: A user's content preferences and blocks
   - name: mod-bugs
     description: Mod bug report triage
   - name: mod-files
@@ -87,6 +92,38 @@ paths:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
           "$ref": "#/components/responses/ValidationFailed"
+  "/content-settings":
+    get:
+      tags:
+        - content-settings
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Get my content settings
+      description: |
+        The authenticated user's content settings: whether they see adult content, whether
+        adult images are blurred, and the tags and users they have blocked.
+
+        A user who has never changed these settings gets the defaults: adult content hidden
+        and adult images blurred, with nothing blocked.
+      operationId: getContentSettings
+      security:
+        - ApiKeyAuth: []
+        - BearerJwtAuth: []
+      responses:
+        "200":
+          description: The user's content settings.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ContentSettings"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
   "/games/{game_domain}/trending-mods":
     get:
       tags:
@@ -1538,8 +1575,14 @@ paths:
       x-badges:
         - name: Experimental
           color: orange
+        - name: Upcoming change
+          color: orange
       summary: Create a new mod file version
       description: |
+        > ⚠️ **Upcoming changes to this operation**
+        >
+        > - `CreateModFileVersionRequest.description` (request): `maxLength: 255` will be enforced from 2026-11-23
+
         Creates a new version of an existing mod file from the upload specified in the request. The
         new version is inserted after `previous_version_id`, or after the latest version if that is
         omitted.
@@ -2054,8 +2097,14 @@ paths:
       x-badges:
         - name: Experimental
           color: orange
+        - name: Upcoming change
+          color: orange
       summary: Create mod file
       description: |
+        > ⚠️ **Upcoming changes to this operation**
+        >
+        > - `CreateModFileRequest.description` (request): `maxLength: 255` will be enforced from 2026-11-23
+
         Creates a new mod file using the data from a finalised [upload session](#tag/uploads/operation/createUpload).
 
         Note that this is for entirely new files, not new versions of existing files.
@@ -2708,6 +2757,7 @@ components:
         - manifest_url
         - supports_mod_managers
         - security_scan_status
+        - size_in_bytes
       properties:
         id:
           type: string
@@ -2750,6 +2800,10 @@ components:
             mod manager.
         security_scan_status:
           "$ref": "#/components/schemas/SecurityScanStatus"
+        size_in_bytes:
+          type: integer
+          format: int64
+          description: The size of the archive, in bytes.
     ModFileVersionStats:
       type: object
       description: Download counters for a mod file version.
@@ -2764,15 +2818,21 @@ components:
           type: integer
           description: Downloads of this version by distinct users.
     ModFileVersionWithStats:
-      description: A mod file version with its download counters.
+      description: A mod file version with its download counters and description.
       allOf:
         - "$ref": "#/components/schemas/ModFileVersion"
         - type: object
           required:
             - stats
+            - description
           properties:
             stats:
               "$ref": "#/components/schemas/ModFileVersionStats"
+            description:
+              type: string
+              nullable: true
+              description: The author's description of this version. Null when there
+                is none.
     ModFilesResponse:
       type: object
       required:
@@ -2840,6 +2900,7 @@ components:
         - game_scoped_id
         - is_primary
         - supports_mod_managers
+        - count
       properties:
         id:
           type: string
@@ -2855,6 +2916,12 @@ components:
           type: boolean
           description: Whether the author allows this file to be installed with a
             mod manager.
+        count:
+          type: integer
+          minimum: 1
+          description: The number of the mod's main file versions that have cleared
+            the security scan, including this one. `1` means the mod has no other
+            main file to choose from.
     ModStatus:
       type: string
       description: The effective visibility status of a mod.
@@ -3865,6 +3932,30 @@ components:
           description: |
             `true` returns only mods that can be installed with a mod manager, `false` only mods that
             cannot. Mods are not filtered on mod manager support when left out.
+        requirements:
+          type: array
+          description: |
+            Only mods that have at least one of these kinds of requirement. Mods are not filtered on
+            requirements when left out.
+          maxItems: 4
+          uniqueItems: true
+          items:
+            "$ref": "#/components/schemas/ModsSearchRequirement"
+          example:
+            - mod
+            - external
+        exclude_requirements:
+          type: array
+          description: |
+            Leaves out mods that have any of these kinds of requirement; mods with no requirements are
+            kept. Combines with `requirements`, which still picks from the mods left. Mods are not
+            filtered on requirements when left out.
+          maxItems: 4
+          uniqueItems: true
+          items:
+            "$ref": "#/components/schemas/ModsSearchRequirement"
+          example:
+            - dlc
     DateTimeRange:
       type: object
       description: |
@@ -3908,6 +3999,16 @@ components:
             - asc
             - desc
           default: desc
+    ModsSearchRequirement:
+      type: string
+      enum:
+        - mod
+        - file
+        - external
+        - dlc
+      description: |
+        A kind of requirement a mod can have: `mod` for another mod, `file` for a specific mod file,
+        `external` for something hosted outside Nexus Mods, and `dlc` for a DLC or expansion of the game.
     ModsSearchPagination:
       description: Pages by cursor (`type` `cursor`, the default) or by number (`type`
         `page`). The response `meta` has the same `type`.
@@ -4120,6 +4221,52 @@ components:
         name:
           type: string
           example: Gameplay
+    BlockedAuthor:
+      type: object
+      description: A user whose content another user has blocked.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the user, comparable with a mod's
+            `uploader.id`.
+        name:
+          type: string
+          nullable: true
+          description: The user's name, or null if the account no longer exists.
+    ContentSettings:
+      type: object
+      description: The content a user has chosen to see, blur or block across the
+        site.
+      required:
+        - adult
+        - blur_adult_images
+        - blocked_tags
+        - blocked_authors
+      properties:
+        adult:
+          type: boolean
+          description: Whether the user has chosen to see adult content.
+        blur_adult_images:
+          type: boolean
+          description: Whether adult images should be blurred until the user reveals
+            them.
+        blocked_tags:
+          type: array
+          description: |
+            Tags the user has blocked. Content carrying any of these tags should be shown as
+            blocked. Empty when the user has blocked no tags.
+          items:
+            "$ref": "#/components/schemas/ModTag"
+        blocked_authors:
+          type: array
+          description: |
+            Users whose content this user has blocked. Content they uploaded should be shown as
+            blocked. Empty when the user has blocked no one.
+          items:
+            "$ref": "#/components/schemas/BlockedAuthor"
     CreateModFileRequest:
       type: object
       required:
@@ -4152,7 +4299,10 @@ components:
           pattern: "^[a-zA-Z0-9.-]+$"
         description:
           type: string
-          description: Description of the mod file.
+          description: |-
+            Description of the mod file.
+
+            > ⚠️ **Upcoming change:** `maxLength: 255` will be enforced from 2026-11-23.
           nullable: true
         file_category:
           "$ref": "#/components/schemas/NewModFileCategory"
@@ -4403,7 +4553,10 @@ components:
           pattern: "^[a-zA-Z0-9 _'().-]+$"
         description:
           type: string
-          description: Description of the mod file
+          description: |-
+            Description of the mod file
+
+            > ⚠️ **Upcoming change:** `maxLength: 255` will be enforced from 2026-11-23.
           nullable: true
         version:
           type: string

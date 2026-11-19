@@ -56,6 +56,8 @@ interface IModListProps {
   emptyState: ReactNode;
   /** Shown after the last card once the last page has loaded. */
   endOfResults: ReactNode;
+  /** Shown under the Load more button while loading is paused. */
+  loadMoreFooter?: ReactNode;
   /** The list, for moving focus back into it or onto its open mod. */
   listRef?: Ref<IModListHandle>;
 }
@@ -91,6 +93,7 @@ export const ModList = ({
   onRetry,
   emptyState,
   endOfResults,
+  loadMoreFooter,
 }: IModListProps) => {
   const { t } = useTranslation();
   const isLastPageLoaded = !!mods.length && status === "done";
@@ -156,6 +159,7 @@ export const ModList = ({
           errorMessage={t("The mods couldn't be loaded. Try again.")}
           errorTitle={t("Something went wrong")}
           loadMoreErrorMessage={t("More mods couldn't be loaded. Try again.")}
+          loadMoreFooter={loadMoreFooter}
           loadMoreLabel={t("Load more mods")}
           loadMoreNote={
             isBreakNudgePause({

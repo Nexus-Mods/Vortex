@@ -1,3 +1,11 @@
+/* A length, so it can transition: see the toolbar's overhang below. Its initial value is in px,
+   as a registered one must not depend on the font size. */
+@property --nxm-table-toolbar-overhang {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
 @layer components {
     /* One grid for the whole table; every row takes its tracks through subgrid, so the
        columns line up without measuring anything. The gutters are tracks of their own,
@@ -32,6 +40,10 @@
         container-type: inline-size;
         overflow-y: clip;
         overflow-anchor: none;
+        /* At the speed a panel beside the table slides, so the toolbar over both keeps its width. */
+        transition-property: --nxm-table-toolbar-overhang;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
     }
 
     .nxm-table-header,
@@ -74,7 +86,9 @@
 
     /* The width in view, stuck to its left edge, so it stays put while the columns scroll
        sideways under it. Padded by the gutter and gap, so its first tab lines up with the
-       first column; its last control sits by the gutter alone, under the page header's. */
+       first column; its last control sits by the gutter alone, under the page header's.
+       Wider by the overhang a page gives it, over a panel beside the table: the table clips
+       only what's below it, so this shows. */
     .nxm-table-toolbar {
         position: sticky;
         left: 0;
@@ -82,7 +96,7 @@
         grid-row: 1;
         grid-column: 1 / -1;
         justify-self: start;
-        width: 100cqi;
+        width: calc(100cqi + var(--nxm-table-toolbar-overhang));
         height: var(--nxm-table-toolbar-height);
         padding-right: var(--nxm-table-gutter);
         padding-left: calc(var(--nxm-table-gutter-start) + var(--nxm-table-gap));
@@ -352,7 +366,9 @@
     }
 
     /* A sortable column's header: its label, in line with the column's content, and an arrow
-       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox. */
+       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox.
+       The grey of the headers that don't sort, brighter only for the column the rows are
+       sorted by. */
     .nxm-table-sort-button {
         display: flex;
         align-items: center;
@@ -362,12 +378,16 @@
         margin-left: calc(var(--spacing) * -2);
         padding-inline: calc(var(--spacing) * 2);
         border-radius: var(--radius-sm);
-        color: var(--color-translucent-moderate);
+        color: var(--color-translucent-subdued);
         white-space: nowrap;
         cursor: pointer;
         transition-property: color, background-color;
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+
+        :is([aria-sort="ascending"], [aria-sort="descending"]) > & {
+            color: var(--color-translucent-moderate);
+        }
 
         &:hover,
         &:focus-visible {

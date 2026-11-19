@@ -15,6 +15,9 @@ export default defineConfig({
     // still import from "vitest" explicitly.
     globals: true,
     setupFiles: ["./test-setup.mts"],
+    // After-hooks run last-registered first, so test-setup.mts's act() check runs after
+    // testing-library's cleanup and catches updates that land while a test is torn down.
+    sequence: { hooks: "stack" },
 
     include: ["src/**/*.test.{ts,tsx,js,jsx}"],
   },

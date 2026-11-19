@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -87,7 +87,7 @@ describe("RadioGroupField", () => {
   it("moves the choice with the arrow keys", async () => {
     const { onChange } = renderGroup({ value: "replace" });
 
-    screen.getByTestId("radio-replace").focus();
+    act(() => screen.getByTestId("radio-replace").focus());
     await userEvent.keyboard("{ArrowDown}");
 
     expect(onChange).toHaveBeenCalledWith("alongside");

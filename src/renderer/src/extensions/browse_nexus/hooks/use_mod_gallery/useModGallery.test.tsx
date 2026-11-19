@@ -103,6 +103,41 @@ describe("useModGallery", () => {
     expect(result.current.gallery).toEqual([primary("p"), image("a")]);
   });
 
+  it("pairs a comparison's after image with its before image, named in its title", async () => {
+    const sizes = (file: string) => ({
+      url: `https://cdn/mods/1/images/57/${file}?v=2#top`,
+      thumbnail_url: `https://cdn/mods/1/images/thumbnails/57/${file}`,
+      large_thumbnail_url: `https://img/1/t/large/5/57/${file}`,
+      blurred_thumbnail_url: `https://img/1/tb/med/5/57/${file}`,
+      blurred_large_thumbnail_url: `https://img/1/tb/large/5/57/${file}`,
+    });
+    mocks.mods["1"] = {
+      primary_image: null,
+      gallery_images: [
+        { ...sizes("57-after.png"), id: "2", title: "[compare:1:57/57-before.png] At night" },
+        image("b", "[compare] isn't one"),
+      ],
+    };
+
+    const { result } = await loadedGallery(summary("1"));
+
+    expect(result.current.gallery).toEqual([
+      { ...sizes("57-after.png"), id: "2", title: "At night", before: sizes("57-before.png") },
+      image("b", "[compare] isn't one"),
+    ]);
+  });
+
+  it("doesn't put the primary image first when it's a comparison's before image", async () => {
+    mocks.mods["1"] = {
+      primary_image: primary("https://cdn/57/before"),
+      gallery_images: [image("https://cdn/57/after", "[compare:1:57/before.png]")],
+    };
+
+    const { result } = await loadedGallery(summary("1"));
+
+    expect(result.current.gallery.map(({ url }) => url)).toEqual(["https://cdn/57/after.png"]);
+  });
+
   it("shows nothing for a mod with no images", async () => {
     mocks.mods["1"] = { primary_image: null, gallery_images: [] };
 

@@ -1,15 +1,16 @@
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { describe, expect, it } from "vitest";
 
 import {
   nexusFilePageUrl,
+  nexusModCommentsUrl,
   nexusModFilesUrl,
   nexusModReportUrl,
   nexusModPageUrl,
   nexusSiteModPageUrl,
 } from "./nexusUrls";
 
-const SKYRIM = GameDomain("skyrimspecialedition");
+const SKYRIM = NexusGameDomain("skyrimspecialedition");
 
 describe("nexusModPageUrl", () => {
   it("is the mod's page", () => {
@@ -45,6 +46,14 @@ describe("nexusModReportUrl", () => {
   it("is the mod's page, asking for its report dialog", () => {
     expect(nexusModReportUrl(SKYRIM, 12604)).toBe(
       "https://www.nexusmods.com/skyrimspecialedition/mods/12604?report=1",
+    );
+  });
+});
+
+describe("nexusModCommentsUrl", () => {
+  it("is the mod's Posts tab", () => {
+    expect(nexusModCommentsUrl(SKYRIM, 12604)).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?tab=posts",
     );
   });
 });
