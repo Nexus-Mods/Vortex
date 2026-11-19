@@ -146,7 +146,6 @@ import getTextModManagement from "../extensions/mod_management/texts";
 import getTextProfileManagement from "../extensions/profile_management/texts";
 import deepMerge from "./deepMerge";
 import { runElevated } from "./elevated";
-import { runThreaded } from "./thread";
 import {
   batchDispatch,
   bytesToString,
@@ -286,7 +285,6 @@ export {
   ruleInstallSpec,
   rulePhase,
   runElevated,
-  runThreaded,
   sanitizeCSSId,
   sanitizeFilename,
   Section,
