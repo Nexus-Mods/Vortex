@@ -72,7 +72,7 @@ const GROUP_ROW_GAP = 4;
  * same for a row, opening the first group it's in, then selecting it alone.
  *
  * The grid role sits on a `display: contents` wrapper, so an `aside` shares the layout but not
- * the grid.
+ * the grid. A click on its empty space, not the head or the aside, clears the selection.
  */
 export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
   columns,
@@ -282,7 +282,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     onRowFocused?.();
   }, [focusRowId, getRowId, items, onRowFocused, onSelectedIdsChange, ready, scrollToIndex]);
 
-  const revealWidth = columns.find((column) => column.sticky === "end")?.revealWidth;
+  const stickyEnd = columns.find((column) => column.sticky === "end");
+  const revealWidth = stickyEnd?.revealWidth;
 
   // The rows in the sticky head, which come before the table's own in aria-rowindex.
   const headRows = toolbar ? 2 : 1;
@@ -380,7 +381,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           expanded={item.expanded}
           group={item.group}
           index={index}
-          isLast={index === items.length - 1}
           menu={
             <Toolbar className="ml-auto pl-1" tracking={groupTracking}>
               <ToolbarGroup actions={groupActions(item.group)} maxVisible={0} />
@@ -408,9 +408,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
             ? selection.checkbox({ key: item.key, id: getRowId(item.row) }, getRowLabel?.(item.row))
             : undefined
         }
-        className={joinClasses([getRowClassName?.(item.row) ?? ""], {
-          "nxm-table-row-last": index === items.length - 1,
-        })}
+        className={getRowClassName?.(item.row)}
         columns={columns}
         index={index}
         level={item.level}
@@ -485,8 +483,6 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
         } as CSSProperties
       }
       onClick={(event) => {
-        // Between and below the rows, but not the head or the aside; a portalled panel isn't in
-        // the table.
         const target = event.target as Element;
         if (
           selectable &&
@@ -626,6 +622,8 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
           </div>
         )}
       </div>
+
+      {!!stickyEnd && <div aria-hidden className="nxm-table-end" />}
 
       {!!aside && <div className="nxm-table-aside">{aside}</div>}
     </div>

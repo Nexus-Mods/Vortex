@@ -1073,20 +1073,24 @@ describe("Table with groups", () => {
     expect(screen.getAllByRole("row")).toHaveLength(6);
   });
 
-  // So the sticky column's shadow runs on under it, through the room the table leaves below.
-  it("marks its last row, the last group's heading once that group's shut", async () => {
-    renderGrouped();
-    const last = () => screen.getAllByRole("row").at(-1);
-    const marked = () => document.querySelectorAll(".nxm-table-row-last");
+  // So the sticky column's shadow runs on under the last row, whatever that row is.
+  it("has a strip for the sticky column's shadow below its rows, only with a sticky column", () => {
+    const { unmount } = renderGrouped();
+    expect(document.querySelector(".nxm-table-end")).toBeNull();
+    unmount();
 
-    expect(marked()).toHaveLength(1);
-    expect(last()).toHaveClass("nxm-table-row-last");
+    render(
+      <Table
+        columns={[GROUPED_COLUMNS[0], { ...GROUPED_COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        groups={GROUPS}
+        label="Files"
+      />,
+    );
 
-    await userEvent.click(screen.getByRole("button", { name: "Second" }));
-
-    expect(marked()).toHaveLength(1);
-    expect(last()).toHaveAttribute("aria-expanded", "false");
-    expect(last()).toHaveClass("nxm-table-row-last");
+    const strip = document.querySelector(".nxm-table-end");
+    expect(strip).toHaveAttribute("aria-hidden");
+    expect(screen.getByRole("treegrid")).not.toContainElement(strip as HTMLElement);
   });
 });
 

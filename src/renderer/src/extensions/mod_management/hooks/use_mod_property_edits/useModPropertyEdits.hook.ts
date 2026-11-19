@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { setDialogVisible } from "@/actions/session";
 import { categoryChoices } from "@/extensions/category_management/util/category_choices/categoryChoices";
 import { activeGameId } from "@/util/selectors";
 
@@ -76,6 +77,11 @@ export const useModPropertyEdits = (mods: IModWithState[]): IModPropertyEdits =>
           ...modsSharedValue(mods, categoryOf),
           choices: categories,
           onChange: (value) => save("category", value),
+          action: {
+            icon: "sell",
+            label: t("modsTable::properties::manageCategories"),
+            onClick: () => dispatch(setDialogVisible("categories")),
+          },
         },
         ...(allInstalled
           ? [

@@ -39,19 +39,9 @@ const SKYUI = mod("skyui", {
     modId: 12604,
     fileId: 35407,
     variant: "Lite",
+    homepage: `${NEXUS_BASE_URL}/skyrimspecialedition/mods/12604/`,
   },
 });
-
-const KNOWN = [
-  { id: "game", name: "Test Game", details: { nexusPageId: "testgame" } },
-  {
-    id: "skyrimse",
-    name: "Skyrim Special Edition",
-    details: { nexusPageId: "skyrimspecialedition" },
-  },
-  // As Stardew Valley's is, its id doubling as its domain on the site.
-  { id: "stardewvalley", name: "Stardew Valley" },
-];
 
 const collection = (name: string) => ({ id: name, attributes: { name } }) as unknown as IMod;
 
@@ -63,7 +53,6 @@ const renderProperties = (
   attributes: ITableAttribute[] = [],
 ): IModProperties => {
   const store = makeModsTableStore({
-    knownGames: KNOWN,
     downloads: {
       archive: { localPath: "SkyUI_5_2_SE-12604-5-2SE.7z", fileTime: Date.now() - HOUR },
     },
@@ -93,35 +82,24 @@ describe("useModProperties", () => {
       description: "[b]SkyUI[/b] is an interface mod.",
       author: "schlangster",
       pictureUrl: "https://example.com/skyui.png",
-      pageUrl: `${NEXUS_BASE_URL}/testgame/mods/12604`,
+      pageUrl: `${NEXUS_BASE_URL}/skyrimspecialedition/mods/12604/`,
       isAdult: false,
       status: undefined,
     });
   });
 
-  // As its game section keeps it, which can differ from the active game.
-  it("links the card to the mod's page in its game section", () => {
-    const fromSkyrimSE = mod("skyui", {
-      attributes: { ...SKYUI.attributes, downloadGame: "skyrimse" },
+  it("has no page where the one it keeps isn't on Nexus Mods", () => {
+    const elsewhere = mod("skyui", {
+      attributes: { ...SKYUI.attributes, homepage: "https://example.com/skyui" },
     });
 
-    expect(renderProperties([fromSkyrimSE]).card?.pageUrl).toBe(
-      `${NEXUS_BASE_URL}/skyrimspecialedition/mods/12604`,
-    );
-  });
-
-  it("links to the game's own id on the site when its extension names no page", () => {
-    const fromStardew = mod("skyui", {
-      attributes: { ...SKYUI.attributes, downloadGame: "stardewvalley" },
-    });
-
-    expect(renderProperties([fromStardew]).card?.pageUrl).toBe(
-      `${NEXUS_BASE_URL}/stardewvalley/mods/12604`,
-    );
+    expect(renderProperties([elsewhere]).card?.pageUrl).toBeUndefined();
   });
 
   it("has no page for a mod that isn't from Nexus Mods", () => {
-    const local = mod("local", { attributes: { name: "Local", source: "other", modId: 1 } });
+    const local = mod("local", {
+      attributes: { name: "Local", source: "website", homepage: `${NEXUS_BASE_URL}/x/mods/1` },
+    });
 
     expect(renderProperties([local]).card?.pageUrl).toBeUndefined();
   });

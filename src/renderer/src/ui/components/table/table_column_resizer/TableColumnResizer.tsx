@@ -49,16 +49,26 @@ export const TableColumnResizer = ({
     }
 
     const measure = () => {
-      setSize({
-        drawn: Math.round(cell.getBoundingClientRect().width),
-        table: Math.round((table?.clientWidth ?? 0) - asideWidthOf(table)),
+      const drawn = Math.round(cell.getBoundingClientRect().width);
+      const width = Math.round((table?.clientWidth ?? 0) - asideWidthOf(table));
+      setSize((size) => {
+        if (size.drawn === drawn && size.table === width) {
+          return size;
+        }
+
+        return { drawn, table: width };
       });
     };
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target === table && event.propertyName === "--nxm-table-aside-width") {
+        measure();
+      }
+    };
     measure();
-    table?.addEventListener("transitionend", measure);
+    table?.addEventListener("transitionend", onTransitionEnd);
 
     if (typeof ResizeObserver === "undefined") {
-      return () => table?.removeEventListener("transitionend", measure);
+      return () => table?.removeEventListener("transitionend", onTransitionEnd);
     }
 
     const observer = new ResizeObserver(measure);
@@ -68,7 +78,7 @@ export const TableColumnResizer = ({
     }
     return () => {
       observer.disconnect();
-      table?.removeEventListener("transitionend", measure);
+      table?.removeEventListener("transitionend", onTransitionEnd);
     };
   }, []);
 

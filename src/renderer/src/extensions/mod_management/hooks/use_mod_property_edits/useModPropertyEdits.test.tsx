@@ -81,6 +81,22 @@ describe("useModPropertyEdits", () => {
     ]);
   });
 
+  it("manages the categories from beside the category, in the categories dialog", () => {
+    const { edits, dispatch } = renderEdits([mod("a")]);
+    const category = byId(edits.organise, "category");
+
+    act(() => {
+      if (category.kind === "select") {
+        category.action?.onClick();
+      }
+    });
+
+    expect(category).toMatchObject({ action: { icon: "sell" } });
+    expect(dispatch.mock.calls.map(([action]) => action)).toMatchObject([
+      { type: "SET_DIALOG_VISIBLE", payload: { dialogId: "categories" } },
+    ]);
+  });
+
   it("saves a note to the mods it's given, not whichever are selected", () => {
     const { edits, dispatch } = renderEdits([mod("a", { notes: "old" })]);
     const notes = byId(edits.organise, "notes");

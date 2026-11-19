@@ -29,6 +29,27 @@ const open = () => userEvent.click(trigger());
 const options = () => screen.getAllByRole("option");
 
 describe("ModPropertySelect", () => {
+  it("has its action beside it, named for what it does", async () => {
+    const onClick = vi.fn();
+    render(
+      <ModPropertySelect
+        property={category({ action: { icon: "sell", label: "Manage", onClick } })}
+      />,
+    );
+
+    const action = screen.getByTestId("mod-property-category-action");
+    expect(action).toHaveAccessibleName("Manage");
+    await userEvent.click(action);
+
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("has no action unless it's given one", () => {
+    render(<ModPropertySelect property={category()} />);
+
+    expect(screen.queryByTestId("mod-property-category-action")).toBeNull();
+  });
+
   it("shows the pick and saves another", async () => {
     const onChange = vi.fn();
     render(<ModPropertySelect property={category({ onChange })} />);

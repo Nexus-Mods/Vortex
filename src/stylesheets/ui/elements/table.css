@@ -89,8 +89,7 @@
 
     /* The width in view, stuck to its left edge, so it stays put while the columns scroll
        sideways under it. Padded by the gutter and gap, so its first tab lines up with the
-       first column; its last control sits by the gutter alone, under the page header's, over
-       an aside. */
+       first column; its last control lines up under the page header's, over an aside. */
     .nxm-table-toolbar {
         position: sticky;
         left: 0;
@@ -100,7 +99,7 @@
         justify-self: start;
         width: 100cqi;
         height: var(--nxm-table-toolbar-height);
-        padding-right: var(--nxm-table-gutter);
+        padding-right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
         padding-left: calc(var(--nxm-table-gutter-start) + var(--nxm-table-gap));
     }
 
@@ -584,9 +583,27 @@
             var(--nxm-table-sticky-bg);
     }
 
-    /* The last row's runs on through the room under it, to the table's foot. */
-    .nxm-table-row-last .nxm-table-cell[data-sticky="end"]::before {
-        bottom: calc(-1 * var(--nxm-table-end-padding));
+    /* The sticky column's shadow run on through the room under the last row, in its track and
+       pinned with it, without any row's tint. Of no height itself, so the room stays the same. */
+    .nxm-table-end {
+        grid-column-end: -2;
+        position: sticky;
+        right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap) + var(--nxm-table-aside-width));
+        z-index: 2;
+        height: var(--nxm-table-end-padding);
+        margin-bottom: calc(-1 * var(--nxm-table-end-padding));
+        pointer-events: none;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            right: calc(100% + var(--nxm-table-sticky-solid));
+            width: var(--nxm-table-sticky-fade);
+            background: linear-gradient(to right, transparent, var(--color-scrim-300));
+            mask-image: linear-gradient(to right, transparent, #000);
+            opacity: 0;
+        }
     }
 
     .nxm-table-group-row .nxm-table-cell[data-sticky="end"]::before {
@@ -606,7 +623,8 @@
 
     /* The fade only while the page's scroller has further to go right, as the table says. */
     .nxm-table[data-scrollable-right] {
-        .nxm-table-cell[data-sticky="end"]::before {
+        .nxm-table-cell[data-sticky="end"]::before,
+        .nxm-table-end::before {
             opacity: 1;
         }
 

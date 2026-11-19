@@ -174,7 +174,7 @@ const nop = () => undefined;
  * left some for it, and otherwise that nothing matches the filters.
  *
  * The Properties panel is the new table's aside, pinned over its right edge; the columns scroll
- * sideways clear of it when both don't fit.
+ * sideways clear of it when both don't fit. One title tooltip serves extension controls in both.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -672,10 +672,6 @@ export const ModsTableSwitch = ({
         }
       >
         <RegisteredModsInputsProvider value={registered.inputs}>
-          {/*
-            One for every extension control's titles, in the table and the panel, as only one
-            shows at a time.
-          */}
           <LegacyTitleTooltips>
             <Table
               {...tableProps}
@@ -708,7 +704,6 @@ export const ModsTableSwitch = ({
                         memberships={memberships}
                         mods={selectedMods}
                         registered={registeredDetails}
-                        onClose={() => setPropertiesOpen(false)}
                       />
                     </ErrorBoundary>
                   )}

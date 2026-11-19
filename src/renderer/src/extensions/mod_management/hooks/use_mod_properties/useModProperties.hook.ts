@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
-import { nexusModPageUrlOf } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import { NEXUS_DOMAIN } from "@/extensions/nexus_integration/constants";
 import type { IState } from "@/types/IState";
 import type { ITableAttribute } from "@/types/ITableAttribute";
+import type { SymbolName } from "@/ui/components/icon/Icon";
 import { preT } from "@/util/i18n";
-import { activeGameId } from "@/util/selectors";
 
 import { modAuthor } from "../../components/mod_author/ModAuthor";
 import type { IMod } from "../../types/IMod";
@@ -43,6 +43,15 @@ export interface IModPropertiesCard {
   isAdult: boolean;
   /** Its status tag, for an update out. */
   status?: ModStatus;
+}
+
+/** An icon button beside a property's control. */
+export interface IModPropertyAction {
+  /** Its icon. */
+  icon: SymbolName;
+  /** What it does, as its tooltip and accessible name. */
+  label: string;
+  onClick: () => void;
 }
 
 /** One of a select's choices: what it saves, and what the user reads. */
@@ -96,6 +105,8 @@ export type ModProperty = IModPropertyBase &
         required?: boolean;
         /** Saves a pick, "" for none, to every selected mod. */
         onChange: (value: string) => void;
+        /** An icon button beside the dropdown, such as one managing its choices. */
+        action?: IModPropertyAction;
       }
     | {
         kind: "switch";
@@ -193,21 +204,32 @@ const timeProperty = (
   return [{ kind: "time", id, label, timestamp }];
 };
 
-/** A Nexus Mods mod's page; none for one from anywhere else. */
-const pageUrlOf = (state: IState, mod: IModWithState) => {
-  if (mod.attributes?.source !== "nexus" || !mod.attributes?.modId) {
+/** Whether an address is on Nexus Mods. */
+const isOnNexusMods = (address: string) => {
+  try {
+    const { hostname } = new URL(address);
+    return hostname === NEXUS_DOMAIN || hostname.endsWith(`.${NEXUS_DOMAIN}`);
+  } catch {
+    return false;
+  }
+};
+
+/** A Nexus Mods mod's page, as kept when it was downloaded; none for one from anywhere else. */
+const pageUrlOf = (mod: IModWithState) => {
+  const homepage = textOf(mod.attributes?.homepage);
+  if (mod.attributes?.source !== "nexus" || !homepage || !isOnNexusMods(homepage)) {
     return undefined;
   }
 
-  return nexusModPageUrlOf(state, mod, activeGameId(state));
+  return homepage;
 };
 
 /** The mod's card: its picture, status, name, summary, author and page. */
-const cardOf = (mod: IModWithState, pageUrl: string | undefined): IModPropertiesCard => ({
+const cardOf = (mod: IModWithState): IModPropertiesCard => ({
   name: displayName(mod),
   summary: textOf(mod.attributes?.shortDescription),
   description: textOf(mod.attributes?.description) || undefined,
-  pageUrl,
+  pageUrl: pageUrlOf(mod),
   author: modAuthor(mod),
   pictureUrl: textOf(mod.attributes?.pictureUrl),
   isAdult: mod.attributes?.adultContent === true,
@@ -360,10 +382,6 @@ export const useModProperties = (
   const edits = useModPropertyEdits(mods);
   const advanced = useModAdvancedEdits(mods);
   const iniTweaks = useIniTweaks(mods);
-  const pageMod = mods.length === 1 ? mods[0] : undefined;
-  const pageUrl = useSelector(
-    useCallback((state: IState) => pageMod && pageUrlOf(state, pageMod), [pageMod]),
-  );
 
   return useMemo(() => {
     const withContent = (sections: IModPropertySection[]) =>
@@ -385,7 +403,7 @@ export const useModProperties = (
 
     return {
       count: 1,
-      card: cardOf(mod, pageUrl),
+      card: cardOf(mod),
       sections: withContent([
         section("organise", "general", edits.organise),
         section("times", "general", timeProperties(mod, download, t), "grid"),
@@ -397,5 +415,5 @@ export const useModProperties = (
         section("registered", "advanced", registeredProperties(mods, registered, tCommon)),
       ]),
     };
-  }, [advanced, download, edits, iniTweaks, memberships, mods, pageUrl, registered, t, tCommon]);
+  }, [advanced, download, edits, iniTweaks, memberships, mods, registered, t, tCommon]);
 };

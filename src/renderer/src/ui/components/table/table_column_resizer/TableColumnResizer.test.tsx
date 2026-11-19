@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,6 +48,25 @@ describe("TableColumnResizer", () => {
     const { handle } = renderResizer(200, "424px");
 
     expect(handle).toHaveAttribute("aria-valuemax", "576");
+  });
+
+  it("measures again once an aside has slid in, but not as the table's other transitions end", () => {
+    const { handle } = renderResizer(200, "424px");
+    const table = handle.closest<HTMLElement>(".nxm-table")!;
+    const ended = (target: Element, propertyName: string) => {
+      const event = new Event("transitionend", { bubbles: true });
+      Object.defineProperty(event, "propertyName", { value: propertyName });
+      act(() => {
+        target.dispatchEvent(event);
+      });
+    };
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1200);
+
+    ended(handle, "opacity");
+    expect(handle).toHaveAttribute("aria-valuemax", "576");
+
+    ended(table, "--nxm-table-aside-width");
+    expect(handle).toHaveAttribute("aria-valuemax", "776");
   });
 
   it("reads as its least while its column is drawn narrower", () => {
