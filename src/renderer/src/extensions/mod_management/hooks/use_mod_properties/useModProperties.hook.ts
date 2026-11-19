@@ -1,17 +1,23 @@
+import type { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
+import { gameData } from "@/extensions/gamemode_management/gameData";
+import type { IGameData } from "@/extensions/gamemode_management/queries";
+import { nexusModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IState } from "@/types/IState";
 import type { ITableAttribute } from "@/types/ITableAttribute";
 import { preT } from "@/util/i18n";
+import { activeGameId } from "@/util/selectors";
 
 import { modAuthor } from "../../components/mod_author/ModAuthor";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import { attributeText as textOf } from "../../util/attribute_text/attributeText";
+import { keptDownloadGame, keptSection } from "../../util/kept_section/keptSection";
 import { type ModStatus, localModStatus } from "../../util/mod_status/modStatus";
 import { displayName } from "../../util/mods_table_views/modsTableViews";
 import type { RegisteredValues } from "../../util/registered_values/registeredValues";
@@ -31,6 +37,8 @@ export interface IModPropertiesCard {
   summary?: string;
   /** Its whole description from the site, in BBCode, if it came with one. */
   description?: string;
+  /** Its page on the site, if it came from Nexus Mods, where its description's images show. */
+  pageUrl?: string;
   /** Its author, or its uploader where the author isn't known. */
   author?: string;
   /** Its picture from the site, if it came from one. */
@@ -189,11 +197,27 @@ const timeProperty = (
   return [{ kind: "time", id, label, timestamp }];
 };
 
-/** The mod's card: its picture, status, name, summary and author. */
-const cardOf = (mod: IModWithState): IModPropertiesCard => ({
+/** A Nexus Mods mod's page, in its game section, the active game's where none is kept. */
+const pageUrlOf = (mod: IModWithState, games: IGameData, gameId: VortexGameId) => {
+  const modId = mod.attributes?.modId;
+  if (mod.attributes?.source !== "nexus" || !modId) {
+    return undefined;
+  }
+
+  const { section } = keptSection(games, keptDownloadGame(mod) ?? gameId);
+  return section && nexusModPageUrl(section, modId);
+};
+
+/** The mod's card: its picture, status, name, summary, author and page. */
+const cardOf = (
+  mod: IModWithState,
+  games: IGameData,
+  gameId: VortexGameId,
+): IModPropertiesCard => ({
   name: displayName(mod),
   summary: textOf(mod.attributes?.shortDescription),
   description: textOf(mod.attributes?.description) || undefined,
+  pageUrl: pageUrlOf(mod, games, gameId),
   author: modAuthor(mod),
   pictureUrl: textOf(mod.attributes?.pictureUrl),
   isAdult: mod.attributes?.adultContent === true,
@@ -346,6 +370,8 @@ export const useModProperties = (
   const edits = useModPropertyEdits(mods);
   const advanced = useModAdvancedEdits(mods);
   const iniTweaks = useIniTweaks(mods);
+  const games = useSelector(gameData);
+  const gameId = useSelector(activeGameId);
 
   return useMemo(() => {
     const withContent = (sections: IModPropertySection[]) =>
@@ -367,7 +393,7 @@ export const useModProperties = (
 
     return {
       count: 1,
-      card: cardOf(mod),
+      card: cardOf(mod, games, gameId),
       sections: withContent([
         section("organise", "general", edits.organise),
         section("times", "general", timeProperties(mod, download, t), "grid"),
@@ -379,5 +405,17 @@ export const useModProperties = (
         section("registered", "advanced", registeredProperties(mods, registered, tCommon)),
       ]),
     };
-  }, [advanced, download, edits, iniTweaks, memberships, mods, registered, t, tCommon]);
+  }, [
+    advanced,
+    download,
+    edits,
+    gameId,
+    games,
+    iniTweaks,
+    memberships,
+    mods,
+    registered,
+    t,
+    tCommon,
+  ]);
 };
