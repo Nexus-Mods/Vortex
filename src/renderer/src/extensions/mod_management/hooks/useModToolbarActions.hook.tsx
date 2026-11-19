@@ -1,4 +1,4 @@
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { getErrorCode, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
 import _ from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
@@ -26,6 +26,7 @@ import { getIcon } from "@/views/components/icon_map/iconMap";
 import NXMUrl from "../../nexus_integration/NXMUrl";
 import { setAutoDeployment } from "../../settings_interface/actions/automation";
 import { setBetaModsTable } from "../actions/settings";
+import { APPLY_RUN_FAILURE_KINDS } from "../util/applyDeploy";
 import { selectModsToUpdate } from "../util/collection_update_warning/collectionUpdateWarning";
 import { NoDeployment } from "../util/exceptions";
 import metaLookupMatch from "../util/metaLookupMatch";
@@ -296,6 +297,11 @@ const usePurgeAction = (t: TFunction): IPositionedAction => {
             undefined,
             { allowReport: false },
           );
+          return;
+        }
+
+        if (APPLY_RUN_FAILURE_KINDS.has(parseError(err).data.kind)) {
+          api.showErrorNotification("Failed to purge mods", err, { allowReport: false });
           return;
         }
 

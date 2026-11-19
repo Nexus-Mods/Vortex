@@ -4,6 +4,7 @@ import {
   getErrorMessageOrDefault,
   VortexDeploymentMethodId,
   VortexError,
+  type VortexErrorKind,
   type VortexGameId,
   type VortexModTypeId,
   type VortexProfileId,
@@ -30,7 +31,7 @@ import {
   type RunOptions,
 } from "./apply/apply";
 import type { JournalPhase, JournalStorage } from "./apply/journal";
-import { DEPLOYMENT_FOLDER_TAG } from "./deploymentPlan";
+import { DEPLOYMENT_FOLDER_TAG, type DeploymentPlan } from "./deploymentPlan";
 import { isGameWithPlannedDeployments, type DeployOrchestrator } from "./DeployOrchestrator";
 import { journalStorageAt } from "./journalStorage";
 import { toPortablePath, type ManifestFiles } from "./resolverInput";
@@ -79,15 +80,24 @@ export const applyJournalFileFor = (gameMode: VortexGameId) =>
 export const keptFolderFor = (stagingPath: string, gameMode: VortexGameId) =>
   path.join(path.dirname(stagingPath), "vortex-apply-kept", gameMode);
 
-export interface PlanAndApplyDeploymentOptions {
-  profileId: VortexProfileId;
-  /** by mod type */
-  mergeResult: Record<VortexModTypeId, IMergeResultByType>;
+/** Where an Apply run keeps its journal and set-aside files, and who hears its progress. */
+export interface ApplyRunOptions {
   journal: JournalStorage;
   /** where `journal` keeps the journal, for the failure messages */
   journalFile: string;
   keptFolder: string;
   onProgress?: RunOptions["onProgress"];
+}
+
+export interface PlanAndApplyDeploymentOptions extends ApplyRunOptions {
+  profileId: VortexProfileId;
+  /** by mod type */
+  mergeResult: Record<VortexModTypeId, IMergeResultByType>;
+}
+
+/** The run options default to the game's journal and kept folder. */
+export interface PlanAndApplyPurgeOptions extends Partial<ApplyRunOptions> {
+  gameMode: VortexGameId;
 }
 
 /**
@@ -115,12 +125,29 @@ export function progressBarFor(
 export const ApplyRunKind = { Deployment: "deployment", Purge: "purge" } as const;
 export type ApplyRunKind = (typeof ApplyRunKind)[keyof typeof ApplyRunKind];
 
+/** How the failure messages name each kind of run. */
+const wordingOfRunKind: Record<ApplyRunKind, { noun: string; verb: string }> = {
+  [ApplyRunKind.Deployment]: { noun: "deployment", verb: "deploy" },
+  [ApplyRunKind.Purge]: { noun: "purge", verb: "purge" },
+};
+
+/** The error kinds of a failed Apply run; not bugs to report. */
+export const APPLY_RUN_FAILURE_KINDS: ReadonlySet<VortexErrorKind> = new Set<VortexErrorKind>([
+  "deployment:interrupted-run-unsettled",
+  "deployment:apply-failed",
+]);
+
 /** The error a run through Apply fails with; not a bug to report. */
 const applyFailedError = (
   runKind: ApplyRunKind,
   message: string,
   applyStatus?: Exclude<ApplyResult, AppliedResult>["status"],
-) => new VortexError(message, { kind: "deployment:apply-failed", runKind, applyStatus });
+) =>
+  new VortexError(message, {
+    kind: "deployment:apply-failed",
+    runKind,
+    ...(applyStatus === undefined ? {} : { applyStatus }),
+  });
 
 function failedStepDescriptionOf({ index, operation, cause }: FailedStep): string {
   const parts: string[] = [];
@@ -154,19 +181,24 @@ function refusalCauseOf({ reason, path: refusedPath, cause }: RefusedResult, jou
   }
 }
 
-/** Why a run that didn't apply failed, for the deployment's error. */
-function failureMessageOf(result: Exclude<ApplyResult, AppliedResult>, journalFile: string) {
+/** Why a run that didn't apply failed, for the run's error. */
+function failureMessageOf(
+  result: Exclude<ApplyResult, AppliedResult>,
+  journalFile: string,
+  runKind: ApplyRunKind,
+) {
+  const { noun, verb } = wordingOfRunKind[runKind];
   switch (result.status) {
     case ApplyStatus.Refused:
-      return `Vortex didn't deploy, because ${refusalCauseOf(result, journalFile)}`;
+      return `Vortex didn't ${verb}, because ${refusalCauseOf(result, journalFile)}`;
     case ApplyStatus.RolledBack:
       return result.failedAt === undefined
-        ? "The deployment was undone"
-        : `The deployment failed at ${failedStepDescriptionOf(result.failedAt)}, and was undone`;
+        ? `The ${noun} was undone`
+        : `The ${noun} failed at ${failedStepDescriptionOf(result.failedAt)}, and was undone`;
     case ApplyStatus.RollbackFailed:
-      return `The deployment failed, and undoing it stopped at ${failedStepDescriptionOf(result.rollbackFailedAt)}; the journal at ${journalFile} records what changed`;
+      return `The ${noun} failed, and undoing it stopped at ${failedStepDescriptionOf(result.rollbackFailedAt)}; the journal at ${journalFile} records what changed`;
     case ApplyStatus.Unfinished:
-      return `The deployment changed every file but couldn't finish: ${getErrorMessageOrDefault(result.cause)}; the journal at ${journalFile} records what changed`;
+      return `The ${noun} changed every file but couldn't finish: ${getErrorMessageOrDefault(result.cause)}; the journal at ${journalFile} records what changed`;
     default: {
       const exhausted: never = result;
       return exhausted;
@@ -182,14 +214,7 @@ function failureMessageOf(result: Exclude<ApplyResult, AppliedResult>, journalFi
 export async function planAndApplyDeployment(
   api: IExtensionApi,
   orchestrator: DeployOrchestrator,
-  {
-    profileId,
-    mergeResult,
-    journal,
-    journalFile,
-    keptFolder,
-    onProgress,
-  }: PlanAndApplyDeploymentOptions,
+  { profileId, mergeResult, ...run }: PlanAndApplyDeploymentOptions,
 ): Promise<ManifestFiles> {
   // the lockfile has no merged files
   const hasMergedFiles = Object.values(mergeResult).some(
@@ -210,6 +235,44 @@ export async function planAndApplyDeployment(
       "The deployment couldn't be planned; see the log",
     );
   }
+  return applyPlanned(api, orchestrator, plan, ApplyRunKind.Deployment, run);
+}
+
+/**
+ * Plans a purge of the game's deployment and runs it through Apply. Fails, naming the cause, when it
+ * can't be planned or doesn't apply.
+ */
+export async function planAndApplyPurge(
+  api: IExtensionApi,
+  orchestrator: DeployOrchestrator,
+  {
+    gameMode,
+    journalFile = applyJournalFileFor(gameMode),
+    journal = journalStorageAt(journalFile),
+    keptFolder = keptFolderFor(installPathForGame(api.getState(), gameMode), gameMode),
+    onProgress,
+  }: PlanAndApplyPurgeOptions,
+): Promise<void> {
+  const plan = await orchestrator.planPurge(gameMode);
+  if (plan === undefined) {
+    throw applyFailedError(ApplyRunKind.Purge, "The purge couldn't be planned; see the log");
+  }
+  await applyPlanned(api, orchestrator, plan, ApplyRunKind.Purge, {
+    journal,
+    journalFile,
+    keptFolder,
+    onProgress,
+  });
+}
+
+/** Runs the plan the orchestrator holds through Apply, giving the manifest entries it saved. */
+async function applyPlanned(
+  api: IExtensionApi,
+  orchestrator: DeployOrchestrator,
+  plan: DeploymentPlan,
+  runKind: ApplyRunKind,
+  { journal, journalFile, keptFolder, onProgress }: ApplyRunOptions,
+): Promise<ManifestFiles> {
   const applied = await orchestrator.apply(
     plan,
     {
@@ -223,17 +286,13 @@ export async function planAndApplyDeployment(
   );
   if (applied === undefined) {
     throw applyFailedError(
-      ApplyRunKind.Deployment,
-      "The deployment's plan was replaced before it ran",
+      runKind,
+      `The ${wordingOfRunKind[runKind].noun}'s plan was replaced before it ran`,
     );
   }
   const { result, savedManifestFiles } = applied;
   if (result.status !== ApplyStatus.Applied) {
-    throw applyFailedError(
-      ApplyRunKind.Deployment,
-      failureMessageOf(result, journalFile),
-      result.status,
-    );
+    throw applyFailedError(runKind, failureMessageOf(result, journalFile, runKind), result.status);
   }
   notifyFilesSetAside(api, result, keptFolder);
   return savedManifestFiles ?? new Map();
