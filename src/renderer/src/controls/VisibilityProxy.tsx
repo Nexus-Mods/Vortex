@@ -90,7 +90,19 @@ class VisibilityProxy extends React.PureComponent<any, {}> {
     if (node === null) {
       // A componentClass that doesn't pass its ref on to an element leaves nothing to observe,
       // so there's no telling when it comes into view. Show the content rather than a
-      // placeholder that never fills.
+      // placeholder that never fills, and say so: that content no longer loads lazily.
+      const { componentClass } = this.props;
+      log(
+        "warn",
+        "VisibilityProxy: componentClass doesn't pass its ref on to an element, so its " +
+          "content renders right away instead of when it scrolls into view",
+        {
+          componentClass:
+            typeof componentClass === "string"
+              ? componentClass
+              : (componentClass?.displayName ?? componentClass?.name),
+        },
+      );
       this.applyVisible(true);
       return;
     }

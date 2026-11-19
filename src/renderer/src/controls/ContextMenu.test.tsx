@@ -3,6 +3,7 @@ import * as PropTypes from "prop-types";
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { IActionDefinitionEx } from "./ActionControl";
 import ContextMenu from "./ContextMenu";
 
 // Icon loads its font set into an `#icon-sets` element the test document lacks; a submenu
@@ -34,7 +35,11 @@ class LegacyContextProvider extends React.Component<{
   }
 }
 
-const testAction = { title: "Test Action", action: () => undefined, show: true } as any;
+const testAction: IActionDefinitionEx = {
+  title: "Test Action",
+  action: () => undefined,
+  show: true,
+};
 
 function Harness(props: { menuLayer: HTMLElement; actions?: any[] }) {
   const [visible, setVisible] = React.useState(false);

@@ -1,20 +1,18 @@
 import { render } from "@testing-library/react";
-import * as React from "react";
+import React, { createRef } from "react";
 import { describe, expect, it } from "vitest";
 
 import ToolbarIcon from "./ToolbarIcon";
 
 describe("ToolbarIcon", () => {
-  it("hands its button element to buttonRef", () => {
-    const buttonRef = React.createRef<HTMLButtonElement>();
-    const { getByRole } = render(
-      <ToolbarIcon tooltip="Manage" text="Manage" buttonRef={buttonRef} />,
-    );
+  it("hands its button element to domRef", () => {
+    const domRef = createRef<HTMLButtonElement>();
+    const { getByRole } = render(<ToolbarIcon tooltip="Manage" text="Manage" domRef={domRef} />);
 
-    expect(buttonRef.current).toBe(getByRole("button"));
+    expect(domRef.current).toBe(getByRole("button"));
   });
 
-  it("renders the same button without a buttonRef", () => {
+  it("renders the same button without a domRef", () => {
     const { getByRole } = render(<ToolbarIcon tooltip="Manage" text="Manage" className="manage" />);
 
     expect(getByRole("button")).toHaveClass("manage");

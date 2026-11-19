@@ -130,7 +130,7 @@ function IconBarIcon(props: IIconBarIconProps) {
   return (
     <ToolbarIcon
       key={actionId}
-      buttonRef={itemRef}
+      domRef={itemRef}
       className={actionId}
       instanceId={instanceIds}
       icon={hasIcon ? icon.icon : undefined}

@@ -7,7 +7,10 @@ import { render } from "@testing-library/react";
 import * as React from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { log } from "../util/log";
 import VisibilityProxy from "./VisibilityProxy";
+
+vi.mock("../util/log", () => ({ log: vi.fn() }));
 
 interface IObserverCall {
   op: "observe" | "unobserve";
@@ -152,5 +155,11 @@ describe("VisibilityProxy", () => {
 
     expect(calls).toEqual([]);
     expect(setVisible).toHaveBeenCalledWith(true);
+    // an extension author can see why their content no longer loads lazily
+    expect(log).toHaveBeenCalledWith(
+      "warn",
+      expect.stringContaining("doesn't pass its ref on"),
+      expect.objectContaining({ componentClass: "Opaque" }),
+    );
   });
 });

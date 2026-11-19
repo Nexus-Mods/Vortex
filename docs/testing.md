@@ -106,9 +106,9 @@ The usual sources:
 A test also fails when our own code calls `findDOMNode`, which React 19
 removes: `findDOMNode was called from X`, naming the caller. Put a ref on the
 element instead. Where the element belongs to a react-bootstrap 0.33 component,
-which doesn't pass refs on, hand it a `componentClass` that does:
-`ButtonWithRef` in `src/renderer/src/controls/ToolbarIcon.tsx` and
-`AnchorWithRef` in `src/renderer/src/controls/ContextMenu.tsx` do this.
+which doesn't pass refs on, hand it a `componentClass` made with `withDomRef`
+(`src/renderer/src/controls/with_dom_ref/withDomRef.ts`) and a `domRef` prop:
+`ToolbarIcon` and `ContextMenu` do this.
 
 The check catches the call, not React's warning. React logs that warning once
 per test file, and react-bootstrap and react-overlays still call `findDOMNode`
@@ -135,7 +135,7 @@ themselves, so their warning would hide ours. Their calls don't fail a test.
   the tests.
 - The `findDOMNode` check only sees code that runs in a test. The renderer
   still has calls outside the tested paths, such as `Dropdown`,
-  `ActionDropdown` and `DraggableList`.
+  `ActionDropdown`, `OverlayTrigger` and `DraggableList`.
 
 ## Extension tests
 
