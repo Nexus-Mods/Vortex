@@ -62,7 +62,7 @@ In your `package.json`, replace:
 
 ```diff
 - "packageManager": "yarn@1.22.19"
-+ "packageManager": "pnpm@10.31.0"
++ "packageManager": "pnpm@12.21.0"
 ```
 
 ### 1b. Generate `pnpm-lock.yaml`
