@@ -1,29 +1,50 @@
 import update from "immutability-helper";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/plugins";
+import type { IPluginCombined, IPlugins } from "../types/IPlugins";
+
+/** session.plugins: the plugins found on disk and everything gathered about them */
+export interface IPluginsSessionState {
+  // keyed by plugin id
+  pluginList: IPlugins;
+  // keyed by plugin id
+  pluginInfo: { [id: string]: IPluginCombined };
+  newlyAddedPlugins: number;
+}
+
+declare module "@/types/IState" {
+  interface ISessionState {
+    plugins: IPluginsSessionState;
+  }
+}
 
 /**
  * reducer for changes to the plugin list
  */
-export const pluginsReducer: IReducerSpec = {
-  reducers: {
-    [actions.setPluginList as any]: (state, payload) =>
+export const pluginsReducer = actionsToReducerSpec<IPluginsSessionState, typeof actions>(
+  {
+    pluginList: {},
+    pluginInfo: {},
+    newlyAddedPlugins: 0,
+  },
+  actions,
+  {
+    setPluginList: (state, payload) =>
       update(state, { pluginList: { $set: payload.plugins ?? {} } }),
-    [actions.setPluginInfo as any]: (state, payload) =>
-      update(state, { pluginInfo: { $set: payload.plugins } }),
-    [actions.setPluginFilePath as any]: (state, payload) => {
+    setPluginInfo: (state, payload) => update(state, { pluginInfo: { $set: payload.plugins } }),
+    setPluginFilePath: (state, payload) => {
       const { pluginId, filePath } = payload;
-      const withFilePath = (map: Record<string, any> = {}) => ({
+      const withFilePath = <T extends { filePath: string }>(map: Record<string, T> = {}) => ({
         ...map,
-        [pluginId]: { ...(map[pluginId] ?? {}), filePath },
+        [pluginId]: { ...map[pluginId], filePath },
       });
       return update(state, {
         pluginList: { $set: withFilePath(state.pluginList) },
         pluginInfo: { $set: withFilePath(state.pluginInfo) },
       });
     },
-    [actions.updatePluginWarnings as any]: (state, payload) => {
+    updatePluginWarnings: (state, payload) => {
       if (state.pluginList?.[payload.id] === undefined) {
         return state;
       }
@@ -34,16 +55,10 @@ export const pluginsReducer: IReducerSpec = {
         },
       });
     },
-    [actions.incrementNewPluginCounter as any]: (state, payload) =>
+    incrementNewPluginCounter: (state, payload) =>
       update(state, {
         newlyAddedPlugins: { $set: (state.newlyAddedPlugins ?? 0) + payload.counter },
       }),
-    [actions.clearNewPluginCounter as any]: (state) =>
-      update(state, { newlyAddedPlugins: { $set: 0 } }),
+    clearNewPluginCounter: (state) => update(state, { newlyAddedPlugins: { $set: 0 } }),
   },
-  defaults: {
-    pluginList: {},
-    pluginInfo: {},
-    newlyAddedPlugins: 0,
-  },
-};
+);

@@ -4,9 +4,8 @@ import reducer, { sessionReducer } from "./reducers";
 
 describe("setUpdateChannel", () => {
   it("sets the Update Channel", () => {
-    const input = { channel: "value" };
-    const result = reducer.reducers.SET_UPDATE_CHANNEL(input, "new value");
-    expect(result).toEqual({ channel: "new value" });
+    const result = reducer.reducers.SET_UPDATE_CHANNEL({ channel: "stable" }, "beta");
+    expect(result).toEqual({ channel: "beta" });
   });
 });
 

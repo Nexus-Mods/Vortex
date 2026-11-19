@@ -1,7 +1,21 @@
 import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
-import type { IManualInstallerPreferences, ITierZeroGame } from "@/types/IState";
+import type {
+  IGameUidRetirement,
+  IManualInstallerPreferences,
+  ITierZeroGame,
+} from "@/types/IState";
+
+/**
+ * append uid retirements to the history, in order. The only write to the history: entries are
+ * never edited or removed, a wrong mapping is fixed by appending a correction. Invalid entries
+ * (not lowercase uids, or mapping a uid to itself) are dropped with a logged error.
+ */
+export const appendGameUidRetirements = createAction(
+  "APPEND_GAME_UID_RETIREMENTS",
+  (entries: IGameUidRetirement[]) => ({ entries }),
+);
 
 export const setGameInfo = createAction(
   "SET_GAME_INFO",

@@ -7,6 +7,17 @@ import toPluginId from "../util/toPluginId";
 // manually locked mod indices, keyed by game id then plugin id
 export type ILockedIndices = Record<string, Record<string, number>>;
 
+/** persistent.plugins: plugin state kept across sessions */
+export interface IPersistentPlugins {
+  lockedIndices: ILockedIndices;
+}
+
+declare module "@/types/IState" {
+  interface IPersistentState {
+    plugins: IPersistentPlugins;
+  }
+}
+
 /** Locks are keyed by plugin id, so any spelling of a plugin's name lands on the same entry. */
 export const indexReducer = actionsToReducerSpec<ILockedIndices, typeof actions>({}, actions, {
   lockPluginIndex: (state, payload) => {

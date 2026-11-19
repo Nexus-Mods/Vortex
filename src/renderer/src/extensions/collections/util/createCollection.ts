@@ -34,7 +34,7 @@ export async function createCollection(
       installTime: new Date().toString(),
       author: state.persistent["nexus"]?.userInfo?.name ?? "Anonymous",
       uploader: state.persistent["nexus"]?.userInfo?.name ?? "Anonymous",
-      uploaderId: state.persistent["nexus"]?.userInfo?.user_id,
+      uploaderId: state.persistent["nexus"]?.userInfo?.userId,
       editable: true,
       source: "user-generated",
       recommendNewProfile: false,

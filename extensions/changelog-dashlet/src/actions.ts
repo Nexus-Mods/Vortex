@@ -1,3 +1,8 @@
 import { createAction } from "redux-act";
 
-export const setChangelogs = createAction("SET_CHANGELOGS", (changelogs: any[]) => changelogs);
+import type { Changelog } from "./types";
+
+export const setChangelogs = createAction(
+  "SET_CHANGELOGS",
+  (changelogs: Changelog[]) => changelogs,
+);

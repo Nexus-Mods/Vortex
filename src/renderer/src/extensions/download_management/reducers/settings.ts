@@ -1,27 +1,14 @@
 import * as path from "path";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import type { ISettingsDownloads } from "../../../types/IState";
-import { setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/settings";
 
 /**
- * reducer for changes to ephemeral session state
+ * reducer for changes to download settings
  */
-export const settingsReducer: IReducerSpec<ISettingsDownloads> = {
-  reducers: {
-    [actions.setMaxDownloads as any]: (state, payload) =>
-      setSafe(state, ["maxParallelDownloads"], payload),
-    [actions.setDownloadPath as any]: (state, payload) => setSafe(state, ["path"], payload),
-    [actions.setShowDLDropzone as any]: (state, payload) =>
-      setSafe(state, ["showDropzone"], payload),
-    [actions.setShowDLGraph as any]: (state, payload) => setSafe(state, ["showGraph"], payload),
-    [actions.setCopyOnIFF as any]: (state, payload) => setSafe(state, ["copyOnIFF"], payload),
-    [actions.setMaxBandwidth as any]: (state, payload) => setSafe(state, ["maxBandwidth"], payload),
-    [actions.setCollectionConcurrency as any]: (state, payload) =>
-      setSafe(state, ["collectionsInstallWhileDownloading"], payload),
-  },
-  defaults: {
+export const settingsReducer = actionsToReducerSpec<ISettingsDownloads, typeof actions>(
+  {
     minChunkSize: 1024 * 1024,
     maxChunks: 10,
     maxParallelDownloads: 1,
@@ -32,10 +19,23 @@ export const settingsReducer: IReducerSpec<ISettingsDownloads> = {
     copyOnIFF: false,
     collectionsInstallWhileDownloading: true,
   },
-  verifiers: {
+  actions,
+  {
+    setMaxDownloads: (state, payload) => ({ ...state, maxParallelDownloads: payload }),
+    setDownloadPath: (state, payload) => ({ ...state, path: payload }),
+    setShowDLDropzone: (state, payload) => ({ ...state, showDropzone: payload }),
+    setShowDLGraph: (state, payload) => ({ ...state, showGraph: payload }),
+    setCopyOnIFF: (state, payload) => ({ ...state, copyOnIFF: payload }),
+    setMaxBandwidth: (state, payload) => ({ ...state, maxBandwidth: payload }),
+    setCollectionConcurrency: (state, payload) => ({
+      ...state,
+      collectionsInstallWhileDownloading: payload,
+    }),
+  },
+  {
     path: {
       description: () => "Severe! The download folder is invalid and will be reset",
       type: "string",
     },
   },
-};
+);

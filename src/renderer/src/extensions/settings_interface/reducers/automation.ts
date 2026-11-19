@@ -1,31 +1,27 @@
-import update from "immutability-helper";
+import { actionsToReducerSpec, setField } from "@/reducers/builder";
+import type { ISettingsAutomation } from "@/types/IState";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import type { ISettingsAutomation } from "../../../types/IState";
 import * as actions from "../actions/automation";
 
 /**
  * reducer for changes to automation settings
  */
-const automationReducer: IReducerSpec<ISettingsAutomation> = {
-  reducers: {
-    [actions.setAutoDeployment as any]: (state, payload) =>
-      update(state, { deploy: { $set: payload } }),
-    [actions.setAutoInstall as any]: (state, payload) =>
-      update(state, { install: { $set: payload } }),
-    [actions.setAutoEnable as any]: (state, payload) =>
-      update(state, { enable: { $set: payload } }),
-    [actions.setAutoStart as any]: (state, payload) => update(state, { start: { $set: payload } }),
-    [actions.setStartMinimized as any]: (state, payload) =>
-      update(state, { minimized: { $set: payload } }),
-  },
-  defaults: {
+const automationReducer = actionsToReducerSpec<ISettingsAutomation, typeof actions>(
+  {
     deploy: true,
     install: true,
     enable: true,
     start: false,
     minimized: false,
   },
-};
+  actions,
+  {
+    setAutoDeployment: (state, payload) => setField(state, "deploy", payload),
+    setAutoInstall: (state, payload) => setField(state, "install", payload),
+    setAutoEnable: (state, payload) => setField(state, "enable", payload),
+    setAutoStart: (state, payload) => setField(state, "start", payload),
+    setStartMinimized: (state, payload) => setField(state, "minimized", payload),
+  },
+);
 
 export default automationReducer;

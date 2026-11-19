@@ -57,7 +57,9 @@ class InfoCache {
       return this.mCacheColRequests[slug];
     }
 
-    return collections[slug].info;
+    // the cache holds the fields the fetching query asked for; callers have always treated that
+    // as a complete collection
+    return collections[slug].info as ICollection;
   }
 
   public async clearCache() {
@@ -107,8 +109,11 @@ class InfoCache {
     revisionNumber: number,
     fetchBehavior: "allow" | "avoid" | "force" = "allow",
   ): Promise<IRevision | undefined> {
-    const revisions: { [id: string]: { info: IRevision; timestamp: number } } =
-      this.mApi.getState().persistent.collections.revisions ?? {};
+    // the cache holds the fields the fetching query asked for; callers have always treated that
+    // as a complete revision
+    const revisions = (this.mApi.getState().persistent.collections.revisions ?? {}) as {
+      [id: string]: { info: IRevision; timestamp: number };
+    };
     if (
       fetchBehavior === "force" ||
       revisions[revisionId]?.timestamp === undefined ||

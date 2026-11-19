@@ -1,67 +1,70 @@
 import { describe, it, expect } from "vitest";
 
+import * as actions from "../actions/category";
+import type { ICategory, ICategoryState } from "../types/ICategoryDictionary";
 import { categoryReducer } from "./category";
+
+function category(name: string, order = 0, parentCategory = ""): ICategory {
+  return { name, order, parentCategory };
+}
 
 describe("loadCategories", () => {
   it("replaces existing categories", () => {
-    const input = { game1: { cat1old: { name: "Cat1 name", order: 0 } } };
+    const input: ICategoryState = { game1: { cat1old: category("Cat1 name", 0) } };
     const categories = {
-      cat1new: { name: "Cat1 name", order: 0 },
-      cat2new: { name: "Cat2 name", order: 2 },
-      cat12new: { name: "Cat12 name", order: 1, parentCategory: "cat1new" },
+      cat1new: category("Cat1 name", 0),
+      cat2new: category("Cat2 name", 2),
+      cat12new: category("Cat12 name", 1, "cat1new"),
     };
-    const result = categoryReducer.reducers.LOAD_CATEGORIES(input, {
-      gameId: "game1",
-      gameCategories: categories,
-    });
+    const result = categoryReducer.reducers.LOAD_CATEGORIES(
+      input,
+      actions.loadCategories("game1", categories).payload,
+    );
     expect(result).toEqual({ game1: categories });
   });
 
   it("leaves other games alone", () => {
-    const input = { game1: { cat1: { name: "Cat1 name", order: 0 } } };
+    const input: ICategoryState = { game1: { cat1: category("Cat1 name", 0) } };
     const categories = {
-      cat1: { name: "Cat1 name game2", order: 0 },
+      cat1: category("Cat1 name game2", 0),
     };
-    const result = categoryReducer.reducers.LOAD_CATEGORIES(input, {
-      gameId: "game2",
-      gameCategories: categories,
-    });
-    expect(result).toEqual(Object.assign(input, { game2: categories }));
+    const result = categoryReducer.reducers.LOAD_CATEGORIES(
+      input,
+      actions.loadCategories("game2", categories).payload,
+    );
+    expect(result).toEqual({ ...input, game2: categories });
   });
 });
 
 describe("renameCategory", () => {
   it("renames the category", () => {
-    const input = { game1: { cat1: { name: "Old name" } } };
-    const result = categoryReducer.reducers.RENAME_CATEGORY(input, {
-      gameId: "game1",
-      categoryId: "cat1",
-      name: "New name",
-    });
-    expect(result).toEqual({ game1: { cat1: { name: "New name" } } });
+    const input: ICategoryState = { game1: { cat1: category("Old name") } };
+    const result = categoryReducer.reducers.RENAME_CATEGORY(
+      input,
+      actions.renameCategory("game1", "cat1", "New name").payload,
+    );
+    expect(result).toEqual({ game1: { cat1: category("New name") } });
   });
   it("does nothing if the category doesn't exist", () => {
-    const input = { game1: { cat1: { name: "Old name" } } };
-    const result = categoryReducer.reducers.RENAME_CATEGORY(input, {
-      gameId: "game1",
-      categoryId: "cat2",
-      name: "New name",
-    });
-    expect(result).toEqual({ game1: { cat1: { name: "Old name" } } });
+    const input: ICategoryState = { game1: { cat1: category("Old name") } };
+    const result = categoryReducer.reducers.RENAME_CATEGORY(
+      input,
+      actions.renameCategory("game1", "cat2", "New name").payload,
+    );
+    expect(result).toEqual({ game1: { cat1: category("Old name") } });
   });
   it("affects only the right game", () => {
-    const input = {
-      game1: { cat1: { name: "Old name" } },
-      game2: { cat1: { name: "Old name" } },
+    const input: ICategoryState = {
+      game1: { cat1: category("Old name") },
+      game2: { cat1: category("Old name") },
     };
-    const result = categoryReducer.reducers.RENAME_CATEGORY(input, {
-      gameId: "game1",
-      categoryId: "cat1",
-      name: "New name",
-    });
+    const result = categoryReducer.reducers.RENAME_CATEGORY(
+      input,
+      actions.renameCategory("game1", "cat1", "New name").payload,
+    );
     expect(result).toEqual({
-      game1: { cat1: { name: "New name" } },
-      game2: { cat1: { name: "Old name" } },
+      game1: { cat1: category("New name") },
+      game2: { cat1: category("Old name") },
     });
   });
 });

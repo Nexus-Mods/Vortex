@@ -1,89 +1,88 @@
-import update from "immutability-helper";
-
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToReducerSpec } from "../../../reducers/builder";
+import type { ICollectionsPersistentState } from "../../../types/IState";
 import * as actions from "../actions/persistent";
 
-const persistentReducer: IReducerSpec = {
-  reducers: {
-    [actions.updateCollectionInfo as any]: (state, payload) => {
+const persistentReducer = actionsToReducerSpec<ICollectionsPersistentState, typeof actions>(
+  {
+    collections: {},
+    revisions: {},
+    pendingVotes: {},
+  },
+  actions,
+  {
+    updateCollectionInfo: (state, payload) => {
       const { collectionId, collectionInfo, timestamp } = payload;
 
       if (collectionInfo === undefined) {
         if (state.collections?.[collectionId] === undefined) {
           return state;
         }
-        return update(state, { collections: { $unset: [collectionId] } });
+        const { [collectionId]: _, ...collections } = state.collections;
+        return { ...state, collections };
       }
 
-      return update(state, {
-        collections: {
-          [collectionId]: { $set: { timestamp, info: collectionInfo } },
-        },
-      });
+      return {
+        ...state,
+        collections: { ...state.collections, [collectionId]: { timestamp, info: collectionInfo } },
+      };
     },
-    [actions.updateRevisionInfo as any]: (state, payload) => {
+    updateRevisionInfo: (state, payload) => {
       const { revisionId, revisionInfo, timestamp } = payload;
 
       if (revisionInfo === undefined) {
         if (state.revisions?.[revisionId] === undefined) {
           return state;
         }
-        return update(state, { revisions: { $unset: [revisionId] } });
+        const { [revisionId]: _, ...revisions } = state.revisions;
+        return { ...state, revisions };
       }
 
-      return update(state, {
-        revisions: {
-          [revisionId]: { $set: { timestamp, info: revisionInfo } },
-        },
-      });
+      return {
+        ...state,
+        revisions: { ...state.revisions, [revisionId]: { timestamp, info: revisionInfo } },
+      };
     },
-    [actions.updateSuccessRate as any]: (state, payload) => {
+    updateSuccessRate: (state, payload) => {
       const { revisionId, vote, average, total } = payload;
 
-      return update(state, {
+      const revision = state.revisions[revisionId];
+      const info = revision?.info;
+      return {
+        ...state,
         revisions: {
+          ...state.revisions,
           [revisionId]: {
-            $apply: (rev) =>
-              update(rev ?? {}, {
-                info: {
-                  $apply: (info) =>
-                    update(info ?? {}, {
-                      metadata: {
-                        $apply: (m) => ({ ...(m ?? {}), ratingValue: vote }),
-                      },
-                      rating: { $set: { average, total } },
-                    }),
-                },
-              }),
+            ...revision,
+            info: {
+              ...info,
+              metadata: { ...info?.metadata, ratingValue: vote },
+              rating: { average, total },
+            },
           },
         },
-      });
+      };
     },
-    [actions.setPendingVote as any]: (state, payload) => {
+    setPendingVote: (state, payload) => {
       const { revisionId, collectionSlug, revisionNumber, time } = payload;
 
-      return update(state, {
+      return {
+        ...state,
         pendingVotes: {
-          [revisionId]: {
-            $set: { collectionSlug, revisionNumber, time },
-          },
+          ...state.pendingVotes,
+          [revisionId]: { collectionSlug, revisionNumber, time },
         },
-      });
+      };
     },
-    [actions.clearPendingVote as any]: (state, payload) => {
+    clearPendingVote: (state, payload) => {
       const { revisionId } = payload;
 
       if (state.pendingVotes?.[revisionId] === undefined) {
         return state;
       }
-      return update(state, { pendingVotes: { $unset: [revisionId] } });
+      const { [revisionId]: _, ...pendingVotes } = state.pendingVotes;
+      return { ...state, pendingVotes };
     },
   },
-  defaults: {
-    collections: {},
-    revisions: {},
-    pendingVotes: {},
-  },
-};
+);
 
 export default persistentReducer;

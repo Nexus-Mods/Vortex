@@ -1,5 +1,3 @@
-import * as reduxAct from "redux-act";
-
 import safeCreateAction from "../../../actions/safeCreateAction";
 import type { InstallPathMode } from "../../../types/api";
 

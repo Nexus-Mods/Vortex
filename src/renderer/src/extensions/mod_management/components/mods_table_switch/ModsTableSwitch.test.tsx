@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { VortexModId } from "@vortex/shared";
 import React from "react";
 import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1263,7 +1264,7 @@ describe("ModsTableSwitch", () => {
     it("shows a mod a saved filter hides when asked to, leaving the filter saved", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) }, undefined, {
         ...filteredView("custom-1"),
-        focusedModId: "a",
+        focusedModId: VortexModId("a"),
       });
 
       expect(shownIds()).toEqual(["a", "b"]);

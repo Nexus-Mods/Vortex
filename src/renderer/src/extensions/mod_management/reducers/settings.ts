@@ -1,6 +1,6 @@
 import type { ISettingsMods } from "@/types/IState";
 
-import { actionsToReducerSpec } from "../../../reducers/builder";
+import { actionsToPartialReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/settings";
 
 declare module "@/types/IState" {
@@ -30,9 +30,10 @@ const defaultState: ModsSettingsState = {
 };
 
 /**
- * reducer for changes to settings regarding mods
+ * reducer for changes to settings regarding mods. Partial: installer_fomod_ipc owns
+ * installerSandbox in the same slice.
  */
-export const settingsReducer = actionsToReducerSpec<ModsSettingsState, typeof actions>(
+export const settingsReducer = actionsToPartialReducerSpec<ISettingsMods, typeof actions>(
   defaultState,
   actions,
   {

@@ -1102,11 +1102,12 @@ function makeMapStateToProps(): (state: IState, ownProps: ICollectionPageProps) 
     let collectionInfo: ICollection;
 
     if (collection?.attributes?.revisionId !== undefined) {
-      revisionInfo =
-        state.persistent.collections.revisions?.[collection.attributes.revisionId]?.info;
+      // cached info holds the fields the fetching query asked for, read here as complete
+      revisionInfo = state.persistent.collections.revisions?.[collection.attributes.revisionId]
+        ?.info as IRevision;
       if (revisionInfo?.collection !== undefined) {
-        collectionInfo =
-          state.persistent.collections.collections?.[revisionInfo.collection.id]?.info;
+        collectionInfo = state.persistent.collections.collections?.[revisionInfo.collection.id]
+          ?.info as ICollection;
       }
       votedSuccess = revisionInfo?.metadata?.ratingValue ?? "abstained";
     }
