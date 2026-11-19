@@ -111,9 +111,16 @@ export function progressBarFor(
   };
 }
 
-/** An error the deployment fails with, naming the cause, not a bug to report. */
-const deploymentError = (message: string) =>
-  Object.assign(new Error(message), { allowReport: false });
+/** What an Apply run does. */
+export const ApplyRunKind = { Deployment: "deployment", Purge: "purge" } as const;
+export type ApplyRunKind = (typeof ApplyRunKind)[keyof typeof ApplyRunKind];
+
+/** The error a run through Apply fails with; not a bug to report. */
+const applyFailedError = (
+  runKind: ApplyRunKind,
+  message: string,
+  applyStatus?: Exclude<ApplyResult, AppliedResult>["status"],
+) => new VortexError(message, { kind: "deployment:apply-failed", runKind, applyStatus });
 
 function failedStepDescriptionOf({ index, operation, cause }: FailedStep): string {
   const parts: string[] = [];
@@ -191,11 +198,17 @@ export async function planAndApplyDeployment(
   );
   if (hasMergedFiles) {
     // TODO: remove this once we figure out how to deal with merged files.
-    throw deploymentError("A deployment through Apply can't deploy merged files");
+    throw applyFailedError(
+      ApplyRunKind.Deployment,
+      "A deployment through Apply can't deploy merged files",
+    );
   }
   const plan = await orchestrator.plan(profileId);
   if (plan === undefined) {
-    throw deploymentError("The deployment couldn't be planned; see the log");
+    throw applyFailedError(
+      ApplyRunKind.Deployment,
+      "The deployment couldn't be planned; see the log",
+    );
   }
   const applied = await orchestrator.apply(
     plan,
@@ -209,11 +222,18 @@ export async function planAndApplyDeployment(
     APPLY_DEPLOYMENT_METHOD,
   );
   if (applied === undefined) {
-    throw deploymentError("The deployment's plan was replaced before it ran");
+    throw applyFailedError(
+      ApplyRunKind.Deployment,
+      "The deployment's plan was replaced before it ran",
+    );
   }
   const { result, savedManifestFiles } = applied;
   if (result.status !== ApplyStatus.Applied) {
-    throw deploymentError(failureMessageOf(result, journalFile));
+    throw applyFailedError(
+      ApplyRunKind.Deployment,
+      failureMessageOf(result, journalFile),
+      result.status,
+    );
   }
   notifyFilesSetAside(api, result, keptFolder);
   return savedManifestFiles ?? new Map();
