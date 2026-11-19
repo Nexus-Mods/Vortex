@@ -25,6 +25,10 @@ on:
         description: "Build and pack without publishing."
         type: boolean
         default: true
+      ref:
+        description: "Branch or commit to build instead of the tag, for dry runs of an unreleased branch. The tag still sets the version."
+        required: false
+        type: string
 
 concurrency:
   group: publish-vortex-api-${{ github.event.release.tag_name || inputs.tag }}
@@ -44,9 +48,15 @@ jobs:
       # The API bundle never loads Electron, so skip the native rebuild the app needs.
       VORTEX_ELECTRON_REBUILD: "skip"
     steps:
+      - name: Refuse to publish a ref other than the tag
+        if: ${{ inputs.ref != '' && env.DRY_RUN != 'true' }}
+        run: |
+          echo "::error::The ref input is for dry runs only. Publishing must build the release tag."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ref: ${{ github.event.release.tag_name || inputs.ref || inputs.tag }}
 
       - name: Install pnpm
         uses: ./.github/actions/setup-pnpm
