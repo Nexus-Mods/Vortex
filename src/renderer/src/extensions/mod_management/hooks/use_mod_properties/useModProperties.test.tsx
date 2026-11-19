@@ -110,8 +110,18 @@ describe("useModProperties", () => {
     expect(renderProperties([local]).card?.pageUrl).toBeUndefined();
   });
 
-  it("tags a downloaded mod's card", () => {
-    expect(renderProperties([mod("a", { state: "downloaded" })]).card?.status).toBe("downloaded");
+  it("tags the card of a mod with an update out", () => {
+    const outdated = mod("a", {
+      attributes: {
+        source: "nexus",
+        fileId: 1,
+        version: "1.0",
+        newestVersion: "1.1",
+        newestFileId: 2,
+      },
+    });
+
+    expect(renderProperties([outdated]).card?.status).toBe("update");
   });
 
   it("puts its version and times side by side on General", () => {

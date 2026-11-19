@@ -29,7 +29,7 @@ const ONE_MOD: IModProperties = {
     summary: "A friendlier menu.",
     author: "schlangster",
     isAdult: false,
-    status: "downloaded",
+    status: "update",
   },
   sections: [
     {
@@ -158,7 +158,7 @@ describe("ModPropertiesPanel", () => {
 
     const general = screen.getByRole("tabpanel");
     expect(within(general).getByTestId("mod-properties-card")).toBeInTheDocument();
-    expect(within(general).getByTestId("mod-status-downloaded")).toBeInTheDocument();
+    expect(within(general).getByTestId("mod-status-update")).toBeInTheDocument();
     expect(within(general).getByTestId("mod-property-version")).toHaveTextContent("5.2");
     expect(within(general).queryByTestId("mod-property-archiveName")).not.toBeInTheDocument();
   });
@@ -173,6 +173,26 @@ describe("ModPropertiesPanel", () => {
     expect(general).toHaveAttribute("aria-selected", "false");
     expect(screen.getByTestId("mod-property-archiveName")).toHaveTextContent("SkyUI.7z");
     expect(screen.queryByTestId("mod-properties-card")).not.toBeInTheDocument();
+  });
+
+  it("keeps its tabs and close button out of what scrolls", () => {
+    renderPanel(ONE_MOD);
+
+    const scrollArea = screen.getByTestId("mod-properties-scroll-area");
+    expect(scrollArea).not.toContainElement(screen.getByRole("tablist"));
+    expect(scrollArea).not.toContainElement(screen.getByTestId("mod-properties-close"));
+    expect(scrollArea).toContainElement(screen.getByTestId("mod-properties-card"));
+  });
+
+  it("keeps several mods' count out of what scrolls", () => {
+    renderPanel({
+      count: 3,
+      sections: [{ id: "organise", tab: "general", layout: "list", properties: [CATEGORY] }],
+    });
+
+    const scrollArea = screen.getByTestId("mod-properties-scroll-area");
+    expect(scrollArea).not.toContainElement(screen.getByTestId("mod-properties-count"));
+    expect(scrollArea).toContainElement(screen.getByRole("button", { name: /^Category/ }));
   });
 
   it("has no Advanced tab with nothing on it", () => {

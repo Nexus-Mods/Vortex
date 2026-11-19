@@ -45,7 +45,7 @@ export interface IModPropertiesCard {
   pictureUrl?: string;
   /** Whether the site marks it adult, so its picture blurs as the user has asked. */
   isAdult: boolean;
-  /** Its status tag: downloaded but not installed, or with an update out. */
+  /** Its status tag, for an update out. */
   status?: ModStatus;
 }
 

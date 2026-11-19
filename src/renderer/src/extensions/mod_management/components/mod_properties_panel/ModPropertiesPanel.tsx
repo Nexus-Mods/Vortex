@@ -39,6 +39,13 @@ interface IModPropertiesPanelProps {
 
 const TABS: ModPropertiesTab[] = ["general", "advanced"];
 
+/** Its header, which stays put, keeping the gutter its scroll area keeps so their edges line up. */
+const HEADER_CLASSES = "flex shrink-0 scrollbar-gutter-stable overflow-hidden pr-3 pb-4 pl-5";
+
+/** Where its contents scroll and fade out at the foot, as Browse's mod details do. */
+const SCROLL_CLASSES =
+  "min-h-0 flex-1 scrollbar-gutter-stable overflow-y-auto scroll-fade pr-3 pb-9 pl-5 scroll-fade-9";
+
 /** The sections on a tab, ruled off from each other. */
 const sectionsOn = (properties: IModProperties, tab: ModPropertiesTab) =>
   properties.sections
@@ -102,9 +109,13 @@ export const ModPropertiesPanel = ({
   const body = () => {
     if (properties.count === 0) {
       return (
-        <div className="flex items-start gap-x-2">
+        <div className={joinClasses([SCROLL_CLASSES, "flex items-start gap-x-2"])}>
           <div className="flex-1" data-testid="mod-properties-empty">
-            <NoResults icon="info" title={t("modsTable::properties::noSelection")} />
+            <NoResults
+              className="py-8"
+              icon="info"
+              title={t("modsTable::properties::noSelection")}
+            />
           </div>
 
           {closeButton}
@@ -116,7 +127,7 @@ export const ModPropertiesPanel = ({
     if (properties.count > 1) {
       return (
         <>
-          <div className="flex items-center gap-x-2 pb-4">
+          <div className={joinClasses([HEADER_CLASSES, "items-center gap-x-2"])}>
             <Typography appearance="moderate" data-testid="mod-properties-count">
               {t("modsTable::properties::count", { count: properties.count })}
             </Typography>
@@ -125,9 +136,11 @@ export const ModPropertiesPanel = ({
           </div>
 
           {/* General's then Advanced's, in one run, as there are no tabs to put them on. */}
-          <div className="flex flex-col divide-y divide-stroke-weak">
-            {sectionsOn(properties, "general")}
-            {sectionsOn(properties, "advanced")}
+          <div className={SCROLL_CLASSES} data-testid="mod-properties-scroll-area">
+            <div className="flex flex-col divide-y divide-stroke-weak">
+              {sectionsOn(properties, "general")}
+              {sectionsOn(properties, "advanced")}
+            </div>
           </div>
         </>
       );
@@ -140,7 +153,7 @@ export const ModPropertiesPanel = ({
         tabType="secondary"
         onSetSelectedTab={(next) => setPicked(next as ModPropertiesTab)}
       >
-        <div className="flex items-center gap-x-1 pb-4">
+        <div className={joinClasses([HEADER_CLASSES, "items-center gap-x-1"])}>
           <TabBar className="min-w-0 flex-1">
             {tabs.map((id) => (
               <TabButton
@@ -156,17 +169,19 @@ export const ModPropertiesPanel = ({
           {closeButton}
         </div>
 
-        {tabs.map((id) => (
-          <TabPanel className="flex flex-col divide-y divide-stroke-weak" id={id} key={id}>
-            {id === "general" && !!properties.card && (
-              <div className="pb-4">
-                <ModPropertiesCard card={properties.card} />
-              </div>
-            )}
+        <div className={SCROLL_CLASSES} data-testid="mod-properties-scroll-area">
+          {tabs.map((id) => (
+            <TabPanel className="flex flex-col divide-y divide-stroke-weak" id={id} key={id}>
+              {id === "general" && !!properties.card && (
+                <div className="pb-4">
+                  <ModPropertiesCard card={properties.card} />
+                </div>
+              )}
 
-            {sectionsOn(properties, id)}
-          </TabPanel>
-        ))}
+              {sectionsOn(properties, id)}
+            </TabPanel>
+          ))}
+        </div>
       </TabProvider>
     );
   };
@@ -174,7 +189,7 @@ export const ModPropertiesPanel = ({
   return (
     <aside
       aria-label={t("modsTable::properties::label")}
-      className={joinClasses(["flex min-h-0 flex-col overflow-y-auto px-5 pb-4", className])}
+      className={joinClasses(["flex min-h-0 flex-col", className])}
       data-testid="mod-properties-panel"
     >
       <RegisteredModsVersionsProvider versions={versions}>{body()}</RegisteredModsVersionsProvider>
