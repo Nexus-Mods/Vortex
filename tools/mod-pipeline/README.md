@@ -27,7 +27,7 @@ Vortex; deploy from the UI. `--reset` only deletes. `tamper`
 changes deployed files behind Vortex's back. `rollback` runs a profile's plan
 through Apply with one disk call made to fail, then checks that the game and
 staging folders are as they were. `manifests` runs Apply to another profile and
-back, then checks that the files it left and the deployment manifests it saved
+back, then checks that the files and folders it left and the manifests it saved
 are the ones today's deployment did. `journal` prints the journal of the latest
 Apply run that `rollback` or `manifests` started: how the run ended, and each
 operation with how far it got. Apply removes its journal when a run ends, so a

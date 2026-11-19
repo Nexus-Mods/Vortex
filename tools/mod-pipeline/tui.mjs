@@ -287,6 +287,9 @@ function Journals({ rows, onClose }) {
               { key: "run", wrap: "truncate-end" },
               `run ${journal.runId}, ${operationCount} operations, `,
               h(Text, { color: OUTCOME_COLOR[journal.outcome] }, journal.outcome),
+              journal.removedFolders.length > 0
+                ? `, removed ${journal.removedFolders.length} emptied folders`
+                : "",
             ),
             ...journal.operations
               .slice(firstRow, firstRow + shownRows)

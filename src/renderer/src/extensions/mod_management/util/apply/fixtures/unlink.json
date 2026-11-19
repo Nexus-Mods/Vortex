@@ -1,5 +1,5 @@
 {
-  "name": "a removed file of ours is deleted, leaving its folder",
+  "name": "a removed file of ours is deleted, leaving its untagged folder",
   "disk": {
     "files": {
       "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v1",

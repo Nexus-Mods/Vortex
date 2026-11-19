@@ -150,7 +150,10 @@
     "disk": {
       "files": {
         "/fixture-root/game/Data/Meshes": "meshes file",
+        "/fixture-root/game/Data/SKSE/__folder_managed_by_vortex": "a folder Vortex made",
+        "/fixture-root/game/Data/SKSE/Plugins/__folder_managed_by_vortex": "a folder Vortex made",
         "/fixture-root/game/Data/SKSE/Plugins/SkyUI.dll": "SkyUI dll",
+        "/fixture-root/game/Data/Scripts/__folder_managed_by_vortex": "a folder Vortex made",
         "/fixture-root/game/Data/Scripts/skse.pex": "skse pex",
         "/fixture-root/game/Data/SkyUI_SE.esp": "SkyUI esp v1",
         "/fixture-root/game/Data/SkyUI_SE.esp.backup": "game's own esp",

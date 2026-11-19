@@ -6,9 +6,10 @@ import {
   type FileSource,
   type Operation,
 } from "@nexusmods/mod-pipeline";
-import { VortexError } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexError } from "@vortex/shared";
 import { QualifiedPath, type FileSystem, type StatResult } from "@vortex/shared/filesystem";
 
+import { log } from "../../../../logging";
 import { entryIdOf } from "../diskScan";
 import {
   continueJournal,
@@ -21,11 +22,18 @@ import {
   type JournalEntry,
   type JournalStorage,
   type JournalWriter,
+  type RemovedFolder,
 } from "./journal";
 
 /** Where Stage keeps a lockfile's files. */
 export interface StagedFiles {
   pathOf(file: FileSource): string | undefined;
+}
+
+/** The file that marks a folder as made by a deployment, for it to be removed once empty. */
+export interface FolderTag {
+  name: string;
+  contents: string;
 }
 
 export interface RunOptions {
@@ -36,6 +44,11 @@ export interface RunOptions {
    * calls it again, so it is safe to repeat
    */
   recordDeployment?: (entries: readonly JournalEntry[]) => Promise<void>;
+  /**
+   * the tag the run gives the folders a LINK makes; without it they are untagged and no folder the
+   * run empties is removed
+   */
+  folderTag?: FolderTag;
 }
 
 export interface ApplyOptions extends RunOptions {
@@ -89,7 +102,7 @@ export interface AppliedResult {
   status: typeof ApplyStatus.Applied;
   kept: KeptFile[];
 }
-/** Every step ran, but the deployment couldn't be recorded or the journal ended; {@link resumeApply} does both. */
+/** Every step ran, but the deployment couldn't be recorded or the journal written or ended; {@link resumeApply} finishes it. */
 export interface UnfinishedResult {
   status: typeof ApplyStatus.Unfinished;
   cause: unknown;
@@ -175,18 +188,44 @@ async function moveOnDrive(fs: FileSystem, from: string, to: string): Promise<vo
   await fs.move(qualified(from), qualified(to));
 }
 
-/** Does nothing when the folder is missing or holds anything, or a file is there. */
-async function removeEmptyFolder(fs: FileSystem, path: string): Promise<void> {
+/** The names of a folder's first two entries, or undefined when no folder is there. */
+async function firstTwoEntryNames(fs: FileSystem, path: string): Promise<string[] | undefined> {
   const status = await statusAt(fs, path);
   if (!status.exists || status.isFile) {
-    return;
+    return undefined;
   }
-  const folder = qualified(path);
-  const listing = await fs.enumerateDirectory(folder);
-  const { done } = await listing.next();
-  await listing.return?.();
-  if (done === true) {
-    await fs.deleteRecursive(folder);
+  const names: string[] = [];
+  for await (const entry of await fs.enumerateDirectory(qualified(path))) {
+    names.push(entry.basename);
+    if (names.length === 2) {
+      break;
+    }
+  }
+  return names;
+}
+
+/** Whether a folder's entries are no more than the tag. */
+const isEmptyButForTag = (names: readonly string[], folderTag: FolderTag | undefined) =>
+  names.every((name) => name === folderTag?.name);
+
+/** Removes a folder holding nothing, or nothing but `folderTag`; leaves anything else. */
+async function removeFolderIfEmpty(fs: FileSystem, path: string, folderTag?: FolderTag) {
+  const names = await firstTwoEntryNames(fs, path);
+  if (names !== undefined && isEmptyButForTag(names, folderTag)) {
+    await fs.deleteRecursive(qualified(path));
+  }
+}
+
+/** Writes the tag into a folder that is there and lacks it. */
+async function writeTagIfMissing(fs: FileSystem, folder: string, folderTag: FolderTag) {
+  const tagPath = qualified(folder).join(folderTag.name);
+  const folderStatus = await statusAt(fs, folder);
+  if (
+    folderStatus.exists &&
+    !folderStatus.isFile &&
+    !(await fs.stat(tagPath, { parseSymLink: true })).exists
+  ) {
+    await fs.writeFile(tagPath, new TextEncoder().encode(folderTag.contents));
   }
 }
 
@@ -202,6 +241,7 @@ const refused = (reason: RefusalReason, details: Partial<RefusedResult> = {}): R
 /** A run's state, kept as its journal records it. */
 interface Run {
   fs: FileSystem;
+  folderTag: FolderTag | undefined;
   recordDeployment: RunOptions["recordDeployment"];
   writer: JournalWriter;
   entries: readonly JournalEntry[];
@@ -214,8 +254,13 @@ interface Run {
   undone: ReadonlySet<number>;
   /** by entry, deepest first */
   createdFolders: Map<number, string[]>;
-  removedFolders: Set<number>;
+  /** in the order the run removed them */
+  removedFolders: RemovedFolder[];
 }
+
+/** Whether the LINK at `index` may have removed an empty folder at its destination. */
+const linkRemovedAFolder = (run: Run, index: number) =>
+  run.removedFolders.some((folder) => "index" in folder && folder.index === index);
 
 function addFolder(folders: Map<number, string[]>, index: number, path: string): void {
   folders.set(index, [...(folders.get(index) ?? []), path]);
@@ -359,9 +404,9 @@ async function linkFromDisk(
 ): Promise<void> {
   const { fs } = run;
   if (destinationId !== undefined) {
-    await run.writer.recordRemovedFolder(index);
-    run.removedFolders.add(index);
-    await removeEmptyFolder(fs, destinationPath);
+    await run.writer.recordRemovedFolder({ index });
+    run.removedFolders.push({ index });
+    await removeFolderIfEmpty(fs, destinationPath);
     if ((await idAt(fs, destinationPath)) !== undefined) {
       throw new Error(`something else is at ${destinationPath}`);
     }
@@ -416,15 +461,21 @@ async function applyEntry(run: Run, index: number, entry: JournalEntry): Promise
         throw new Error(`no staged file to link at ${destinationPath}`);
       }
       const destinationId = await idAt(fs, destinationPath);
-      if (await isStagedFile(fs, destinationId, stagedPath)) {
-        return;
+      if (!(await isStagedFile(fs, destinationId, stagedPath))) {
+        await markChanging(run, index);
+        try {
+          await fs.createLink(qualified(stagedPath), qualified(destinationPath), "hardlink");
+        } catch {
+          // a taken destination or a missing folder; a real failure recurs
+          await linkFromDisk(run, index, destinationPath, stagedPath, destinationId);
+        }
       }
-      await markChanging(run, index);
-      try {
-        await fs.createLink(qualified(stagedPath), qualified(destinationPath), "hardlink");
-      } catch {
-        // a taken destination or a missing folder; a real failure recurs
-        await linkFromDisk(run, index, destinationPath, stagedPath, destinationId);
+      // also when the link is already there, for a run killed before its folders were tagged
+      const { folderTag } = run;
+      if (folderTag !== undefined) {
+        for (const folder of run.createdFolders.get(index) ?? []) {
+          await writeTagIfMissing(fs, folder, folderTag);
+        }
       }
       return;
     }
@@ -451,7 +502,7 @@ async function undoEntry(run: Run, index: number, entry: JournalEntry): Promise<
       } else if (
         run.done.has(index) &&
         // a folder this LINK removed, put back by an undo a kill cut short
-        !run.removedFolders.has(index)
+        !linkRemovedAFolder(run, index)
       ) {
         throw new Error(`something else is at ${destinationPath}`);
       }
@@ -500,10 +551,10 @@ async function undoFolders(run: Run, index: number, entry: JournalEntry): Promis
   const created = run.createdFolders.get(index);
   if (created !== undefined) {
     for (const folder of created) {
-      await removeEmptyFolder(run.fs, folder);
+      await removeFolderIfEmpty(run.fs, folder, run.folderTag);
     }
   }
-  if (run.removedFolders.has(index)) {
+  if (linkRemovedAFolder(run, index)) {
     const folder = destinationOf(entry.operation);
     if ((await idAt(run.fs, folder)) === undefined) {
       await run.fs.createDirectory(qualified(folder));
@@ -524,6 +575,106 @@ const keptFiles = (run: Run): KeptFile[] =>
           : KeptReason.NotOurs,
     }));
 
+/** Logs a folder the run leaves although its steps emptied it. */
+const warnFolderStays = (message: string, folder: string, err: unknown) =>
+  log("warn", message, { folder, error: getErrorMessageOrDefault(err) });
+
+/**
+ * Removes the tagged folders the run's UNLINKs and BACKUPs left holding only their tag, deepest
+ * first, recording each first. A folder whose listing or removal fails stays, tagged where it can
+ * be, with the folders above it; a failure to record ends the run unfinished.
+ */
+async function removeEmptiedTaggedFolders(run: Run): Promise<void> {
+  const { folderTag } = run;
+  if (folderTag === undefined) {
+    return;
+  }
+  const foldersAboveRemovedFiles = new Set<string>();
+  const aboveAFolderThatStays = new Set<string>();
+  const keepFoldersAbove = (path: string) => {
+    for (const folder of parentFolders(path)) {
+      aboveAFolderThatStays.add(folder);
+    }
+  };
+  for (const { operation } of run.entries) {
+    const destinationPath = destinationOf(operation);
+    if (operation.kind === OperationKind.Unlink || operation.kind === OperationKind.Backup) {
+      for (const folder of parentFolders(destinationPath)) {
+        if (foldersAboveRemovedFiles.has(folder)) {
+          break;
+        }
+        foldersAboveRemovedFiles.add(folder);
+      }
+    } else {
+      // a LINK or RESTORE leaves a file there
+      keepFoldersAbove(destinationPath);
+    }
+  }
+  const recordedAsRemoved = new Set(
+    run.removedFolders.flatMap((folder) => ("path" in folder ? [folder.path] : [])),
+  );
+  // a folder's path is longer than its parent's, so a parent is decided after its children
+  for (const folder of [...foldersAboveRemovedFiles].toSorted(
+    (lhs, rhs) => rhs.length - lhs.length,
+  )) {
+    if (aboveAFolderThatStays.has(folder)) {
+      continue;
+    }
+    let names: string[] | undefined;
+    try {
+      names = await firstTwoEntryNames(run.fs, folder);
+    } catch (err) {
+      warnFolderStays("couldn't list a folder the deployment emptied", folder, err);
+      keepFoldersAbove(folder);
+      continue;
+    }
+    if (names === undefined) {
+      continue;
+    }
+    // a recorded folder may have lost its tag to a kill before it was removed
+    if (
+      !isEmptyButForTag(names, folderTag) ||
+      (names.length === 0 && !recordedAsRemoved.has(folder))
+    ) {
+      keepFoldersAbove(folder);
+      continue;
+    }
+    if (!recordedAsRemoved.has(folder)) {
+      await run.writer.recordRemovedFolder({ path: folder });
+      run.removedFolders.push({ path: folder });
+    }
+    try {
+      await run.fs.deleteRecursive(qualified(folder));
+    } catch (err) {
+      warnFolderStays("couldn't remove a folder the deployment emptied", folder, err);
+      // a purge removes it later if it keeps its tag
+      await writeTagIfMissing(run.fs, folder, folderTag).catch((tagErr: unknown) =>
+        warnFolderStays("couldn't tag a folder the deployment emptied", folder, tagErr),
+      );
+      keepFoldersAbove(folder);
+    }
+  }
+}
+
+/** Puts back the tagged folders the run removed, the last removed first, tagged where it can be. */
+async function restoreRemovedTaggedFolders(run: Run): Promise<void> {
+  const { folderTag } = run;
+  if (folderTag === undefined) {
+    return;
+  }
+  for (const removed of run.removedFolders.toReversed()) {
+    if (!("path" in removed)) {
+      continue;
+    }
+    if ((await idAt(run.fs, removed.path)) === undefined) {
+      await run.fs.createDirectory(qualified(removed.path));
+    }
+    await writeTagIfMissing(run.fs, removed.path, folderTag).catch((err: unknown) =>
+      warnFolderStays("couldn't tag a folder a rollback put back", removed.path, err),
+    );
+  }
+}
+
 /** Undoes the entries that changed the disk, newest first; the journal goes last. */
 async function rollBack(
   run: Run,
@@ -538,6 +689,8 @@ async function rollBack(
     if (run.phase !== JournalPhase.RollingBack) {
       await run.writer.startRollback();
     }
+    // before any step is undone, so a file put back has its folder
+    await restoreRemovedTaggedFolders(run);
   } catch (cause) {
     return stopped({ cause });
   }
@@ -579,6 +732,7 @@ async function runForward(run: Run): Promise<ApplyResult> {
   }
   try {
     await run.recordDeployment?.(run.entries);
+    await removeEmptiedTaggedFolders(run);
     await run.writer.finish();
     return { status: ApplyStatus.Applied, kept: keptFiles(run) };
   } catch (cause) {
@@ -587,11 +741,12 @@ async function runForward(run: Run): Promise<ApplyResult> {
 }
 
 const runOf = (
-  { fs, recordDeployment }: RunOptions,
+  { fs, recordDeployment, folderTag }: RunOptions,
   writer: JournalWriter,
   journal: Omit<Journal, "runId">,
 ): Run => ({
   fs,
+  folderTag,
   recordDeployment,
   writer,
   entries: journal.entries,
@@ -601,7 +756,7 @@ const runOf = (
   kept: new Set(journal.kept),
   undone: journal.undone,
   createdFolders: foldersByEntry(journal.createdFolders),
-  removedFolders: new Set(journal.removedFolders),
+  removedFolders: [...journal.removedFolders],
 });
 
 /** Always ends with the journal closed; a handle that won't close leaves the journal intact. */
@@ -655,7 +810,7 @@ export async function apply(
     kept: new Set(),
     undone: new Set(),
     createdFolders: [],
-    removedFolders: new Set(),
+    removedFolders: [],
   });
   return closingAfter(writer, () => runForward(run));
 }
