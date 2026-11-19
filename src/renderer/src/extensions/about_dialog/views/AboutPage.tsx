@@ -11,7 +11,7 @@ import I18next from "i18next";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
 
-import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import { ComponentEx, translate } from "../../../controls/ComponentEx";
 import More from "../../../controls/More";
@@ -145,7 +145,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const imgPath = path.resolve(getVortexPath("assets"), "images", "vortex.png");
 
     const licenseBox = ownLicense ? (
-      <ReactMarkdown className="license-text-own" disallowedElements={["link"]}>
+      <ReactMarkdown className="license-text-own" disallowedElements={["a"]} unwrapDisallowed>
         {ownLicenseText}
       </ReactMarkdown>
     ) : (

@@ -27,8 +27,9 @@ const failingWarnings: { logged: string; failure: (components: string) => string
     failure: (components) => `React updated ${components} outside act()`,
   },
   {
-    logged: "Support for defaultProps will be removed from function components",
-    failure: (components) => `${components} set defaultProps on a function component`,
+    // React logs one message for function components and another for memo components
+    logged: "Support for defaultProps will be removed from",
+    failure: (components) => `${components} set defaultProps on a function or memo component`,
   },
 ];
 let componentsByWarning = new Map<(typeof failingWarnings)[number], Set<string>>();

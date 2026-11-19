@@ -19,7 +19,7 @@ import { getEmptyImage } from "react-dnd-html5-backend";
 import { findDOMNode } from "react-dom";
 import { connect } from "react-redux";
 
-import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import Advanced from "../../../controls/Advanced";
 import { ComponentEx } from "../../../controls/ComponentEx";

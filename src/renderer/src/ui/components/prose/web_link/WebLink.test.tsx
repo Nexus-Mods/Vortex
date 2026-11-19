@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it } from "vitest";
 
-import { ReactMarkdown } from "../react_markdown/ReactMarkdown";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
+
 import { WebLink } from "./WebLink";
 
 const renderMarkdown = (markdown: string) =>

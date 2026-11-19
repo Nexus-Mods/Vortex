@@ -6,8 +6,8 @@ import Select from "react-select";
 import type * as Redux from "redux";
 import { generate as shortid } from "shortid";
 
-import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 import { WebLink } from "@/ui/components/prose/web_link/WebLink";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import * as actions from "../../../../actions";
 import { ComponentEx } from "../../../../controls/ComponentEx";

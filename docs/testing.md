@@ -55,12 +55,12 @@ renderer's test setup, `src/renderer/test-setup.mts`, enforces this: when React
 logs one, the test that logged it fails with
 `React updated X outside act()`.
 
-It also fails a test on a function component that sets `defaultProps`
-(`X set defaultProps on a function component`), which React 19 drops. In our
+It also fails a test on a function or `React.memo` component that sets
+`defaultProps` (`X set defaultProps on a function or memo component`), which React 19 drops. In our
 code, use default parameter values instead. From a dependency, upgrade it. If the
 version that fixes it is ESM-only, the renderer can't `import` it while it
 compiles to CommonJS; load it the way
-`src/renderer/src/ui/components/prose/react_markdown/ReactMarkdown.ts` loads
+`src/renderer/src/util/react_markdown/ReactMarkdown.tsx` loads
 react-markdown.
 
 The check is there because nothing else surfaces these warnings. Vitest's

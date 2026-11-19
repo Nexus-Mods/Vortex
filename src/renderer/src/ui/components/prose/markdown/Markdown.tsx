@@ -1,10 +1,10 @@
 import React from "react";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import type { IProseWithImagesProps } from "../Prose.types";
 import { ProseImage } from "../prose_image/ProseImage";
-import { ReactMarkdown } from "../react_markdown/ReactMarkdown";
 import { WebLink } from "../web_link/WebLink";
 
 interface IMarkdownProps extends IProseWithImagesProps {

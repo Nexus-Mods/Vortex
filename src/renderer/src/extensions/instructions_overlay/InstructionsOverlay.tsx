@@ -3,8 +3,8 @@ import * as React from "react";
 import { Button } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
 
-import { ReactMarkdown } from "@/ui/components/prose/react_markdown/ReactMarkdown";
 import { WebLink } from "@/ui/components/prose/web_link/WebLink";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import { tooltip } from "../../controls/api";
 import FlexLayout from "../../controls/FlexLayout";
