@@ -1,7 +1,11 @@
 import * as path from "node:path";
 
 import type { Operation } from "@nexusmods/mod-pipeline";
-import { getErrorMessageOrDefault, VortexProfileId } from "@vortex/shared";
+import {
+  getErrorMessageOrDefault,
+  VortexDeploymentMethodId,
+  VortexProfileId,
+} from "@vortex/shared";
 import { ChaosFS, QualifiedPath, type FileSystem } from "@vortex/shared/filesystem";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
@@ -141,7 +145,7 @@ export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrc
       const gameId = gameIdOfProfile(state, profileId);
       const activatorId =
         gameId === undefined ? undefined : getCurrentActivator(state, gameId, false)?.id;
-      if (activatorId === undefined) {
+      if (activatorId === undefined || activatorId === "") {
         throw new Error(`profile ${profileId}'s game has no deployment method`);
       }
       const plan = await orchestrator.plan(profileId);
@@ -159,7 +163,7 @@ export function exposeApplyDevHandle(api: IExtensionApi, orchestrator: DeployOrc
           keptPathOf: (_destinationPath, runId, entryIndex) =>
             toPortablePath(path.join(keptFolder, runId, String(entryIndex))),
         },
-        activatorId,
+        VortexDeploymentMethodId(activatorId),
       );
       return applied === undefined
         ? undefined

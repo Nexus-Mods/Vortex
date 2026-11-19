@@ -7,7 +7,12 @@ import {
   OperationKind,
   type PlannedDestination,
 } from "@nexusmods/mod-pipeline";
-import { VortexGameId, VortexModId, VortexProfileId } from "@vortex/shared";
+import {
+  VortexDeploymentMethodId,
+  VortexGameId,
+  VortexModId,
+  VortexProfileId,
+} from "@vortex/shared";
 import { QualifiedPath } from "@vortex/shared/filesystem";
 import { expect, onTestFinished, vi } from "vitest";
 
@@ -184,7 +189,7 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
         keptPathOf: (_destinationPath, runId, entryIndex) =>
           toPortablePath(path.join(game.stagingPath, "kept", runId, String(entryIndex))),
       },
-      "hardlink_activator",
+      VortexDeploymentMethodId("hardlink_activator"),
     );
     await game.emitAndAwait("did-deploy", activeProfileId, {});
     return applied?.result;
@@ -533,15 +538,17 @@ test("a deployment after one Apply refused plans from the lockfile deployed befo
   expect(loggedCalls("seeded previous lockfile from manifest")).toHaveLength(0);
 });
 
-test("a deployment after one Apply left unfinished plans nothing", async () => {
+test("a deployment after one Apply left unfinished seeds its plan from the manifests", async () => {
   const { game, applyDeploy, deploy } = await makeGameWithStagedMod(true);
   // with no game folder on the disk, the run's manifests can't be saved
   await rm(game.dataPath, { recursive: true });
 
   const result = await applyDeploy(await newJournal());
+  vi.mocked(window.api).log.mockClear();
+  await deploy();
 
   expect(result?.status).toBe(ApplyStatus.Unfinished);
-  expect(operationsOf(await deploy())).toEqual([]);
+  expect(loggedCalls("seeded previous lockfile from manifest")).toHaveLength(1);
 });
 
 test("only a removed destination already gone from the disk counts as cleared", () => {
