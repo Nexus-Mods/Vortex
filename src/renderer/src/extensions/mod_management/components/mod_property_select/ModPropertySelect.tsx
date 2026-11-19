@@ -9,6 +9,7 @@ import { Listbox } from "@/ui/components/listbox/Listbox";
 import { ListboxButton } from "@/ui/components/listbox/ListboxButton";
 import { ListboxOption } from "@/ui/components/listbox/ListboxOption";
 import { ListboxOptions } from "@/ui/components/listbox/ListboxOptions";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 import type { ModProperty } from "../../hooks/use_mod_properties/useModProperties.hook";
 
@@ -19,8 +20,8 @@ interface IModPropertySelectProps {
 /**
  * A choice from a list, in the design system's dropdown, under its label with its hint. Its button
  * says "Various" while the mods differ, which isn't offered to pick back, and a value saved that
- * isn't one of the choices as it is. Picking the choice it already has saves nothing. Its action,
- * if it has one, is an icon button beside it.
+ * isn't one of the choices as it is, cut short at the design's 240px. Picking the choice it already
+ * has saves nothing. Its action, if it has one, is an icon button beside it.
  */
 export const ModPropertySelect = ({ property }: IModPropertySelectProps) => {
   const { t } = useTranslation("mod_management");
@@ -58,10 +59,7 @@ export const ModPropertySelect = ({ property }: IModPropertySelectProps) => {
             }
           }}
         >
-          {/* The design's 240px, a long category path cut short; the whole of it on hover. */}
-          <ListboxButton className="w-60 justify-between [&>span]:truncate" title={shown}>
-            {shown}
-          </ListboxButton>
+          <ListboxButton className="w-60 justify-between [&>span]:truncate">{shown}</ListboxButton>
 
           <ListboxOptions anchor={{ gap: 4, to: "bottom start" }}>
             {options.map(({ value, label }) => (
@@ -71,16 +69,17 @@ export const ModPropertySelect = ({ property }: IModPropertySelectProps) => {
         </Listbox>
 
         {!!property.action && (
-          <Button
-            appearance="subdued"
-            aria-label={property.action.label}
-            brand="neutral"
-            data-testid={`mod-property-${property.id}-action`}
-            leftIcon={property.action.icon}
-            size="sm"
-            title={property.action.label}
-            onClick={property.action.onClick}
-          />
+          <Tooltip content={property.action.label}>
+            <Button
+              appearance="subdued"
+              aria-label={property.action.label}
+              brand="neutral"
+              data-testid={`mod-property-${property.id}-action`}
+              leftIcon={property.action.icon}
+              size="sm"
+              onClick={property.action.onClick}
+            />
+          </Tooltip>
         )}
       </div>
 

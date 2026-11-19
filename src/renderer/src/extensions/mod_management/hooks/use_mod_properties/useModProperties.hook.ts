@@ -81,6 +81,8 @@ export type ModProperty = IModPropertyBase &
         value: string;
         /** Whether it has a button to copy it, as an id does. */
         copyable?: boolean;
+        /** Whether it goes without a title showing it whole on hover, where that adds nothing. */
+        hideTitle?: boolean;
       }
     | {
         kind: "time";
@@ -187,8 +189,8 @@ const valueProperty = (
   id: string,
   label: string,
   value: string | undefined,
-  copyable?: boolean,
-): ModProperty[] => (value ? [{ kind: "value", id, label, value, copyable }] : []);
+  options: { copyable?: boolean; hideTitle?: boolean } = {},
+): ModProperty[] => (value ? [{ kind: "value", id, label, value, ...options }] : []);
 
 /** A time as a property that ages on screen; none where there's no valid one. */
 const timeProperty = (
@@ -238,7 +240,14 @@ const cardOf = (mod: IModWithState): IModPropertiesCard => ({
 
 /** Its version, and when it was installed, downloaded and enabled. */
 const timeProperties = (mod: IModWithState, download: IDownload | undefined, t: TFunction) => [
-  ...valueProperty("version", t("modsTable::properties::version"), textOf(mod.attributes?.version)),
+  ...valueProperty(
+    "version",
+    t("modsTable::properties::version"),
+    textOf(mod.attributes?.version),
+    {
+      hideTitle: true,
+    },
+  ),
   ...timeProperty(
     "installTime",
     t("modsTable::properties::installTime"),
@@ -262,7 +271,7 @@ const collectionIdProperties = (mod: IModWithState, t: TFunction) => {
     "nexusCollectionId",
     t("modsTable::properties::nexusCollectionId"),
     id ?? t("modsTable::properties::notPublished"),
-    id !== undefined,
+    { copyable: id !== undefined, hideTitle: true },
   );
 };
 
@@ -277,7 +286,7 @@ const linkProperties = (mod: IModWithState, memberships: IMod[], t: TFunction) =
     mod.attributes?.source === "nexus" && mod.type !== "collection"
       ? textOf(mod.attributes?.modId)
       : undefined,
-    true,
+    { copyable: true, hideTitle: true },
   ),
   ...collectionIdProperties(mod, t),
   ...valueProperty(
@@ -287,6 +296,7 @@ const linkProperties = (mod: IModWithState, memberships: IMod[], t: TFunction) =
       .map((collection) => displayName(collection))
       .sort((a, b) => a.localeCompare(b))
       .join(", "),
+    { hideTitle: true },
   ),
 ];
 
@@ -298,7 +308,7 @@ const fileProperties = (mod: IModWithState, download: IDownload | undefined, t: 
     "nexusFileId",
     t("modsTable::properties::nexusFileId"),
     mod.attributes?.source === "nexus" ? textOf(mod.attributes?.fileId) : undefined,
-    true,
+    { copyable: true, hideTitle: true },
   ),
 ];
 

@@ -140,6 +140,17 @@ describe("useModProperties", () => {
     expect(propertyById(renderProperties([neverEnabled]), "enabledTime")).toBeUndefined();
   });
 
+  // None gains anything from showing itself whole on hover; a long file name does.
+  it("leaves the version, its ids and the collections it's in without a title, but not its archive", () => {
+    const result = renderProperties([SKYUI], { skyui: [collection("Essentials")] });
+
+    expect(propertyById(result, "version")).toMatchObject({ hideTitle: true });
+    expect(propertyById(result, "nexusModId")).toMatchObject({ hideTitle: true });
+    expect(propertyById(result, "nexusFileId")).toMatchObject({ hideTitle: true });
+    expect(propertyById(result, "collections")).toMatchObject({ hideTitle: true });
+    expect(propertyById(result, "archiveName")).not.toHaveProperty("hideTitle");
+  });
+
   it("lists a Nexus mod's ID on General, to copy", () => {
     expect(propertyById(renderProperties([SKYUI]), "nexusModId")).toMatchObject({
       tab: "general",

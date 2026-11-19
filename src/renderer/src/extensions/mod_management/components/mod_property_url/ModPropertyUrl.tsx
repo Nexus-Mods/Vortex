@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { TextField } from "@/ui/components/form/text_field/TextField";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 
 import type { ModProperty } from "../../hooks/use_mod_properties/useModProperties.hook";
 import { useUnsavedDraft } from "../../hooks/use_unsaved_draft/useUnsavedDraft.hook";
@@ -44,17 +45,19 @@ export const ModPropertyUrl = ({ property }: IModPropertyUrlProps) => {
         onChange={(event) => change(event.target.value)}
       />
 
-      <Button
-        appearance="weak"
-        brand="neutral"
-        // Level with the box, under its label.
-        className="mt-6"
-        data-testid="mod-property-open-website"
-        disabled={draft === "" || !isValid}
-        leftIcon="open_in_new"
-        title={t("modsTable::properties::openWebsite")}
-        onClick={() => window.api.shell.openUrl(draft)}
-      />
+      <Tooltip content={t("modsTable::properties::openWebsite")}>
+        <Button
+          appearance="weak"
+          aria-label={t("modsTable::properties::openWebsite")}
+          brand="neutral"
+          // Level with the box, under its label.
+          className="mt-6"
+          data-testid="mod-property-open-website"
+          disabled={draft === "" || !isValid}
+          leftIcon="open_in_new"
+          onClick={() => window.api.shell.openUrl(draft)}
+        />
+      </Tooltip>
     </div>
   );
 };

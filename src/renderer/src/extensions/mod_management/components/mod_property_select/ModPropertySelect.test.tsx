@@ -39,6 +39,9 @@ describe("ModPropertySelect", () => {
 
     const action = screen.getByTestId("mod-property-category-action");
     expect(action).toHaveAccessibleName("Manage");
+    expect(action).not.toHaveAttribute("title");
+    await userEvent.hover(action);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Manage");
     await userEvent.click(action);
 
     expect(onClick).toHaveBeenCalledTimes(1);

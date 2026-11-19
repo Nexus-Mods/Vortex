@@ -28,6 +28,32 @@ describe("ModPropertyValue", () => {
     expect(screen.getByTestId("mod-property-nexusModId")).toHaveTextContent("1234");
   });
 
+  it("shows the whole value as a title, unless it's told not to", () => {
+    const { unmount } = renderValue();
+    expect(
+      screen.getByTestId("mod-property-nexusModId").querySelector(".truncate"),
+    ).toHaveAttribute("title", "1234");
+    unmount();
+
+    render(
+      <ModPropertyValue
+        property={{ kind: "value", id: "version", label: "Version", value: "1.0", hideTitle: true }}
+      />,
+    );
+    expect(
+      screen.getByTestId("mod-property-version").querySelector(".truncate"),
+    ).not.toHaveAttribute("title");
+  });
+
+  it("names its copy button in a tooltip, not a title", async () => {
+    renderValue();
+    const copy = screen.getByTestId("mod-property-copy-nexusModId");
+
+    expect(copy).not.toHaveAttribute("title");
+    await userEvent.hover(copy);
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
+  });
+
   it("offers no copy where it isn't copyable", () => {
     renderValue(false);
 

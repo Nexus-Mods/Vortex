@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
+import { Tooltip } from "@/ui/components/tooltip/Tooltip";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import type { ModProperty } from "../../hooks/use_mod_properties/useModProperties.hook";
@@ -28,22 +29,24 @@ export const ModPropertyValue = ({ property }: IModPropertyValueProps) => {
         appearance="moderate"
         as="span"
         className="truncate font-medium"
-        title={property.value}
+        title={property.hideTitle ? undefined : property.value}
         typographyType="body-sm"
       >
         {property.value}
       </Typography>
 
       {property.copyable && (
-        <Button
-          appearance="weak"
-          brand="neutral"
-          data-testid={`mod-property-copy-${property.id}`}
-          leftIcon="content_copy"
-          size="sm"
-          title={t("modsTable::properties::copy", { label: property.label })}
-          onClick={copy}
-        />
+        <Tooltip content={t("modsTable::properties::copy", { label: property.label })}>
+          <Button
+            appearance="weak"
+            aria-label={t("modsTable::properties::copy", { label: property.label })}
+            brand="neutral"
+            data-testid={`mod-property-copy-${property.id}`}
+            leftIcon="content_copy"
+            size="sm"
+            onClick={copy}
+          />
+        </Tooltip>
       )}
     </ModPropertyLabel>
   );

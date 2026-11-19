@@ -53,6 +53,15 @@ describe("ModPropertyUrl", () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 
+  it("names its open button in a tooltip, not a title", async () => {
+    render(website(vi.fn(), "https://example.com"));
+    const open = screen.getByTestId("mod-property-open-website");
+
+    expect(open).not.toHaveAttribute("title");
+    await userEvent.hover(open);
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
+  });
+
   it("opens a valid address in the browser, and nothing else", async () => {
     const openUrl = vi.fn();
     vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
