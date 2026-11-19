@@ -612,3 +612,33 @@ const interfaceReducer = util.actionsToPartialReducerSpec<
 ### Building the path at runtime
 
 `registerReducer` needs the path as a literal, such as `["settings", "myExtension"]`, so it can look the slice up. A path held in a `string[]` variable fails the typecheck. Pass the literal at the call.
+
+## Vortex 2.x: `react-markdown` 9
+
+Vortex now supplies `react-markdown` **9.1.0** to extensions at runtime, in place of 6.0.3. If your extension bundles its own copy, nothing changes. If it uses Vortex's copy (`require("react-markdown")`, or an import your bundler leaves external), read on.
+
+### What keeps working
+
+- Every way of importing 6: `require`, `import ReactMarkdown from`, `import * as` and `import =`. You get a component that is also its own `.default`, and carries 9's other exports (`defaultUrlTransform`, `MarkdownAsync`, `MarkdownHooks`) and 6's `uriTransformer`.
+- `transformLinkUri` and `transformImageUri` still run, as 9's `urlTransform` would. They log a deprecation warning.
+
+### What changes
+
+- **Links only open if they go to a web page (`http`, `https`) or an email address (`mailto:`).** Any other link renders with no target and does nothing when clicked: app links (`steam:`, `nxm:`), `file:` and `tel:` links, relative links (`../run.exe`) and network paths (`//server/share`). This holds with your own `components.a` and your own `urlTransform` too: Vortex filters the URL after your transform runs.
+- **Images from network shares don't load.** An image keeps its source if it's a web address, a `data:` address, or a file on the user's machine (`file:///C:/...`, or a relative path). `//host/share/x.png` and `file://host/share/x.png` render with no source.
+- **Links lose their `title`** when you use the default link component.
+- **6's removed props are ignored** and log a deprecation warning: `linkTarget`, `includeElementIndex`, `rawSourcePos`, `sourcePos`, and the ones 6 had already deprecated (`renderers`, `source`, `plugins`, `allowedTypes`, `disallowedTypes`, `allowNode`, `includeNodeIndex`, `escapeHtml`, `allowDangerousHtml`, `astPlugins`).
+
+### What you need to change
+
+| react-markdown 6                                                                            | react-markdown 9                                                                          |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `linkTarget="_blank"`                                                                       | `components={{ a: ... }}`                                                                 |
+| `transformLinkUri`, `transformImageUri`                                                     | `urlTransform={(url, key, node) => ...}`                                                  |
+| `ReactMarkdown.uriTransformer`                                                              | `defaultUrlTransform`                                                                     |
+| `inline`, `level`, `ordered`, `index`, `checked` and `isHeader` props on a custom component | gone: use a component per tag (`h1`, `h2`, ...), or read the element from the `node` prop |
+| remark and rehype plugins made for 6                                                        | versions made for 9, such as `remark-gfm` 4                                               |
+
+Plugins made for 6 (for example `remark-gfm` 1.x) throw under 9. Vortex catches that, shows the markdown without your `remarkPlugins` and `rehypePlugins`, and logs a warning, so tables and other syntax the plugin added show as plain text until you update it.
+
+A custom component that reads a prop 9 no longer passes gets `undefined`: a `code` that checks `inline` renders inline code as a block, for example.
