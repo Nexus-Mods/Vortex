@@ -1,5 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
-import type { GameUid, NexusGameDomain, NexusGameId } from "@vortex/shared";
+import type { GameUid, NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -247,6 +247,8 @@ export interface ISettingsInterface {
     addToolsToTitleBar: boolean;
     order?: { [gameId: string]: string[] };
     pinned?: { [gameId: string]: { [toolId: string]: boolean } };
+    // keyed by game id, then tool id: whether the tool's executable was found
+    valid?: Record<VortexGameId, { [toolId: string]: boolean }>;
   };
   primaryTool?: { [gameId: string]: string };
 }
@@ -465,13 +467,29 @@ export interface IOverlaysState {
  * @export
  * @interface IState
  */
+/**
+ * confidential.account: per-service credentials. Each service's extension declares its own
+ * entry by augmenting this interface.
+ */
+// oxlint-disable-next-line typescript/no-empty-object-type -- filled in by augmentation
+export interface IConfidentialAccount {}
+
+/**
+ * A cached revision. The cache holds what the API returned for the query that fetched it, so
+ * any field may be missing, and the rating may lack `positive`.
+ */
+export type ICachedRevisionInfo = Partial<Omit<IRevision, "collection" | "rating">> & {
+  collection?: Partial<ICollection>;
+  rating?: Partial<IRevision["rating"]>;
+};
+
 // persistent state owned by the collections extension: the cached collection and
 // revision info fetched from the API
 export interface ICollectionsPersistentState {
-  // keyed by collection id
-  collections: Record<string, { timestamp: number; info: ICollection }>;
+  // keyed by collection id; the cache holds what the API returned, so any field may be missing
+  collections: Record<string, { timestamp: number; info: Partial<ICollection> }>;
   // keyed by revision id
-  revisions: Record<string, { timestamp: number; info: IRevision }>;
+  revisions: Record<string, { timestamp: number; info: ICachedRevisionInfo }>;
   // keyed by revision id; queued success votes awaiting submission
   pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
 }
@@ -510,7 +528,7 @@ export interface IState {
   app: IApp;
   user: IUser;
   confidential: {
-    account: {};
+    account: IConfidentialAccount;
   };
   session: ISessionState;
   settings: ISettings;

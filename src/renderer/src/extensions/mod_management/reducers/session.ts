@@ -1,11 +1,19 @@
-import type { VortexModId, VortexModStagingFolder } from "@vortex/shared";
+import type { VortexModId } from "@vortex/shared";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setSafe } from "../../../util/storeHelper";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import type { IDeploymentFailure, IDeploymentProblem } from "../actions/session";
-import * as actions from "../actions/session";
+import {
+  addDeploymentFailures,
+  focusModsTableGroup,
+  focusModsTableMod,
+  setDeploymentFailures,
+  setDeploymentProblem,
+  setExternalChangeAction,
+  setExternalChanges,
+  setUpdatingMods,
+} from "../actions/session";
 import { MAX_STORED_DEPLOYMENT_FAILURES } from "../constants";
-import type { FileAction, IFileEntry } from "../types/IFileEntry";
+import type { IFileEntry } from "../types/IFileEntry";
 
 export interface IModsSessionState {
   /** files changed outside Vortex, awaiting the user's decision */
@@ -28,28 +36,33 @@ declare module "@/types/IState" {
   }
 }
 
+const sessionActions = {
+  focusModsTableGroup,
+  focusModsTableMod,
+  setExternalChanges,
+  setExternalChangeAction,
+  setUpdatingMods,
+  setDeploymentProblem,
+  setDeploymentFailures,
+  addDeploymentFailures,
+};
+
 /**
  * reducer for changes to settings regarding mods
  */
-export const sessionReducer: IReducerSpec = {
-  reducers: {
-    [actions.focusModsTableGroup as any]: (state, payload) => ({
-      ...state,
-      focusedGroupId: payload,
-    }),
-    [actions.focusModsTableMod as any]: (state, payload) => ({
-      ...state,
-      focusedModId: payload,
-    }),
-    [actions.setExternalChanges as any]: (state, payload) => setSafe(state, ["changes"], payload),
-    [actions.setExternalChangeAction.getType()]: (
-      state: IModsSessionState,
-      payload: {
-        filePaths: string[];
-        action: FileAction;
-        source: VortexModStagingFolder | undefined;
-      },
-    ): IModsSessionState => {
+export const sessionReducer = actionsToReducerSpec<IModsSessionState, typeof sessionActions>(
+  {
+    changes: [],
+    updatingMods: {},
+    deploymentProblems: [],
+    deploymentFailures: {},
+  },
+  sessionActions,
+  {
+    focusModsTableGroup: (state, payload) => ({ ...state, focusedGroupId: payload }),
+    focusModsTableMod: (state, payload) => ({ ...state, focusedModId: payload }),
+    setExternalChanges: (state, payload) => ({ ...state, changes: payload }),
+    setExternalChangeAction: (state, payload) => {
       const changeSet = new Set(payload.filePaths);
       const chosen = (entry: IFileEntry) =>
         changeSet.has(entry.filePath) &&
@@ -61,20 +74,19 @@ export const sessionReducer: IReducerSpec = {
         ),
       };
     },
-    [actions.setUpdatingMods as any]: (state, payload) => {
-      const { gameId, updatingMods } = payload;
-      return setSafe(state, ["updatingMods", gameId], updatingMods);
-    },
-    [actions.setDeploymentProblem as any]: (state, payload) =>
-      setSafe(state, ["deploymentProblems"], payload),
-    [actions.setDeploymentFailures as any]: (state, payload) => ({
+    setUpdatingMods: (state, payload) => ({
+      ...state,
+      updatingMods: { ...state.updatingMods, [payload.gameId]: payload.updatingMods },
+    }),
+    setDeploymentProblem: (state, payload) => ({ ...state, deploymentProblems: payload }),
+    setDeploymentFailures: (state, payload) => ({
       ...state,
       deploymentFailures: {
         ...state.deploymentFailures,
         [payload.gameId]: payload.failures,
       },
     }),
-    [actions.addDeploymentFailures as any]: (state, payload) => ({
+    addDeploymentFailures: (state, payload) => ({
       ...state,
       deploymentFailures: {
         ...state.deploymentFailures,
@@ -86,10 +98,4 @@ export const sessionReducer: IReducerSpec = {
       },
     }),
   },
-  defaults: {
-    changes: [],
-    updatingMods: {},
-    deploymentProblems: [],
-    deploymentFailures: {},
-  },
-};
+);

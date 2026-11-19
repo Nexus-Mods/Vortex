@@ -2,27 +2,96 @@ import { inspect } from "util";
 
 import * as _ from "lodash";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToPartialReducerSpec } from "../../../reducers/builder";
 import { VerifierDropParent } from "../../../types/IExtensionContext";
+import type { IStateDownloads } from "../../../types/IState";
 import { terminate } from "../../../util/errorHandling";
-import { deleteOrNop, getSafe, merge, setOrNop, setSafe } from "../../../util/storeHelper";
 import { objDiff, flatten } from "../../../util/util";
 import * as action from "../actions/state";
+import type { IDownload } from "../types/IDownload";
 
 export const NUM_SPEED_DATA_POINTS = 30;
 
+const stateActions = {
+  initDownload: action.initDownload,
+  downloadProgress: action.downloadProgress,
+  finalizingProgress: action.finalizingProgress,
+  setDownloadFilePath: action.setDownloadFilePath,
+  setDownloadPausable: action.setDownloadPausable,
+  setDownloadHash: action.setDownloadHash,
+  setDownloadHashByFile: action.setDownloadHashByFile,
+  setDownloadInterrupted: action.setDownloadInterrupted,
+  startDownload: action.startDownload,
+  finishDownload: action.finishDownload,
+  finalizingDownload: action.finalizingDownload,
+  setDownloadTime: action.setDownloadTime,
+  pauseDownload: action.pauseDownload,
+  setDownloadSpeed: action.setDownloadSpeed,
+  setDownloadSpeeds: action.setDownloadSpeeds,
+  removeDownload: action.removeDownload,
+  removeDownloadSilent: action.removeDownloadSilent,
+  addLocalDownload: action.addLocalDownload,
+  setDownloadModInfo: action.setDownloadModInfo,
+  mergeDownloadModInfo: action.mergeDownloadModInfo,
+  setDownloadInstalled: action.setDownloadInstalled,
+  setCompatibleGames: action.setCompatibleGames,
+};
+
+/** stores a download under its id, replacing whatever was there */
+function putFile(state: IStateDownloads, id: string, file: IDownload): IStateDownloads {
+  return { ...state, files: { ...state.files, [id]: file } };
+}
+
+/** changes a known download; returns the same state when there is no download under that id */
+function updateFile(
+  state: IStateDownloads,
+  id: string,
+  update: (file: IDownload) => IDownload,
+): IStateDownloads {
+  const file = state.files?.[id];
+  return file === undefined ? state : putFile(state, id, update(file));
+}
+
+/** removes a download; returns the same state when there is no download under that id */
+function removeFile(state: IStateDownloads, id: string): IStateDownloads {
+  if (state.files === undefined || !Object.hasOwn(state.files, id)) {
+    return state;
+  }
+  const { [id]: _removed, ...files } = state.files;
+  return { ...state, files };
+}
+
 /**
- * reducer for changes to ephemeral session state
+ * sets a value at a key path inside a nested object, copying each level on the way and
+ * creating missing ones as objects. A level that is an array is copied as an array.
  */
-export const stateReducer: IReducerSpec = {
-  reducers: {
-    [action.initDownload as any]: (state, payload) => {
+function setNested(level: unknown, keys: readonly string[], value: unknown): action.IDictionary {
+  const [key, ...rest] = keys;
+  const copy: action.IDictionary = Array.isArray(level) ? level.slice() : Object.assign({}, level);
+  copy[key] =
+    rest.length === 0 ? value : setNested(Object.hasOwn(copy, key) ? copy[key] : {}, rest, value);
+  return copy;
+}
+
+/**
+ * reducer for the downloads Vortex knows about. Partial: the core downloads reducer owns
+ * checkpoints in the same slice.
+ */
+export const stateReducer = actionsToPartialReducerSpec<IStateDownloads, typeof stateActions>(
+  {
+    speed: 0,
+    speedHistory: [],
+    files: {},
+  },
+  stateActions,
+  {
+    initDownload: (state, payload) => {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id");
       }
       const downloadObj = {
         id: payload.id,
-        state: "init",
+        state: "init" as const,
         game: payload.games,
         urls: payload.urls,
         modInfo: payload.modInfo,
@@ -61,40 +130,41 @@ export const stateReducer: IReducerSpec = {
         );
         return state;
       }
-      return setSafe(state, ["files", payload.id], downloadObj);
+      // a new download has no size, progress or start time yet, which IDownload declares required
+      return putFile(state, payload.id, downloadObj as IDownload);
     },
-    [action.downloadProgress as any]: (state, payload) => {
+    downloadProgress: (state, payload) => {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id");
       }
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      const update = {
+      const update: Partial<IDownload> = {
         received: payload.received,
         size: payload.total,
       };
       if (state.files[payload.id].state === "init") {
-        update["state"] = payload.received > 0 ? "started" : "init";
+        update.state = payload.received > 0 ? "started" : "init";
       }
       if (payload.urls !== undefined) {
-        update["urls"] = payload.urls;
+        update.urls = payload.urls;
       }
-      return merge(state, ["files", payload.id], update);
+      return putFile(state, payload.id, { ...state.files[payload.id], ...update });
     },
-    [action.finalizingProgress as any]: (state, payload) => {
+    finalizingProgress: (state, payload) => {
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      return setSafe(state, ["files", payload.id, "verified"], payload.progress);
+      return putFile(state, payload.id, { ...state.files[payload.id], verified: payload.progress });
     },
-    [action.setDownloadFilePath as any]: (state, payload) =>
-      setOrNop(state, ["files", payload.id, "localPath"], payload.filePath),
-    [action.setDownloadPausable as any]: (state, payload) =>
-      setOrNop(state, ["files", payload.id, "pausable"], payload.pausable),
-    [action.setDownloadHash as any]: (state, payload) =>
-      setOrNop(state, ["files", payload.id, "fileMD5"], payload.fileMD5),
-    [action.setDownloadHashByFile as any]: (state, payload) => {
+    setDownloadFilePath: (state, payload) =>
+      updateFile(state, payload.id, (file) => ({ ...file, localPath: payload.filePath })),
+    setDownloadPausable: (state, payload) =>
+      updateFile(state, payload.id, (file) => ({ ...file, pausable: payload.pausable })),
+    setDownloadHash: (state, payload) =>
+      updateFile(state, payload.id, (file) => ({ ...file, fileMD5: payload.fileMD5 })),
+    setDownloadHashByFile: (state, payload) => {
       const downloadId = Object.keys(state.files || {}).find(
         (id: string) => state.files[id].localPath === payload.fileName,
       );
@@ -104,59 +174,62 @@ export const stateReducer: IReducerSpec = {
       if (typeof downloadId !== "string") {
         throw new Error("invalid download id");
       }
-      return merge(state, ["files", downloadId], {
+      return putFile(state, downloadId, {
+        ...state.files[downloadId],
         fileMD5: payload.fileMD5,
         size: payload.fileSize,
       });
     },
-    [action.setDownloadInterrupted as any]: (state, payload) => {
+    setDownloadInterrupted: (state, payload) => {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id");
       }
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      return merge(state, ["files", payload.id], {
+      return putFile(state, payload.id, {
+        ...state.files[payload.id],
         state: "paused",
         received: payload.realReceived,
       });
     },
-    [action.startDownload as any]: (state, payload) => {
+    startDownload: (state, payload) => {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id");
       }
-      if (getSafe<string>(state, ["files", payload.id, "state"], "unknown") !== "init") {
+      if ((state.files?.[payload.id]?.state ?? "unknown") !== "init") {
         return state;
       }
-      return merge(state, ["files", payload.id], {
+      return putFile(state, payload.id, {
+        ...state.files[payload.id],
         state: "started",
         startTime: Date.now(),
       });
     },
-    [action.finishDownload as any]: (state, payload) => {
+    finishDownload: (state, payload) => {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id");
       }
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      return merge(state, ["files", payload.id], {
+      return putFile(state, payload.id, {
+        ...state.files[payload.id],
         state: payload.state,
         failCause: payload.failCause,
         fileTime: Date.now(),
       });
     },
-    [action.finalizingDownload as any]: (state, payload) => {
+    finalizingDownload: (state, payload) => {
       if (state.files[payload.id] === undefined) {
         return state;
       }
-      return setSafe(state, ["files", payload.id, "state"], "finalizing");
+      return putFile(state, payload.id, { ...state.files[payload.id], state: "finalizing" });
     },
-    [action.setDownloadTime as any]: (state, payload) =>
-      merge(state, ["files", payload.id], {
-        fileTime: payload.time,
-      }),
-    [action.pauseDownload as any]: (state, payload) => {
+    // creates the download's entry if it has none
+    setDownloadTime: (state, payload) =>
+      putFile(state, payload.id, { ...state.files?.[payload.id], fileTime: payload.time }),
+    pauseDownload: (state, payload) => {
       const { id, paused } = payload;
       const oldDLState = state.files?.[id]?.state;
       if (
@@ -172,37 +245,38 @@ export const stateReducer: IReducerSpec = {
         : (state.files?.[id]?.received ?? 0) > 0
           ? "started"
           : "init";
-      const next = setOrNop(state, ["files", id, "state"], newState);
-      // Count each actual pause transition (setOrNop returns the same ref on a no-op, so a
-      // redundant pause doesn't double-count). Persisted, so it accumulates across restarts;
-      // surfaced as pause_count.
-      if (paused && next !== state) {
-        return setSafe(next, ["files", id, "pauseCount"], (state.files[id].pauseCount ?? 0) + 1);
-      }
-      return next;
+      const file = state.files[id];
+      // Count each pause request, including one for a download that is already paused.
+      // Persisted, so it accumulates across restarts; surfaced as pause_count.
+      return putFile(
+        state,
+        id,
+        paused
+          ? { ...file, state: newState, pauseCount: (file.pauseCount ?? 0) + 1 }
+          : { ...file, state: newState },
+      );
     },
-    [action.setDownloadSpeed as any]: (state, payload) => {
-      const temp = setSafe(state, ["speed"], payload);
+    setDownloadSpeed: (state, payload) => {
       let speeds = Array.isArray(state.speedHistory) ? state.speedHistory.slice() : [];
       speeds.push(payload);
       if (speeds.length > NUM_SPEED_DATA_POINTS) {
         speeds = speeds.slice(speeds.length - NUM_SPEED_DATA_POINTS);
       }
-      return setSafe(temp, ["speedHistory"], speeds);
+      return { ...state, speed: payload, speedHistory: speeds };
     },
-    [action.setDownloadSpeeds as any]: (state, payload) => {
+    setDownloadSpeeds: (state, payload) => {
       let speeds = Array.isArray(payload) ? payload.slice() : [];
       if (speeds.length > NUM_SPEED_DATA_POINTS) {
         speeds = speeds.slice(speeds.length - NUM_SPEED_DATA_POINTS);
       }
-      const temp = setSafe(state, ["speed"], speeds[speeds.length - 1] ?? 0);
-      return setSafe(temp, ["speedHistory"], speeds);
+      return { ...state, speed: speeds[speeds.length - 1] ?? 0, speedHistory: speeds };
     },
-    [action.removeDownload as any]: (state, payload) => deleteOrNop(state, ["files", payload.id]),
-    [action.removeDownloadSilent as any]: (state, payload) =>
-      deleteOrNop(state, ["files", payload.id]),
-    [action.addLocalDownload as any]: (state, payload) =>
-      setSafe(state, ["files", payload.id], {
+    removeDownload: (state, payload) => removeFile(state, payload.id),
+    removeDownloadSilent: (state, payload) => removeFile(state, payload.id),
+    addLocalDownload: (state, payload) =>
+      // a download found on disk has no id field, start time or hash progress, which IDownload
+      // declares required
+      putFile(state, payload.id, {
         state: "finished",
         game: [payload.game],
         localPath: payload.localPath,
@@ -211,22 +285,21 @@ export const stateReducer: IReducerSpec = {
         fileTime: Date.now(),
         urls: [],
         modInfo: {},
-      }),
-    [action.setDownloadModInfo as any]: (state, payload) => {
+      } as IDownload),
+    setDownloadModInfo: (state, payload) => {
       if (typeof payload.id !== "string") {
         throw new Error("invalid download id: " + inspect(payload.id));
       }
       if (state.files[payload.id] === undefined) {
         return state;
       }
-
-      return setSafe(
-        state,
-        ["files", payload.id, "modInfo"].concat(payload.key.split(".")),
-        payload.value,
-      );
+      const file = state.files[payload.id];
+      return putFile(state, payload.id, {
+        ...file,
+        modInfo: setNested(file.modInfo, payload.key.split("."), payload.value),
+      });
     },
-    [action.mergeDownloadModInfo as any]: (state, payload) => {
+    mergeDownloadModInfo: (state, payload) => {
       const { id, value } = payload;
 
       if (typeof id !== "string") {
@@ -237,26 +310,22 @@ export const stateReducer: IReducerSpec = {
         return state;
       }
 
-      return setSafe(
-        state,
-        ["files", id, "modInfo"],
-        _.merge(state.files[id]?.modInfo || {}, value),
-      );
+      return putFile(state, id, {
+        ...state.files[id],
+        modInfo: _.merge(state.files[id]?.modInfo || {}, value),
+      });
     },
-    [action.setDownloadInstalled as any]: (state, payload) =>
-      setSafe(state, ["files", payload.id, "installed"], {
-        gameId: payload.gameId,
-        modId: payload.modId,
+    // creates the download's entry if it has none
+    setDownloadInstalled: (state, payload) =>
+      putFile(state, payload.id, {
+        ...state.files?.[payload.id],
+        installed: { gameId: payload.gameId, modId: payload.modId },
       }),
-    [action.setCompatibleGames as any]: (state, payload) =>
-      setSafe(state, ["files", payload.id, "game"], payload.games),
+    // creates the download's entry if it has none
+    setCompatibleGames: (state, payload) =>
+      putFile(state, payload.id, { ...state.files?.[payload.id], game: payload.games }),
   },
-  defaults: {
-    speed: 0,
-    speedHistory: [],
-    files: {},
-  },
-  verifiers: {
+  {
     speedHistory: {
       // A corrupted speedHistory (non-array, or longer than NUM_SPEED_DATA_POINTS)
       // used to crash the Downloads page render. Repair it on hydration so affected
@@ -310,4 +379,4 @@ export const stateReducer: IReducerSpec = {
       },
     },
   },
-};
+);

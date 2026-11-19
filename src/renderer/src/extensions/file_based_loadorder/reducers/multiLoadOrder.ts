@@ -6,6 +6,12 @@ import type { LoadOrder } from "../types/types";
 // keyed by profile id, then by load order id
 export type NamedLoadOrders = Record<string, Record<string, LoadOrder>>;
 
+declare module "@/types/IState" {
+  interface IPersistentState {
+    loadOrders: NamedLoadOrders;
+  }
+}
+
 // The named load orders of each profile, persistent.loadOrders[profileId][loadOrderId]; the
 // primary stays in persistent.loadOrder.
 export const multiLoadOrderReducer = actionsToReducerSpec<NamedLoadOrders, typeof actions>(

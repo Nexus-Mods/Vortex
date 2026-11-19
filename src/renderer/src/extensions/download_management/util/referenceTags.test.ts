@@ -22,7 +22,8 @@ const applied = (download: IDownload, tag: string) => {
   let files: Record<string, IDownload> = { "dl-1": download };
   for (const action of actions) {
     const reduce = stateReducer.reducers[action.type];
-    files = reduce({ files }, (action as unknown as { payload: unknown }).payload).files;
+    const state = { speed: 0, speedHistory: [], checkpoints: {}, files };
+    files = reduce(state, (action as unknown as { payload: unknown }).payload).files;
   }
   return { actions, modInfo: files["dl-1"].modInfo };
 };

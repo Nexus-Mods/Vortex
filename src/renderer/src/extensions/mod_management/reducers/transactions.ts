@@ -1,34 +1,46 @@
-import update from "immutability-helper";
-
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { deleteOrNop, setSafe } from "../../../util/storeHelper";
+import { actionsToPartialReducerSpec } from "../../../reducers/builder";
+import type { IStateTransactions } from "../../../types/IState";
 import * as actions from "../actions/transactions";
 
-export const transactionsReducer: IReducerSpec = {
-  reducers: {
-    [actions.setTransferMods as any]: (state, payload) => {
+/**
+ * Partial: download_management registers on the same slice for its own transfer, and nothing
+ * supplies a default for `transfer`, so it may be missing until the first transfer is recorded.
+ */
+export const transactionsReducer = actionsToPartialReducerSpec<IStateTransactions, typeof actions>(
+  {
+    pendingPluginSort: {},
+  },
+  actions,
+  {
+    setTransferMods: (state, payload) => {
       const { gameId, destination } = payload;
-      return destination === undefined || destination === ""
-        ? deleteOrNop(state, ["transfer", gameId])
-        : setSafe(state, ["transfer", gameId], destination);
+      if (destination === undefined || destination === "") {
+        const transfer: Record<string, string> | undefined = state.transfer;
+        if (transfer === undefined || !Object.hasOwn(transfer, gameId)) {
+          return state;
+        }
+        const { [gameId]: _, ...rest } = transfer;
+        return { ...state, transfer: rest };
+      }
+      return { ...state, transfer: { ...state.transfer, [gameId]: destination } };
     },
-    [actions.setPendingPluginSort as any]: (state, payload) => {
+    setPendingPluginSort: (state, payload) => {
       const { profileId, collectionId, time } = payload;
-      return update(state, {
+      return {
+        ...state,
         pendingPluginSort: {
-          [profileId]: { $apply: (prof) => ({ ...(prof ?? {}), [collectionId]: time }) },
+          ...state.pendingPluginSort,
+          [profileId]: { ...state.pendingPluginSort[profileId], [collectionId]: time },
         },
-      });
+      };
     },
-    [actions.clearPendingPluginSort as any]: (state, payload) => {
+    clearPendingPluginSort: (state, payload) => {
       const { profileId } = payload;
       if (state.pendingPluginSort?.[profileId] === undefined) {
         return state;
       }
-      return update(state, { pendingPluginSort: { $unset: [profileId] } });
+      const { [profileId]: _, ...pendingPluginSort } = state.pendingPluginSort;
+      return { ...state, pendingPluginSort };
     },
   },
-  defaults: {
-    pendingPluginSort: {},
-  },
-};
+);

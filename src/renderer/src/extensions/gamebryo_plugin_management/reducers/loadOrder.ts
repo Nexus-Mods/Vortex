@@ -1,16 +1,28 @@
 import update from "immutability-helper";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/loadOrder";
+import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import toPluginId from "../util/toPluginId";
+
+/** the plugin load order, keyed by plugin id (lowercased, ghost suffix stripped) */
+export type IPluginLoadOrder = Record<string, IPluginLoadOrderEntry>;
+
+declare module "@/types/IState" {
+  interface IState {
+    loadOrder: IPluginLoadOrder;
+  }
+}
 
 /**
  * reducer for changes to the plugin list. entries are keyed by plugin id (lowercased, ghost suffix
  * stripped) via toPluginId, so the key never diverges from the rest of the extension.
  */
-export const loadOrderReducer: IReducerSpec = {
-  reducers: {
-    [actions.setPluginEnabled as any]: (state, payload) => {
+export const loadOrderReducer = actionsToReducerSpec<IPluginLoadOrder, typeof actions>(
+  {},
+  actions,
+  {
+    setPluginEnabled: (state, payload) => {
       const id = toPluginId(payload.pluginName);
       return state[id] !== undefined
         ? update(state, { [id]: { enabled: { $set: payload.enabled } } })
@@ -20,10 +32,10 @@ export const loadOrderReducer: IReducerSpec = {
             },
           });
     },
-    [actions.setPluginOrder as any]: (state, payload) => {
+    setPluginOrder: (state, payload) => {
       const { plugins, defaultEnable } = payload;
-      const result = {};
-      plugins.forEach((pluginName: string, idx: number) => {
+      const result: IPluginLoadOrder = {};
+      plugins.forEach((pluginName, idx) => {
         const id = toPluginId(pluginName);
         result[id] = {
           name: pluginName,
@@ -33,13 +45,13 @@ export const loadOrderReducer: IReducerSpec = {
       });
       return result;
     },
-    [actions.updatePluginOrder as any]: (state, payload) => {
+    updatePluginOrder: (state, payload) => {
       const { pluginList, setEnabled, defaultEnable } = payload;
 
-      const result = JSON.parse(JSON.stringify(state));
+      const result: IPluginLoadOrder = JSON.parse(JSON.stringify(state));
 
       // put the listed plugins in the specified order
-      pluginList.forEach((pluginName: string, idx: number) => {
+      pluginList.forEach((pluginName, idx) => {
         const id = toPluginId(pluginName);
         result[id] = {
           name: pluginName,
@@ -64,5 +76,4 @@ export const loadOrderReducer: IReducerSpec = {
       return result;
     },
   },
-  defaults: {},
-};
+);

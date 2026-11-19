@@ -1,6 +1,5 @@
 import type { Message, PluginCleaningData, Tag } from "loot";
 
-import type { IDialog } from "../views/UserlistEditor";
 import type { ILootReference } from "./ILOOTList";
 import type { IPluginLoadOrderEntry } from "./IPluginLoadOrderEntry";
 
@@ -129,13 +128,30 @@ export type IPluginCombined = IPlugin &
     mediumIndex?: number;
   };
 
+export type UserlistRuleType = "after" | "requires" | "incompatible";
+
+/** the userlist rule the rule dialog is editing */
+export interface IRuleDialog {
+  pluginId: string;
+  reference: string;
+  type: UserlistRuleType;
+}
+
+/** one end of the connector line drawn while dragging a rule from one plugin to another */
+export interface IPluginConnectionEnd {
+  // null while the target end isn't over a plugin
+  id: string | null;
+  pos: { x: number; y: number };
+}
+
+/** session.pluginDependencies: the state of the plugin rule editing UI */
 export interface IPluginDependencies {
-  connection: {
-    target: {
-      id: string;
-    };
+  // undefined while no rule is being dragged
+  connection?: {
+    source?: IPluginConnectionEnd;
+    target?: IPluginConnectionEnd;
   };
-  dialog: IDialog;
+  dialog: IRuleDialog;
   quickEdit: {
     plugin: string;
     mode: string;

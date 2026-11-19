@@ -12,3 +12,18 @@ export interface IFNISPatch {
   description: string;
   requiredFile: string;
 }
+
+export interface IFNISSettings {
+  autoRun: boolean;
+  /** ids of the enabled patches, per profile */
+  patches: { [profileId: string]: string[] };
+  needToRun: { [profileId: string]: boolean };
+}
+
+declare module "@nexusmods/vortex-api" {
+  namespace types {
+    interface ISettings {
+      fnis: IFNISSettings;
+    }
+  }
+}

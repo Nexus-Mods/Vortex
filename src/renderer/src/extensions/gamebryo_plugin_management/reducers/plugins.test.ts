@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vitest";
 
+import { makePlugin, makePluginCombined } from "../../../test-utils/builders";
 import * as actions from "../actions/plugins";
-import { pluginsReducer } from "./plugins";
+import { type IPluginsSessionState, pluginsReducer } from "./plugins";
 
 // invoke a single case of the reducer spec by the action it handles
-function reduce(state: unknown, action: { type: string; payload: unknown }) {
+function reduce(state: IPluginsSessionState, action: { type: string; payload: unknown }) {
   return pluginsReducer.reducers[action.type](state, action.payload);
 }
 
@@ -13,19 +14,23 @@ const initial = () => ({ ...pluginsReducer.defaults });
 describe("pluginsReducer", () => {
   describe("setPluginList", () => {
     test("stores the provided plugin map", () => {
-      const plugins = { "a.esp": { name: "a.esp", enabled: true } };
+      const plugins = { "a.esp": makePlugin({ filePath: "C:/a.esp" }) };
 
-      const next = reduce(initial(), actions.setPluginList(plugins as any));
+      const next = reduce(initial(), actions.setPluginList(plugins));
 
       expect(next.pluginList).toEqual(plugins);
     });
 
     test("replaces any existing plugin list", () => {
-      const state = { ...initial(), pluginList: { "old.esp": { name: "old.esp" } } };
+      const state = {
+        ...initial(),
+        pluginList: { "old.esp": makePlugin({ filePath: "C:/old.esp" }) },
+      };
+      const plugins = { "new.esp": makePlugin({ filePath: "C:/new.esp" }) };
 
-      const next = reduce(state, actions.setPluginList({ "new.esp": { name: "new.esp" } } as any));
+      const next = reduce(state, actions.setPluginList(plugins));
 
-      expect(next.pluginList).toEqual({ "new.esp": { name: "new.esp" } });
+      expect(next.pluginList).toEqual({ "new.esp": makePlugin({ filePath: "C:/new.esp" }) });
     });
 
     test("resets pluginList to {} when passed undefined rather than leaving it undefined", () => {
@@ -37,9 +42,9 @@ describe("pluginsReducer", () => {
 
   describe("setPluginInfo", () => {
     test("stores the provided plugin info map", () => {
-      const info = { "a.esp": { name: "a.esp", filePath: "C:/a.esp" } };
+      const info = { "a.esp": makePluginCombined({ name: "a.esp", filePath: "C:/a.esp" }) };
 
-      const next = reduce(initial(), actions.setPluginInfo(info as any));
+      const next = reduce(initial(), actions.setPluginInfo(info));
 
       expect(next.pluginInfo).toEqual(info);
     });
@@ -49,18 +54,18 @@ describe("pluginsReducer", () => {
     test("sets filePath on both pluginList and pluginInfo, preserving other fields", () => {
       const state = {
         ...initial(),
-        pluginList: { "a.esp": { name: "a.esp", enabled: true } },
-        pluginInfo: { "a.esp": { name: "a.esp" } },
+        pluginList: { "a.esp": makePlugin({ filePath: "C:/old/a.esp", modId: "mod-a" }) },
+        pluginInfo: { "a.esp": makePluginCombined({ name: "a.esp", filePath: "C:/old/a.esp" }) },
       };
 
       const next = reduce(state, actions.setPluginFilePath("a.esp", "C:/a.esp"));
 
-      expect(next.pluginList["a.esp"]).toEqual({
-        name: "a.esp",
-        enabled: true,
-        filePath: "C:/a.esp",
-      });
-      expect(next.pluginInfo["a.esp"]).toEqual({ name: "a.esp", filePath: "C:/a.esp" });
+      expect(next.pluginList["a.esp"]).toEqual(
+        makePlugin({ filePath: "C:/a.esp", modId: "mod-a" }),
+      );
+      expect(next.pluginInfo["a.esp"]).toEqual(
+        makePluginCombined({ name: "a.esp", filePath: "C:/a.esp" }),
+      );
     });
 
     test("creates the entry when the plugin is not yet present", () => {
@@ -73,12 +78,12 @@ describe("pluginsReducer", () => {
 
   describe("updatePluginWarnings", () => {
     test("sets the warning flag on an existing plugin", () => {
-      const state = { ...initial(), pluginList: { "a.esp": { name: "a.esp" } } };
+      const state = { ...initial(), pluginList: { "a.esp": makePlugin({ filePath: "C:/a.esp" }) } };
 
       const next = reduce(state, actions.updatePluginWarnings("a.esp", "missing-master", true));
 
       expect(next.pluginList["a.esp"].warnings).toEqual({ "missing-master": true });
-      expect(next.pluginList["a.esp"].name).toBe("a.esp");
+      expect(next.pluginList["a.esp"].filePath).toBe("C:/a.esp");
     });
 
     test("leaves state unchanged when the plugin is not in the list", () => {

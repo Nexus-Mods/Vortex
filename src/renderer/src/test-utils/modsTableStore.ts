@@ -1,4 +1,4 @@
-import { VortexGameId } from "@vortex/shared";
+import { VortexGameId, type VortexModId } from "@vortex/shared";
 import { type AnyAction, createStore } from "redux";
 
 import type { ICategoryDictionary } from "@/extensions/category_management/types/ICategoryDictionary";
@@ -62,7 +62,7 @@ export const makeModsTableStore = ({
   /** A group the table is asked to show, as `session.mods.focusedGroupId` keeps it. */
   focusedGroupId?: string;
   /** A mod the table is asked to show, as `session.mods.focusedModId` keeps it. */
-  focusedModId?: string;
+  focusedModId?: VortexModId;
   /** The active profile's game, which its mods and categories are kept under. */
   gameId?: VortexGameId;
 } = {}) => {

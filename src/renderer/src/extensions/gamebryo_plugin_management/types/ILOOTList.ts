@@ -55,7 +55,8 @@ export interface ILOOTGroup {
 }
 
 export interface ILOOTList {
-  globals: IMessage[];
+  // absent from the userlist, which only holds plugin and group rules
+  globals?: IMessage[];
   plugins: ILOOTPlugin[];
   groups: ILOOTGroup[];
   // only used in the persistors to determine if the list has been loaded from disk

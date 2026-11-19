@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
 
 import { setPluginEnabled, setPluginOrder, updatePluginOrder } from "../actions/loadOrder";
-import { loadOrderReducer } from "./loadOrder";
+import { type IPluginLoadOrder, loadOrderReducer } from "./loadOrder";
 
 // drive the reducer through the real action creators so the payload shapes under test
 // stay the ones production dispatches. state is keyed by the plugin id (lowercased,
 // ghost suffix stripped).
-function reduce(state: unknown, action: { type: string; payload: unknown }) {
+function reduce(state: IPluginLoadOrder, action: { type: string; payload: unknown }) {
   return loadOrderReducer.reducers[action.type](state, action.payload);
 }
 

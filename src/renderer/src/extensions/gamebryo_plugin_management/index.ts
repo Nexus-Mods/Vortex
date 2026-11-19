@@ -176,8 +176,8 @@ function register(
   context: IExtensionContextExt,
   setPluginLight: (id: string, enable: boolean) => void,
 ) {
-  for (const { path: statePath, reducer } of REDUCER_BINDINGS) {
-    context.registerReducer(statePath, reducer);
+  for (const binding of REDUCER_BINDINGS) {
+    binding.register(context);
   }
 
   context.registerTableAttribute("gamebryo-plugins", genLockIndexAttribute(context.api));

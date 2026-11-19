@@ -1,18 +1,29 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-import { setSafe } from "../../util/storeHelper";
+import { actionsToReducerSpec } from "../../reducers/builder";
 import * as actions from "./actions";
 
+/** settings.firststeps: which "first steps" todos the user has dismissed */
+export interface ISettingsFirstSteps {
+  // nothing sets this; it is read by the dashlet and kept for persisted state
+  dismissAll: boolean;
+  // keyed by step id
+  steps: { [stepId: string]: boolean };
+}
+
+declare module "@/types/IState" {
+  interface ISettings {
+    firststeps: ISettingsFirstSteps;
+  }
+}
+
 /**
- * reducer for changes to interface settings
+ * reducer for changes to first steps settings
  */
-const settingsReducer: IReducerSpec = {
-  reducers: {
-    [actions.dismissStep as any]: (state, payload) => setSafe(state, ["steps", payload], true),
+const settingsReducer = actionsToReducerSpec<ISettingsFirstSteps, typeof actions>(
+  { dismissAll: false, steps: {} },
+  actions,
+  {
+    dismissStep: (state, payload) => ({ ...state, steps: { ...state.steps, [payload]: true } }),
   },
-  defaults: {
-    dismissAll: false,
-    steps: {},
-  },
-};
+);
 
 export default settingsReducer;

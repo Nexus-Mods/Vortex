@@ -1,27 +1,13 @@
-import type { Action } from "redux";
+import { createAction } from "redux-act";
 
-import safeCreateAction from "../../actions/safeCreateAction";
-
-type ShowUrlFunc = (
-  url: string,
-  instructions?: string,
-  subscriber?: string,
-  skippable?: boolean,
-) => Action<{
-  url: string;
-  instructions: string;
-  subscriber: string;
-  skippable: boolean;
-}>;
-
-export const showURL: ShowUrlFunc = safeCreateAction(
+export const showURL = createAction(
   "SHOW_URL",
-  (url: string, instructions?: string, subscriber?: string, skippable?: boolean) => ({
+  (url: string, instructions: string, subscriber: string, skippable: boolean) => ({
     url,
     instructions,
     subscriber,
     skippable: skippable ?? false,
   }),
-) as any;
+);
 
-export const closeBrowser = safeCreateAction("CLOSE_BROWSER");
+export const closeBrowser = createAction("CLOSE_BROWSER");
