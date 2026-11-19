@@ -80,7 +80,7 @@ console.error = (...args: unknown[]) => {
       .reverse()
       .find((arg) => typeof arg === "string" && arg.includes(" at "));
     const frame = /\bat (\S+) \(([^)]+)\)/.exec(String(stack ?? ""));
-    if (frame === null || !frame[2].includes("/node_modules/")) {
+    if (frame === null || !/[\\/]node_modules[\\/]/.test(frame[2])) {
       ourWarningsLogged.add(`${frame?.[1] ?? "a component"} ${warning.failure}`);
     }
   }
