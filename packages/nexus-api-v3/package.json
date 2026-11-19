@@ -87,7 +87,6 @@
     "./package.json": "./package.json"
   },
   "devDependencies": {
-    "@typescript/native": "catalog:",
     "openapi-fetch": "catalog:",
     "openapi-typescript": "catalog:",
     "tsdown": "catalog:",

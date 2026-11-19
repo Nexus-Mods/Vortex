@@ -19,7 +19,6 @@
     "@types/react-dom": "catalog:",
     "@types/redux": "catalog:",
     "@types/redux-thunk": "catalog:",
-    "@typescript/native": "catalog:",
     "copyfiles": "catalog:",
     "lodash": "catalog:",
     "react-i18next": "catalog:",

@@ -15,7 +15,6 @@
     "@types/react-redux": "catalog:",
     "@types/redux": "catalog:",
     "@types/which": "catalog:",
-    "@typescript/native": "catalog:",
     "bluebird": "catalog:",
     "copyfiles": "catalog:",
     "redux": "catalog:",

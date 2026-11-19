@@ -112,9 +112,6 @@ catalog:
   "@types/ws": 7.4.7
   "@types/xml2js": 0.4.14
   "@typescript-eslint/utils": 8.62.1
-  # TS 7 provides the `tsc` command; `typescript` below stays on TS 6 for tools
-  # that use its JS API. See docs/typescript.md.
-  "@typescript/native": npm:typescript@7.1.0-beta
   "@vitejs/plugin-react": 6.0.3
   "@vitest/coverage-v8": 4.1.9
   "@vitest/ui": 4.1.9
@@ -257,7 +254,9 @@ catalog:
   tsdown: 0.22.3
   tsx: 4.23.0
   turbowalk: github:Nexus-Mods/node-turbowalk#c8d9be07cc658aecdca63af2508df929990cd583
-  typescript: npm:@typescript/typescript6@6.0.2
+  # TS 7. Packages that peer on `typescript` get TS 6 instead, through
+  # .pnpmfile.cjs. See docs/typescript.md.
+  typescript: 7.1.0-beta
   typescript-eslint: 8.62.1
   universal-analytics: 0.4.23
   uuid: 3.4.0

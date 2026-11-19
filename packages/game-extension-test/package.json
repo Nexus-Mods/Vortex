@@ -14,7 +14,6 @@
     "@nexusmods/nexus-api": "catalog:",
     "@nexusmods/vortex-api": "workspace:*",
     "@types/node": "catalog:",
-    "@typescript/native": "catalog:",
     "@vortex/extension-test-mocks": "workspace:*",
     "limiter": "catalog:",
     "minimist": "catalog:",
