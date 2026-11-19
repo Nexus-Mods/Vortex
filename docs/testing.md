@@ -114,6 +114,11 @@ The check catches the call, not React's warning. React logs that warning once
 per test file, and react-bootstrap and react-overlays still call `findDOMNode`
 themselves, so their warning would hide ours. Their calls don't fail a test.
 
+One call of ours is let through: `findDOMNodeUntilReact19` in
+`VisibilityProxy`, which finds the element of an extension's `componentClass`
+that doesn't pass its ref on. It goes when React 19 does. The names let through
+are listed in `allowedFindDOMNodeCallers` in the test setup.
+
 ### What the check can't see
 
 - `waitFor`, the `findBy…` queries and `userEvent` turn React's `act()` checks

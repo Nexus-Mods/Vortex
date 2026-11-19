@@ -35,13 +35,23 @@ console.error = (...args: unknown[]) => {
 // this: it's logged once per test file, and react-bootstrap 0.33 and react-overlays still call
 // findDOMNode themselves, so theirs would hide ours. vi.mock only reaches the modules vitest
 // transforms, our source, and not the copy of react-dom those libraries require() for themselves.
-const findDOMNodeCallers = vi.hoisted(() => new Set<string>());
+// The callers named in `allowedFindDOMNodeCallers` are let through.
+const { allowedFindDOMNodeCallers, findDOMNodeCallers } = vi.hoisted(() => ({
+  /**
+   * Functions that call findDOMNode on purpose until React 19, for extension components that
+   * don't pass a ref on. Each is named for that, so a new call elsewhere still fails.
+   */
+  allowedFindDOMNodeCallers: ["findDOMNodeUntilReact19"],
+  findDOMNodeCallers: new Set<string>(),
+}));
 vi.mock("react-dom", async (importOriginal) => {
   const original = await importOriginal<typeof ReactDOMModule>();
   const findDOMNode: typeof original.findDOMNode = (instance) => {
     // the frame below this one is whoever called findDOMNode
     const caller = new Error().stack?.split("\n")[2]?.trim().replace(/^at /, "");
-    findDOMNodeCallers.add(caller ?? "unknown code");
+    if (!allowedFindDOMNodeCallers.some((allowed) => caller?.startsWith(`${allowed} `))) {
+      findDOMNodeCallers.add(caller ?? "unknown code");
+    }
     return original.findDOMNode(instance);
   };
   return { ...original, findDOMNode, default: { ...original, findDOMNode } };

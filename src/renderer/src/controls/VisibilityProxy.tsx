@@ -1,6 +1,7 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import * as _ from "lodash";
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 
 import { log } from "../util/log";
 
@@ -16,11 +17,6 @@ export interface IProps {
   componentClass?: React.ElementType;
 }
 
-interface IState {
-  /** the componentClass gave no element to observe, so the content goes in a <div> inside it */
-  wrapContent: boolean;
-}
-
 /**
  * The componentClasses already warned about, and whether a proxy without one has been. Each
  * warning is logged once, not once per proxy: a list of thousands of entries would flood the log.
@@ -28,10 +24,25 @@ interface IState {
 const sWarnedComponentClasses = new WeakSet<object>();
 let sWarnedNoComponentClass = false;
 
-function componentClassName(componentClass: React.ElementType): string | undefined {
-  return typeof componentClass === "string"
-    ? componentClass
-    : ((componentClass as { displayName?: string }).displayName ?? componentClass.name);
+interface INamedType {
+  displayName?: string;
+  name?: string;
+}
+
+/** A name for the log; a bare `React.memo(fn)` or `forwardRef` has none of its own. */
+function componentClassName(componentClass: React.ElementType): string {
+  if (typeof componentClass === "string") {
+    return componentClass;
+  }
+  const type = componentClass as INamedType & { type?: INamedType; render?: INamedType };
+  return (
+    type.displayName ||
+    type.name ||
+    type.type?.displayName ||
+    type.type?.name ||
+    type.render?.name ||
+    "anonymous"
+  );
 }
 
 /** Tells an extension author once that a proxy without a componentClass adds a <div>. */
@@ -48,7 +59,7 @@ function warnNoComponentClass() {
   );
 }
 
-/** Tells an extension author once per componentClass that their content gets an extra <div>. */
+/** Tells an extension author once per componentClass to pass its ref on before React 19. */
 function warnNoElement(componentClass: React.ElementType) {
   if (typeof componentClass !== "string") {
     if (sWarnedComponentClasses.has(componentClass)) {
@@ -58,8 +69,9 @@ function warnNoElement(componentClass: React.ElementType) {
   }
   log(
     "warn",
-    "VisibilityProxy: componentClass doesn't pass its ref on to an element, so its content " +
-      "is wrapped in a <div> to see when it scrolls into view",
+    "VisibilityProxy: componentClass doesn't pass its ref on to an element, so Vortex finds " +
+      "the element with findDOMNode, which React 19 removes. Wrap the componentClass in " +
+      "React.forwardRef and pass the ref to the element it renders",
     { componentClass: componentClassName(componentClass) },
   );
 }
@@ -69,13 +81,42 @@ function isElement(ref: unknown): ref is Element {
   return (ref as Node | null)?.nodeType === Node.ELEMENT_NODE;
 }
 
+const FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
+const MEMO_TYPE = Symbol.for("react.memo");
+
+/**
+ * Whether a ref given to this componentClass reaches whatever it chooses: a tag, a forwardRef,
+ * or a memo of one. It's decided before rendering because a plain function component can't
+ * take a ref at all (React logs an error), and a class takes it as its instance, not an element.
+ */
+function passesRefOn(componentClass: React.ElementType): boolean {
+  if (typeof componentClass === "string") {
+    return true;
+  }
+  const type = componentClass as { $$typeof?: symbol; type?: React.ElementType };
+  if (type.$$typeof === FORWARD_REF_TYPE) {
+    return true;
+  }
+  return type.$$typeof === MEMO_TYPE && type.type !== undefined && passesRefOn(type.type);
+}
+
+/**
+ * Finds the element of a componentClass that doesn't pass its ref on, an extension's, the way
+ * Vortex did before refs, so its layout stays as it was. React 19 removes findDOMNode, and this
+ * goes with it. The test setup lets this one caller through by its name.
+ */
+function findDOMNodeUntilReact19(instance: React.Component): Element | null {
+  const node = ReactDOM.findDOMNode(instance);
+  return isElement(node) ? node : null;
+}
+
 /**
  * proxy component that delays loading of a control until it comes into view
  *
  * @class VisibilityProxy
- * @extends {React.Component<IProps, IState>}
+ * @extends {React.Component<IProps>}
  */
-class VisibilityProxy extends React.PureComponent<any, IState> {
+class VisibilityProxy extends React.PureComponent<any> {
   // need to use maps because the keys aren't PODs
   private static sObservers: Map<Element, IntersectionObserver> = new Map();
   private static sInstances: Map<Element, (visible: boolean) => void> = new Map();
@@ -124,8 +165,6 @@ class VisibilityProxy extends React.PureComponent<any, IState> {
     }
   }
 
-  public state: IState = { wrapContent: false };
-
   private mLastVisible: boolean = false;
   private mVisibleTime: number = 0;
   /**
@@ -136,7 +175,7 @@ class VisibilityProxy extends React.PureComponent<any, IState> {
   #container: HTMLElement | undefined;
   #mounted: boolean = false;
   #observed: Element | undefined;
-  /** the element render() puts the content in: the componentClass's, or the wrapping <div> */
+  /** the element the ref gave: the componentClass's, or the <div> used when there's none */
   #element: Element | null = null;
   #inView: boolean = false;
   #hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -154,34 +193,32 @@ class VisibilityProxy extends React.PureComponent<any, IState> {
     this.observeElement();
   }
 
+  /**
+   * Forgets the observed element as well as unobserving it: StrictMode and `<Activity>` mount
+   * the same instance again, and it has to start observing afresh.
+   */
   public componentWillUnmount() {
     this.#mounted = false;
     clearTimeout(this.#hideTimer);
     if (this.#observed !== undefined) {
       VisibilityProxy.unobserve(this.#container, this.#observed);
+      this.#observed = undefined;
     }
   }
 
   /** The element whose visibility this proxy tracks: the componentClass's, or its own <div>. */
   public get element(): Element | null {
-    return this.#element;
+    return this.#observed ?? null;
   }
 
   /**
-   * Observes the element render() put the content in, moving off the one observed before if
-   * it was replaced, e.g. by a new componentClass. A componentClass that gave no element gets
-   * its content wrapped in a <div> on the next render, and that <div> is observed instead.
+   * Observes the element the content is in, moving off the one observed before if it was
+   * replaced, e.g. by a new componentClass. One that doesn't pass its ref on to an element is
+   * found with findDOMNode instead.
    */
   private observeElement() {
-    const element = this.#element;
-    if (element === null) {
-      if (!this.state.wrapContent) {
-        warnNoElement(this.props.componentClass);
-        this.setState({ wrapContent: true });
-      }
-      return;
-    }
-    if (element === this.#observed) {
+    const element = this.#element ?? this.findElementWithoutRef();
+    if (element === null || element === this.#observed) {
       return;
     }
     if (this.#observed !== undefined) {
@@ -191,6 +228,23 @@ class VisibilityProxy extends React.PureComponent<any, IState> {
     VisibilityProxy.observe(this.#container, element, (visible: boolean) =>
       this.onIntersection(visible),
     );
+  }
+
+  /**
+   * The element of a componentClass whose ref gave none. Without a componentClass there's
+   * nothing to find: the <div> rendered in its place always hands over its ref. No warning when
+   * there's no element yet: a forwardRef that renders null at first gives its ref later.
+   */
+  private findElementWithoutRef(): Element | null {
+    const { componentClass } = this.props;
+    if (componentClass === undefined) {
+      return null;
+    }
+    const element = findDOMNodeUntilReact19(this);
+    if (element !== null) {
+      warnNoElement(componentClass);
+    }
+    return element;
   }
 
   /**
@@ -245,7 +299,6 @@ class VisibilityProxy extends React.PureComponent<any, IState> {
 
   public render(): JSX.Element {
     const { componentClass: Component } = this.props;
-    const { wrapContent } = this.state;
     const props = _.omit(this.props, [
       "container",
       "placeholder",
@@ -261,19 +314,12 @@ class VisibilityProxy extends React.PureComponent<any, IState> {
 
     if (Component === undefined) {
       return <div ref={this.setElement}>{content}</div>;
-    } else if (wrapContent) {
-      return (
-        <Component {...props}>
-          <div ref={this.setElement}>{content}</div>
-        </Component>
-      );
-    } else {
-      return (
-        <Component {...props} ref={this.setElement}>
-          {content}
-        </Component>
-      );
     }
+    return (
+      <Component {...props} ref={passesRefOn(Component) ? this.setElement : undefined}>
+        {content}
+      </Component>
+    );
   }
 }
 

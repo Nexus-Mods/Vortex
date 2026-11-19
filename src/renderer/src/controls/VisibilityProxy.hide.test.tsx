@@ -205,9 +205,52 @@ describe("VisibilityProxy hiding", () => {
     expect(queryByTestId("content")).not.toBeNull();
   });
 
+  // Fast Refresh does this in development: the componentClass remounts its element while the
+  // proxy's props, and so the proxy, stay as they were.
+  it("keeps showing a row whose componentClass replaces its element on its own", () => {
+    let replaceElement: () => void = () => undefined;
+    const SelfReplacing = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+      function SelfReplacing(props, ref) {
+        const [key, setKey] = React.useState(0);
+        replaceElement = () => setKey((value) => value + 1);
+        return <div key={key} ref={ref} {...props} />;
+      },
+    );
+    const onSetVisible = vi.fn();
+    function Entry() {
+      const [visible, setVisible] = React.useState(false);
+      return (
+        <VisibilityProxy
+          componentClass={SelfReplacing}
+          container={null}
+          content={() => <span data-testid="content" />}
+          data-testid="row"
+          placeholder={() => <span data-testid="placeholder" />}
+          visible={visible}
+          setVisible={(value: boolean) => {
+            onSetVisible(value);
+            setVisible(value);
+          }}
+        />
+      );
+    }
+    const { getByTestId, queryByTestId } = render(<Entry />);
+    const before = getByTestId("row");
+    report(before, true);
+
+    act(() => replaceElement());
+    const after = getByTestId("row");
+    expect(after).not.toBe(before);
+    expect(FakeIntersectionObserver.sInstances.some((obs) => obs.observes(before))).toBe(false);
+    report(after, true);
+    act(() => vi.advanceTimersByTime(5000));
+
+    expect(onSetVisible.mock.calls).toEqual([[true]]);
+    expect(queryByTestId("content")).not.toBeNull();
+  });
+
   // Without a componentClass the proxy wraps its content in a <div> and observes that, so
   // swapping the placeholder for content doesn't change the node it observes.
-  // ConflictEditor (mod-dependency-manager) uses it this way.
   describe("without a componentClass", () => {
     function renderEntry(placeholder: () => React.ReactNode, content: () => React.ReactNode) {
       const onSetVisible = vi.fn();

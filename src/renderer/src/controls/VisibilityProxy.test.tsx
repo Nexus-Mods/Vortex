@@ -5,7 +5,7 @@
  */
 import { render } from "@testing-library/react";
 import * as React from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { log } from "../util/log";
 import VisibilityProxy from "./VisibilityProxy";
@@ -43,6 +43,10 @@ beforeAll(() => {
 // testing-library unmounts each test's proxy after the test, so its unobserve lands late
 beforeEach(() => {
   calls.length = 0;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function Proxy(props: { container: HTMLElement | null }) {
@@ -191,12 +195,12 @@ describe("VisibilityProxy", () => {
     ]);
   });
 
-  // An extension's componentClass may not give a ref to its element, so the proxy puts a <div>
-  // inside it to observe instead, and the content still loads as it scrolls into view.
-  it("observes a <div> inside a componentClass that gives no element", () => {
+  // An extension's componentClass may not pass its ref on. Its element is found the way it was
+  // before refs, so its layout doesn't change, until React 19 removes findDOMNode.
+  it("observes the element of a class componentClass, with nothing added around its content", () => {
     const setVisible = vi.fn();
 
-    const { getByTestId } = render(
+    const { container, getByTestId } = render(
       <VisibilityProxy
         componentClass={Opaque}
         container={null}
@@ -207,16 +211,85 @@ describe("VisibilityProxy", () => {
       />,
     );
 
-    const wrapper = getByTestId("entry").parentElement;
-    expect(wrapper?.parentElement?.tagName).toBe("DIV");
-    expect(calls).toEqual([{ op: "observe", root: null, target: wrapper }]);
+    const element = getByTestId("entry").parentElement;
+    expect(element?.parentElement).toBe(container);
+    expect(calls).toEqual([{ op: "observe", root: null, target: element }]);
     expect(setVisible).not.toHaveBeenCalled();
-    // an extension author can see where the extra <div> comes from
+    // an extension author learns to forward the ref before React 19
     expect(log).toHaveBeenCalledWith(
       "warn",
-      expect.stringContaining("doesn't pass its ref on"),
+      expect.stringContaining("React.forwardRef"),
       expect.objectContaining({ componentClass: "Opaque" }),
     );
+  });
+
+  it("keeps the cells of a function componentClass's <tr> straight in it", () => {
+    const consoleError = vi.spyOn(console, "error");
+    const Row = (props: React.HTMLAttributes<HTMLTableRowElement>) => <tr {...props} />;
+
+    const { getByTestId } = render(
+      <table>
+        <tbody>
+          <VisibilityProxy
+            componentClass={Row}
+            container={null}
+            content={() => null}
+            placeholder={() => <td data-testid="cell" />}
+            visible={false}
+            setVisible={() => undefined}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const row = getByTestId("cell").parentElement;
+    expect(row?.tagName).toBe("TR");
+    expect(calls).toEqual([{ op: "observe", root: null, target: row }]);
+    // a function component can't take a ref, so the proxy doesn't give it one
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("names a memo componentClass after the function it wraps", () => {
+    const Row = (props: React.HTMLAttributes<HTMLDivElement>) => <div {...props} />;
+
+    render(
+      <VisibilityProxy
+        componentClass={React.memo(Row)}
+        container={null}
+        content={() => null}
+        placeholder={() => null}
+        visible={false}
+        setVisible={() => undefined}
+      />,
+    );
+
+    expect(log).toHaveBeenCalledWith("warn", expect.stringContaining("doesn't pass its ref on"), {
+      componentClass: "Row",
+    });
+  });
+
+  // StrictMode mounts each component, unmounts it and mounts the same instance again
+  it("observes again when the same instance mounts again", () => {
+    const { getByTestId } = render(
+      <React.StrictMode>
+        <VisibilityProxy
+          componentClass="div"
+          container={null}
+          content={() => null}
+          data-testid="row"
+          placeholder={() => null}
+          visible={false}
+          setVisible={() => undefined}
+        />
+      </React.StrictMode>,
+    );
+
+    const row = getByTestId("row");
+    expect(calls).toEqual([
+      { op: "observe", root: null, target: row },
+      { op: "unobserve", root: null, target: row },
+      { op: "observe", root: null, target: row },
+    ]);
   });
 
   it("warns once per componentClass that gives no element, however many entries use it", () => {

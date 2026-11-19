@@ -46,7 +46,7 @@ class ToolbarIcon extends React.PureComponent<IToolbarIconProps, {}> {
       disabled,
     } = this.props;
     const placement = this.props.placement || "bottom";
-    const refProps = domRef === undefined ? {} : { componentClass: ButtonWithDomRef, domRef };
+    const refProps = { componentClass: ButtonWithDomRef, domRef };
     return (
       <Button
         tooltip={tooltip}
