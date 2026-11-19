@@ -5,8 +5,11 @@ import {
   getErrorMessageOrDefault,
   parseError,
   unknownToError,
+  VortexDeploymentMethodId,
   VortexError,
   VortexGameId,
+  VortexModId,
+  VortexProfileId,
 } from "@vortex/shared";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
@@ -28,7 +31,7 @@ import type { Normalize } from "../../util/getNormalizeFunc";
 import getNormalizeFunc from "../../util/getNormalizeFunc";
 import { log } from "../../util/log";
 import { showError } from "../../util/message";
-import { downloadPathForGame } from "../../util/selectors";
+import { downloadPathForGame, profileById } from "../../util/selectors";
 import { knownGames } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, makeQueue, truthy } from "../../util/util";
@@ -39,7 +42,11 @@ import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
 import { setModsEnabled } from "../profile_management/actions/profiles";
-import { activeGameId, activeProfile } from "../profile_management/selectors";
+import {
+  activeGameId,
+  activeProfile,
+  lastActiveProfileForGame,
+} from "../profile_management/selectors";
 import { setDeploymentNecessary } from "./actions/deployment";
 import { addMod, removeMod } from "./actions/mods";
 import { setActivator } from "./actions/settings";
@@ -54,6 +61,7 @@ import type { IInstallOptions } from "./types/IInstallOptions";
 import type { IMod, IModRule } from "./types/IMod";
 import type { IRemoveModOptions } from "./types/IRemoveModOptions";
 import {
+  doSaveActivation,
   getManifest,
   loadActivation,
   purgeDeployedFiles,
@@ -62,8 +70,8 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
-import { settleLeftoverDeployment } from "./util/applyDeploy";
-import { purgeMods } from "./util/deploy";
+import { isDeployingThroughApply, settleLeftoverDeployment } from "./util/applyDeploy";
+import { activateSingleMod, laterStagingFolders, purgeMods } from "./util/deploy";
 import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getCurrentActivator,
@@ -76,6 +84,7 @@ import modName from "./util/modName";
 import { genSubDirFunc } from "./util/modSubDirectory";
 import queryGameId from "./util/queryGameId";
 import refreshMods from "./util/refreshMods";
+import { doSortMods } from "./util/sort";
 
 async function checkStagingGame(
   api: IExtensionApi,
@@ -758,6 +767,9 @@ async function undeploy(
 // undeploys rewrite the manifest they load, so they run one at a time
 const undeployQueue = makeQueue<void>();
 
+/** Runs a full deployment of a profile; rejects when it fails. */
+export type DeployProfile = (profileId: VortexProfileId) => Promise<void>;
+
 function undeployMods(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
@@ -806,6 +818,7 @@ export function onRemoveMods(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
   installManager: InstallManager,
+  deployProfile: DeployProfile,
   gameId: string,
   modIds: string[],
   callback?: (error: Error) => void,
@@ -838,18 +851,24 @@ export function onRemoveMods(
   const profileId = state.settings.profiles.lastActiveProfile[gameId];
 
   // is it even a plausible scenario that there is no profile active?
-  if (profileId !== undefined) {
-    // Disable automatic deployment if it's active, a deployment
-    //  event will occur once the mods have been successfully removed
-    //  anyway.
-    setModsEnabled(api, profileId, modIds, false, {
-      installed: options?.incomplete,
-      allowAutoDeploy: false,
-      willBeReplaced: options?.willBeReplaced,
-      // this disable is a mechanical step of removal; the removal itself is tracked separately.
-      skipStateChangeEvent: true,
-    });
-  }
+  // Disable automatic deployment if it's active, a deployment
+  //  event will occur once the mods have been successfully removed
+  //  anyway.
+  const modsDisabled =
+    profileId !== undefined
+      ? setModsEnabled(api, profileId, modIds, false, {
+          installed: options?.incomplete,
+          allowAutoDeploy: false,
+          willBeReplaced: options?.willBeReplaced,
+          // this disable is a mechanical step of removal; the removal itself is tracked separately.
+          skipStateChangeEvent: true,
+        })
+      : Promise.resolve();
+  const activator = getCurrentActivator(state, gameId, false);
+  const removesThroughApply =
+    profileId !== undefined &&
+    activator !== undefined &&
+    isDeployingThroughApply(VortexGameId(gameId), VortexDeploymentMethodId(activator.id));
 
   // undeploy mods, otherwise we'd leave orphaned links in the game directory
   const installationPath = installPathForGame(state, gameId);
@@ -875,7 +894,14 @@ export function onRemoveMods(
       removeMods.map((mod) => mod.id),
       options,
     )
-    .then(() => undeployMods(api, activators, gameId, removeMods))
+    // a deployment through Apply leaves out only disabled mods
+    .then(() => modsDisabled)
+    .then(() =>
+      // the deployment unlinks the disabled mods while they are still staged
+      removesThroughApply
+        ? deployProfile(VortexProfileId(profileId))
+        : undeployMods(api, activators, gameId, removeMods),
+    )
     .then(() => {
       let completedCount = 0;
       const totalCount = removeMods.length;
@@ -964,6 +990,7 @@ export function onRemoveMod(
   api: IExtensionApi,
   activators: IDeploymentMethod[],
   installManager: InstallManager,
+  deployProfile: DeployProfile,
   gameId: string,
   modId: string,
   callback?: (error: Error) => void,
@@ -973,7 +1000,152 @@ export function onRemoveMod(
     callback?.(null);
     return;
   }
-  return onRemoveMods(api, activators, installManager, gameId, [modId], callback, options);
+  return onRemoveMods(
+    api,
+    activators,
+    installManager,
+    deployProfile,
+    gameId,
+    [modId],
+    callback,
+    options,
+  );
+}
+
+export function onDeploySingleMod(api: IExtensionApi, deployProfile: DeployProfile) {
+  return async (gameId: string, modId: string, enable?: boolean) => {
+    const state: IState = api.store.getState();
+    const game = getGame(gameId);
+    const discovery = getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
+    if (game === undefined || discovery === undefined || discovery.path === undefined) {
+      return;
+    }
+    const mod: IMod = getSafe(state, ["persistent", "mods", game.id, modId], undefined);
+    if (mod === undefined) {
+      return;
+    }
+    const activator = getCurrentActivator(state, gameId, false);
+
+    if (activator === undefined) {
+      return;
+    }
+
+    const profileId = lastActiveProfileForGame(state, gameId);
+    if (
+      profileId !== undefined &&
+      isDeployingThroughApply(VortexGameId(gameId), VortexDeploymentMethodId(activator.id))
+    ) {
+      // the profile decides what is deployed, so `enable` isn't applied
+      await api.emitAndAwait("will-deploy-single-mod", gameId, modId, enable);
+      try {
+        await deployProfile(VortexProfileId(profileId));
+      } catch (err) {
+        // the deployment has shown its error
+        log("warn", "failed to deploy for a single mod", {
+          gameId,
+          modId,
+          error: getErrorMessageOrDefault(err),
+        });
+        return;
+      }
+      await api.emitAndAwait("did-deploy-single-mod", gameId, modId, enable);
+      return;
+    }
+
+    const dataPath = game.getModPaths(discovery.path)[mod.type || ""];
+    if (!truthy(dataPath)) {
+      return;
+    }
+    const stagingPath: string = installPathForGame(state, gameId);
+    let modPath: string;
+
+    try {
+      modPath = path.join(stagingPath, mod.installationPath);
+    } catch (err) {
+      err["StagingPath"] = stagingPath || "<undefined>";
+      err["InstallPath"] = mod.installationPath || "<undefined>";
+      err["GameId"] = gameId || "<undefined>";
+      api.showErrorNotification("Failed to deploy mod", err, {
+        message: modId,
+      });
+      return;
+    }
+
+    const subdir = genSubDirFunc(game, getModType(mod.type));
+    let deployed = false;
+    await withActivationLock(async () => {
+      try {
+        await settleLeftoverDeployment(api, VortexGameId(gameId));
+        const normalize = await getNormalizeFunc(dataPath);
+        const lastActivation = await loadActivation(
+          api,
+          gameId,
+          mod.type,
+          dataPath,
+          stagingPath,
+          activator,
+        );
+        await api.emitAndAwait("will-deploy-single-mod", gameId, modId, enable);
+        resetDeploymentFailures(api, gameId);
+        if (enable !== false) {
+          const profile = profileById(state, profileId);
+          const sorted =
+            profile !== undefined
+              ? await doSortMods(api, profile, state.persistent.mods[gameId], VortexModId(mod.id))
+              : [];
+          await activateSingleMod({
+            method: activator,
+            game,
+            dataPath,
+            normalize,
+            lastActivation,
+            mod,
+            modPath,
+            subDir: subdir(mod),
+            laterSources: laterStagingFolders(sorted, mod),
+          });
+        } else {
+          await activator.prepare(dataPath, false, lastActivation, normalize);
+          await activator.deactivate(modPath, subdir(mod), mod.installationPath);
+        }
+        const newActivation = await activator.finalize(gameId, dataPath, stagingPath);
+        await doSaveActivation(
+          api,
+          gameId,
+          mod.type,
+          dataPath,
+          stagingPath,
+          newActivation,
+          activator.id,
+        );
+        reportRecordedFailures(api, gameId);
+        deployed = true;
+      } catch (unknownErr) {
+        if (activator.cancel !== undefined) {
+          activator.cancel(gameId, dataPath, stagingPath);
+        }
+        const err = unknownToError(unknownErr);
+        if (err instanceof ProcessCanceled) {
+          api.sendNotification({
+            type: "warning",
+            title: "Deployment interrupted",
+            message: err.message,
+          });
+        } else {
+          const userCanceled = err instanceof UserCanceled;
+          api.showErrorNotification("Failed to deploy mod", err, {
+            message: modId,
+            allowReport:
+              !userCanceled && parseError(err).data.kind !== "deployment:interrupted-run-unsettled",
+          });
+        }
+      }
+    });
+    // outside the activation lock, so a listener can deploy again
+    if (deployed) {
+      await api.emitAndAwait("did-deploy-single-mod", gameId, modId, enable);
+    }
+  };
 }
 
 export function onAddMod(

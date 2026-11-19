@@ -43,8 +43,7 @@ import {
 } from "./activationStore";
 import { JournalPhase } from "./apply/journal";
 import {
-  DeploymentPlanning,
-  deploymentPlanningFor,
+  isDeployingThroughApply,
   planAndApplyPurge,
   progressBarFor,
   settleLeftoverDeployment,
@@ -308,8 +307,7 @@ async function purgeModsImpl(
         const orchestrator = registeredDeployOrchestrator();
         const isPurgeThroughApply =
           orchestrator !== undefined &&
-          deploymentPlanningFor(purgingVortexGameId, VortexDeploymentMethodId(activator.id)) ===
-            DeploymentPlanning.ThroughApply;
+          isDeployingThroughApply(purgingVortexGameId, VortexDeploymentMethodId(activator.id));
         if (isPurgeThroughApply) {
           await planAndApplyPurge(api, orchestrator, {
             gameMode: purgingVortexGameId,
