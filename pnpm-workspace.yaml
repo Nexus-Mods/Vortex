@@ -116,6 +116,7 @@ catalog:
   "@vitest/coverage-v8": 4.1.9
   "@vitest/ui": 4.1.9
   "@welldone-software/why-did-you-render": 7.0.1
+  ajv: 8.18.0
   babel-loader: 10.1.1
   bbcode-to-react: github:TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
