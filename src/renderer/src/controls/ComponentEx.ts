@@ -1,10 +1,10 @@
 import { clearImmediate, setImmediate } from "timers";
 
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import type { WithTranslation } from "react-i18next";
 import { withTranslation } from "react-i18next";
 
+import { MainContext } from "../contexts/main_context/MainContext";
 import type { IComponentContext } from "../types/IComponentContext";
 import { deleteOrNop, setSafe } from "../util/storeHelper";
 import { truthy } from "../util/util";
@@ -138,11 +138,7 @@ export class ComponentEx<P, S extends object> extends React.Component<
   P & Partial<WithTranslation>,
   S
 > {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
+  public static contextType = MainContext;
 
   declare public context: IComponentContext;
 
@@ -161,11 +157,7 @@ export class PureComponentEx<P, S extends object> extends React.PureComponent<
   P & Partial<WithTranslation>,
   S
 > {
-  public static contextTypes: React.ValidationMap<any> = {
-    api: PropTypes.object.isRequired,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
+  public static contextType = MainContext;
 
   declare public context: IComponentContext;
 

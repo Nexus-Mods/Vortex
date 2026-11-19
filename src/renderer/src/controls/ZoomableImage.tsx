@@ -1,9 +1,10 @@
 import * as _ from "lodash";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Image } from "react-bootstrap";
 import { Portal } from "react-overlays";
 
+import { MainContext } from "../contexts/main_context/MainContext";
+import type { IComponentContext } from "../types/IComponentContext";
 import { setSafe } from "../util/storeHelper";
 import Icon from "./Icon";
 
@@ -27,11 +28,8 @@ export interface IZoomableImageProps {
 }
 
 class ZoomableImage extends React.Component<IZoomableImageProps, { showOverlay: boolean }> {
-  public static contextTypes: React.ValidationMap<any> = {
-    menuLayer: PropTypes.object,
-  };
-
-  declare public context: { menuLayer: JSX.Element };
+  public static contextType = MainContext;
+  declare public context: IComponentContext;
 
   constructor(props) {
     super(props);

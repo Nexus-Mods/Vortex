@@ -110,7 +110,7 @@ export const GameDetailsModal = ({
           {gameName}
         </Typography>
 
-        <Typography appearance="subdued" className="space-y-2" typographyType="body-sm">
+        <Typography appearance="subdued" as="div" className="space-y-2" typographyType="body-sm">
           {!keys.length
             ? t("No information about this game")
             : keys.map((key) => (

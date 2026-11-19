@@ -166,6 +166,26 @@ describe("BBCode", () => {
     });
   });
 
+  // The browser puts rows written straight in a table into a <tbody> of its own, so they're
+  // drawn in one, or React's tree wouldn't match the page.
+  it("puts a table's rows in a tbody", () => {
+    const { container } = render(
+      <BBCode bbcode="[table][tr][td]A[/td][/tr][tr][td]B[/td][/tr][/table]" />,
+    );
+
+    expect(container.querySelectorAll("table > tbody > tr")).toHaveLength(2);
+  });
+
+  it("keeps a table's own thead and tbody", () => {
+    const { container } = render(
+      <BBCode bbcode="[table][thead][tr][th]H[/th][/tr][/thead][tbody][tr][td]A[/td][/tr][/tbody][/table]" />,
+    );
+
+    expect(container.querySelectorAll("table > thead > tr")).toHaveLength(1);
+    expect(container.querySelectorAll("table > tbody > tr")).toHaveLength(1);
+    expect(container.querySelectorAll("tbody tbody")).toHaveLength(0);
+  });
+
   it("keeps how far a table cell spans and where its text sits", () => {
     render(
       <BBCode bbcode='[table][tr][th colspan=2 align="center"]Header[/th][/tr][tr][td rowspan=2]A[/td][td]B[/td][/tr][/table]' />,

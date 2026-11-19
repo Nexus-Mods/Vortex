@@ -40,6 +40,53 @@ const failOnActWarnings = () => {
 afterEach(failOnActWarnings);
 afterAll(failOnActWarnings);
 
+// React warnings about our own code fail the test they're logged in, as act() warnings do above;
+// "React warnings" in docs/testing.md says how to fix each. A warning is ours when the first
+// component in React's stack that has a file isn't in node_modules: react-bootstrap 0.33 logs
+// the same warnings about its own components, and those go when it does.
+const ourWarnings = [
+  { logged: "uses the legacy contextTypes API", failure: "reads legacy context" },
+  { logged: "uses the legacy childContextTypes API", failure: "provides legacy context" },
+  { logged: "validateDOMNesting", failure: "nests elements HTML doesn't allow" },
+  {
+    logged: "Function components cannot be given refs",
+    failure: "gives a ref to a function component",
+  },
+];
+// Legacy context on purpose: ComponentExProvider hands MainContext on to extensions that still
+// read legacy context, LegacyContextExtension is the tests' stand-in for one of those, and
+// FormFeedback reads react-bootstrap's FormGroup, which only has legacy context.
+const legacyContextOnPurpose = ["ComponentExProvider", "LegacyContextExtension", "FormFeedback"];
+let ourWarningsLogged = new Set<string>();
+const consoleErrorBeforeOurWarnings = console.error;
+console.error = (...args: unknown[]) => {
+  const message = args[0];
+  const warning =
+    typeof message === "string"
+      ? ourWarnings.find(({ logged }) => message.includes(logged))
+      : undefined;
+  if (warning !== undefined && !legacyContextOnPurpose.includes(String(args[1]))) {
+    // React passes the component stack last
+    const stack = [...args]
+      .reverse()
+      .find((arg) => typeof arg === "string" && arg.includes(" at "));
+    const frame = /\bat (\S+) \(([^)]+)\)/.exec(String(stack ?? ""));
+    if (frame === null || !frame[2].includes("/node_modules/")) {
+      ourWarningsLogged.add(`${frame?.[1] ?? "a component"} ${warning.failure}`);
+    }
+  }
+  consoleErrorBeforeOurWarnings.apply(console, args);
+};
+const failOnOurWarnings = () => {
+  const failures = [...ourWarningsLogged];
+  ourWarningsLogged = new Set();
+  if (failures.length > 0) {
+    throw new Error(`${failures.join("; ")}; see "React warnings" in docs/testing.md`);
+  }
+};
+afterEach(failOnOurWarnings);
+afterAll(failOnOurWarnings);
+
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is
 // already what the assertions read — this just makes it the stated behaviour instead of a

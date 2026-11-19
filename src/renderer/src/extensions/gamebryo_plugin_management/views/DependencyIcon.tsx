@@ -1,6 +1,5 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import type I18next from "i18next";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Button, Overlay, Popover } from "react-bootstrap";
 import type {
@@ -191,10 +190,6 @@ function collectDrop(dropConnect: DropTargetConnector, monitor: DropTargetMonito
 const RE_MATCH = /[:\*?|]/;
 
 class DependencyIcon extends ComponentEx<IProps, IComponentState> {
-  public static contextTypes: React.ValidationMap<any> = {
-    getModifiers: PropTypes.func,
-  };
-
   private mRef: JSX.Element;
 
   constructor(props: IProps) {
