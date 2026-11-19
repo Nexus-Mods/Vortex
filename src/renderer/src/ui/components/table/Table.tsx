@@ -36,6 +36,7 @@ import { TableGroupRow } from "./TableGroupRow";
 import { TableHeader } from "./TableHeader";
 import { TableRow } from "./TableRow";
 import { TableSpacer } from "./TableSpacer";
+import { useScrollableRight } from "./use_scrollable_right/useScrollableRight.hook";
 import { useTableSelection } from "./useTableSelection.hook";
 import { useTableSort } from "./useTableSort.hook";
 import { useTableVirtualizer } from "./useTableVirtualizer.hook";
@@ -228,6 +229,7 @@ export const Table = <T, G extends ITableGroup<T> = ITableGroup<T>>({
     getItemSize,
     stickyIndexes,
   });
+  useScrollableRight(virtual.scroller, virtual.tableRef);
 
   const hasFocusGroup = !!focusGroupId && !!groups?.some((group) => group.id === focusGroupId);
 

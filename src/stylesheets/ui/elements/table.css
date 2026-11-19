@@ -143,10 +143,8 @@
     }
 
     /* Only while the page's scroller has further to go right. */
-    @container scroll-state(scrollable: right) {
-        .nxm-table-edge::after {
-            opacity: 1;
-        }
+    .nxm-table[data-scrollable-right] .nxm-table-edge::after {
+        opacity: 1;
     }
 
     /* A zero-size point pinned at the view's top right, spanning every column so it sticks as
@@ -606,15 +604,15 @@
             100% calc(100% - var(--nxm-table-group-row-gap) - 1px);
     }
 
-    /* The fade only while the page's scroller has further to go right. */
-    @container scroll-state(scrollable: right) {
+    /* The fade only while the page's scroller has further to go right, as the table says. */
+    .nxm-table[data-scrollable-right] {
         .nxm-table-cell[data-sticky="end"]::before {
             opacity: 1;
         }
 
         /* A row's pins sit clear of the shadow the column casts, on every row, so they don't
            move as a row is left. */
-        .nxm-table[data-sticky-reveal]
+        &[data-sticky-reveal]
             .nxm-table-row
             .nxm-toolbar-group
             > [data-toolbar-control]:has(+ :not([data-toolbar-control])) {
@@ -623,7 +621,7 @@
 
         /* A widened row keeps the shadow at the column's edge, under its pins, so it runs on
            unbroken down the column. */
-        .nxm-table[data-sticky-reveal]
+        &[data-sticky-reveal]
             .nxm-table-row:is(
                 :hover,
                 :has(:focus-visible),
