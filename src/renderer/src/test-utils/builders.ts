@@ -1227,6 +1227,14 @@ export function makeApiHarness(
       },
     },
     emitAndAwait: () => Promise.resolve([]),
+    withPrePost:
+      (eventName: string, callback: (...args: unknown[]) => PromiseLike<unknown>) =>
+      async (...args: unknown[]) => {
+        await api.emitAndAwait(`will-${eventName}`, ...args);
+        const result = await callback(...args);
+        await api.emitAndAwait(`did-${eventName}`, result, ...args);
+        return result;
+      },
     // no meta server rules; sorting uses the mods' own
     lookupModMeta: () => Promise.resolve([]),
   } as unknown as IExtensionApi;

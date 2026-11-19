@@ -336,8 +336,7 @@ export function registerDeployOrchestrator(
   api.onAsync<"did-deploy">("did-deploy", (profileId) =>
     orchestrator.deployed(VortexProfileId(profileId)),
   );
-  // TODO(MOD-150): remove these two listeners once deploy-single-mod and mod removal run a full
-  // Apply deploy
+  // a single-mod deploy or mod removal can change the disk behind the planner
   api.onAsync<"will-remove-mods">("will-remove-mods", forgetGame);
   api.onAsync<"will-deploy-single-mod">("will-deploy-single-mod", forgetGame);
   // a failed purge emits only will-purge, a purge of one mod type only did-purge

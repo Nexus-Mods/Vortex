@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
+import hardlinkInit from "../extensions/hardlink_activator";
 import { sessionReducer } from "../extensions/mod_management/reducers/session";
 import { STAGING_DIR_TAG } from "../extensions/mod_management/stagingDirectory";
 import type { IDeployedFile } from "../extensions/mod_management/types/IDeploymentMethod";
@@ -15,8 +16,11 @@ import {
   makeDeployedFile,
   makeGameHarness,
   makeMod,
+  makeRealDeploymentMethod,
+  registerTestDeploymentMethod,
   type IHarnessReducerBinding,
 } from "./builders";
+import { enableModPipelineFlag } from "./flags";
 import type { IDeployedGameHarness } from "./harnessTypes";
 import { makeTempDir, writeInto } from "./tempDir";
 
@@ -121,6 +125,22 @@ export async function makeResolvableGame(): Promise<IDeployedGameHarness> {
   game.setState((draft) => {
     draft.settings.gameMode.discovered[game.gameId].store = "epic";
   });
+  return game;
+}
+
+/** A game deploying through Apply by hardlink, with `modIds` deployed. */
+export async function makeApplyDeployedGame(
+  modIds: string[],
+  extraReducers: IHarnessReducerBinding[] = [],
+): Promise<IDeployedGameHarness> {
+  enableModPipelineFlag();
+  const game = await makeDeployedGame({
+    methodId: "hardlink_activator",
+    extraReducers: [{ path: ["session", "mods"], reducer: sessionReducer }, ...extraReducers],
+  });
+  const method = makeRealDeploymentMethod(game.api, hardlinkInit);
+  registerTestDeploymentMethod(method);
+  await game.deployMods(method, modIds);
   return game;
 }
 
