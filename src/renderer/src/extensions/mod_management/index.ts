@@ -1007,6 +1007,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
             void emitModListSnapshot(api, gameId);
           } catch (unknownErr) {
             const err = unknownToError(unknownErr);
+            const errorKind = parseError(err).data.kind;
             if (err instanceof UserCanceled) {
               // nop
             } else if (err instanceof ProcessCanceled) {
@@ -1019,7 +1020,10 @@ function genUpdateModDeployment(installManager: InstallManager) {
               api.showErrorNotification("Failed to deploy mods, please try again", err.message, {
                 allowReport: false,
               });
-            } else if (parseError(err).data.kind === "deployment:interrupted-run-unsettled") {
+            } else if (
+              errorKind === "deployment:interrupted-run-unsettled" ||
+              errorKind === "deployment:apply-failed"
+            ) {
               api.showErrorNotification("Failed to deploy mods", err, { allowReport: false });
             } else if (err instanceof CycleError) {
               api.sendNotification({

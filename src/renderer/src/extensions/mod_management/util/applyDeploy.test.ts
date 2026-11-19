@@ -42,9 +42,10 @@ import { newJournal, unreadableJournal } from "../../../test-utils/journal";
 import { writeInto } from "../../../test-utils/tempDir";
 import type { IMergeResultByType } from "../modMerging";
 import { saveActivation } from "./activationStore";
-import type { RunOptions } from "./apply/apply";
+import { ApplyStatus, type RunOptions } from "./apply/apply";
 import { JournalPhase, type JournalStorage } from "./apply/journal";
 import {
+  ApplyRunKind,
   DeploymentPlanning,
   deploymentPlanningFor,
   planAndApplyDeployment,
@@ -134,10 +135,18 @@ test("a deployment whose manifest another program holds for a moment still saves
 test("a deployment Apply refuses fails, naming why, and leaves the disk as it was", async () => {
   const { planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
 
-  await expect(planAndApplyWith(await unreadableJournal())).rejects.toThrow(
-    `Vortex didn't deploy, because the journal at ${JOURNAL_FILE} can't be used`,
+  const failure = parseError(
+    await planAndApplyWith(await unreadableJournal()).catch((err: unknown) => err),
   );
 
+  expect(failure.data).toEqual({
+    kind: "deployment:apply-failed",
+    runKind: ApplyRunKind.Deployment,
+    applyStatus: ApplyStatus.Refused,
+  });
+  expect(failure.message).toContain(
+    `Vortex didn't deploy, because the journal at ${JOURNAL_FILE} can't be used`,
+  );
   expect(await isModFileDeployed()).toBe(false);
 });
 
