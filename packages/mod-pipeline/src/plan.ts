@@ -167,7 +167,7 @@ export function sameOrigin(lhs: FileOrigin, rhs: FileOrigin): boolean {
 }
 
 // the same bytes from another mod still relink, so a symlink never points into a purged mod
-const sameFile = (lhs: FileSource, rhs: FileSource) =>
+export const sameFile = (lhs: FileSource, rhs: FileSource): boolean =>
   sameContent(lhs, rhs) && sameOrigin(lhs, rhs);
 
 /** The current and previous lockfile's file at one destination; at least one is there. */

@@ -62,6 +62,19 @@ export type VortexModId = Brand<string, "VortexModId">;
 export const VortexModId: Brander<VortexModId> = make<VortexModId>(validateNonEmptyString);
 
 /**
+ * The id of a mod type, the `type` of a mod and the key of a game's mod paths. The default mod
+ * type's id is the empty string.
+ *
+ * @public */
+export type VortexModTypeId = Brand<string, "VortexModTypeId">;
+
+/**
+ * Brands a string as a {@link VortexModTypeId}.
+ *
+ * @public */
+export const VortexModTypeId: Brander<VortexModTypeId> = make<VortexModTypeId>();
+
+/**
  * The id of a Vortex profile, the key of `persistent.profiles`.
  *
  * @public */

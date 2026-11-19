@@ -7,15 +7,17 @@
  *   node tools/mod-pipeline/fake-skyrimse.mjs [setup] [--root dir] [--port 9222] [--files N] [--mod id] [--reset] [--no-launch]
  *   node tools/mod-pipeline/fake-skyrimse.mjs tamper [--root dir]
  *   node tools/mod-pipeline/fake-skyrimse.mjs rollback [--root dir] [--port 9222] [--profile id] [--fail-at path] [--call name]
+ *   node tools/mod-pipeline/fake-skyrimse.mjs manifests [--root dir] [--port 9222]
  *
- * setup builds <root>/game, <root>/staging and <root>/userData, starts dev Vortex (build it first:
- * `pnpm run build`) and, over the Chrome debug port, registers the game, the mods and three
+ * setup deletes what an earlier run made, so every run starts fresh. It then builds <root>/game,
+ * <root>/staging and <root>/userData, starts dev Vortex (build it first:
+ * `pnpm run build`) and, over the Chrome debug port, registers the game, the mods and four
  * profiles, then activates the "Edge cases" profile. Auto-deploy is off; deploy from the UI.
  *   --root       where everything goes (default: <temp>/vortex-fake-skyrimse); game and staging
  *                share it, so hardlink deployment works
  *   --files N    also stage a "bulk" mod of N files, for timing
  *   --mod id     stage only this mod, by the id listed below
- *   --reset      delete <root> first; setup stops when <root> exists without it
+ *   --reset      only delete what an earlier run made; nothing is built or started
  *   --no-launch  only build the folders
  *
  * tamper changes the deployed game folder behind Vortex's back, after a deploy: it replaces one
@@ -30,10 +32,15 @@
  *   --fail-at    the path the failing call names, relative to <root>/game (default: Data/other/only.txt)
  *   --call       the disk call that fails: createLink, delete or move (default: createLink)
  *
+ * manifests proves an Apply deployment leaves the files and saves the manifests today's deployment
+ * does, on a Vortex that setup started and whose "Edge cases" profile today's deployment deployed
+ * last. It keeps both, runs Apply to "Other" and back, and compares every file in the game and
+ * staging folders (content, file id, link count) and every manifest entry.
+ *
  * Skyrim's ini files and plugin lists live outside <root>: the game is registered as an Epic
  * install, so Vortex uses "Skyrim Special Edition EPIC" under Documents/My Games (ini files) and
  * local app data (plugins.txt, loadorder.txt). setup makes both folders with a marker file,
- * refuses to run where one exists without it, and --reset deletes them. Expect "Some files could
+ * refuses to run where one exists without it, and deletes them with <root>. Expect "Some files could
  * not be deployed" on every deploy of the "Taken backup" profile: that is over-leftover, whose
  * backup name is taken.
  *
@@ -52,12 +59,15 @@
  *   other-only                        the only mod of the second profile, "Other"
  *   over-leftover                     the only mod of the third profile, "Taken backup": a path
  *                                     holding a file and an older .vortex_backup, which fails to deploy
+ *   shared-from-root, shared-from-data  the mods of the fourth profile, "Shared by types": a
+ *                                     "dinput" mod and a default-type mod deploying one path, the
+ *                                     default-type mod sorted last
  */
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,6 +79,7 @@ const STAGING_TAG = "__vortex_staging_folder";
 const PROFILE_EDGE_CASES = "fake-edge-cases";
 const PROFILE_OTHER = "fake-other";
 const PROFILE_TAKEN_BACKUP = "fake-taken-backup";
+const PROFILE_SHARED_BY_TYPES = "fake-shared-by-types";
 const WRITES_AT_ONCE = 64;
 const VORTEX_WINDOW_TITLE = "Vortex (fake Skyrim SE)";
 
@@ -86,6 +97,7 @@ const bulkFiles = Number(option("files", "0"));
 const gamePath = path.join(root, "game");
 const dataPath = path.join(gamePath, "Data");
 const stagingPath = path.join(root, "staging");
+const userDataPath = path.join(root, "userData");
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const mainPath = path.join(repoRoot, "src", "main");
 
@@ -183,6 +195,18 @@ function stagedMods() {
       },
     },
     { id: "other-only", profile: PROFILE_OTHER, files: { "other/only.txt": null } },
+    {
+      id: "shared-from-root",
+      profile: PROFILE_SHARED_BY_TYPES,
+      type: "dinput",
+      files: { "Data/shared-by-types.txt": null },
+    },
+    {
+      id: "shared-from-data",
+      profile: PROFILE_SHARED_BY_TYPES,
+      after: "shared-from-root",
+      files: { "shared-by-types.txt": null },
+    },
   ];
   if (bulkFiles > 0) {
     const files = {};
@@ -203,21 +227,44 @@ function stagedMods() {
   return [{ ...only, after: undefined }];
 }
 
-async function buildFolders(mods) {
-  if (existsSync(root)) {
-    // a deployed file is its staged file, so writing the game folder again would change staging
-    if (!flag("reset")) {
-      throw new Error(`${root} already exists; pass --reset to delete it and build it again`);
+/** Whether a Vortex answers on the debug port. */
+const vortexAnswers = () =>
+  fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(2000) }).then(
+    () => true,
+    () => false,
+  );
+
+/** Deletes what an earlier run made: <root> and the settings folders. */
+async function deleteLastSetup() {
+  if (existsSync(root) && !existsSync(path.join(root, MARKER))) {
+    throw new Error(`${root} was not made by this script; delete it yourself`);
+  }
+  if (await vortexAnswers()) {
+    throw new Error(`a Vortex is running on debug port ${port}; close it first`);
+  }
+  try {
+    // on Windows a running Vortex holds its user data open, so this fails with the setup whole
+    if (existsSync(userDataPath)) {
+      const doomed = `${userDataPath}.deleting`;
+      await rm(doomed, { recursive: true, force: true });
+      await rename(userDataPath, doomed);
     }
-    if (!existsSync(path.join(root, MARKER))) {
-      throw new Error(`${root} was not made by this script; delete it yourself`);
-    }
-    await rm(root, { recursive: true, force: true });
-    // checkSettingsFolders has passed, so any that exist are this script's
-    for (const folder of settingsFolders) {
+    // checkSettingsFolders has passed, so any settings folder that exists is this script's
+    for (const folder of [root, ...settingsFolders].filter((owned) => existsSync(owned))) {
+      // the marker goes last, so a folder that couldn't be deleted whole is still this script's
+      for (const name of (await readdir(folder)).filter((child) => child !== MARKER)) {
+        await rm(path.join(folder, name), { recursive: true, force: true });
+      }
       await rm(folder, { recursive: true, force: true });
     }
+  } catch (cause) {
+    throw new Error(`couldn't delete the last setup; close its Vortex first (${cause.message})`, {
+      cause,
+    });
   }
+}
+
+async function buildFolders(mods) {
   await write(path.join(root, MARKER), "");
 
   await write(path.join(gamePath, "SkyrimSE.exe"), "MZ");
@@ -252,7 +299,7 @@ async function buildFolders(mods) {
     }
   }
   // the layout packages/e2e's prepareVortexInstance gives a Vortex with its own user data
-  await mkdir(path.join(root, "userData"), { recursive: true });
+  await mkdir(userDataPath, { recursive: true });
   await mkdir(path.join(root, "appData", "@vortex", "main"), { recursive: true });
 }
 
@@ -265,7 +312,7 @@ function launchVortex() {
     NODE_ENV: "development",
     // no game discovery, and its own user data
     VORTEX_E2E: "1",
-    ELECTRON_USERDATA: path.join(root, "userData"),
+    ELECTRON_USERDATA: userDataPath,
     ELECTRON_APPDATA: path.join(root, "appData"),
   };
   // set by editor-hosted shells
@@ -483,7 +530,14 @@ async function buildSettingsFolders() {
 
 async function setup() {
   checkSettingsFolders();
+  if (flag("reset")) {
+    await deleteLastSetup();
+    console.log(`deleted ${root} and the fake Skyrim SE's settings folders`);
+    return;
+  }
   const mods = stagedMods();
+  // a deployed file is its staged file, so every setup starts from nothing
+  await deleteLastSetup();
   await buildFolders(mods);
   console.log(`fake Skyrim SE in ${root}`);
   if (flag("no-launch")) {
@@ -544,6 +598,7 @@ async function registerWith(session, mods) {
       profileOf(PROFILE_EDGE_CASES, "Edge cases"),
       profileOf(PROFILE_OTHER, "Other"),
       profileOf(PROFILE_TAKEN_BACKUP, "Taken backup"),
+      profileOf(PROFILE_SHARED_BY_TYPES, "Shared by types"),
     ],
   });
 
@@ -589,12 +644,18 @@ async function snapshotOf(folder) {
   return entries;
 }
 
-/** The folders a rollback leaves as they were, each with the name a report gives it. */
+/** The folders a proof compares, each with the name a report gives it. */
 const snapshotFolders = [
   ["game folder", gamePath],
   ["staging", stagingPath],
 ];
 const snapshotAll = () => Promise.all(snapshotFolders.map(([, folder]) => snapshotOf(folder)));
+
+/** How each folder of `after` differs from `before`, both from snapshotAll; a line per difference. */
+const folderDifferences = (before, after) =>
+  snapshotFolders.flatMap(([name], index) =>
+    differencesBetween(before[index], after[index]).map((line) => `${name} ${line}`),
+  );
 
 /** How `after` differs from `before`, one line per difference; a path is matched whatever its case. */
 function differencesBetween(before, after) {
@@ -628,12 +689,112 @@ const SEEDED_MESSAGE = "seeded previous lockfile from manifest";
 async function seedCount() {
   // the renderer's log lines reach the file through the main process
   await sleep(2000);
-  const userData = path.join(root, "userData");
-  const logNames = (await readdir(userData)).filter((name) => /^vortex.*\.log$/.test(name));
+  const logNames = (await readdir(userDataPath)).filter((name) => /^vortex.*\.log$/.test(name));
   const logs = await Promise.all(
-    logNames.map((name) => readFile(path.join(userData, name), "utf8")),
+    logNames.map((name) => readFile(path.join(userDataPath, name), "utf8")),
   );
   return logs.reduce((count, log) => count + log.split(SEEDED_MESSAGE).length - 1, 0);
+}
+
+const journalFile = path.join(root, "work", "apply-journal.ndjson");
+const keptFolder = path.join(root, "work", "kept");
+
+/** A session on a running Vortex that has the Apply dev handle. */
+async function connectToApplyHandle() {
+  const session = await connect(5000);
+  if (!(await session.evaluate(hasApplyDevHandle))) {
+    session.close();
+    throw new Error("this Vortex has no Apply dev handle; build the renderer and run setup");
+  }
+  return session;
+}
+
+/** Runs a profile's plan through Apply on the Vortex behind `session`, and gives the outcome. */
+async function applyProfile(session, { profileId, fault }) {
+  const outcome = await session.evaluate(applyThroughDevHandle, {
+    profileId,
+    journalFile,
+    keptFolder,
+    fault,
+  });
+  if (outcome === undefined) {
+    throw new Error(`Vortex couldn't plan profile "${profileId}"; see its log`);
+  }
+  return outcome;
+}
+
+/** An Apply outcome for an error message, without its operations. */
+const reportOf = (outcome) => JSON.stringify({ ...outcome, operations: undefined });
+
+/** The game's manifests as one entry per manifest and per file it lists, without their save time. */
+async function manifestSnapshot() {
+  const entries = new Map();
+  for (const folder of [gamePath, dataPath]) {
+    const names = (await readdir(folder)).filter((name) =>
+      /^vortex\.deployment.*\.json$/.test(name),
+    );
+    for (const name of names) {
+      const { files, ...header } = JSON.parse(await readFile(path.join(folder, name), "utf8"));
+      delete header.deploymentTime;
+      entries.set(name, JSON.stringify(header));
+      for (const file of files) {
+        entries.set(path.join(name, file.relPath), JSON.stringify(file, Object.keys(file).sort()));
+      }
+    }
+  }
+  return entries;
+}
+
+/** A disk snapshot's files without the manifests and their staging copies, which carry a save time. */
+// TODO(MOD-147): compare folders too once Apply removes the ones it empties
+const deployedFilesIn = (snapshot) =>
+  new Map(
+    [...snapshot].filter(
+      ([relPath, entry]) =>
+        entry !== "folder" && !path.basename(relPath).startsWith("vortex.deployment."),
+    ),
+  );
+
+/**
+ * Proves an Apply deployment leaves the files and saves the manifests today's deployment does:
+ * keeps both from the deployed "Edge cases" profile, runs Apply to "Other" and back, and compares.
+ */
+async function manifests() {
+  const session = await connectToApplyHandle();
+  try {
+    const fromTodaysDeploy = await manifestSnapshot();
+    const filesFromTodaysDeploy = (await snapshotAll()).map(deployedFilesIn);
+    const manifestsAfterApplying = async (profileId) => {
+      const outcome = await applyProfile(session, { profileId });
+      if (outcome.status !== "applied") {
+        throw new Error(`Apply ended ${outcome.status} for "${profileId}": ${reportOf(outcome)}`);
+      }
+      return manifestSnapshot();
+    };
+    // a run that saves nothing leaves today's manifests in place
+    const forOther = await manifestsAfterApplying(PROFILE_OTHER);
+    if (differencesBetween(fromTodaysDeploy, forOther).length === 0) {
+      throw new Error(`Apply saved no manifests for "${PROFILE_OTHER}"`);
+    }
+    const fromApply = await manifestsAfterApplying(PROFILE_EDGE_CASES);
+    const filesFromApply = (await snapshotAll()).map(deployedFilesIn);
+    const differences = [
+      ...differencesBetween(fromTodaysDeploy, fromApply).map((line) => `manifests ${line}`),
+      ...folderDifferences(filesFromTodaysDeploy, filesFromApply),
+    ];
+    if (differences.length > 0) {
+      throw new Error(
+        `Apply's deployment differs from today's deployment's:\n  ${differences.join("\n  ")}`,
+      );
+    }
+    const [gameFiles] = filesFromApply;
+    console.log(
+      `manifests proven: Apply left the ${gameFiles.size} game folder files and saved the ` +
+        `${fromApply.size} manifest entries today's deployment did`,
+    );
+  } finally {
+    session.close();
+  }
 }
 
 const FAULT_CALLS = ["createLink", "delete", "move"];
@@ -653,32 +814,18 @@ async function rollback() {
   if (!FAULT_CALLS.includes(fault.call)) {
     throw new Error(`--call is one of ${FAULT_CALLS.join(", ")}`);
   }
-  const workPath = path.join(root, "work");
-  const journalFile = path.join(workPath, "apply-journal.ndjson");
-  const keptFolder = path.join(workPath, "kept");
 
-  const session = await connect(5000);
+  const session = await connectToApplyHandle();
   const failures = [];
   try {
-    if (!(await session.evaluate(hasApplyDevHandle))) {
-      throw new Error("this Vortex has no Apply dev handle; build the renderer and run setup");
-    }
     const before = await snapshotAll();
-    const outcome = await session.evaluate(applyThroughDevHandle, {
-      profileId,
-      journalFile,
-      keptFolder,
-      fault,
-    });
-    if (outcome === undefined) {
-      throw new Error(`Vortex couldn't plan profile "${profileId}"; see its log`);
-    }
+    const outcome = await applyProfile(session, { profileId, fault });
     const { operations, status, failedAt } = outcome;
     if (status !== "rolled-back") {
       throw new Error(
         `planned ${operations.length} operations for "${profileId}" and expected a rollback, ` +
           `but Apply ended ${status}; the fault (${fault.call} on ${fault.path}) may match no ` +
-          `step: ${JSON.stringify({ ...outcome, operations: undefined })}`,
+          `step: ${reportOf(outcome)}`,
       );
     }
     console.log(
@@ -691,11 +838,7 @@ async function rollback() {
     }
 
     const after = await snapshotAll();
-    snapshotFolders.forEach(([name], index) =>
-      failures.push(
-        ...differencesBetween(before[index], after[index]).map((line) => `${name} ${line}`),
-      ),
-    );
+    failures.push(...folderDifferences(before, after));
     if (existsSync(journalFile)) {
       failures.push(`the journal is still there: ${journalFile}`);
     }
@@ -729,9 +872,9 @@ async function rollback() {
   );
 }
 
-const commands = { setup, tamper, rollback };
+const commands = { setup, tamper, rollback, manifests };
 if (commands[command] === undefined) {
-  console.error(`unknown command "${command}"; use setup, tamper or rollback`);
+  console.error(`unknown command "${command}"; use setup, tamper, rollback or manifests`);
   process.exit(1);
 }
 commands[command]().catch((err) => {

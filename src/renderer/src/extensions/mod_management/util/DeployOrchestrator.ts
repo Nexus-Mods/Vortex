@@ -15,10 +15,13 @@ import {
   type PlannerPlanFigures,
 } from "../../analytics/utils/plannerPlanEvent";
 import { gameIdOfProfile, lastActiveProfileForGame } from "../../profile_management/selectors";
+import { manifestFilesAfter, readManifestFiles, saveAppliedManifests } from "./appliedManifests";
 import { ApplyStatus, type ApplyResult } from "./apply/apply";
 import { deploymentFailures } from "./deploymentFailures";
 import {
   applyPlan,
+  clearedDestinationsOf,
+  deployedOperationsOf,
   deploymentPlanOf,
   hashingOnce,
   planAndLogOperations,
@@ -31,7 +34,7 @@ import {
 import { addGeneratedFiles } from "./generatedFiles";
 import { keepLastPlan } from "./lastPlans";
 import { type LockfileContributions } from "./lockfileContributions";
-import { gatherResolverInput } from "./resolverInput";
+import { gatherResolverInput, type ManifestFiles } from "./resolverInput";
 import { compareWithManifests } from "./shadowComparison";
 
 /** The games whose deployments are planned. */
@@ -49,10 +52,16 @@ async function withGeneratedFiles(
   return addGeneratedFiles(lockfile, generatedFiles);
 }
 
-/** A planned deployment that hasn't finished: the lockfile it deploys, and its plan run's figures. */
+/** A planned deployment that hasn't finished. */
 interface PendingDeployment {
   gameMode: VortexGameId;
+  /** the lockfile it deploys */
   current: StagedLockfile;
+  /** its plan's */
+  destinations: DeploymentPlan["destinations"];
+  // TODO(MOD-134): remove with deployed()
+  /** the game's manifests as they were when it was planned */
+  manifestFilesBefore: ManifestFiles;
   figures: PlannerPlanFigures;
 }
 
@@ -107,13 +116,10 @@ export class DeployOrchestrator {
       // the disk, and the next plan then reseeds
       this.#previousLockfiles.delete(gameMode);
 
-      const { current, resolveMs, diskScan, scanMs } = await resolveAndScan(
-        this.#api,
-        gameMode,
-        profileId,
-        previous.lockfile,
-        hashOnce,
-      );
+      const [{ current, resolveMs, diskScan, scanMs }, manifestFilesBefore] = await Promise.all([
+        resolveAndScan(this.#api, gameMode, profileId, previous.lockfile, hashOnce),
+        readManifestFiles(this.#api, gameMode),
+      ]);
       const { lockfile } = current;
       figures.resolve_ms = resolveMs;
       figures.lockfile_files = lockfile.files.length;
@@ -134,7 +140,7 @@ export class DeployOrchestrator {
       figures.plan_ms = planMs;
       figures.operations = counts;
       keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
-      this.#pending = { gameMode, current, figures };
+      this.#pending = { gameMode, current, destinations, manifestFilesBefore, figures };
       return deploymentPlanOf(current, previous, destinations);
     } catch (err) {
       log("warn", "failed to plan deployment", { gameMode, error: getErrorMessageOrDefault(err) });
@@ -147,27 +153,37 @@ export class DeployOrchestrator {
   }
 
   /**
-   * Runs the pending deployment's plan through Apply and reports its plan run. An applied run's
-   * lockfile becomes the game's last deployed one; a refused or rolled back run left the disk as
-   * the previous one describes, so that one stays. Undefined when `plan` isn't the pending one.
+   * Runs the pending deployment's plan through Apply and reports its plan run. The run saves the
+   * game's manifests from its operations, for `activatorId`, before it ends. A run whose
+   * operations all ran leaves its lockfile as the game's last deployed one; a refused or rolled
+   * back run keeps the previous one. Undefined when `plan` isn't pending.
    */
-  public async apply(plan: DeploymentPlan, run: ApplyRun): Promise<ApplyResult | undefined> {
+  public async apply(
+    plan: DeploymentPlan,
+    run: ApplyRun,
+    activatorId: string,
+  ): Promise<ApplyResult | undefined> {
     const pending = this.#pending;
-    if (pending === undefined || pending.current.lockfile !== plan.lockfile) {
+    if (pending?.destinations !== plan.destinations) {
       return undefined;
     }
     this.#pending = undefined;
     const { gameMode, current, figures } = pending;
-    const result = await applyPlan(plan, run);
+    const cleared = clearedDestinationsOf(plan.destinations);
+    const result = await applyPlan(plan, {
+      ...run,
+      recordDeployment: (entries) =>
+        saveAppliedManifests(this.#api, gameMode, run.fs, entries, cleared, activatorId),
+    });
     switch (result.status) {
       case ApplyStatus.Applied:
+      case ApplyStatus.Unfinished:
         this.#previousLockfiles.set(gameMode, current);
         break;
       case ApplyStatus.Refused:
       case ApplyStatus.RolledBack:
         this.#previousLockfiles.set(gameMode, plan.previous);
         break;
-      case ApplyStatus.Unfinished:
       case ApplyStatus.RollbackFailed:
         // the journal says where the disk is; the next plan reseeds
         break;
@@ -176,14 +192,19 @@ export class DeployOrchestrator {
         return exhausted;
       }
     }
-    void emitPlannerPlanEvent(this.#api, gameMode, () => ({ ...figures, manifest_diff: null }));
+    void emitPlannerPlanEvent(this.#api, gameMode, () => ({
+      ...figures,
+      manifest_diff: null,
+      manifest_entry_diff: null,
+    }));
     return result;
   }
 
   // TODO(MOD-134): remove once Apply replaces today's deploy
   /**
    * Keeps the lockfile of a pending deployment today's deploy finished as the game's last deployed
-   * one, and reports its plan run with how the lockfile compares to the manifests.
+   * one, and reports its plan run with how the lockfile, and the manifests its plan's operations
+   * would leave, compare to the manifests the deploy saved.
    */
   public async deployed(profileId: VortexProfileId): Promise<void> {
     const gameMode = gameIdOfProfile(this.#api.getState(), profileId);
@@ -191,16 +212,30 @@ export class DeployOrchestrator {
     if (pending === undefined || pending.gameMode !== gameMode) {
       return;
     }
-    const { current, figures } = pending;
+    const { current, destinations, manifestFilesBefore, figures } = pending;
     this.#pending = undefined;
     // the lockfile is only what's deployed when every file was placed
     if (deploymentFailures(this.#api, gameMode).length === 0) {
       this.#previousLockfiles.set(gameMode, current);
     }
-    const manifestDiff = await compareWithManifests(this.#api, gameMode, current.lockfile);
+    const { manifestDiff, manifestEntryDiff } = await compareWithManifests(
+      this.#api,
+      gameMode,
+      current.lockfile,
+      () =>
+        manifestFilesAfter(
+          this.#api,
+          gameMode,
+          window.api.fs,
+          manifestFilesBefore,
+          deployedOperationsOf(destinations, current.stagedFiles),
+          clearedDestinationsOf(destinations),
+        ),
+    );
     void emitPlannerPlanEvent(this.#api, gameMode, () => ({
       ...figures,
       manifest_diff: manifestDiff,
+      manifest_entry_diff: manifestEntryDiff,
     }));
   }
 

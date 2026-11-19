@@ -620,3 +620,53 @@ export function saveActivation(
         }),
       );
 }
+
+/** Saves a mod type's manifest for this instance; a failed write asks the user to retry or ignore. */
+export function doSaveActivation(
+  api: IExtensionApi,
+  gameId: string,
+  typeId: string,
+  deployPath: string,
+  stagingPath: string,
+  files: IDeployedFile[],
+  activatorId: string,
+): Promise<void> {
+  const state = api.getState();
+  return Promise.resolve<void>(
+    saveActivation(
+      gameId,
+      typeId,
+      state.app.instanceId,
+      deployPath,
+      stagingPath,
+      files,
+      activatorId,
+    ),
+  ).catch((err) => {
+    const canceled = err instanceof UserCanceled;
+    let text = canceled
+      ? "You canceled the writing of the manifest file."
+      : "Saving the manifest failed (see error below).";
+
+    text +=
+      "This could lead to errors " +
+      "(e.g. orphaned files in the game directory, external changes not being detected) " +
+      'later on. Please either retry or immediately "purge" after this and try ' +
+      "deploying again.";
+    return api
+      .showDialog(
+        "error",
+        "Saving manifest failed",
+        {
+          text,
+          message: canceled ? undefined : unknownToError(err).stack,
+        },
+        [{ label: "Retry" }, { label: "Ignore" }],
+      )
+      .then((result) =>
+        result.action === "Retry"
+          ? doSaveActivation(api, gameId, typeId, deployPath, stagingPath, files, activatorId)
+          : Promise.resolve(),
+      );
+  });
+}
