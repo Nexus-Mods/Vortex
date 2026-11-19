@@ -1,8 +1,8 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
 import type { IHealthCheckResult } from "../../../types/IHealthCheck";
+import { reducerFor } from "../../../util/reducerFor";
 import { deleteOrNop, setSafe } from "../../../util/storeHelper";
 import * as actions from "../actions/session";
-import { reducerFor } from "./reducerFor";
 
 export interface IHealthCheckSessionState {
   /** Results keyed by check ID */

@@ -1,7 +1,7 @@
 import type { IReducerSpec } from "../../../types/IExtensionContext";
+import { reducerFor } from "../../../util/reducerFor";
 import { setSafe, deleteOrNop } from "../../../util/storeHelper";
 import * as actions from "../actions/persistent";
-import { reducerFor } from "./reducerFor";
 
 export interface IHealthCheckPersistentState {
   /**
