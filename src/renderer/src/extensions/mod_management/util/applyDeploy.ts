@@ -27,8 +27,9 @@ import {
   type RefusedResult,
   type ResumeResult,
   type RolledBackResult,
+  type RunOptions,
 } from "./apply/apply";
-import type { JournalStorage } from "./apply/journal";
+import type { JournalPhase, JournalStorage } from "./apply/journal";
 import { DEPLOYMENT_FOLDER_TAG } from "./deploymentPlan";
 import { isGameWithPlannedDeployments, type DeployOrchestrator } from "./DeployOrchestrator";
 import { journalStorageAt } from "./journalStorage";
@@ -86,6 +87,28 @@ export interface PlanAndApplyDeploymentOptions {
   /** where `journal` keeps the journal, for the failure messages */
   journalFile: string;
   keptFolder: string;
+  onProgress?: RunOptions["onProgress"];
+}
+
+/**
+ * An Apply progress callback that moves a progress bar from `from` to `to` percent, labelled by the
+ * run's phase, reporting only when the whole percent or the phase changes.
+ */
+export function progressBarFor(
+  report: (label: string, percent: number) => void,
+  labelOfPhase: Record<JournalPhase, string>,
+  from: number,
+  to: number,
+): NonNullable<RunOptions["onProgress"]> {
+  let lastReported: { phase: JournalPhase; percent: number } | undefined;
+  return (done, total, phase) => {
+    const percent = Math.floor(from + ((to - from) * done) / total);
+    if (lastReported?.phase === phase && lastReported.percent === percent) {
+      return;
+    }
+    lastReported = { phase, percent };
+    report(labelOfPhase[phase], percent);
+  };
 }
 
 /** An error the deployment fails with, naming the cause, not a bug to report. */
@@ -152,7 +175,14 @@ function failureMessageOf(result: Exclude<ApplyResult, AppliedResult>, journalFi
 export async function planAndApplyDeployment(
   api: IExtensionApi,
   orchestrator: DeployOrchestrator,
-  { profileId, mergeResult, journal, journalFile, keptFolder }: PlanAndApplyDeploymentOptions,
+  {
+    profileId,
+    mergeResult,
+    journal,
+    journalFile,
+    keptFolder,
+    onProgress,
+  }: PlanAndApplyDeploymentOptions,
 ): Promise<ManifestFiles> {
   // the lockfile has no merged files
   const hasMergedFiles = Object.values(mergeResult).some(
@@ -174,6 +204,7 @@ export async function planAndApplyDeployment(
       journal,
       keptPathOf: (_destinationPath, runId, entryIndex) =>
         toPortablePath(path.join(keptFolder, runId, String(entryIndex))),
+      onProgress,
     },
     APPLY_DEPLOYMENT_METHOD,
   );
@@ -217,6 +248,14 @@ function settleFailureCauseOf(
   }
 }
 
+export interface SettleLeftoverDeploymentOptions {
+  /** the game's journal file by default */
+  journalFile?: string;
+  /** the storage at `journalFile` by default */
+  journal?: JournalStorage;
+  onProgress?: RunOptions["onProgress"];
+}
+
 /**
  * Finishes the run a killed deployment of the game left in its journal, or undoes it when it can't
  * be finished; called with the activation lock held. Fails, naming the journal, while it can't.
@@ -224,8 +263,11 @@ function settleFailureCauseOf(
 export async function settleLeftoverDeployment(
   api: IExtensionApi,
   gameMode: VortexGameId,
-  journalFile = applyJournalFileFor(gameMode),
-  journal = journalStorageAt(journalFile),
+  {
+    journalFile = applyJournalFileFor(gameMode),
+    journal = journalStorageAt(journalFile),
+    onProgress,
+  }: SettleLeftoverDeploymentOptions = {},
 ): Promise<void> {
   if (!isGameWithPlannedDeployments(gameMode)) {
     return;
@@ -236,6 +278,7 @@ export async function settleLeftoverDeployment(
     journal,
     recordDeployment: recordDeploymentSavingManifests(api, gameMode, fs),
     folderTag: DEPLOYMENT_FOLDER_TAG,
+    onProgress,
   });
   switch (result.status) {
     case ApplyStatus.NothingToDo:

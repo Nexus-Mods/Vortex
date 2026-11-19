@@ -53,6 +53,8 @@ export interface RunOptions {
    * run empties is removed
    */
   folderTag?: FolderTag;
+  /** called as each step of the phase completes, with how many of its steps are done */
+  onProgress?: (done: number, total: number, phase: JournalPhase) => void;
 }
 
 export interface ApplyOptions extends RunOptions {
@@ -250,6 +252,7 @@ interface Run {
   folderTag: FolderTag | undefined;
   manifestSaveDetails: ManifestSaveDetails | undefined;
   recordDeployment: RunOptions["recordDeployment"];
+  onProgress: RunOptions["onProgress"];
   writer: JournalWriter;
   entries: readonly JournalEntry[];
   phase: JournalPhase;
@@ -702,6 +705,7 @@ async function rollBack(
     return stopped({ cause });
   }
 
+  let undoneCount = [...run.changing].filter((index) => run.undone.has(index)).length;
   for (const [index, entry] of [...run.entries.entries()].toReversed()) {
     if (run.undone.has(index) || !run.changing.has(index)) {
       continue;
@@ -713,6 +717,8 @@ async function rollBack(
     } catch (cause) {
       return stopped({ cause, index, operation: entry.operation });
     }
+    undoneCount += 1;
+    run.onProgress?.(undoneCount, run.changing.size, JournalPhase.RollingBack);
   }
 
   try {
@@ -736,6 +742,7 @@ async function runForward(run: Run): Promise<ApplyResult> {
     } catch (cause) {
       return rollBack(run, { cause, index, operation: entry.operation });
     }
+    run.onProgress?.(run.done.size, run.entries.length, JournalPhase.Applying);
   }
   try {
     await run.recordDeployment?.(run.entries, run.manifestSaveDetails);
@@ -748,7 +755,7 @@ async function runForward(run: Run): Promise<ApplyResult> {
 }
 
 const runOf = (
-  { fs, recordDeployment, folderTag }: RunOptions,
+  { fs, recordDeployment, folderTag, onProgress }: RunOptions,
   writer: JournalWriter,
   journal: Omit<Journal, "runId">,
 ): Run => ({
@@ -756,6 +763,7 @@ const runOf = (
   folderTag,
   manifestSaveDetails: journal.manifestSaveDetails,
   recordDeployment,
+  onProgress,
   writer,
   entries: journal.entries,
   phase: journal.phase,
