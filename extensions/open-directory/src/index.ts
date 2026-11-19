@@ -17,7 +17,7 @@ function init(context: types.IExtensionContext) {
   initGameSupport(context.api);
   context.registerAction(OPEN_GROUP, 300, "open-ext", {}, "Open Mod Staging Folder", () => {
     const store = context.api.store;
-    util.opn(selectors.installPath(store.getState())).catch((err) => undefined);
+    context.api.openFile(selectors.installPath(store.getState()));
   });
 
   context.registerAction(OPEN_GROUP, 300, "open-ext", {}, "Open Game Folder", () => {
@@ -25,7 +25,7 @@ function init(context: types.IExtensionContext) {
     const gameId: string = selectors.activeGameId(state);
     getGameInstallPath(state, gameId)
       .then((installPath) => {
-        openPath(installPath);
+        openPath(context.api, installPath);
       })
       .catch((e) => {
         context.api.showErrorNotification("Failed to open game folder", e);
@@ -35,7 +35,7 @@ function init(context: types.IExtensionContext) {
   context.registerAction("download-actions", 100, "open-ext", {}, "Open Folder", () => {
     const state = context.api.getState();
     const dlPath = selectors.downloadPath(state);
-    util.opn(dlPath).catch(() => undefined);
+    context.api.openFile(dlPath);
   });
 
   context.registerAction(OPEN_GROUP, 300, "open-ext", {}, "Open Game Mods Folder", () => {
@@ -59,7 +59,7 @@ function init(context: types.IExtensionContext) {
           modPath = path.join(installPath, modPath) + path.sep;
         }
 
-        openPath(modPath, installPath);
+        openPath(context.api, modPath, installPath);
       })
       .catch((e) => {
         context.api.showErrorNotification("Failed to open the game mods folder", e);
@@ -78,7 +78,7 @@ function init(context: types.IExtensionContext) {
       const game = util.getGame(gameId);
       const target = settingsPath(game);
       if (target !== undefined) {
-        openPath(target);
+        openPath(context.api, target);
       }
     },
     () => {
@@ -101,7 +101,7 @@ function init(context: types.IExtensionContext) {
       const game = util.getGame(gameId);
       const target = appDataPath(game);
       if (target !== undefined) {
-        openPath(target);
+        openPath(context.api, target);
       }
     },
     () => {
@@ -122,7 +122,7 @@ function init(context: types.IExtensionContext) {
       const store = context.api.store;
       const installPath = selectors.installPath(store.getState());
       const modPath = path.join(installPath, instanceIds[0]);
-      openPath(modPath, installPath);
+      openPath(context.api, modPath, installPath);
     },
     (instanceIds) => {
       const state: types.IState = context.api.store.getState();
@@ -162,7 +162,7 @@ function init(context: types.IExtensionContext) {
         return;
       }
       const modArchivePath = path.join(downloadPath, download.localPath);
-      openPath(modArchivePath, downloadPath);
+      openPath(context.api, modArchivePath, downloadPath);
     },
     (instanceIds) => {
       const state: types.IState = context.api.store.getState();
@@ -175,7 +175,7 @@ function init(context: types.IExtensionContext) {
 
   context.registerAction("download-icons", 300, "open-ext", {}, "Open in File Manager", () => {
     const store = context.api.store;
-    util.opn(selectors.downloadPath(store.getState())).catch((err) => undefined);
+    context.api.openFile(selectors.downloadPath(store.getState()));
   });
 
   return true;
@@ -196,13 +196,17 @@ function getGameInstallPath(state: any, gameId: string): Promise<string> {
   });
 }
 
-function openPath(mainPath: string, fallbackPath?: string) {
-  fs.statAsync(mainPath)
-    .then(() => util.opn(mainPath).catch(() => undefined))
-    .catch(() =>
-      fallbackPath !== undefined ? util.opn(fallbackPath).catch(() => undefined) : undefined,
-    )
-    .then(() => null);
+async function openPath(api: types.IExtensionApi, mainPath: string, fallbackPath?: string) {
+  try {
+    await fs.statAsync(mainPath);
+  } catch {
+    if (fallbackPath !== undefined) {
+      api.openFile(fallbackPath);
+    }
+    return;
+  }
+
+  api.openFile(mainPath);
 }
 
 export default init;

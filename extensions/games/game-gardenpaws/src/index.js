@@ -76,7 +76,7 @@ function main(context) {
                   {
                     label: "Go to the Unity Mod Manager page",
                     action: () => {
-                      util.opn("https://www.nexusmods.com/site/mods/21/").catch((err) => undefined);
+                      context.api.openUrl("https://www.nexusmods.com/site/mods/21/");
                       reject(new util.UserCanceled());
                     },
                   },

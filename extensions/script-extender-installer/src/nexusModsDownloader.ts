@@ -76,7 +76,10 @@ async function startDownload(
   const modPageURL = `https://www.nexusmods.com/${gameSupport.nexusMods?.gameId}/mods/${gameSupport.nexusMods?.modId}?tab=files`;
 
   // If the user is logged out, all we can do is open the web page.
-  if (!nexusInfo || !OAuthCredentials) return util.opn(modPageURL).catch(() => null);
+  if (!nexusInfo || !OAuthCredentials) {
+    api.openUrl(modPageURL);
+    return;
+  }
 
   if (api.ext?.ensureLoggedIn !== undefined) {
     try {
@@ -149,7 +152,7 @@ async function startDownload(
           links: [
             {
               label: "Can't see the right version? Visit the mod page.",
-              action: () => util.opn(modPageURL).catch(() => null),
+              action: () => api.openUrl(modPageURL),
             },
           ],
         },
@@ -188,7 +191,8 @@ async function startDownload(
       `Could not obtain script extender file ID for ${gameSupport.name}. Opening mod page as a fallback.`,
       err,
     );
-    return util.opn(modPageURL).catch(() => null);
+    api.openUrl(modPageURL);
+    return;
   }
 
   const modInfo = {

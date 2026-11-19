@@ -270,7 +270,7 @@ export async function downloadScriptMerger(api: types.IExtensionApi) {
           actions: [
             {
               title: "Install Manually",
-              action: () => util.opn(SCRIPT_MERGER_RELEASES_URL).catch((err) => null),
+              action: () => api.openUrl(SCRIPT_MERGER_RELEASES_URL),
             },
           ],
         });

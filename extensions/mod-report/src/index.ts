@@ -388,7 +388,7 @@ async function createReport(api: types.IExtensionApi, modId: string, gameId?: st
             );
             const formatted = format(new FormatterReadable(), report);
             await fs.writeFileAsync(tmpPath, formatted);
-            util.opn(modReportsPath).catch(() => null);
+            api.openFile(modReportsPath);
           },
         },
         {
@@ -409,7 +409,7 @@ async function createReport(api: types.IExtensionApi, modId: string, gameId?: st
                 [
                   {
                     label: "Open Report",
-                    action: () => util.opn(url).catch(() => null),
+                    action: () => api.openUrl(url),
                   },
                   {
                     label: "Copy Link",

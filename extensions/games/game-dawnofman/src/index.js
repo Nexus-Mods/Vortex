@@ -69,17 +69,15 @@ function prepareForModding(discovery) {
             {
               label: "More on Vortex Tools",
               action: () => {
-                util
-                  .opn("https://wiki.nexusmods.com/index.php/Category:Tool_Setup")
-                  .then(() => showUMMDialog())
-                  .catch((err) => undefined);
+                _API.openUrl("https://wiki.nexusmods.com/index.php/Category:Tool_Setup");
+                showUMMDialog().catch((err) => undefined);
                 resolve();
               },
             },
             {
               label: "Go to UMM page",
               action: () => {
-                util.opn("https://www.nexusmods.com/site/mods/21/").catch((err) => undefined);
+                _API.openUrl("https://www.nexusmods.com/site/mods/21/");
                 // We want to go forward even if UMM is not installed as the scenario modType
                 //  can be installed without UMM.
                 resolve();

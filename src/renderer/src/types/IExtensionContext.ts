@@ -626,6 +626,23 @@ export interface IExtensionApi {
   selectDir: (options: IOpenOptions) => PromiseBB<string>;
 
   /**
+   * opens a URL in the default application for its scheme, such as the browser for
+   * `https:` links. Anything that isn't a URL with a scheme, including a filesystem
+   * path, is logged and ignored: open those with `openFile`.
+   *
+   * @memberOf IExtensionApi
+   */
+  openUrl: (url: string) => void;
+
+  /**
+   * opens a file in its default application, or a folder in the file manager.
+   * An empty path is logged and ignored.
+   *
+   * @memberOf IExtensionApi
+   */
+  openFile: (filePath: string) => void;
+
+  /**
    * the redux store containing all application state & data
    *
    * Please note: this store object will remain valid for the whole

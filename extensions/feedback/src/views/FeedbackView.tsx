@@ -515,15 +515,15 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
   };
 
   private openIssues = () => {
-    util.opn("https://github.com/Nexus-Mods/Vortex/issues").catch(() => null);
+    this.context.api.openUrl("https://github.com/Nexus-Mods/Vortex/issues");
   };
 
   private openSupportForum = () => {
-    util.opn("https://forums.nexusmods.com/index.php?/forum/4306-vortex-support").catch(() => null);
+    this.context.api.openUrl("https://forums.nexusmods.com/index.php?/forum/4306-vortex-support");
   };
 
   private openFeedbackPage = () => {
-    util.opn("https://feedback.nexusmods.com/?tags=vortex").catch(() => null);
+    this.context.api.openUrl("https://feedback.nexusmods.com/?tags=vortex");
   };
 
   private validateTitle(): { valid: boolean; text: string } {
@@ -625,7 +625,7 @@ class FeedbackPage extends ComponentEx<IProps, IComponentState> {
 
   private openIssue = (evt) => {
     const url = evt.currentTarget.getAttribute("data-url");
-    util.opn(url).catch(() => null);
+    this.context.api.openUrl(url);
   };
 
   private renderTitleInput = (validationMessage: { valid: boolean; text: string }) => {

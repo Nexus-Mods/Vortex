@@ -284,18 +284,16 @@ class IssueList extends ComponentEx<IProps, IIssueListState> {
   private openIssue = (evt: React.MouseEvent<HTMLAnchorElement>) => {
     evt.preventDefault();
     const issueId = evt.currentTarget.getAttribute("data-issue");
-    (util as any)
-      .opn(`https://www.github.com/${IssueList.GITHUB_PROJ}/issues/${issueId}`)
-      .catch(() => null);
+    this.context.api.openUrl(`https://www.github.com/${IssueList.GITHUB_PROJ}/issues/${issueId}`);
   };
 
   private openMilestone = (evt: React.MouseEvent<Button>) => {
     evt.preventDefault();
     const node: Element = ReactDOM.findDOMNode(evt.currentTarget) as Element;
     const milestoneId = node.getAttribute("data-milestone");
-    (util as any)
-      .opn(`https://www.github.com/${IssueList.GITHUB_PROJ}/milestone/${milestoneId}`)
-      .catch(() => null);
+    this.context.api.openUrl(
+      `https://www.github.com/${IssueList.GITHUB_PROJ}/milestone/${milestoneId}`,
+    );
   };
 
   private issueURL(issueId: string): string {
