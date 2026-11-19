@@ -6,6 +6,7 @@ export const SCROLLABLE_RIGHT = "data-scrollable-right";
 /**
  * Marks the table while its scroller can scroll right, on the element and only on change, so
  * reaching an edge restyles only what the attribute's rules pick out and nothing re-renders.
+ * Widths are measured only on resize; a scroll reads only how far left it is.
  */
 export const useScrollableRight = (
   scroller: HTMLElement | null | undefined,
@@ -17,17 +18,32 @@ export const useScrollableRight = (
       return;
     }
 
+    let maxLeft = 0;
+    let lastLeft: number | undefined;
+
     const update = () => {
-      const scrollable = scroller.scrollLeft < scroller.scrollWidth - scroller.clientWidth - 1;
+      const left = scroller.scrollLeft;
+      if (left === lastLeft) {
+        return;
+      }
+      lastLeft = left;
+      const scrollable = left < maxLeft;
       if (table.hasAttribute(SCROLLABLE_RIGHT) !== scrollable) {
         table.toggleAttribute(SCROLLABLE_RIGHT, scrollable);
       }
     };
 
-    update();
+    const measure = () => {
+      maxLeft = scroller.scrollWidth - scroller.clientWidth - 1;
+      lastLeft = undefined;
+      update();
+    };
+
+    measure();
     scroller.addEventListener("scroll", update, { passive: true });
 
-    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(update);
+    const observer =
+      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
     observer?.observe(scroller);
     const header = table.querySelector(".nxm-table-header");
     if (header) {
