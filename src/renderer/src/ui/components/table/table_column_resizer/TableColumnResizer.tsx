@@ -28,8 +28,8 @@ const asideWidthOf = (table: HTMLElement | null | undefined) => {
 /**
  * The handle on a resizable column's header edge, resizing it as `useResizeHandle` does: no
  * narrower than its least; dragged, as wide as wanted, but from the keyboard no wider than the
- * table's visible width less any aside over it, which End takes it to. Read as a separator whose value is the width
- * the column's drawn at, in px.
+ * table's visible width less any aside over it, which End takes it to. Read as a separator
+ * whose value is the width the column's drawn at, in px.
  */
 export const TableColumnResizer = ({
   header,

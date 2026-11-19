@@ -7,7 +7,12 @@ import type { Dispatch } from "redux";
 
 import { useMainContext } from "@/contexts";
 import { gameData } from "@/extensions/gamemode_management/gameData";
-import { convertId, type IGameData } from "@/extensions/gamemode_management/queries";
+import {
+  convertId,
+  findGame,
+  type IGameData,
+  storedGameQuery,
+} from "@/extensions/gamemode_management/queries";
 import { currentGameDiscovery, discovered } from "@/extensions/gamemode_management/selectors";
 import type { IDiscoveryResult } from "@/extensions/gamemode_management/types/IDiscoveryResult";
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
@@ -22,7 +27,6 @@ import { activeGameId } from "@/util/selectors";
 
 import { setModAttribute, setModType } from "../../actions/mods";
 import type { IModWithState } from "../../types/IModProps";
-import { keptDownloadGame, keptSection } from "../../util/kept_section/keptSection";
 import { modsSharedValue } from "../../util/mods_shared_value/modsSharedValue";
 import type { ModProperty } from "../use_mod_properties/useModProperties.hook";
 
@@ -47,6 +51,37 @@ const activeGamePath = (state: IState): string | undefined => currentGameDiscove
 
 /** The games found installed, by their Vortex id. */
 type InstalledGames = Readonly<Record<VortexGameId, IDiscoveryResult>>;
+
+/** What a mod's game section is kept as, alone or first in a list; none if not kept. */
+const keptDownloadGame = (mod: IModWithState): string | undefined => {
+  const kept: unknown = mod.attributes?.downloadGame;
+  const first: unknown = Array.isArray(kept) ? kept[0] : kept;
+  return typeof first === "string" && first !== "" ? first : undefined;
+};
+
+/**
+ * The Nexus Mods game a mod's section is, from how the legacy field keeps it: the Vortex game's id,
+ * or, for a game Vortex has no extension for, its domain, as the games data says it is. Also the
+ * Vortex game it names, if it's one, to name a section the site doesn't have yet. No section where
+ * it's neither, or where the game has none on the site.
+ */
+const keptSection = (
+  games: IGameData,
+  kept: string,
+): { section?: NexusGameDomain; vortexGameName?: string } => {
+  const query = storedGameQuery(games, kept);
+  if (query === undefined) {
+    return {};
+  }
+  if ("gameDomain" in query) {
+    return { section: query.gameDomain };
+  }
+
+  return {
+    section: convertId(games, query, "gameDomain"),
+    vortexGameName: findGame(games, query)?.name,
+  };
+};
 
 /** Where a game puts mods of a type, "" for one that doesn't deploy, none if the game's unknown. */
 const deployPath = (gameId: VortexGameId, typeId: string, gamePath: string | undefined) => {

@@ -44,14 +44,15 @@ describe("useScrollableRight", () => {
     expect(table).toHaveAttribute(SCROLLABLE_RIGHT);
   });
 
-  it("stops listening once it's gone", () => {
+  it("clears the mark once it's gone, and stops listening", () => {
     const { scroller, table, tableRef } = setup(1400, 1000);
     const { unmount } = renderHook(() => useScrollableRight(scroller, tableRef));
 
     unmount();
-    scroller.scrollLeft = 400;
-    scroller.dispatchEvent(new Event("scroll"));
+    expect(table).not.toHaveAttribute(SCROLLABLE_RIGHT);
 
-    expect(table).toHaveAttribute(SCROLLABLE_RIGHT);
+    scroller.scrollLeft = 100;
+    scroller.dispatchEvent(new Event("scroll"));
+    expect(table).not.toHaveAttribute(SCROLLABLE_RIGHT);
   });
 });

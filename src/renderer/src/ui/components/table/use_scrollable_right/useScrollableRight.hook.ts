@@ -53,6 +53,7 @@ export const useScrollableRight = (
     return () => {
       scroller.removeEventListener("scroll", update);
       observer?.disconnect();
+      table.removeAttribute(SCROLLABLE_RIGHT);
     };
   }, [scroller, tableRef]);
 };
