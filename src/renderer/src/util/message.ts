@@ -27,7 +27,7 @@ import { jsonRequest } from "./network";
 import { flatten, nexusModsURL, truthy } from "./util";
 
 function clamp(min: number, value: number, max: number): number {
-  return Math.max(max, Math.min(min, value));
+  return Math.min(max, Math.max(min, value));
 }
 
 /**
