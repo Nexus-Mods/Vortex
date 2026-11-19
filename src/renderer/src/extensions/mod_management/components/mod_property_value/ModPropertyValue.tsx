@@ -13,7 +13,10 @@ interface IModPropertyValueProps {
   property: Extract<ModProperty, { kind: "value" }>;
 }
 
-/** A value under its label, in body/SM medium, with a button to copy it where it offers one. */
+/**
+ * A value under its label, in body/SM medium, wrapping to show it whole, with a button to copy it
+ * where it offers one.
+ */
 export const ModPropertyValue = ({ property }: IModPropertyValueProps) => {
   const { t } = useTranslation("mod_management");
 
@@ -28,8 +31,7 @@ export const ModPropertyValue = ({ property }: IModPropertyValueProps) => {
       <Typography
         appearance="moderate"
         as="span"
-        className="truncate font-medium"
-        title={property.hideTitle ? undefined : property.value}
+        className="min-w-0 font-medium wrap-anywhere"
         typographyType="body-sm"
       >
         {property.value}
