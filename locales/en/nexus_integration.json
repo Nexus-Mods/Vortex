@@ -1,5 +1,31 @@
 {
   "_comment": "Nexus Mods integration strings - to be populated during migration",
+  "login_prompt": {
+    "title": "Log in for the full experience",
+    "description": "The button below will open the Nexus Mods website, please click “authorise” or log in / register if required.",
+    "login": "Log in to Vortex",
+    "no_thanks": "No, thanks",
+    "dont_show_again": "Don’t show this again"
+  },
+  "login_dialog": {
+    "address": "Login address",
+    "progress": {
+      "title": "Log in or register on the Nexus Mods website",
+      "description": "Look out for a browser window opening and click “authorise” or log in / register if required.",
+      "copy_address": "The button didn’t work? Copy the below address into your browser",
+      "still_not_working": "Still didn’t work?",
+      "login_with_token": "Login with token"
+    },
+    "token": {
+      "title": "Log in with token",
+      "description": "Click “authorise” on the website and you’ll be given a token. Paste it below and click Save.",
+      "step_open": "Don’t have a token yet? Copy this address into your browser and log in / register if required.",
+      "step_paste": "Token",
+      "invalid": "Your token wasn’t recognised. Copy it again using the button on the website.",
+      "failed": "Logging in with this token didn’t work: {{error}}",
+      "save": "Save"
+    }
+  },
   "premium_upsell": {
     "benefits_title": "With Premium you get:",
     "benefits": {

@@ -75,6 +75,8 @@ import {
   genGameAttribute,
   genModIdAttribute,
 } from "./attributes";
+import { LOGIN_PROMPT_ID, LoginPrompt } from "./components/login_prompt/LoginPrompt";
+import { showLoginPromptOnStartup } from "./components/login_prompt/showLoginPromptOnStartup";
 import {
   NEXUS_API_SUBDOMAIN,
   NEXUS_BASE_URL,
@@ -83,6 +85,7 @@ import {
   REVALIDATION_FREQUENCY,
 } from "./constants";
 import * as eh from "./eventHandlers";
+import { LoginDialogForCohort } from "./experiments/LoginDialogForCohort";
 import {
   adoptMembershipRead,
   ensureFreshMembership,
@@ -122,7 +125,6 @@ import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
 import FreeUserDLDialog from "./views/FreeUserDLDialog";
 import GoPremiumDashlet from "./views/GoPremiumDashlet";
-import LoginDialog from "./views/LoginDialog";
 import LoginIcon from "./views/LoginIcon";
 import {} from "./views/Settings";
 
@@ -1088,6 +1090,13 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
       }
     }
 
+    // A forced logout already asks the user to log in, so don't ask twice.
+    if (!forcedLogout) {
+      showLoginPromptOnStartup(api).catch((err: unknown) =>
+        log("warn", "failed to show login prompt", { error: getErrorMessageOrDefault(err) }),
+      );
+    }
+
     registerFunc(getSafe(state, ["settings", "nexus", "associateNXM"], undefined));
 
     api.registerRepositoryLookup("nexus", true, makeRepositoryLookup(api, nexus));
@@ -1521,10 +1530,12 @@ function init(context: IExtensionContext): boolean {
 
   const onCancelLogin = () => onCancelLoginImpl(context.api);
 
-  context.registerDialog("login-dialog", LoginDialog, () => ({
+  context.registerDialog("login-dialog", LoginDialogForCohort, () => ({
     onCancelLogin,
     onReceiveCode: (code: string, state: string) => oauthCallback(context.api, code, state),
   }));
+
+  context.registerDialog(LOGIN_PROMPT_ID, LoginPrompt);
 
   context.registerDialog("free-user-download", FreeUserDLDialog, () => ({
     t: context.api.translate,

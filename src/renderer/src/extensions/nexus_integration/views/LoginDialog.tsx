@@ -26,6 +26,8 @@ import { OAUTH_URL } from "../constants";
 import type { IValidateKeyData } from "../types/IValidateKeyData";
 import { getPageURL } from "../util/sso";
 
+// STA-574: the login dialog the `control` cohort still sees.
+
 const API_ACCESS_URL = `${NEXUS_BASE_URL}/users/myaccount?tab=api+access`;
 
 export interface IBaseProps extends WithTranslation {
