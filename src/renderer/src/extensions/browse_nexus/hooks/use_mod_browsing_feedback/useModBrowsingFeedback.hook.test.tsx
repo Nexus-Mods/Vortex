@@ -86,7 +86,7 @@ describe("useModBrowsingFeedback", () => {
       expect.objectContaining({
         id: "browse-mods-feedback-sent",
         type: "success",
-        displayMS: 3000,
+        displayMS: 2000,
       }),
     );
   });
