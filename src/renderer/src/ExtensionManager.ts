@@ -112,6 +112,7 @@ import lazyRequire from "./util/lazyRequire";
 import { showError } from "./util/message";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
+import { savePathFromDialogResult } from "./util/savePathFromDialogResult";
 import { activeGameId } from "./util/selectors";
 import { getSafe } from "./util/storeHelper";
 import {
@@ -1950,9 +1951,7 @@ class ExtensionManager {
     //if (options === true) {
     //fullOptions.properties.push('showOverwriteConfirmation');
     //}
-    return PromiseBB.resolve(showSaveDialog(fullOptions)).then((result) =>
-      result.filePath !== undefined ? result.filePath : undefined,
-    );
+    return PromiseBB.resolve(showSaveDialog(fullOptions)).then(savePathFromDialogResult);
   }
 
   private selectExecutable(options: IOpenOptions) {
