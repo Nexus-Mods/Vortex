@@ -172,6 +172,10 @@ export default function ToolEditDialog(props: IProps) {
     handleChange("detach", !editTool.detach);
   }, [editTool, handleChange]);
 
+  const toggleStartWithGame = React.useCallback(() => {
+    handleChange("startWithGame", !editTool.startWithGame);
+  }, [editTool, handleChange]);
+
   const setStartEvent = React.useCallback(
     (mode: "nothing" | "hide" | "hide_recover" | "close") => {
       editTool.onStart = mode === "nothing" ? undefined : mode;
@@ -389,6 +393,24 @@ export default function ToolEditDialog(props: IProps) {
               </Toggle>
             </Col>
           </FormGroup>
+          {editTool.isGame ? null : (
+            <FormGroup>
+              <Col sm={12}>
+                <Toggle checked={editTool.startWithGame ?? false} onToggle={toggleStartWithGame}>
+                  {t("Start with game")}
+                  <More id="start-with-game" name={t("Start with game")}>
+                    {t(
+                      "Start this tool automatically whenever you launch the game from Vortex, " +
+                        "including through the primary tool (e.g. a script extender). Use this " +
+                        "for programs the game needs running alongside it, like an injector " +
+                        "or an input remapper. The tool isn't started again if it's already " +
+                        "running.",
+                    )}
+                  </More>
+                </Toggle>
+              </Col>
+            </FormGroup>
+          )}
         </Form>
       </Modal.Body>
       <Modal.Footer>
