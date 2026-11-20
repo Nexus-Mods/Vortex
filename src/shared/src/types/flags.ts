@@ -40,6 +40,8 @@ export const flagVariantSchemas = {
         }),
       ) as z.ZodType<GameFolderCheckFlagConfig>,
   },
+  // STA-574 experiment: on is the `test` cohort (login prompt and new login dialog).
+  "vortex-sta-574-login-prompt": {},
 };
 
 export interface GameFolderCheckFlagConfig {
