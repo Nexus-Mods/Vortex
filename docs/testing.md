@@ -101,6 +101,43 @@ The usual sources:
   testing-library's, that microtask lands outside `act()`. Re-render inside an
   async `act()`: `await act(async () => { rerender(…); })`.
 
+### Legacy context, nesting and refs
+
+A test also fails when React warns that our own code:
+
+- **reads or provides legacy context** (`contextTypes`, `childContextTypes`).
+  Read `MainContext` instead, with `static contextType = MainContext` in a class
+  or `useMainContext()` in a function component. `ComponentEx` already does. A
+  test that renders a `ComponentEx` without the app provides it with
+  `<MainContext.Provider value={…}>`. A `ComponentEx` subclass that declares
+  `contextTypes` of its own reads legacy context instead, so drop them.
+- **declares `contextTypes` on a class that also has `contextType`.** React
+  ignores the `contextTypes`; drop them.
+- **fails a context type check,** such as `ComponentExProvider` rendered
+  without the `api` it requires (`Failed child context type`). Render it inside
+  a `<MainContext.Provider>` that has an `api`.
+- **nests elements HTML doesn't allow** (`validateDOMNesting`), such as a `<p>`
+  inside a `<p>`. Render the outer element as a `<div>` (`Typography` takes
+  `as="div"`).
+- **gives a ref to a function component.** Wrap the component in
+  `forwardRef`, including a test's mock of one.
+
+The message names the component React blamed. Warnings about react-bootstrap's
+own components don't fail a test. Two components keep legacy context on purpose:
+`ComponentExProvider`, which hands `MainContext` on to community extensions that
+still read legacy context, and `FormFeedback`, which reads react-bootstrap's
+`FormGroup`. Tests standing in for such an extension name their component
+`LegacyContextExtension`, which is allowed too.
+
+`MainContext` lives in `src/renderer/src/contexts/main_context/MainContext.ts`.
+A component that React renders as a separate root, as react-bootstrap's
+`OverlayTrigger` does with its overlay, has no provider above it, so it reads
+the app-wide values `MainProvider` fills in. Use `MainContextOverlayTrigger`
+(`src/renderer/src/controls/main_context_overlay/`) in place of react-bootstrap's
+`OverlayTrigger`: it hands the overlay the trigger's own `MainContext`, so a
+popover in a dialog gets the dialog's menu layer. Our `OverlayTrigger` control
+and `TooltipControls` use it.
+
 ### What the check can't see
 
 - `waitFor`, the `findBy…` queries and `userEvent` turn React's `act()` checks
@@ -114,11 +151,11 @@ The usual sources:
 - An update that lands after testing-library's cleanup fails the next test in
   the file, or the file's `afterAll` after its last test, rather than the test
   that caused it.
-- Only `act()` warnings fail a test. The deprecation warnings still in the log
-  (`findDOMNode`, `defaultProps`, legacy `contextTypes`) come from older code:
-  class components built on `ComponentEx` in `src/renderer/src/controls/`, and
-  old dependencies such as `react-bootstrap` 0.33. Clearing them means changing
-  that code, not the tests.
+- The deprecation warnings that don't fail a test (`findDOMNode`,
+  `defaultProps`, and legacy context from react-bootstrap) come from older
+  code: class components in `src/renderer/src/controls/`, and old dependencies
+  such as `react-bootstrap` 0.33. Clearing them means changing that code, not
+  the tests.
 
 ## Extension tests
 
