@@ -28,7 +28,14 @@ export interface ReconcileResult {
 }
 
 /**
- * TODO
+ * The idea behind this function is that it takes a previous lockfile and tries to figure out were any files
+ * changed in game folder or edited in place in staging. Based on the result we can bring those files in staging
+ * and/or trigger the ECD.
+ * Inputs:
+ *  1. previous lockfile
+ *  2. function that returns a path from staging by file hash
+ *
+ *  Does not throw.
  */
 export async function reconcileLockfile(
   lockfile: Lockfile,
@@ -71,7 +78,11 @@ export async function reconcileLockfile(
         continue;
       }
 
-      if (!stagedStatus.modifiedTime.equals(file.stageModifiedTime)) {
+      // nothing recorded to compare against, e.g. a generated file: can't tell, so don't flag it
+      if (
+        file.stageModifiedTime !== undefined &&
+        !stagedStatus.modifiedTime.equals(file.stageModifiedTime)
+      ) {
         changedFiles.push({ file, change: ReconcileChange.StagedContentChanged });
       }
     } catch (err) {
