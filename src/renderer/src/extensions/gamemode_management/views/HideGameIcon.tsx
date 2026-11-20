@@ -4,7 +4,7 @@ import type { ThunkDispatch } from "redux-thunk";
 
 import { ComponentEx, connect } from "../../../controls/ComponentEx";
 import type { ButtonType } from "../../../controls/IconBar";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
+import ToolbarIcon from "../../../controls/toolbar_icon/ToolbarIcon";
 import { getSafe } from "../../../util/storeHelper";
 import { setGameHidden } from "../actions/settings";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";

@@ -6,8 +6,8 @@ import type { Dispatch } from "redux";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
 import IconBar from "../../../controls/IconBar";
+import ToolbarIcon from "../../../controls/toolbar_icon/ToolbarIcon";
 import ToolbarDropdown from "../../../controls/ToolbarDropdown";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
 import type { IState } from "../../../types/IState";
 import { TabBar } from "../../../ui/components/tabs/TabBar";
