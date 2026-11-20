@@ -6,12 +6,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { IGameStored } from "../types/IGameStored";
 
-const { cardActions, emit, state } = vi.hoisted(() => ({
+const { cardActions, emit, once, state } = vi.hoisted(() => ({
   cardActions: {
     primary: undefined as { label: string; onClick: () => void } | undefined,
     onMenuAction: undefined as ((action: string) => void) | undefined,
   },
   emit: vi.fn<(...args: unknown[]) => void>(),
+  once: vi.fn<(event: string, listener: () => void) => void>(),
   state: {
     current: {
       persistent: { profiles: {} as Record<string, { gameId: string }> },
@@ -25,7 +26,7 @@ const { cardActions, emit, state } = vi.hoisted(() => ({
 
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMainContext: () => ({ api: { events: { emit } } }),
+  useMainContext: () => ({ api: { events: { emit, once }, getState: () => state.current } }),
 }));
 
 vi.mock("react-redux", async () => {
@@ -80,6 +81,7 @@ describe("GameCard", () => {
     state.current.settings.profiles.activeProfileId = undefined;
     cardActions.primary = undefined;
     emit.mockReset();
+    once.mockReset();
   });
 
   // A game whose extension isn't installed has never been through discovery.
@@ -109,6 +111,73 @@ describe("GameCard", () => {
     render(<GameCard game={skyrim} section="detected" />);
 
     expect(screen.getByTestId("game-tile")).not.toHaveAttribute("data-store");
+  });
+
+  describe("opening an added game that isn't in play", () => {
+    const activate = () => {
+      state.current.persistent.profiles = { p1: { gameId: "skyrimse" } };
+      state.current.settings.profiles.activeProfileId = "p1";
+    };
+
+    const pagesShown = () => emit.mock.calls.filter(([event]) => event === "show-main-page");
+
+    // Plays the profile switch ending, for whoever is waiting on it.
+    const finishSwitch = () => {
+      const waiting = once.mock.calls.filter(([event]) => event === "profile-did-change");
+      once.mockClear();
+      waiting.forEach(([, listener]) => listener());
+    };
+
+    // The switch unmounts the Games page, so the tile that was clicked is gone by the
+    // time the game is in play.
+    it("opens the game's mods once the one click has made it the game in play", async () => {
+      const onClick = vi.fn();
+      cardActions.primary = { label: "Activate", onClick };
+      const { unmount } = render(<GameCard game={skyrim} section="added" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      // Activating can wait on a dialog, so nothing is shown until the game is in play.
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(pagesShown()).toEqual([]);
+
+      unmount();
+      activate();
+      finishSwitch();
+
+      expect(pagesShown()).toEqual([["show-main-page", "Mods"]]);
+    });
+
+    it("leaves the page alone when the switch fails", async () => {
+      cardActions.primary = { label: "Activate", onClick: vi.fn() };
+      render(<GameCard game={skyrim} section="added" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+      finishSwitch();
+
+      expect(pagesShown()).toEqual([]);
+    });
+
+    it("leaves the page alone when the next switch is to another game", async () => {
+      cardActions.primary = { label: "Activate", onClick: vi.fn() };
+      render(<GameCard game={skyrim} section="added" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+      state.current.persistent.profiles = { p2: { gameId: "fallout4" } };
+      state.current.settings.profiles.activeProfileId = "p2";
+      finishSwitch();
+
+      expect(pagesShown()).toEqual([]);
+    });
+
+    it("doesn't wait to open the mods of a game that is only being added", async () => {
+      cardActions.primary = { label: "Manage", onClick: vi.fn() };
+      render(<GameCard game={skyrim} section="detected" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Add game" }));
+
+      expect(once).not.toHaveBeenCalled();
+    });
   });
 
   describe("tracking", () => {

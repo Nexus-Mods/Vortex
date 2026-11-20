@@ -113,7 +113,24 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   // Activate is conditioned away for the game already in play, so its tile opens the
   // game's mods rather than leading with nothing.
   const openMods = useCallback(() => api.events.emit("show-main-page", "Mods"), [api]);
-  const runPrimary = isActive ? openMods : primary?.onClick;
+
+  // An added game that isn't in play has to be activated before its mods can show. The
+  // profile switch takes the Games page down with it, this tile included, so the wait
+  // is a listener on the api rather than anything the tile holds. The next profile
+  // change ends it either way: the mods open if it put this game in play, and a switch
+  // that failed or went to another game lets it go.
+  const activateAndOpen =
+    primary &&
+    (() => {
+      api.events.once("profile-did-change", () => {
+        if (activeGameId(api.getState()) === game.id) {
+          openMods();
+        }
+      });
+      primary.onClick();
+    });
+
+  const runPrimary = isActive ? openMods : section === "added" ? activateAndOpen : primary?.onClick;
   const onPrimary =
     runPrimary &&
     (() => {
