@@ -1,2 +1,2 @@
-export type { FeatureFlag, GameFolderCheckFlagConfig, KnownFlagName } from "../types/flags";
+export type { FeatureFlag, IGameFolderCheckFlagConfig, KnownFlagName } from "../types/flags";
 export { flagVariantSchemas, knownFlagNames } from "../types/flags";

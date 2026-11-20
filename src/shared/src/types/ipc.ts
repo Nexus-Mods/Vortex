@@ -24,7 +24,7 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
-import type { GameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
 import type { VortexGameId } from "./ids";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
@@ -397,10 +397,10 @@ export interface InvokeChannels {
   // Game folder check: run a check. The result goes through the
   // game-folder-check:submit callback; this resolves once that is done or the
   // check was cancelled, and rejects if the check or the submit failed
-  "game-folder-check:start": (input: GameFolderCheckInput) => Promise<void>;
+  "game-folder-check:start": (input: IGameFolderCheckInput) => Promise<void>;
   // Game folder check, development builds only: run now, write a JSON report,
   // show it in the file manager and resolve with its path
-  "game-folder-check:run-manual": (input: GameFolderCheckInput) => Promise<string>;
+  "game-folder-check:run-manual": (input: IGameFolderCheckInput) => Promise<string>;
 
   // Updater: the renderer polls this (pull, like downloads and uploads). With
   // `since`, the reply also lists every snapshot recorded after that sequence

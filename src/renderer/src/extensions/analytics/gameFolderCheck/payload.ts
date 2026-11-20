@@ -6,14 +6,14 @@ import type {
   GameFolderStatePayload,
 } from "@vortex/nexus-api-v3";
 import type { NexusGameId } from "@vortex/shared";
-import type { GameFolderCheckCounts, GameFolderCheckResult } from "@vortex/shared/ipc";
+import type { IGameFolderCheckCounts, GameFolderCheckResult } from "@vortex/shared/ipc";
 
 const iso = (ms: number | null | undefined): string | null =>
   ms === null || ms === undefined || !Number.isFinite(ms) ? null : new Date(ms).toISOString();
 
 const zero = (): GameFolderFileCount => ({ files: 0, bytes: 0 });
 
-const NO_COUNTS: GameFolderCheckCounts = {
+const NO_COUNTS: IGameFolderCheckCounts = {
   steamFiles: {
     verified: zero(),
     sizeMatched: zero(),
