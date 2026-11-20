@@ -148,7 +148,7 @@ import {
   HealthCheckSeverity,
   HealthCheckTrigger,
 } from "../types/IHealthCheck";
-import type { INotification } from "../types/INotification";
+import type { INotification, INotificationAction } from "../types/INotification";
 import type { IExtensionState, IState } from "../types/IState";
 import local from "../util/local";
 import type { IStarterInfo } from "../util/StarterInfo";
@@ -1229,9 +1229,14 @@ export function makeApiHarness(
     showErrorNotification: (
       title: string,
       message: unknown,
-      options?: { allowReport?: boolean },
+      options?: { allowReport?: boolean; actions?: INotificationAction[] },
     ) => {
-      errorNotifications.push({ title, message, allowReport: options?.allowReport });
+      errorNotifications.push({
+        title,
+        message,
+        allowReport: options?.allowReport,
+        actions: options?.actions,
+      });
     },
     showDialog: (
       type: DialogType,
