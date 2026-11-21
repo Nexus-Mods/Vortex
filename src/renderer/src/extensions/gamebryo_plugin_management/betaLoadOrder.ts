@@ -1,7 +1,7 @@
-import type { VortexGameId } from "@vortex/shared";
+import { VortexGameId } from "@vortex/shared";
 
 import type { IState } from "../../types/IState";
-import { activeGameId, activeProfileId } from "../profile_management/selectors";
+import { activeProfile } from "../profile_management/selectors";
 import { knownGame } from "./util/gameSupport";
 
 export function supportsBetaLoadOrder(gameId: VortexGameId | undefined): boolean {
@@ -13,11 +13,10 @@ export function supportsBetaLoadOrder(gameId: VortexGameId | undefined): boolean
   );
 }
 
-export function isBetaLoadOrder(state: IState): boolean {
-  const profileId = activeProfileId(state);
+export function isBetaLoadOrder(state: IState, profile = activeProfile(state)): boolean {
   return (
-    state.settings.plugins.betaLoadOrder?.[profileId] === true &&
-    supportsBetaLoadOrder(activeGameId(state))
+    state.settings.plugins?.betaLoadOrder?.[profile?.id] === true &&
+    supportsBetaLoadOrder(profile?.gameId ? VortexGameId(profile.gameId) : undefined)
   );
 }
 

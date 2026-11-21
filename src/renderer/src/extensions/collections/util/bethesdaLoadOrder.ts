@@ -19,6 +19,8 @@ import { activeProfile } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import type { ICollection } from "../types/ICollection";
 
+export type SavedOrderChoice = "apply" | "keep";
+
 export interface ICollectionProfileSelection {
   newProfileId?: string;
   activateProfile?: (profileId: string) => Promise<void>;
@@ -39,7 +41,8 @@ export async function chooseCollectionLoadOrder(
   api: IExtensionApi,
   profile: IProfile,
   selection: ICollectionProfileSelection,
-): Promise<"apply" | "keep" | "cancel"> {
+  previousChoice?: SavedOrderChoice,
+): Promise<SavedOrderChoice | "cancel"> {
   const { id, gameId, name } = profile;
   const state = api.getState();
   if (!pluginManagementEnabled(state, gameId, id)) return "keep";
@@ -47,7 +50,8 @@ export async function chooseCollectionLoadOrder(
   const isActive = activeProfile(state)?.id === id;
   const apply = "Use Saved Order";
   const keep = "Keep Current Sorting";
-  if (!isNew || !isActive) {
+  if (previousChoice === "keep") return "keep";
+  if (previousChoice === undefined && (!isNew || !isActive)) {
     const choice = await api.showDialog(
       "question",
       "Use the collection's saved load order?",

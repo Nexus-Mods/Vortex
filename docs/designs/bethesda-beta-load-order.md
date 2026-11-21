@@ -17,7 +17,10 @@ Add the shared drag-and-drop Load order page as a per-profile opt-in for games t
 7. In Workshop, a Beta curator can preview and export the collection's plugin sequence and enabled states. Changing the order changes the preview and the exported entries. Exporting from Classic carries no manual sequence.
 8. Installing a collection with a saved order into a new profile opens that profile in Beta and applies that order. An ordinary collection leaves a new profile in Classic.
 9. An existing profile gets a choice before installation. **Use Saved Order** enables Beta and applies the order to installed collection plugins. **Keep Current Sorting** installs using the profile's current method without applying the manual order. **Cancel** returns to the install prompt without starting installation.
-10. The saved order skips absent optional members, keeps unrelated plugins in their relative order and respects master dependencies. An invalid merged order is reported and leaves the deployed plugin order in place.
+10. The saved order skips absent optional members, keeps unrelated plugins in their relative order and respects master dependencies. If the merged order is invalid, Vortex warns the user and keeps the deployed plugin order. The collection remains installed and the profile stays in Beta.
+11. After a pause or a restart, resuming the same collection install on the same profile remembers **Use Saved Order** or **Keep Current Sorting**. A different profile or a fresh install after completion or cancellation gets its own choice.
+12. Collections installed in Beta leave automatic LOOT sorting paused. If the profile returns to Classic with automatic sorting off, those installs never cause a deferred LOOT sort. The user can run LOOT manually.
+13. When a new collection is imported during or after a profile switch, its install prompt opens on the current profile for that game once the switch finishes.
 
 ## Collections compatibility
 
@@ -27,4 +30,4 @@ When a collection carries a saved order, a new profile created by the installer 
 
 ## Scope
 
-The new page reuses the shared load-order UI and the existing Bethesda plugin writer. Switching is scoped to supported Classic profiles.
+The new page reuses the shared load-order UI and the existing Bethesda plugin writer. The opt-in applies to games that use the shared Bethesda Plugins page. Games with their own manual load order experience keep that entry point. The Beta writer uses the game's existing persistence format, including file timestamps where that format requires them.

@@ -21,6 +21,7 @@ import {
   makeFileListItem,
   makeInstallerChoices,
   makeMod,
+  makeLoadOrderEntry,
   makePatches,
   makeReference,
   makeRule,
@@ -32,13 +33,20 @@ import { modRuleId } from "../../../util/collectionInstallSession";
 import type * as ErrorHandling from "../../../util/errorHandling";
 import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import type { IDownload } from "../../download_management/types/IDownload";
+import { setBetaLoadOrder } from "../../gamebryo_plugin_management/actions/settings";
 import { setPendingPluginSort } from "../../mod_management/actions/transactions";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { selectedOptionalRules } from "../../mod_management/util/dependencies";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { MOD_TYPE } from "../constants";
+import type { ICollection } from "../types/ICollection";
 import { applyPatches } from "./binaryPatching";
 import { deterministicReferenceTag } from "./deterministicReferenceTag";
+import { readCollection } from "./readCollection";
+
+vi.mock("./readCollection", () => ({
+  readCollection: vi.fn().mockRejectedValue(new Error("No fixture manifest")),
+}));
 
 // applyPatches is a single named collaborator that does binary file patching (fs). Stubbing it
 // at that boundary lets the member install-spec path run without touching disk while we still
@@ -179,6 +187,27 @@ describe("InstallDriver session lifecycle", () => {
     expect(typeof (marker?.payload as { time: unknown }).time).toBe("number");
   });
 
+  test("does not schedule a deferred sort for an ordinary collection on a Beta profile", async ({
+    makeDriver,
+  }) => {
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+      downloads: { [defaultFixture.download.id]: defaultFixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    h.setState((state) => {
+      state.settings.plugins = {
+        ...state.settings.plugins,
+        betaLoadOrder: { [profile.id]: true },
+      };
+    });
+    await h.driver.start(profile, defaultFixture.collection);
+
+    expect(h.getState().session.collections.activeSession?.profileId).toBe(profile.id);
+    const markerType = setPendingPluginSort(profile.id, defaultFixture.collection.id, 0).type;
+    expect(h.dispatched.some(({ type }) => type === markerType)).toBe(false);
+  });
+
   test("refuses to start a second collection while one is still installing", async ({
     startCollection,
   }) => {
@@ -192,6 +221,63 @@ describe("InstallDriver session lifecycle", () => {
     expect(h.driver.currentSessionId).toBe(firstSessionId);
     expect(h.getState().session.collections.activeSession?.collectionId).toBe("col-1");
   });
+});
+
+describe("InstallDriver saved plugin order on resume", () => {
+  test.for([["Use Saved Order", true] as const, ["Keep Current Sorting", false] as const])(
+    "remembers %s after pause and a new driver",
+    async ([action, appliesOrder], { makeDriver }) => {
+      const manifest = {
+        fbLoadOrders: [
+          { id: "bethesda-plugins", entries: [makeLoadOrderEntry({ id: "test.esp" })] },
+        ],
+      } as ICollection;
+      vi.mocked(readCollection)
+        .mockResolvedValueOnce(manifest)
+        .mockResolvedValueOnce(manifest)
+        .mockResolvedValueOnce(manifest);
+      const collectionId = defaultFixture.collection.id;
+      const other = { ...profile, id: "prof-2", name: "Other profile" };
+      const setup = (mod: IMod, active = profile) =>
+        makeDriver({
+          activeProfileId: active.id,
+          profiles: { [profile.id]: profile, [other.id]: other },
+          mods: { [GAME_ID]: { [collectionId]: mod } },
+          downloads: { [defaultFixture.download.id]: defaultFixture.download },
+          installPath: { [GAME_ID]: "C:/test-staging" },
+        });
+
+      const initial = setup(defaultFixture.collection);
+      const decisions = (h: IDriverHarness) =>
+        h.dialogCalls.filter((dialog) => dialog.title === "Use the collection's saved load order?");
+      initial.setNextDialog({ action, input: {} });
+      await initial.driver.start(profile, defaultFixture.collection);
+      expect(decisions(initial)).toHaveLength(1);
+      initial.driver.pause("user");
+
+      const paused = initial.getState().persistent.mods[GAME_ID][collectionId];
+      const otherProfile = setup(paused, other);
+      otherProfile.setNextDialog({ action: "Cancel", input: {} });
+      await otherProfile.driver.start(other, paused);
+      expect(decisions(otherProfile)).toHaveLength(1);
+
+      const resumed = setup(paused);
+      await resumed.driver.start(profile, paused);
+      expect(decisions(resumed)).toHaveLength(0);
+      expect(resumed.getState().session.collections.activeSession?.profileId).toBe(profile.id);
+      expect(
+        resumed.dispatched.some(({ type }) => type === setBetaLoadOrder(profile.id, true).type),
+      ).toBe(appliesOrder);
+      resumed.driver.cancel();
+
+      const cancelled = resumed.getState().persistent.mods[GAME_ID][collectionId];
+      const restarted = setup(cancelled);
+      restarted.setNextDialog({ action: "Cancel", input: {} });
+      vi.mocked(readCollection).mockResolvedValueOnce(manifest);
+      await restarted.driver.start(profile, cancelled);
+      expect(decisions(restarted)).toHaveLength(1);
+    },
+  );
 });
 
 describe("InstallDriver optional default-skip", () => {

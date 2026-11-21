@@ -31,7 +31,10 @@ import { clearErrorContext, setErrorContext } from "../../../util/errorHandling"
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
 import { setBetaLoadOrder } from "../../gamebryo_plugin_management/actions/settings";
-import { supportsBetaLoadOrder } from "../../gamebryo_plugin_management/betaLoadOrder";
+import {
+  isBetaLoadOrder,
+  supportsBetaLoadOrder,
+} from "../../gamebryo_plugin_management/betaLoadOrder";
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
@@ -66,6 +69,7 @@ import {
   chooseCollectionLoadOrder,
   type ICollectionProfileSelection,
   savedBethesdaOrder,
+  type SavedOrderChoice,
 } from "./bethesdaLoadOrder";
 import { applyPatches } from "./binaryPatching";
 import {
@@ -87,6 +91,8 @@ import { getUnfulfilledNotificationId } from "./util";
  * runs carries it, related or not: the name says "installing" so it isn't read as the cause.
  */
 const INSTALLING_COLLECTION_ERROR_CONTEXT = "installingCollection";
+
+const SAVED_ORDER_CHOICES_ATTRIBUTE = "bethesdaLoadOrderChoices";
 
 export type Step =
   | "prepare"
@@ -182,6 +188,7 @@ class InstallDriver {
       gameId: this.mGameId,
     };
     emitCollectionInstallOutcome(this.mApi, outcome, ref, this.mTimeStarted, context);
+    if (outcome !== "paused") this.storeSavedOrderChoice();
 
     this.mApi.store.dispatch(
       installActions.finishInstallSession(this.mCurrentSessionId, outcome === "completed"),
@@ -881,6 +888,30 @@ class InstallDriver {
     }
   };
 
+  private get savedOrderChoices(): Record<string, SavedOrderChoice> {
+    return (
+      this.mApi.getState().persistent.mods[this.mGameId]?.[this.mCollection?.id]?.attributes?.[
+        SAVED_ORDER_CHOICES_ATTRIBUTE
+      ] ?? {}
+    );
+  }
+
+  private storeSavedOrderChoice(choice?: SavedOrderChoice) {
+    const profileId = this.mProfile?.id;
+    if (profileId === undefined || this.mCollection === undefined) return;
+    const { [profileId]: previous, ...choices } = this.savedOrderChoices;
+    if (previous === choice) return;
+    if (choice !== undefined) choices[profileId] = choice;
+    this.mApi.store.dispatch(
+      setModAttribute(
+        this.mGameId,
+        this.mCollection.id,
+        SAVED_ORDER_CHOICES_ATTRIBUTE,
+        Object.keys(choices).length > 0 ? choices : undefined,
+      ),
+    );
+  }
+
   private startImpl = async (selection: ICollectionProfileSelection) => {
     if (this.mCollection?.archiveId === undefined || this.mProfile === undefined) {
       return false;
@@ -890,7 +921,7 @@ class InstallDriver {
     const profile = this.mProfile;
     const gameId = this.mGameId;
     this.mManualOrderProfileId = undefined;
-    let applyManualOrder = false;
+    let savedOrderChoice: SavedOrderChoice | undefined;
     if (supportsBetaLoadOrder(VortexGameId(gameId))) {
       const manifest = await Promise.resolve()
         .then(() => {
@@ -902,11 +933,17 @@ class InstallDriver {
         })
         .catch(() => undefined);
       if (manifest && savedBethesdaOrder(manifest)) {
-        const choice = await chooseCollectionLoadOrder(this.mApi, profile, selection);
+        const previousChoice = this.savedOrderChoices[profile.id];
+        const choice = await chooseCollectionLoadOrder(
+          this.mApi,
+          profile,
+          selection,
+          previousChoice,
+        );
         if (choice === "cancel" || this.mProfile !== profile || this.mCollection !== collection) {
           return false;
         }
-        applyManualOrder = choice === "apply";
+        savedOrderChoice = choice;
       }
       if (this.mProfile !== profile || this.mCollection !== collection) return false;
     }
@@ -981,17 +1018,23 @@ class InstallDriver {
       }
     }
 
-    if (applyManualOrder) {
-      if (
-        this.mCollection !== collection ||
+    if (
+      savedOrderChoice !== undefined &&
+      (this.mCollection !== collection ||
         this.mProfile !== profile ||
-        this.mApi.getState().settings.profiles.activeProfileId !== profile.id
-      )
-        return false;
+        (savedOrderChoice === "apply" &&
+          this.mApi.getState().settings.profiles.activeProfileId !== profile.id))
+    ) {
+      return false;
+    }
+    if (savedOrderChoice !== undefined) this.storeSavedOrderChoice(savedOrderChoice);
+
+    if (savedOrderChoice === "apply") {
       this.mApi.store.dispatch(setBetaLoadOrder(profile.id, true));
       this.mManualOrderProfileId = profile.id;
-    } else if (isGamebryoGame(gameId)) {
-      // An interrupted rules-based install still needs sorting on the next profile activation.
+    } else if (isGamebryoGame(gameId) && !isBetaLoadOrder(this.mApi.getState(), profile)) {
+      // A Classic collection install still needs sorting after an interruption.
+      // A collection installed in Beta must not carry a deferred sort into Classic.
       this.mApi.store.dispatch(setPendingPluginSort(profile.id, collection.id, Date.now()));
     }
 
