@@ -4,10 +4,11 @@ import { VortexGameId } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { batchDispatch } from "../../util/util";
-import type {
-  ILoadOrderGameInfo,
-  IValidationResult,
-  LoadOrder,
+import {
+  type ILoadOrderGameInfo,
+  type IValidationResult,
+  type LoadOrder,
+  LoadOrderValidationError,
 } from "../file_based_loadorder/types/types";
 import { needToDeploy } from "../mod_management/selectors";
 import { activeProfile } from "../profile_management/selectors";
@@ -16,11 +17,13 @@ import { isBetaLoadOrder, supportsBetaLoadOrder } from "./betaLoadOrder";
 import { ESPFile } from "./esp/ESPFile";
 import { gameSupported, nativePlugins, supportedGames } from "./util/gameSupport";
 import { isGhosted } from "./util/ghost";
+import { pluginFlags } from "./util/pluginFlags";
 
 interface IPluginOrderData {
   native: boolean;
   isMaster: boolean;
   masters: string[];
+  unreadable?: true;
 }
 type PluginOrder = LoadOrder & Array<LoadOrder[number] & { data: IPluginOrderData }>;
 
@@ -54,6 +57,15 @@ export function validateManualLoadOrder(
     }
   });
   const byId = new Map(baseline.map((entry) => [entry.id, entry]));
+  const unreadable = baseline.filter((entry) => entry.data.unreadable);
+  if (unreadable.length > 0) {
+    return {
+      invalid: unreadable.map((entry) => ({
+        id: entry.id,
+        reason: `Could not read ${entry.name}. Repair or remove it before changing the order.`,
+      })),
+    };
+  }
   let nonMasterSeen = false;
   for (const entry of current) {
     const info = byId.get(entry.id).data;
@@ -87,27 +99,39 @@ export function makeManualLoadOrder(api: IExtensionApi, gameId: VortexGameId): I
       Object.entries(state.session.plugins.pluginList ?? {})
         .filter(([, plugin]) => plugin.deployed && !isGhosted(plugin.filePath))
         .map(async ([id, plugin]) => {
-          const parsed = await ESPFile.open(plugin.filePath, gameId);
           const isNative = plugin.isNative || native.includes(id);
+          const data: IPluginOrderData = await ESPFile.open(plugin.filePath, gameId)
+            .then((parsed) => ({
+              native: isNative,
+              isMaster: pluginFlags(plugin.filePath, parsed, gameId).isMaster,
+              masters: parsed.masterList,
+            }))
+            .catch(() => ({ native: isNative, isMaster: false, masters: [], unreadable: true }));
           return {
             id,
             name: path.basename(plugin.filePath),
-            enabled: isNative || state.loadOrder[id]?.enabled === true,
+            enabled: isNative,
             locked: isNative,
             modId: plugin.modId,
-            data: { native: isNative, isMaster: parsed.isMaster, masters: parsed.masterList },
+            data,
           };
         }),
     );
+    const latest = api.getState();
     if (
-      activeProfile(api.getState())?.id !== activeProfile(state)?.id ||
-      api.getState().session.plugins.pluginList !== state.session.plugins.pluginList ||
+      activeProfile(latest)?.id !== activeProfile(state)?.id ||
+      latest.session.plugins.pluginList !== state.session.plugins.pluginList ||
       !condition()
     ) {
       throw new Error("The active game or deployed plugins changed. Refresh the list.");
     }
     const rank = (id: string) =>
-      state.loadOrder[id]?.loadOrder >= 0 ? state.loadOrder[id].loadOrder : Number.MAX_SAFE_INTEGER;
+      latest.loadOrder[id]?.loadOrder >= 0
+        ? latest.loadOrder[id].loadOrder
+        : Number.MAX_SAFE_INTEGER;
+    for (const entry of result) {
+      entry.enabled = entry.data.native || latest.loadOrder[entry.id]?.enabled === true;
+    }
     return result.sort((lhs, rhs) => {
       if (lhs.data.native !== rhs.data.native) return lhs.data.native ? -1 : 1;
       if (lhs.data.native) return native.indexOf(lhs.id) - native.indexOf(rhs.id);
@@ -115,12 +139,16 @@ export function makeManualLoadOrder(api: IExtensionApi, gameId: VortexGameId): I
       return rank(lhs.id) - rank(rhs.id) || lhs.name.localeCompare(rhs.name);
     });
   };
-  const validate = async (_previous: LoadOrder, current: LoadOrder) =>
-    validateManualLoadOrder(await read(), current);
+  const validate = async (previous: LoadOrder, current: LoadOrder) =>
+    validateManualLoadOrder(
+      previous === current ? (previous as PluginOrder) : await read(),
+      current,
+    );
   return {
     gameId,
     loadOrderId: "bethesda-plugins",
     reorderOnDirectHover: true,
+    writesOnUserEdit: true,
     displayName: "Plugins",
     conflictWinner: "last",
     toggleableEntries: true,
@@ -131,7 +159,7 @@ export function makeManualLoadOrder(api: IExtensionApi, gameId: VortexGameId): I
     condition,
     deserializeLoadOrder: read,
     validate,
-    serializeLoadOrder: async (current) => {
+    serializeLoadOrder: async (current, previous) => {
       const state = api.getState();
       const profileId = activeProfile(state)?.id;
       const baseline = await read();
@@ -146,7 +174,16 @@ export function makeManualLoadOrder(api: IExtensionApi, gameId: VortexGameId): I
         throw new Error("Wait for deployment or sorting to finish, then refresh the list.");
       }
       const invalid = validateManualLoadOrder(baseline, current);
-      if (invalid) throw new Error(invalid.invalid.map((entry) => entry.reason).join("\n"));
+      if (invalid) throw new LoadOrderValidationError(invalid, current);
+      if (
+        previous.length !== baseline.length ||
+        baseline.some(
+          (entry, index) =>
+            previous[index].id !== entry.id || previous[index].enabled !== entry.enabled,
+        )
+      ) {
+        throw new Error("The plugin order changed. Review the current list and try again.");
+      }
       if (current.length === 0) return;
       const locks = state.persistent.plugins.lockedIndices?.[gameId] ?? {};
       if (Object.keys(locks).length > 0)

@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import * as path from "path";
 
+import { unknownToError } from "@vortex/shared";
 import { CycleError } from "@vortex/shared/errors";
 
 import type { IExtensionContext } from "../../types/IExtensionContext";
@@ -14,7 +15,13 @@ import type { IProfile } from "../profile_management/types/IProfile";
 import { setFBLoadOrder } from "./actions/loadOrder";
 import { collectionInterface, generate, parser } from "./collections/loadOrder";
 import { LoadOrderRegistry } from "./gameSupport";
-import { isInUse, onStartUp, registerLoadOrderHandlers, validateLoadOrder } from "./handlers";
+import {
+  applyLoadOrderEdit,
+  isInUse,
+  onStartUp,
+  registerLoadOrderHandlers,
+  validateLoadOrder,
+} from "./handlers";
 import {
   importedFromOtherLoadOrder,
   parseLoadOrderFile,
@@ -88,10 +95,23 @@ export default function init(context: IExtensionContext) {
           };
           const loadOrderSorted = [...loadOrder];
           loadOrderSorted.sort((a, b) => findIndex(a) - findIndex(b));
-          context.api.store.dispatch(setFBLoadOrder(profileId, loadOrderSorted, loadOrderId));
+          const entry = registry.find(profile.gameId, loadOrderId);
+          if (entry?.writesOnUserEdit) {
+            await applyLoadOrderEdit(
+              context.api,
+              profileId,
+              entry,
+              loadOrderSorted,
+              loadOrder,
+            ).catch((err) => errorHandler(context.api, profile.gameId, entry, unknownToError(err)));
+          } else {
+            setOrder(profileId, loadOrderSorted, loadOrderId);
+          }
         },
         onImportList: async (loadOrderId?: string) => {
           const api = context.api;
+          const profile = activeProfile(api.getState());
+          const entry = registry.find(profile?.gameId, loadOrderId);
           const file = await api.selectFile({
             filters: [{ name: "JSON", extensions: ["json"] }],
             title: "Import Load Order",
@@ -101,8 +121,11 @@ export default function init(context: IExtensionContext) {
           }
           try {
             const loadOrderFile = parseLoadOrderFile(await readFile(file, "utf8"));
-            const profileId = activeProfile(api.getState()).id;
-            setOrder(profileId, loadOrderFile.entries, loadOrderId);
+            if (entry?.writesOnUserEdit) {
+              await applyLoadOrderEdit(api, profile.id, entry, loadOrderFile.entries);
+            } else {
+              setOrder(activeProfile(api.getState()).id, loadOrderFile.entries, loadOrderId);
+            }
             if (importedFromOtherLoadOrder(loadOrderFile, loadOrderId)) {
               api.sendNotification({
                 type: "warning",

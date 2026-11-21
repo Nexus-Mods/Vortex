@@ -7,6 +7,7 @@ import type { IFbloHarness } from "../../test-utils/harnessTypes";
 import { addMod, removeMod } from "../mod_management/actions/mods";
 import { setModEnabled } from "../profile_management/actions/profiles";
 import { setFBLoadOrder } from "./actions/loadOrder";
+import { applyLoadOrderEdit } from "./handlers";
 import type { ILoadOrderEntry, LoadOrder } from "./types/types";
 
 // The acceptance suite for keeping the user's load order through deployments: the real reducers,
@@ -49,6 +50,52 @@ const purge = async (fblo: IFbloHarness) => {
 };
 
 describe("after a deployment", () => {
+  test("observations and deployment cannot replay an order written by explicit edits only", async ({
+    makeFblo,
+  }) => {
+    const fblo = makeFblo();
+    const committed = [entry("a.pak"), entry("b.pak")];
+    const proposed = [...committed].reverse();
+    const file = gameLoadOrderFile(committed);
+    const registration = fblo.registerLoadOrder({
+      ...file,
+      writesOnUserEdit: true,
+    });
+
+    fblo.api.store.dispatch(setFBLoadOrder(fblo.profileId, proposed));
+    await deploy(fblo);
+    await flushAsync();
+    expect(file.contents()).toEqual(committed);
+    expect(file.writtenByVortex).toEqual([]);
+
+    await applyLoadOrderEdit(fblo.api, fblo.profileId, registration, proposed);
+    expect(file.contents()).toEqual(proposed);
+    expect(file.writtenByVortex).toEqual([proposed]);
+    await expect(
+      applyLoadOrderEdit(fblo.api, "other-profile", registration, committed),
+    ).rejects.toThrow();
+    expect(file.writtenByVortex).toEqual([proposed]);
+  });
+
+  test("an async edit uses the displayed order from before it ran", async ({ makeFblo }) => {
+    const fblo = makeFblo();
+    const displayed = [entry("a.pak"), entry("b.pak")];
+    const proposed = [...displayed].reverse();
+    const canonical = [{ ...displayed[0], enabled: false }, displayed[1]];
+    const registration = fblo.registerLoadOrder({
+      writesOnUserEdit: true,
+      serializeLoadOrder: async (_order, previous) => {
+        if (previous !== canonical) throw new Error("Stale order");
+      },
+    });
+
+    fblo.api.store.dispatch(setFBLoadOrder(fblo.profileId, canonical));
+    await expect(
+      applyLoadOrderEdit(fblo.api, fblo.profileId, registration, proposed, displayed),
+    ).rejects.toThrow("Stale order");
+    expect(fblo.loadOrder()).toEqual(canonical);
+  });
+
   test("entries the game reports go back to the user's order", async ({ makeFblo }) => {
     const fblo = makeFblo();
     fblo.registerLoadOrder({

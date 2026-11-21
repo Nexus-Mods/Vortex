@@ -15,6 +15,7 @@ const paths = vi.hoisted(() => ({
 // resolve the persistor's game paths into per-test temp dirs
 vi.mock("./gameSupport", () => ({
   gameSupported: (gameId: string) => gameId === "skyrimse",
+  knownGame: (gameId: string) => gameId === "skyrimse",
   gameDataPath: () => paths.dataDir,
   pluginPath: () => paths.pluginDir,
   pluginFormat: () => paths.format,
@@ -32,6 +33,9 @@ vi.mock("node:fs", async (importOriginal) => {
 
 import { settle } from "../../../test-utils/async";
 import { installDiskFS, installInMemoryFS } from "../../../test-utils/fsApi";
+import { makeGamebryoHarness } from "../../../test-utils/gamebryoTest";
+import { setAutoSortEnabled, setBetaLoadOrder } from "../actions/settings";
+import { controlsPluginOrder } from "../betaLoadOrder";
 import type { IPluginLoadOrderEntry } from "../types/IPluginLoadOrderEntry";
 import PluginPersistor, { PluginFileConflict, replaceFile, withFileRetry } from "./PluginPersistor";
 
@@ -68,8 +72,11 @@ describe("PluginPersistor", () => {
   };
 
   const persistors: PluginPersistor[] = [];
-  const makePersistor = async (controlOrder: boolean = false) => {
-    const made = new PluginPersistor(vi.fn(), () => controlOrder);
+  const makePersistor = async (controlOrder: boolean | (() => boolean) = false) => {
+    const made = new PluginPersistor(
+      vi.fn(),
+      typeof controlOrder === "function" ? controlOrder : () => controlOrder,
+    );
     made.setResetCallback(vi.fn(() => Promise.resolve()));
     await made.loadFiles("skyrimse");
     persistors.push(made);
@@ -806,6 +813,67 @@ describe("PluginPersistor", () => {
         );
       });
     });
+
+    it.each([false, true])(
+      "uses profile Beta preference %s to control timestamps",
+      async (beta) => {
+        const harness = makeGamebryoHarness();
+        const profileId = harness.getState().settings.profiles.activeProfileId;
+        harness.api.store.dispatch(setAutoSortEnabled(false));
+        harness.api.store.dispatch(setBetaLoadOrder(profileId, beta));
+
+        const old = path.join(paths.dataDir, "Old.esp");
+        const parked = path.join(paths.dataDir, "Parked.esp");
+        nodeFs.writeFileSync(old, "first plugin");
+        nodeFs.writeFileSync(parked, "second plugin");
+        nodeFs.utimesSync(old, 1_600_000_000, 1_600_000_000);
+        nodeFs.utimesSync(parked, 1_600_000_060, 1_600_000_060);
+
+        const p = await makePersistor(() => controlsPluginOrder(harness.getState()));
+        p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+        await p.setItem(["old.esp"], JSON.stringify({ enabled: true, loadOrder: 1 }));
+        await p.setItem(["parked.esp"], JSON.stringify({ enabled: true, loadOrder: 0 }));
+
+        if (beta) {
+          await vi.waitFor(() => {
+            expect(nodeFs.statSync(parked).mtimeMs).toBeLessThan(nodeFs.statSync(old).mtimeMs);
+          });
+        } else {
+          await vi.waitFor(() => {
+            const order = nodeFs.readFileSync(path.join(paths.pluginDir, "loadorder.txt"), "utf8");
+            expect(order.indexOf("Parked.esp")).toBeLessThan(order.indexOf("Old.esp"));
+          });
+          expect(nodeFs.statSync(old).mtimeMs).toBe(1_600_000_000_000);
+          expect(nodeFs.statSync(parked).mtimeMs).toBe(1_600_000_060_000);
+        }
+        expect(nodeFs.readFileSync(old, "utf8")).toBe("first plugin");
+        expect(nodeFs.readFileSync(parked, "utf8")).toBe("second plugin");
+      },
+    );
+  });
+
+  it("flushes a recent Beta reorder before Classic takes back control of file times", async () => {
+    paths.format = "original";
+    let controlsTimestamps = true;
+    const old = path.join(paths.dataDir, "Old.esp");
+    const parked = path.join(paths.dataDir, "Parked.esp");
+    nodeFs.writeFileSync(old, "");
+    nodeFs.writeFileSync(parked, "");
+    nodeFs.writeFileSync(path.join(paths.pluginDir, "loadorder.txt"), "Old.esp\r\nParked.esp\r\n");
+    nodeFs.writeFileSync(path.join(paths.pluginDir, "plugins.txt"), "Old.esp\r\n");
+    const p = await makePersistor(() => controlsTimestamps);
+    p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
+
+    await p.syncFromState("skyrimse", {
+      "old.esp": { enabled: true, loadOrder: 1 },
+      "parked.esp": { enabled: true, loadOrder: 0 },
+    });
+    controlsTimestamps = false;
+    await p.loadFiles("skyrimse");
+
+    expect(nodeFs.statSync(parked).mtimeMs).toBeLessThan(nodeFs.statSync(old).mtimeMs);
+    expect(p.entry("parked.esp").loadOrder).toBe(0);
+    expect(p.entry("old.esp").loadOrder).toBe(1);
   });
 
   it("rehydrates when the installed-native set changes, and only then", async () => {

@@ -125,13 +125,65 @@ describe("Bethesda drag-and-drop load order adapter", () => {
       enabled: true,
     });
     const before = harness.getState().loadOrder;
+    await expect(adapter.serializeLoadOrder(baseline, baseline)).rejects.toThrow(
+      "The plugin order changed",
+    );
+    expect(harness.getState().loadOrder).toBe(before);
     await expect(
       adapter.serializeLoadOrder([reordered[1], reordered[0], reordered[2]], reordered),
-    ).rejects.toThrow("Base game plugins");
+    ).rejects.toMatchObject({
+      validationResult: {
+        invalid: expect.arrayContaining([
+          expect.objectContaining({ reason: expect.stringContaining("Base game plugins") }),
+        ]),
+      },
+    });
     expect(harness.getState().loadOrder).toBe(before);
     harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, false));
     expect(adapter.condition()).toBe(false);
     await expect(adapter.serializeLoadOrder(reordered, baseline)).rejects.toThrow();
+    expect(harness.getState().loadOrder).toBe(before);
+  });
+  test("orders unflagged masters first and shows unreadable plugins without writing", async ({
+    makeGamebryo,
+  }) => {
+    const harness = makeGamebryo({ gameId: "fallout4" });
+    await initGameSupport(harness.api);
+    const root = await makeTempDir("vortex-manual-order-headers-");
+    const names = ["Ordinary.esp", "Light.esl", "Master.esm", "Damaged.esp"];
+    const bytes = Buffer.alloc(24);
+    bytes.write("TES4");
+    for (const name of names) {
+      await writeFile(path.join(root, name), name === "Damaged.esp" ? "corrupt" : bytes);
+    }
+    harness.api.store.dispatch(
+      setPluginList(
+        Object.fromEntries(
+          names.map((name) => [
+            name.toLowerCase(),
+            makePlugin({ filePath: path.join(root, name), deployed: true }),
+          ]),
+        ),
+      ),
+    );
+    harness.api.store.dispatch(setPluginOrder(names, true));
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    const adapter = makeManualLoadOrder(harness.api, VortexGameId("fallout4"));
+    const before = harness.getState().loadOrder;
+    const order = await adapter.deserializeLoadOrder();
+    expect(order.map((item) => item.name)).toEqual([
+      "Light.esl",
+      "Master.esm",
+      "Ordinary.esp",
+      "Damaged.esp",
+    ]);
+    await expect(adapter.serializeLoadOrder(order, order)).rejects.toMatchObject({
+      validationResult: {
+        invalid: [
+          { id: "damaged.esp", reason: expect.stringContaining("Could not read Damaged.esp") },
+        ],
+      },
+    });
     expect(harness.getState().loadOrder).toBe(before);
   });
   test("an empty deployed scan leaves existing plugin positions untouched", async ({

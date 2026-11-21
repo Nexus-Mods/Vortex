@@ -13,6 +13,7 @@ type InvalidEntries = IItemRendererProps["invalidEntries"];
 export class RenderRowsCache {
   // the load order the rows belong to
   readonly #loadOrderId: string;
+  readonly #onEditOrder: (order: LoadOrder) => void;
   #rows:
     | {
         loadOrder: LoadOrder;
@@ -25,8 +26,12 @@ export class RenderRowsCache {
     | { rows: IItemRendererProps[]; filterText: string; result: IItemRendererProps[] }
     | undefined;
 
-  constructor(loadOrderId: string = DEFAULT_LOAD_ORDER_ID) {
+  constructor(
+    loadOrderId: string = DEFAULT_LOAD_ORDER_ID,
+    onEditOrder?: (order: LoadOrder) => void,
+  ) {
     this.#loadOrderId = loadOrderId;
+    this.#onEditOrder = onEditOrder;
   }
 
   public build(
@@ -54,6 +59,7 @@ export class RenderRowsCache {
           position: idx + 1,
           lockedEntriesCount,
           loadOrderId: this.#loadOrderId,
+          ...(this.#onEditOrder && { onEditOrder: this.#onEditOrder }),
         }),
       );
       this.#rows = { loadOrder, invalid, toggleable, result: rows };

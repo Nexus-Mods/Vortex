@@ -20,3 +20,8 @@ export function isBetaLoadOrder(state: IState): boolean {
     supportsBetaLoadOrder(activeGameId(state))
   );
 }
+
+/** The existing writer also controls file timestamps when the user orders plugins in Beta. */
+export function controlsPluginOrder(state: IState): boolean {
+  return state.settings.plugins.autoSort || isBetaLoadOrder(state);
+}

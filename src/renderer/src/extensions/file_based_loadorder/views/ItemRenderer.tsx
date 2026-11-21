@@ -120,12 +120,16 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
   }
 
   private onStatusChange = (evt: any) => {
-    const { item, onSetLoadOrderEntry, profile } = this.props;
+    const { item, onSetLoadOrderEntry, profile, loadOrder } = this.props;
     const entry = {
       ...item.loEntry,
       enabled: evt.target.checked,
     };
-    onSetLoadOrderEntry(profile.id, entry, item.loadOrderId);
+    if (item.onEditOrder) {
+      item.onEditOrder(loadOrder.map((current) => (current.id === entry.id ? entry : current)));
+    } else {
+      onSetLoadOrderEntry(profile.id, entry, item.loadOrderId);
+    }
   };
 
   private currentPosition = (): number => {
@@ -147,7 +151,11 @@ class ItemRenderer extends ComponentEx<IProps, {}> {
 
     const newLO = loadOrder.filter((entry) => entry.id !== item.loEntry.id);
     newLO.splice(idx - 1, 0, entry);
-    onSetLoadOrder(profile.id, newLO, item.loadOrderId);
+    if (item.onEditOrder) {
+      item.onEditOrder(newLO);
+    } else {
+      onSetLoadOrder(profile.id, newLO, item.loadOrderId);
+    }
   };
 
   private lockedEntriesCount = (): number => {

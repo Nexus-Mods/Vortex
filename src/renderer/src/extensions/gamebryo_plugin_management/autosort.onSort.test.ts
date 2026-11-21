@@ -68,6 +68,47 @@ describe("LootInterface autosort-plugins", () => {
     await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1));
   });
 
+  test("drops a deferred collection sort on switching to Beta and accepts explicit LOOT", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setAutoSortEnabled(false));
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+    await new Promise<void>((resolve) =>
+      harness.emit("autosort-plugins", true, resolve, "deployment"),
+    );
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+    await flushAsync();
+
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+    await harness.sort(true);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledExactlyOnceWith(["A.esp"]);
+  });
+
+  test("does not carry a deferred Beta LOOT request into another profile", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+    await harness.sort(true);
+    harness.setState((draft) => {
+      draft.persistent.profiles["new-profile"] = makeProfile({
+        id: "new-profile",
+        gameId: draft.persistent.profiles[harness.profileId].gameId,
+      });
+      draft.settings.profiles.activeProfileId = "new-profile";
+      draft.settings.profiles.nextProfileId = "new-profile";
+    });
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+    await flushAsync();
+
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+    await harness.sort(true);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledExactlyOnceWith(["A.esp"]);
+  });
+
   test("refuses a state sort while plugin management is off for the profile", async ({
     makeLoot,
   }) => {

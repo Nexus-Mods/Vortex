@@ -41,7 +41,7 @@ import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import { testIncompatibleArchives } from "./archiveCheck";
 import LootInterface from "./autosort";
-import { isBetaLoadOrder, supportsBetaLoadOrder } from "./betaLoadOrder";
+import { controlsPluginOrder, isBetaLoadOrder, supportsBetaLoadOrder } from "./betaLoadOrder";
 import { startDeployWatcher, type IDeployWatcher } from "./deployWatcher";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
@@ -57,6 +57,7 @@ import { IStateWithGamebryo } from "./types/IStateWithGamebryo";
 import {
   gameDataPath,
   gameSupported,
+  pluginFormat,
   getGameSupport,
   IGameSupport,
   initGameSupport,
@@ -291,14 +292,35 @@ function register(
   context.registerSettings("Workarounds", Settings, undefined, () => {
     return knownGame(activeGameId(context.api.store.getState()));
   });
-  const switchLoadOrderView = (enabled: boolean) => {
-    const state = context.api.getState();
+  const switchLoadOrderView = async (enabled: boolean) => {
+    let state = context.api.getState();
     const profileId = state.settings.profiles.activeProfileId;
-    if (!profileId || !supportsBetaLoadOrder(activeGameId(state))) return;
+    const gameId = activeGameId(state);
+    if (!profileId || !supportsBetaLoadOrder(gameId)) return;
+    if (!enabled && pluginFormat(gameId) === "original") {
+      // Timestamp-based games need the latest order written while Beta still controls file times.
+      // The ordinary Redux-to-persistor update is debounced.
+      while (isBetaLoadOrder(state)) {
+        await pluginPersistor.syncFromState(gameId, state.loadOrder);
+        const current = context.api.getState();
+        if (current.settings.profiles.activeProfileId !== profileId || !isBetaLoadOrder(current)) {
+          return;
+        }
+        if (current.loadOrder === state.loadOrder) break;
+        state = current;
+      }
+    }
     context.api.store.dispatch(setBetaLoadOrder(profileId, enabled));
     context.api.events.emit(
       "show-main-page",
       enabled ? "file-based-loadorder" : "gamebryo-plugins",
+    );
+  };
+  const switchView = (enabled: boolean) => {
+    void switchLoadOrderView(enabled).catch((err) =>
+      context.api.showErrorNotification("Failed to switch load order view", err, {
+        allowReport: false,
+      }),
     );
   };
   context.registerAction(
@@ -307,7 +329,7 @@ function register(
     "toggle-disabled",
     {},
     "Switch to beta view",
-    () => switchLoadOrderView(true),
+    () => switchView(true),
     () => supportsBetaLoadOrder(activeGameId(context.api.getState())),
   );
   context.registerAction(
@@ -316,7 +338,7 @@ function register(
     "toggle-enabled",
     {},
     "Switch to classic view",
-    () => switchLoadOrderView(false),
+    () => switchView(false),
     () => isBetaLoadOrder(context.api.getState()),
   );
 
@@ -338,17 +360,24 @@ function register(
     {},
     "Sort via LOOT",
     () => {
-      context.api.events.emit("autosort-plugins", true, () => {
-        context.api.store.dispatch(
-          setFBForceUpdate(context.api.getState().settings.profiles.activeProfileId),
-        );
-      });
+      context.api.events.emit("autosort-plugins", true);
     },
     () => {
       const state = context.api.getState();
       return isBetaLoadOrder(state) && gameSupported(activeGameId(state));
     },
   );
+
+  context.once(() => {
+    const refreshBetaLoadOrder = () => {
+      const state = context.api.getState();
+      if (isBetaLoadOrder(state)) {
+        context.api.store.dispatch(setFBForceUpdate(state.settings.profiles.activeProfileId));
+      }
+    };
+    context.api.onStateChange(["session", "plugins", "pluginList"], refreshBetaLoadOrder);
+    context.api.onStateChange(["loadOrder"], refreshBetaLoadOrder);
+  });
 
   context.registerAction("gamebryo-plugin-icons", 100, "connection", {}, "Manage Rules", () => {
     context.api.store.dispatch(setCreateRule(undefined, undefined, undefined));
@@ -512,10 +541,9 @@ function initPersistor(context: IExtensionContextExt) {
 
   // Initialize persistors in renderer process (where Redux store now lives)
   if (pluginPersistor === undefined) {
-    pluginPersistor = new PluginPersistor(onError, () => {
-      const state = context.api.store.getState();
-      return state.settings.plugins.autoSort && !isBetaLoadOrder(state);
-    });
+    pluginPersistor = new PluginPersistor(onError, () =>
+      controlsPluginOrder(context.api.store.getState()),
+    );
     pluginPersistor.setExternalChangeCallback(makePluginConflictPrompt(context.api));
     pluginPersistor.setEmptyListCallback(makeEmptyListNotice(context.api));
   }
@@ -1183,8 +1211,12 @@ function onDidDeploy(api: IExtensionApi, profileId: string): Bluebird<void> {
           // would otherwise be left unsorted/unenabled), so force it; a normal deploy with no
           // marker honours the auto-sort setting. doSort clears the marker on success. Read fresh
           // state: the marker may have changed during the (bounded) wait above.
-          const force = hasPendingPluginSort(api.getState(), profileId);
-          return api.events.emit("autosort-plugins", force);
+          const current = api.getState();
+          if (current.settings.profiles.activeProfileId !== profileId || isBetaLoadOrder(current)) {
+            return;
+          }
+          const force = hasPendingPluginSort(current, profileId);
+          return api.events.emit("autosort-plugins", force, undefined, "deployment");
         })
         .then(() => Bluebird.resolve())
     : Bluebird.resolve();
@@ -1451,7 +1483,8 @@ function init(context: IExtensionContextExt) {
             // handler refreshes the plugin list and sorts (no collection session is active here, so
             // it is not suppressed) and clears the marker. Deploy-first means we never sort against
             // an undeployed Data folder.
-            if (hasPendingPluginSort(store.getState(), newProfileId)) {
+            const current = store.getState();
+            if (!isBetaLoadOrder(current) && hasPendingPluginSort(current, newProfileId)) {
               log("info", "draining pending collection plugin sort", {
                 profileId: newProfileId,
                 gameId: newProfile.gameId,
