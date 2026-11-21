@@ -12,6 +12,7 @@
  * Skip attribution (premium/automatic and free-user) is no longer the driver's concern - it
  * moved to markCollectionMemberSkipped (see collectionSkip.test.ts).
  */
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, vi } from "vitest";
 
 import {
@@ -621,6 +622,55 @@ describe("InstallDriver completion decision", () => {
     setSessionStatus(h, [memberRule], "failed");
 
     expect(h.driver.isInstallComplete(false)).toBe(true);
+  });
+});
+
+describe("InstallDriver import profile", () => {
+  test("opens a new collection on the profile that finishes switching after the prior install", async ({
+    makeDriver,
+  }) => {
+    const nextProfile = { ...profile, id: "prof-2", name: "Next profile" };
+    const next = buildCollectionFixture("next-collection", []);
+    const h = makeDriver({
+      mods: {
+        [GAME_ID]: {
+          [defaultFixture.collection.id]: defaultFixture.collection,
+          [next.collection.id]: next.collection,
+        },
+      },
+      downloads: {
+        [defaultFixture.download.id]: defaultFixture.download,
+        [next.download.id]: next.download,
+      },
+      profiles: { [profile.id]: profile, [nextProfile.id]: nextProfile },
+    });
+    await h.driver.start(profile, defaultFixture.collection);
+    setSessionStatus(h, [memberRule], "installed");
+    h.emit("did-install-dependencies", GAME_ID, defaultFixture.collection.id, false);
+    await vi.waitFor(() => expect(h.driver.step).toBe("review"));
+    await h.driver.continue();
+    expect(h.driver.collection).toBeUndefined();
+
+    const profileSwitch = Promise.withResolvers<string>();
+    const awaitProfileSwitch = vi.fn(() => profileSwitch.promise);
+    Object.assign(h.api.ext, { awaitProfileSwitch });
+    h.setState((state) => {
+      state.settings.profiles.activeProfileId = profile.id;
+      state.settings.profiles.nextProfileId = nextProfile.id;
+    });
+    const queried = h.driver.query(VortexGameId(GAME_ID), next.collection);
+    await vi.waitFor(() => expect(awaitProfileSwitch).toHaveBeenCalledOnce());
+    expect(h.driver.collection).toBeUndefined();
+
+    h.setState((state) => {
+      state.settings.profiles.activeProfileId = nextProfile.id;
+      state.settings.profiles.lastActiveProfile[GAME_ID] = nextProfile.id;
+    });
+    profileSwitch.resolve(nextProfile.id);
+    await queried;
+    expect(h.driver.step).toBe("query");
+    expect(h.driver.collection?.id).toBe(next.collection.id);
+    expect(h.driver.profile?.id).toBe(nextProfile.id);
   });
 });
 

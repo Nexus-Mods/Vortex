@@ -1412,14 +1412,6 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
   });
 
   api.events.on("did-install-mod", async (gameId: string, archiveId: string, modId: string) => {
-    // automatically enable collections once they're installed
-    // Use the driver's target profile if available, otherwise fall back to last active profile
-    const targetProfile = driver.profile;
-    const profileId = targetProfile?.id ?? selectors.lastActiveProfileForGame(state(), gameId);
-    const profile = targetProfile ?? selectors.profileById(state(), profileId);
-    if (profile === undefined) {
-      return;
-    }
     const mod = getSafe(state().persistent.mods, [gameId, modId], undefined);
     if (mod === undefined) {
       // how ?
@@ -1427,9 +1419,7 @@ function once(api: IExtensionApi, collectionsCB: () => ICallbackMap) {
     }
     if (mod.type === MOD_TYPE) {
       if (driver.collection === undefined) {
-        const awaitProfileSwitch = api.ext?.awaitProfileSwitch ?? (() => Promise.resolve());
-        await awaitProfileSwitch();
-        driver.query(profile, mod);
+        await driver.query(VortexGameId(gameId), mod);
       } else {
         api.sendNotification({
           type: "info",

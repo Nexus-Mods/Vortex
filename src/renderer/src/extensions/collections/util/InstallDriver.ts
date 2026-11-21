@@ -49,7 +49,12 @@ import testModReference, {
   testRefByIdentifiers,
 } from "../../mod_management/util/testModReference";
 import { setModEnabled } from "../../profile_management/actions/profiles";
-import { activeGameId, profileById } from "../../profile_management/selectors";
+import {
+  activeGameId,
+  activeProfile,
+  lastActiveProfileForGame,
+  profileById,
+} from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setPendingVote } from "../actions/persistent";
 import { INSTALLING_NOTIFICATION_ID, MOD_TYPE } from "../constants";
@@ -382,7 +387,7 @@ class InstallDriver {
     this.mPrepare = this.mPrepare.then(func);
   }
 
-  public async query(profile: IProfile, collection: IMod) {
+  public async query(gameId: VortexGameId, collection: IMod) {
     await this.mPrepare;
     this.mPrepare = Bluebird.resolve();
 
@@ -390,6 +395,7 @@ class InstallDriver {
       return;
     }
 
+    await this.mApi.ext?.awaitProfileSwitch?.();
     if (!this.mInstallDone && this.mCollection !== undefined) {
       this.mApi.sendNotification({
         type: "warning",
@@ -397,9 +403,19 @@ class InstallDriver {
       });
       return;
     }
+    // A completed install can leave a target on the driver. Resolve this import against
+    // the game's active profile once any in-flight profile switch has settled.
+    const state = this.mApi.getState();
+    const current = activeProfile(state);
+    const profile =
+      current?.gameId === gameId
+        ? current
+        : profileById(state, lastActiveProfileForGame(state, gameId));
+    if (profile === undefined) return;
+
     this.mProfile = profile;
     this.mLastCollection = this.mCollection = collection;
-    this.mGameId = profile?.gameId ?? activeGameId(this.mApi.getState());
+    this.mGameId = gameId;
     this.mStep = "query";
     await this.initCollectionInfo();
     this.triggerUpdate();
