@@ -92,6 +92,7 @@ import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
 import { SpanAttribute } from "./util/spanAttributes";
 import { makeUpdatePluginList } from "./util/updatePluginList";
 import UserlistPersistor from "./util/UserlistPersistor";
+import { BetaLoadOrderToggle } from "./views/BetaLoadOrderToggle";
 import Connector from "./views/Connector";
 import GroupEditor from "./views/GroupEditor";
 import { getPluginFlags } from "./views/PluginFlags";
@@ -326,19 +327,17 @@ function register(
   context.registerAction(
     "gamebryo-plugin-icons",
     1000,
-    "experiment",
+    BetaLoadOrderToggle,
     {},
-    "Switch to beta view",
-    () => switchView(true),
+    () => ({ target: "beta", onClick: () => switchView(true) }),
     () => supportsBetaLoadOrder(activeGameId(context.api.getState())),
   );
   context.registerAction(
     "fb-load-order-icons",
     1000,
-    "experiment",
+    BetaLoadOrderToggle,
     {},
-    "Switch to classic view",
-    () => switchView(false),
+    () => ({ target: "classic", onClick: () => switchView(false) }),
     () => isBetaLoadOrder(context.api.getState()),
   );
 
