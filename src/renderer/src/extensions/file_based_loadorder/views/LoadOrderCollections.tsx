@@ -182,7 +182,9 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     const { loadOrder } = this.state;
     const idx: number = loadOrder.indexOf(loEntry);
     const key = loEntry.id + JSON.stringify(loEntry);
-    const name = this.props.getGameEntry(this.props.gameId)?.writesOnUserEdit
+    const { t, getGameEntry, gameId } = this.props;
+    const showPluginState = getGameEntry(gameId)?.writesOnUserEdit;
+    const name = showPluginState
       ? loEntry.name
       : loEntry.name || loEntry.modId !== undefined
         ? renderModName(this.props.mods[loEntry.modId])
@@ -193,6 +195,9 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
         <FlexLayout type="row">
           <p className="load-order-index">{idx}</p>
           <p>{name}</p>
+          {showPluginState && (
+            <p className="ml-auto">{loEntry.enabled ? t("Enabled") : t("Disabled")}</p>
+          )}
         </FlexLayout>
       </ListGroupItem>
     );
