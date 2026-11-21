@@ -326,7 +326,7 @@ function register(
   context.registerAction(
     "gamebryo-plugin-icons",
     1000,
-    "toggle-disabled",
+    "experiment",
     {},
     "Switch to beta view",
     () => switchView(true),
@@ -335,7 +335,7 @@ function register(
   context.registerAction(
     "fb-load-order-icons",
     1000,
-    "toggle-enabled",
+    "experiment",
     {},
     "Switch to classic view",
     () => switchView(false),
