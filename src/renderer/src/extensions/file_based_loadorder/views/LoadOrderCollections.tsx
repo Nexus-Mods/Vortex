@@ -13,7 +13,7 @@ import type { IMod } from "../../mod_management/types/IMod";
 import renderModName from "../../mod_management/util/modName";
 import { activeGameId, activeProfile } from "../../profile_management/selectors";
 import type { IProfile } from "../../profile_management/types/IProfile";
-import { currentGameMods, currentLoadOrderForProfile } from "../selectors";
+import { currentGameMods, loadOrderForProfile, refreshIdForProfile } from "../selectors";
 import type { IGameSpecificInterfaceProps } from "../types/collections";
 import type { ILoadOrderEntry, IRegisteredLoadOrder, LoadOrder } from "../types/types";
 import { genCollectionLoadOrder, isModInCollection, isValidMod } from "../util";
@@ -30,6 +30,7 @@ interface IConnectedProps {
   // keyed by Vortex mod id
   mods: Record<string, IMod>;
   loadOrder: LoadOrder;
+  refreshId?: string;
   profile: IProfile;
 }
 
@@ -92,7 +93,11 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     const prevRules = JSON.stringify(prevProps.collection.rules);
     const currentLO = JSON.stringify(this.props.loadOrder);
     const prevLO = JSON.stringify(prevProps.loadOrder);
-    if (currentRules !== prevRules || currentLO !== prevLO) {
+    if (
+      currentRules !== prevRules ||
+      currentLO !== prevLO ||
+      this.props.refreshId !== prevProps.refreshId
+    ) {
       this.genLoadOrder();
     }
   }
@@ -177,8 +182,9 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
     const { loadOrder } = this.state;
     const idx: number = loadOrder.indexOf(loEntry);
     const key = loEntry.id + JSON.stringify(loEntry);
-    const name =
-      loEntry.name || loEntry.modId !== undefined
+    const name = this.props.getGameEntry(this.props.gameId)?.writesOnUserEdit
+      ? loEntry.name
+      : loEntry.name || loEntry.modId !== undefined
         ? renderModName(this.props.mods[loEntry.modId])
         : loEntry.id;
     const classes = ["load-order-entry", "collection-tab"];
@@ -195,9 +201,12 @@ class LoadOrderCollections extends ComponentEx<IProps, IBaseState> {
 
 function mapStateToProps(state: IState, ownProps: IProps): IConnectedProps {
   const profile = activeProfile(state);
+  const gameId = activeGameId(state);
+  const entry = ownProps.getGameEntry(gameId);
   return {
-    gameId: activeGameId(state),
-    loadOrder: currentLoadOrderForProfile(state, profile.id),
+    gameId,
+    loadOrder: loadOrderForProfile(state, profile.id, entry?.loadOrderId),
+    refreshId: entry?.writesOnUserEdit ? refreshIdForProfile(state, profile.id) : undefined,
     mods: currentGameMods(state),
     profile,
   };

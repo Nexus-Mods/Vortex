@@ -7,7 +7,9 @@ import { batchDispatch, toPromise } from "../../util/util";
 import type { IMod, IModRule } from "../mod_management/types/IMod";
 import { findModByRef } from "../mod_management/util/findModByRef";
 import testModReference from "../mod_management/util/testModReference";
+import { activeProfileId } from "../profile_management/selectors";
 import type { ICollection } from "./types/ICollection";
+import { applyCollectionPluginOrder } from "./util/bethesdaLoadOrder";
 import type { IExtensionFeature } from "./util/extension";
 import { findExtensions } from "./util/extension";
 import { parseGameSpecifics } from "./util/gameSupport";
@@ -79,7 +81,11 @@ export async function postprocessCollection(
   collectionMod: IMod,
   collection: ICollection,
   mods: { [modId: string]: IMod },
+  manualOrderProfileId?: string,
 ) {
+  const isTargetActive = () =>
+    manualOrderProfileId === undefined || activeProfileId(api.getState()) === manualOrderProfileId;
+  if (!isTargetActive()) return;
   log("info", "postprocess collection");
   applyCollectionRules(api, gameId, collection, mods);
   try {
@@ -92,13 +98,21 @@ export async function postprocessCollection(
   } catch (err) {
     log("warn", "Failed to deploy during collection post processing");
   }
+  if (!isTargetActive()) return;
 
   const exts: IExtensionFeature[] = findExtensions(api.getState(), gameId);
 
   for (const ext of exts) {
     await ext.parse(gameId, collection, collectionMod);
+    if (!isTargetActive()) return;
   }
 
-  await parseGameSpecifics(api, gameId, collection, collectionMod);
+  await parseGameSpecifics(api, gameId, collection, collectionMod, manualOrderProfileId);
+  if (!isTargetActive()) return;
+  if (manualOrderProfileId !== undefined) {
+    await api.emitAndAwait("refresh-collection-plugins", manualOrderProfileId, gameId);
+    await applyCollectionPluginOrder(api, manualOrderProfileId, gameId, collection, collectionMod);
+  }
+  if (!isTargetActive()) return;
   api.events.emit("collection-postprocess-complete", gameId, collectionMod.id);
 }

@@ -91,14 +91,16 @@ export function parser(
     const named = namedLoadOrdersOf(collection);
     api.store.dispatch(setFBLoadOrder(profileId, collection.loadOrder));
     for (const { id, entries } of named) {
-      if (!gameEntries.some((gameEntry) => gameEntry.loadOrderId === id)) {
+      const entry = gameEntries.find((gameEntry) => gameEntry.loadOrderId === id);
+      if (entry === undefined) {
         log("warn", "collection carries a load order the game does not register", {
           gameId,
           loadOrderId: id,
         });
         continue;
       }
-      api.store.dispatch(setFBLoadOrder(profileId, entries, id));
+      // Direct writers apply an imported order explicitly after getting profile consent.
+      if (!entry.writesOnUserEdit) api.store.dispatch(setFBLoadOrder(profileId, entries, id));
     }
   });
 }

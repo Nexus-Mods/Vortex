@@ -27,6 +27,8 @@ interface IPluginOrderData {
 }
 type PluginOrder = LoadOrder & Array<LoadOrder[number] & { data: IPluginOrderData }>;
 
+export const BETHESDA_PLUGIN_ORDER_ID = "bethesda-plugins";
+
 export function validateManualLoadOrder(
   baseline: PluginOrder,
   current: LoadOrder,
@@ -146,14 +148,13 @@ export function makeManualLoadOrder(api: IExtensionApi, gameId: VortexGameId): I
     );
   return {
     gameId,
-    loadOrderId: "bethesda-plugins",
+    loadOrderId: BETHESDA_PLUGIN_ORDER_ID,
     reorderOnDirectHover: true,
     writesOnUserEdit: true,
     displayName: "Plugins",
     conflictWinner: "last",
     toggleableEntries: true,
     clearStateOnPurge: false,
-    noCollectionGeneration: true,
     usageInstructions:
       "Drag plugins to change their load order, or edit a position number. Lower entries override earlier ones. Base game plugins are locked; masters must load before their dependants. Use Sort via LOOT to sort once.",
     condition,

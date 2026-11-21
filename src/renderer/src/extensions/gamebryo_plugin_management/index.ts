@@ -29,6 +29,7 @@ import { discoveryByGame } from "../gamemode_management/selectors";
 import { installPathForGame } from "../mod_management/selectors";
 import {
   activeGameId,
+  activeProfile,
   lastActiveProfileForGame,
   profileById,
 } from "../profile_management/selectors";
@@ -298,6 +299,26 @@ function register(
     const profileId = state.settings.profiles.activeProfileId;
     const gameId = activeGameId(state);
     if (!profileId || !supportsBetaLoadOrder(gameId)) return;
+    const confirm = enabled ? "Switch to Beta" : "Switch to Classic";
+    const result = await context.api.showDialog(
+      "question",
+      enabled ? "Switch to Beta load order?" : "Switch to Classic load order?",
+      {
+        text: enabled
+          ? "Your current plugin order will stay in place. Automatic LOOT sorting will pause for this profile. You can still use Sort via LOOT."
+          : "Your current plugin order will stay in place when you switch. The next LOOT sort may change it.",
+      },
+      [{ label: "Cancel", default: true }, { label: confirm }],
+      "switch-bethesda-load-order",
+    );
+    state = context.api.getState();
+    if (
+      result.action !== confirm ||
+      state.settings.profiles.activeProfileId !== profileId ||
+      activeGameId(state) !== gameId ||
+      isBetaLoadOrder(state) === enabled
+    )
+      return;
     if (!enabled && pluginFormat(gameId) === "original") {
       // Timestamp-based games need the latest order written while Beta still controls file times.
       // The ordinary Redux-to-persistor update is debounced.
@@ -1299,6 +1320,14 @@ function init(context: IExtensionContextExt) {
             handleModInstalled(context.api, gameId, modId);
           },
         );
+
+        context.api.onAsync("refresh-collection-plugins", (profileId: string, gameId: string) => {
+          const profile = activeProfile(context.api.getState());
+          if (profile?.id !== profileId || profile.gameId !== gameId || !gameSupported(gameId)) {
+            return Promise.resolve();
+          }
+          return updatePluginList(store, profile.modState, gameId, profileId);
+        });
 
         context.api.events.on(
           "collection-postprocess-complete",

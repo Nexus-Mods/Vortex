@@ -36,12 +36,15 @@ export async function genCollectionLoadOrder(
   const state = api.getState();
   try {
     const prev = loadOrderForProfile(state, profileId, gameEntry.loadOrderId);
-    let loadOrder = await gameEntry.deserializeLoadOrder();
-    loadOrder = loadOrder.filter((entry) =>
+    const deployed = await gameEntry.deserializeLoadOrder();
+    const loadOrder = deployed.filter((entry) =>
       collection !== undefined
         ? isValidMod(mods[entry.modId]) && isModInCollection(collection, mods[entry.modId])
         : isValidMod(mods[entry.modId]),
     );
+    // Direct writers validate the merged order on import. Export snapshots only collection
+    // members, whose masters can come from outside the collection.
+    if (gameEntry.writesOnUserEdit) return loadOrder;
     const validRes: IValidationResult = await gameEntry.validate(prev, loadOrder);
     assertValidationResult(validRes);
     if (validRes !== undefined) {

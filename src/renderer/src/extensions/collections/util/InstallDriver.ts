@@ -1,7 +1,7 @@
 import * as path from "path";
 
 import type * as nexusApi from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 import Bluebird from "bluebird";
 
 import * as installActions from "../../../actions/collectionInstallTracking";
@@ -30,6 +30,8 @@ import Debouncer from "../../../util/Debouncer";
 import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
+import { setBetaLoadOrder } from "../../gamebryo_plugin_management/actions/settings";
+import { supportsBetaLoadOrder } from "../../gamebryo_plugin_management/betaLoadOrder";
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
@@ -55,6 +57,11 @@ import { postprocessCollection } from "../postprocessCollection";
 import type { CollectionPauseTrigger } from "../types/CollectionPauseTrigger";
 import type { ICollection } from "../types/ICollection";
 import type { IRevisionEx } from "../types/IRevisionEx";
+import {
+  chooseCollectionLoadOrder,
+  type ICollectionProfileSelection,
+  savedBethesdaOrder,
+} from "./bethesdaLoadOrder";
 import { applyPatches } from "./binaryPatching";
 import {
   type CollectionInstallOutcome,
@@ -90,6 +97,8 @@ export type UpdateCB = () => void;
 class InstallDriver {
   private mApi: IExtensionApi;
   private mProfile: IProfile;
+  private mManualOrderProfileId?: string;
+  private mStarting = false;
   private mGameId: string;
   private mCollection: IMod;
   private mLastCollection: IMod;
@@ -418,7 +427,10 @@ class InstallDriver {
     this.mLastCollection = this.mCollection = collection;
     this.mGameId = profile?.gameId ?? activeGameId(this.mApi.getState());
 
-    await this.startInstall();
+    if ((await this.startInstall()) === false) {
+      this.onStop();
+      return;
+    }
     await this.initCollectionInfo();
 
     this.triggerUpdate();
@@ -586,12 +598,12 @@ class InstallDriver {
     this.triggerUpdate();
   }
 
-  public async continue() {
+  public async continue(selection: ICollectionProfileSelection = {}) {
     if (this.canContinue() && this.mCollection?.archiveId !== undefined) {
       await this.initCollectionInfo();
 
       const steps = {
-        query: this.startInstall,
+        query: () => this.startInstall(selection),
         start: this.begin,
         disclaimer: this.closeDisclaimers,
         installing: this.finishInstalling,
@@ -601,6 +613,7 @@ class InstallDriver {
       if (res !== false) {
         this.triggerUpdate();
       }
+      return res;
     }
   }
 
@@ -681,6 +694,10 @@ class InstallDriver {
 
   private async onDidInstallDependencies(gameId: string, modId: string, recommendations: boolean) {
     const mods = this.mApi.getState().persistent.mods[gameId];
+    const manualOrderProfileId =
+      gameId === this.mGameId && modId === this.mCollection?.id
+        ? this.mManualOrderProfileId
+        : undefined;
 
     if (mods[modId]?.type === MOD_TYPE) {
       log("info", "did install dependencies", { gameId, modId });
@@ -720,7 +737,7 @@ class InstallDriver {
       }
     }
 
-    await this.finalizeInstalledCollection(gameId, modId, mods);
+    await this.finalizeInstalledCollection(gameId, modId, mods, manualOrderProfileId);
   }
 
   /**
@@ -735,6 +752,7 @@ class InstallDriver {
     gameId: string,
     modId: string,
     mods: Record<string, IMod>,
+    manualOrderProfileId?: string,
   ) {
     const mod = mods[modId];
     if (mod === undefined || mod.type !== MOD_TYPE) {
@@ -753,7 +771,14 @@ class InstallDriver {
       this.triggerUpdate();
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-      await postprocessCollection(this.mApi, gameId, mod, collectionInfo, mods);
+      await postprocessCollection(
+        this.mApi,
+        gameId,
+        mod,
+        collectionInfo,
+        mods,
+        manualOrderProfileId,
+      );
 
       this.mPostprocessing = false;
 
@@ -801,6 +826,7 @@ class InstallDriver {
 
     this.mCollection = undefined;
     this.mProfile = undefined;
+    this.mManualOrderProfileId = undefined;
     this.mGameId = undefined;
     this.mInstalledMods = [];
     this.setDependentMods([]);
@@ -808,7 +834,9 @@ class InstallDriver {
     this.mOnStop?.();
   }
 
-  private startInstall = async () => {
+  private startInstall = async (selection: ICollectionProfileSelection = {}) => {
+    if (this.mStarting) return false;
+    this.mStarting = true;
     // a restarted install replaces the hold it already has
     this.mOnStop?.();
     // hold off the checks while the collection installs
@@ -826,9 +854,10 @@ class InstallDriver {
     // release when the install never starts
     let started: boolean | undefined = false;
     try {
-      started = await this.startImpl();
+      started = await this.startImpl(selection);
       return started;
     } finally {
+      this.mStarting = false;
       if (started === false) {
         clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
         this.mOnStop?.();
@@ -836,32 +865,40 @@ class InstallDriver {
     }
   };
 
-  private startImpl = async () => {
+  private startImpl = async (selection: ICollectionProfileSelection) => {
     if (this.mCollection?.archiveId === undefined || this.mProfile === undefined) {
       return false;
+    }
+
+    const collection = this.mCollection;
+    const profile = this.mProfile;
+    const gameId = this.mGameId;
+    this.mManualOrderProfileId = undefined;
+    let applyManualOrder = false;
+    if (supportsBetaLoadOrder(VortexGameId(gameId))) {
+      const manifest = await Promise.resolve()
+        .then(() => {
+          const staging = installPathForGame(this.mApi.getState(), gameId);
+          return readCollection(
+            this.mApi,
+            path.join(staging, collection.installationPath, "collection.json"),
+          );
+        })
+        .catch(() => undefined);
+      if (manifest && savedBethesdaOrder(manifest)) {
+        const choice = await chooseCollectionLoadOrder(this.mApi, profile, selection);
+        if (choice === "cancel" || this.mProfile !== profile || this.mCollection !== collection) {
+          return false;
+        }
+        applyManualOrder = choice === "apply";
+      }
+      if (this.mProfile !== profile || this.mCollection !== collection) return false;
     }
 
     this.mInstalledMods = [];
     this.mInstallingMod = undefined;
     this.mInstallDone = false;
     this.mStep = "start";
-
-    const collection = this.mCollection;
-    const profile = this.mProfile;
-    const gameId = this.mGameId;
-
-    // Durable "this profile still needs its plugins sorted/enabled" marker, set as soon as the
-    // install begins so an interruption at ANY point (crash, quit mid-install) leaves a record.
-    // Load order and plugin-enable state are per-profile. The marker drains on the next activation
-    // of this profile (deploy then sort) and is cleared only when a plugin sort actually succeeds.
-    // Only plugin-managed (gamebryo) games sort plugins, and only gamebryo clears the marker, so
-    // restrict it to those games or non-gamebryo games would accumulate entries nothing clears.
-    if (profile?.id !== undefined && isGamebryoGame(gameId)) {
-      // Date.now() rather than Temporal: the stored value is a JSON-serialized epoch-ms number and
-      // both produce exactly that. Temporal is only available on the Electron renderer, not under
-      // the vitest (Node) test runner, so using it here would throw in tests for no functional gain.
-      this.mApi.store.dispatch(setPendingPluginSort(profile.id, collection.id, Date.now()));
-    }
 
     const state: IState = this.mApi.store.getState();
     const mods = state.persistent.mods[gameId] ?? {};
@@ -926,6 +963,20 @@ class InstallDriver {
         this.mInstallDone = true;
         return false;
       }
+    }
+
+    if (applyManualOrder) {
+      if (
+        this.mCollection !== collection ||
+        this.mProfile !== profile ||
+        this.mApi.getState().settings.profiles.activeProfileId !== profile.id
+      )
+        return false;
+      this.mApi.store.dispatch(setBetaLoadOrder(profile.id, true));
+      this.mManualOrderProfileId = profile.id;
+    } else if (isGamebryoGame(gameId)) {
+      // An interrupted rules-based install still needs sorting on the next profile activation.
+      this.mApi.store.dispatch(setPendingPluginSort(profile.id, collection.id, Date.now()));
     }
 
     // Errors raised from here until the install stops name the collection, so a failure can be

@@ -1,4 +1,4 @@
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 
 import { makeLoadOrderEntry, makeMod, makeRegisteredLoadOrder } from "../../../test-utils/builders";
 import { test } from "../../../test-utils/fbloTest";
@@ -47,6 +47,27 @@ describe("generate", () => {
     expect(exported.fbLoadOrders).toEqual([
       { id: "redmod", entries: [entry("a.redmod", "mod-a"), entry("b.redmod", "mod-b")] },
     ]);
+  });
+
+  test("direct writers export collection members and leave applying them to the game", async ({
+    makeFblo,
+  }) => {
+    const fblo = makeFblo({ mods });
+    const deployed = [{ ...entry("b.esp", "mod-b"), enabled: false }, entry("a.esm", "mod-a")];
+    const validate = vi.fn().mockResolvedValue(undefined);
+    const direct = fblo.registerLoadOrder({
+      loadOrderId: "manual",
+      deserializeLoadOrder: readsBack(deployed),
+      validate,
+      writesOnUserEdit: true,
+    });
+
+    const exported = await generate(fblo.api, [direct], ["mod-b"], mods);
+    expect(validate).not.toHaveBeenCalled();
+    expect(exported.fbLoadOrders).toEqual([{ id: "manual", entries: [deployed[0]] }]);
+
+    await parser(fblo.api, [direct], fblo.gameId, collectionWith(exported));
+    expect(storedNamedLoadOrder(fblo.getState(), fblo.profileId, "manual")).toBeUndefined();
   });
 
   test("a game without a primary exports its adopter's order as the legacy key", async ({

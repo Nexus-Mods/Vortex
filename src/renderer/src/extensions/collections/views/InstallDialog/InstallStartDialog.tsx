@@ -149,6 +149,7 @@ function InstallDialogConfirmProfile(props: IInstallDialogConfirmProfileProps) {
  */
 class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
   private mLastCollection: IMod;
+  private mCreatedProfileId?: string;
   private mUnsubscribeDriver?: () => void;
   constructor(props: IProps) {
     super(props);
@@ -195,6 +196,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       }
 
       if (driver.collection !== this.mLastCollection) {
+        this.mCreatedProfileId = undefined;
         this.nextState.confirmProfile = false;
         this.nextState.selectedProfile = undefined;
         this.mLastCollection = driver.collection;
@@ -381,6 +383,7 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
           lastActivated: 0,
         };
         onAddProfile(newProfile);
+        this.mCreatedProfileId = profileId;
         onShowProfilesPage(useModernLayout);
         this.nextState.selectedProfile = profileId;
       }
@@ -409,7 +412,21 @@ class InstallDialog extends ComponentEx<IProps, IInstallDialogState> {
       driver.profile = allProfiles[selectedProfile];
     }
 
-    driver.continue();
+    const target = driver.profile;
+    driver
+      .continue({
+        newProfileId: this.mCreatedProfileId,
+        activateProfile: this.props.onSwitchProfile,
+      })
+      .then((started) => {
+        if (started === false && driver.profile === target) {
+          driver.profile = allProfiles[this.props.nextProfileId] ?? profile;
+          this.nextState.confirmProfile = false;
+        }
+      })
+      .catch((err) =>
+        this.context.api.showErrorNotification("Could not start collection installation", err),
+      );
   }
 }
 
