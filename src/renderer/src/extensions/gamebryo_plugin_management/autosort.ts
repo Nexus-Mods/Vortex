@@ -26,6 +26,7 @@ import { activeGameId, activeProfile } from "../profile_management/selectors";
 /* eslint-disable */
 import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
+import { isBetaLoadOrder } from "./betaLoadOrder";
 import { NAMESPACE } from "./statics";
 import { EdgeType, groupsPath } from "./types/ILoot";
 import type { ICycleEdge, ILootRef } from "./types/ILoot";
@@ -241,10 +242,14 @@ class LootInterface {
   };
 
   private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
-    const outcome = await this.runSort(manual);
+    const result = await this.runSort(manual);
+    const state = this.mExtensionApi.getState();
+    const outcome: SortOutcome =
+      result.result === "sorted" && !manual && isBetaLoadOrder(state)
+        ? { result: "skipped" }
+        : result;
     if (outcome.result === "sorted") {
       const { store } = this.mExtensionApi;
-      const state = store.getState();
       store.dispatch(updatePluginOrder(outcome.sorted, false, state.settings.plugins.autoEnable));
       const sortedProfileId = activeProfile(state)?.id;
       if (sortedProfileId !== undefined) {
@@ -312,7 +317,8 @@ class LootInterface {
       }
       return { result: "deferred" };
     }
-    if (!manual && !store.getState().settings.plugins.autoSort) {
+    const state = store.getState();
+    if (!manual && (!state.settings.plugins.autoSort || isBetaLoadOrder(state))) {
       return { result: "skipped" };
     }
     try {

@@ -24,6 +24,7 @@ import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, delay, setdefault } from "../../util/util";
+import { setFBForceUpdate } from "../file_based_loadorder/actions/session";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import { installPathForGame } from "../mod_management/selectors";
 import {
@@ -35,14 +36,17 @@ import { profilePath } from "../profile_management/util/manage";
 /* eslint-disable */
 import { setPluginEnabled } from "./actions/loadOrder";
 import { clearNewPluginCounter, setPluginFilePath, setPluginList } from "./actions/plugins";
+import { setBetaLoadOrder } from "./actions/settings";
 import { clearUserlist, setGroup } from "./actions/userlist";
 import { openGroupEditor, setCreateRule } from "./actions/userlistEdit";
 import { testIncompatibleArchives } from "./archiveCheck";
 import LootInterface from "./autosort";
+import { isBetaLoadOrder, supportsBetaLoadOrder } from "./betaLoadOrder";
 import { startDeployWatcher, type IDeployWatcher } from "./deployWatcher";
 import { ESPFile } from "./esp/ESPFile";
 import { genLockIndexAttribute, onceIndexLock } from "./indexlock";
 import { makeLootSortAsync } from "./lootSortAsync";
+import { registerManualLoadOrders } from "./manualLoadOrder";
 import { makePluginSync, type IPluginSync } from "./pluginSync";
 import { REDUCER_BINDINGS } from "./reducers/bindings";
 import { IESPFile } from "./types/IESPFile";
@@ -239,7 +243,7 @@ function register(
     visible: () => {
       const state = context.api.store.getState();
       const gameMode = activeGameId(state);
-      return gameSupported(gameMode);
+      return gameSupported(gameMode) && !isBetaLoadOrder(state);
     },
     props: () => ({
       gameSupported,
@@ -287,6 +291,34 @@ function register(
   context.registerSettings("Workarounds", Settings, undefined, () => {
     return knownGame(activeGameId(context.api.store.getState()));
   });
+  const switchLoadOrderView = (enabled: boolean) => {
+    const state = context.api.getState();
+    const profileId = state.settings.profiles.activeProfileId;
+    if (!profileId || !supportsBetaLoadOrder(activeGameId(state))) return;
+    context.api.store.dispatch(setBetaLoadOrder(profileId, enabled));
+    context.api.events.emit(
+      "show-main-page",
+      enabled ? "file-based-loadorder" : "gamebryo-plugins",
+    );
+  };
+  context.registerAction(
+    "gamebryo-plugin-icons",
+    1000,
+    "toggle-disabled",
+    {},
+    "Switch to beta view",
+    () => switchLoadOrderView(true),
+    () => supportsBetaLoadOrder(activeGameId(context.api.getState())),
+  );
+  context.registerAction(
+    "fb-load-order-icons",
+    1000,
+    "toggle-enabled",
+    {},
+    "Switch to classic view",
+    () => switchLoadOrderView(false),
+    () => isBetaLoadOrder(context.api.getState()),
+  );
 
   context.registerAPI(
     "lootSortAsync",
@@ -297,6 +329,25 @@ function register(
       sortFiles: (pluginFilePaths) => loot.sortFiles(pluginFilePaths),
     }),
     { minArguments: 1 },
+  );
+
+  context.registerAction(
+    "fb-load-order-icons",
+    600,
+    "loot-sort",
+    {},
+    "Sort via LOOT",
+    () => {
+      context.api.events.emit("autosort-plugins", true, () => {
+        context.api.store.dispatch(
+          setFBForceUpdate(context.api.getState().settings.profiles.activeProfileId),
+        );
+      });
+    },
+    () => {
+      const state = context.api.getState();
+      return isBetaLoadOrder(state) && gameSupported(activeGameId(state));
+    },
   );
 
   context.registerAction("gamebryo-plugin-icons", 100, "connection", {}, "Manage Rules", () => {
@@ -461,10 +512,10 @@ function initPersistor(context: IExtensionContextExt) {
 
   // Initialize persistors in renderer process (where Redux store now lives)
   if (pluginPersistor === undefined) {
-    pluginPersistor = new PluginPersistor(
-      onError,
-      () => context.api.store.getState().settings.plugins.autoSort,
-    );
+    pluginPersistor = new PluginPersistor(onError, () => {
+      const state = context.api.store.getState();
+      return state.settings.plugins.autoSort && !isBetaLoadOrder(state);
+    });
     pluginPersistor.setExternalChangeCallback(makePluginConflictPrompt(context.api));
     pluginPersistor.setEmptyListCallback(makeEmptyListNotice(context.api));
   }
@@ -1183,6 +1234,7 @@ function init(context: IExtensionContextExt) {
         const store = context.api.store;
 
         loot = new LootInterface(context.api);
+        registerManualLoadOrders(context.api);
 
         deployWatcher = startDeployWatcher(context.api, (profileId) =>
           onDidDeploy(context.api, profileId),

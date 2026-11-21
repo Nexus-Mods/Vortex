@@ -5,6 +5,7 @@ import * as actions from "../actions/settings";
 export interface ISettingsPlugins {
   autoSort: boolean;
   autoEnable: boolean;
+  betaLoadOrder?: { [profileId: string]: boolean };
   // keyed by profile id; absent until a profile's plugin management is first toggled
   pluginManagementEnabled?: { [profileId: string]: boolean };
 }
@@ -27,6 +28,10 @@ export const settingsReducer = actionsToReducerSpec<ISettingsPlugins, typeof act
   {
     setAutoSortEnabled: (state, payload) => ({ ...state, autoSort: payload }),
     setAutoEnable: (state, payload) => ({ ...state, autoEnable: payload }),
+    setBetaLoadOrder: (state, { profileId, enabled }) => ({
+      ...state,
+      betaLoadOrder: { ...state.betaLoadOrder, [profileId]: enabled },
+    }),
     setPluginManagementEnabled: (state, payload) => {
       const { profileId, enabled } = payload;
       return {

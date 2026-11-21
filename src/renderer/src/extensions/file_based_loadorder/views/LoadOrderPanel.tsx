@@ -122,6 +122,7 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
           itemRenderer={chosenItemRenderer}
           items={enabled}
           itemTypeId="file-based-lo-draggable-entry"
+          reorderOnDirectHover={gameEntry.reorderOnDirectHover}
           virtualized={
             gameEntry.customItemRenderer === undefined || gameEntry.uniformRowHeight === true
           }

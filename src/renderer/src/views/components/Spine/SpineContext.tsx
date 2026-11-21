@@ -35,6 +35,7 @@ interface IStateWithPlugins extends IState {
   settings: IState["settings"] & {
     plugins?: {
       pluginManagementEnabled?: { [profileId: string]: boolean };
+      betaLoadOrder?: { [profileId: string]: boolean };
     };
   };
 }
@@ -79,6 +80,10 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     (state: IStateWithPlugins) => state.settings.plugins?.pluginManagementEnabled,
   );
 
+  const betaLoadOrder = useSelector(
+    (state: IStateWithPlugins) => state.settings.plugins?.betaLoadOrder,
+  );
+
   // Game filter for downloads mode, stored in session state
   const downloadGameFilter = useSelector(
     (state: IState) => state.session.base?.downloadGameFilter ?? null,
@@ -109,7 +114,15 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
           page.id !== "Downloads" &&
           isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
+    [
+      mainPages,
+      isPageVisible,
+      activeGameId,
+      profilesVisible,
+      pluginManagementEnabled,
+      activeProfileId,
+      betaLoadOrder,
+    ],
   );
 
   const gamePages: IMainPage[] = useMemo(
@@ -117,7 +130,15 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       mainPages.filter(
         (page) => page.group === "per-game" && page.id !== "game-downloads" && isPageVisible(page),
       ),
-    [mainPages, isPageVisible, activeGameId, profilesVisible, pluginManagementEnabled],
+    [
+      mainPages,
+      isPageVisible,
+      activeGameId,
+      profilesVisible,
+      pluginManagementEnabled,
+      activeProfileId,
+      betaLoadOrder,
+    ],
   );
 
   const mainPage = useSelector(mainPageSelector);

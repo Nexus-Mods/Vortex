@@ -8,7 +8,7 @@ import { makeProfile } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
-import { setAutoSortEnabled } from "./actions/settings";
+import { setAutoSortEnabled, setBetaLoadOrder } from "./actions/settings";
 import LootInterface from "./autosort";
 
 // the five seams the autosort suites share; each factory delegates to lootMocks so the
@@ -87,6 +87,18 @@ describe("LootInterface autosort-plugins", () => {
     await harness.sort(false);
 
     expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+  });
+
+  test("Drag and Drop skips automatic sorting and still accepts Sort via LOOT", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    await harness.sort(false);
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+    await harness.sort(true);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]);
   });
 
   test("defers sorting while a profile switch is pending", async ({ makeLoot }) => {

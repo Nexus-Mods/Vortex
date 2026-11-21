@@ -158,6 +158,8 @@ export interface ILoadOrderGameInfo {
    *  guarantees this, so custom renderers must opt in.
    */
   uniformRowHeight?: boolean;
+  /** Use the directly hovered row as the reorder target. */
+  reorderOnDirectHover?: boolean;
 
   /**
    * By default the FBLO extension will attempt to automatically generate the data
