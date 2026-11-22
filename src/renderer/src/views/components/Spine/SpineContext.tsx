@@ -14,6 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useMainContext, usePagesContext } from "@/contexts";
 import { setNextProfile } from "@/extensions/profile_management/actions/settings";
 import { setLastPage } from "@/extensions/settings_interface/actions/interface";
+import { lastPages as lastPagesSelector } from "@/extensions/settings_interface/selectors";
 import type { IMainPage } from "@/types/IMainPage";
 import type { IState } from "@/types/IState";
 
@@ -165,7 +166,7 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
 
   // The last page open on Home and in each game. Persisted, so a restart reopens it. Read
   // through a ref: it changes on every navigation, and the effects below must not re-run for that.
-  const lastPage = useSelector((state: IState) => state.settings.interface.lastPage);
+  const lastPage = useSelector(lastPagesSelector);
   const lastPageRef = useRef(lastPage);
   lastPageRef.current = lastPage;
 

@@ -67,7 +67,7 @@ let spine: ReturnType<typeof useSpineContext>;
 /** The pages the spine opened, ignoring the remembered-page bookkeeping it also dispatches. */
 const navigations = () =>
   store.dispatch.mock.calls
-    .map(([action]) => action)
+    .map(([action]: [{ type: string }]) => action)
     .filter((action) => action.type === setOpenMainPage.getType());
 
 const Probe = () => {
