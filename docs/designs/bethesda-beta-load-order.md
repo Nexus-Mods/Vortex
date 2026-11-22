@@ -21,6 +21,8 @@ Add the shared drag-and-drop Load order page as a per-profile opt-in for games t
 11. After a pause or a restart, resuming the same collection install on the same profile remembers **Use Saved Order** or **Keep Current Sorting**. A different profile or a fresh install after completion or cancellation gets its own choice.
 12. Collections installed in Beta leave automatic LOOT sorting paused. If the profile returns to Classic with automatic sorting off, those installs never cause a deferred LOOT sort. The user can run LOOT manually.
 13. When a new collection is imported during or after a profile switch, its install prompt opens on the current profile for that game once the switch finishes.
+14. **Load Order Export** writes a JSON snapshot of the full plugin order and enabled states for that profile. **Load Order Import** restores a snapshot whose plugin set matches the deployed plugins and whose order satisfies current validation. Cancelling, malformed JSON, or a rejected snapshot leaves the game files unchanged.
+15. Searching filters the visible rows. **Refresh List** reloads the committed order. **Sort by Deploy Order** applies mod deployment rules through the same validation and preserves plugin enabled states.
 
 ## Collections compatibility
 
