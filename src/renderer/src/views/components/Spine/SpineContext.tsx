@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import React, {
   type FC,
   createContext,
@@ -12,6 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { useMainContext, usePagesContext } from "@/contexts";
 import { setNextProfile } from "@/extensions/profile_management/actions/settings";
+import { setLastPage } from "@/extensions/settings_interface/actions/interface";
 import type { IMainPage } from "@/types/IMainPage";
 import type { IState } from "@/types/IState";
 
@@ -45,13 +47,19 @@ interface ISpineContext {
   /** When selection is "downloads", the game to filter by (null = all) */
   downloadGameFilter: string | null;
   selectHome: () => void;
-  selectGame: (gameId: string) => void;
+  selectGame: (gameId: VortexGameId) => void;
   selectDownloads: (gameId?: string) => void;
   setDownloadGameFilter: (gameId: string | null) => void;
   selectGlobalPage: (pageId: string) => void;
 }
 
 const SpineContext = createContext<ISpineContext | undefined>(undefined);
+
+/** The page last open in a game, or on Home when no game is given. */
+const storedPage = (
+  lastPage: IState["settings"]["interface"]["lastPage"],
+  gameId?: VortexGameId,
+): string | undefined => (gameId === undefined ? lastPage?.home : lastPage?.games?.[gameId]);
 
 export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
   children,
@@ -155,14 +163,27 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
         ? homePages
         : gamePages;
 
-  // Track the last active page per spine context (home / per game)
-  const lastPageRef = useRef<Record<string, string>>({});
+  // The last page open on Home and in each game. Persisted, so a restart reopens it. Read
+  // through a ref: it changes on every navigation, and the effects below must not re-run for that.
+  const lastPage = useSelector((state: IState) => state.settings.interface.lastPage);
+  const lastPageRef = useRef(lastPage);
+  lastPageRef.current = lastPage;
+
+  // The game's (or Home's) last page, if it can still be shown; a page from a removed
+  // extension, or one hidden by a setting since, is not.
+  const rememberedPage = useCallback(
+    (pages: IMainPage[], gameId?: VortexGameId): string | undefined => {
+      const page = storedPage(lastPageRef.current, gameId);
+      return pages.some((p) => p.id === page) ? page : undefined;
+    },
+    [],
+  );
 
   // Save the current page whenever it changes, but only if it's
   // a valid page for the current context (avoid saving e.g. "Games"
   // global page as a game's last page)
   useEffect(() => {
-    if (!mainPage) {
+    if (!mainPage || selection.type === "downloads") {
       return;
     }
 
@@ -171,9 +192,12 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       return;
     }
 
-    const key = selection.type === "game" ? selection.gameId : selection.type;
-    lastPageRef.current[key] = mainPage;
-  }, [mainPage, selection, visiblePages]);
+    // A game selection is always the active game.
+    const gameId = selection.type === "game" ? activeGameId : undefined;
+    if (storedPage(lastPageRef.current, gameId) !== mainPage) {
+      dispatch(setLastPage({ pageId: mainPage, gameId }));
+    }
+  }, [mainPage, selection, visiblePages, activeGameId, dispatch]);
 
   // When the spine selection changes (home↔game or between games), ensure
   // we're on a valid page for the new context. Uses a ref for mainPage so the
@@ -189,17 +213,30 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
 
     if (selection.type === "downloads") {
       dispatch(setOpenMainPage("Downloads", false));
-    } else if (selection.type === "game" && defaultGamePage !== undefined) {
-      dispatch(setOpenMainPage(defaultGamePage, false));
-    } else if (selection.type === "home" && defaultHomePage !== undefined) {
-      dispatch(setOpenMainPage(defaultHomePage, false));
+      return;
     }
-  }, [selection, visiblePages, defaultGamePage, defaultHomePage, dispatch]);
+
+    const target =
+      selection.type === "game"
+        ? (rememberedPage(visiblePages, activeGameId) ?? defaultGamePage)
+        : (rememberedPage(visiblePages) ?? defaultHomePage);
+    if (target !== undefined) {
+      dispatch(setOpenMainPage(target, false));
+    }
+  }, [
+    selection,
+    visiblePages,
+    activeGameId,
+    rememberedPage,
+    defaultGamePage,
+    defaultHomePage,
+    dispatch,
+  ]);
 
   // A game picked in the spine that isn't active yet, and the page it last showed,
   // taken before the switch records the current page as its own. That page opens
   // once the game is active, after the profile switch or the profile picker.
-  const pendingGameRef = useRef<{ gameId: string; page?: string } | undefined>(undefined);
+  const pendingGameRef = useRef<{ gameId: VortexGameId; page?: string } | undefined>(undefined);
 
   useEffect(() => {
     const pending = pendingGameRef.current;
@@ -207,20 +244,22 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       return;
     }
 
-    const targetPage = pending.page || defaultGamePage;
+    // Checked against the now active game's pages, which the page was taken without.
+    const remembered = gamePages.some((p) => p.id === pending.page) ? pending.page : undefined;
+    const targetPage = remembered ?? defaultGamePage;
     if (targetPage === undefined) {
       return;
     }
 
     pendingGameRef.current = undefined;
     dispatch(setOpenMainPage(targetPage, false));
-  }, [activeGameId, defaultGamePage, dispatch]);
+  }, [activeGameId, gamePages, defaultGamePage, dispatch]);
 
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
     pendingGameRef.current = undefined;
-    dispatch(setOpenMainPage(lastPageRef.current["home"] || defaultHomePage, false));
-  }, [defaultHomePage, dispatch]);
+    dispatch(setOpenMainPage(rememberedPage(homePages) ?? defaultHomePage, false));
+  }, [homePages, rememberedPage, defaultHomePage, dispatch]);
 
   const selectDownloads = useCallback(
     (gameId?: string) => {
@@ -232,7 +271,7 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
   );
 
   const selectGame = useCallback(
-    (gameId: string) => {
+    (gameId: VortexGameId) => {
       const profileId = lastActiveProfile[gameId];
       const profileExists =
         profileId !== undefined && profileByIdSelector(api.getState(), profileId) !== undefined;
@@ -240,7 +279,7 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       if (!profileExists) {
         // No usable last-active profile for this game — ask the
         // profile_management extension to show the profile picker dialog.
-        pendingGameRef.current = { gameId, page: lastPageRef.current[gameId] };
+        pendingGameRef.current = { gameId, page: storedPage(lastPageRef.current, gameId) };
         api?.events.emit("activate-game", gameId);
         return;
       }
@@ -250,17 +289,26 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       }
 
       if (gameId !== activeGameId) {
-        pendingGameRef.current = { gameId, page: lastPageRef.current[gameId] };
+        pendingGameRef.current = { gameId, page: storedPage(lastPageRef.current, gameId) };
         return;
       }
 
       pendingGameRef.current = undefined;
-      const targetPage = lastPageRef.current[gameId] || defaultGamePage;
+      const targetPage = rememberedPage(gamePages, gameId) ?? defaultGamePage;
       if (targetPage !== undefined) {
         dispatch(setOpenMainPage(targetPage, false));
       }
     },
-    [lastActiveProfile, activeProfileId, activeGameId, dispatch, api, defaultGamePage],
+    [
+      lastActiveProfile,
+      activeProfileId,
+      activeGameId,
+      dispatch,
+      api,
+      rememberedPage,
+      gamePages,
+      defaultGamePage,
+    ],
   );
 
   const selectGlobalPage = useCallback(

@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import { describe, it, expect } from "vitest";
 
 import type { ISettingsInterface } from "@/types/IState";
@@ -128,5 +129,27 @@ describe("setReduceMotion", () => {
 
   it("has no default, so an untouched setting follows the OS", () => {
     expect(settingsReducer.defaults).not.toHaveProperty("reduceMotion");
+  });
+});
+
+describe("setLastPage", () => {
+  it("remembers Home's page and each game's apart", () => {
+    let state = settingsReducer.reducers.SET_LAST_PAGE(
+      defaults,
+      actions.setLastPage({ pageId: "Dashboard" }).payload,
+    );
+    state = settingsReducer.reducers.SET_LAST_PAGE(
+      state,
+      actions.setLastPage({ pageId: "Mods", gameId: VortexGameId("skyrim") }).payload,
+    );
+    state = settingsReducer.reducers.SET_LAST_PAGE(
+      state,
+      actions.setLastPage({ pageId: "health", gameId: VortexGameId("stardew") }).payload,
+    );
+
+    expect(state.lastPage).toEqual({
+      home: "Dashboard",
+      games: { [VortexGameId("skyrim")]: "Mods", [VortexGameId("stardew")]: "health" },
+    });
   });
 });

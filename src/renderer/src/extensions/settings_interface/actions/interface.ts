@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import * as reduxAct from "redux-act";
 
 import safeCreateAction from "../../../actions/safeCreateAction";
@@ -58,3 +59,11 @@ export const setShowGameArt = safeCreateAction("SET_SHOW_GAME_ART", (enabled: bo
  * then the setting is absent and the operating system's preference is followed.
  */
 export const setReduceMotion = safeCreateAction("SET_REDUCE_MOTION", (enabled: boolean) => enabled);
+
+/**
+ * remember the page open in a spine context: the game's when gameId is set, Home's otherwise
+ */
+export const setLastPage = reduxAct.createAction(
+  "SET_LAST_PAGE",
+  (page: { pageId: string; gameId?: VortexGameId }) => page,
+);
