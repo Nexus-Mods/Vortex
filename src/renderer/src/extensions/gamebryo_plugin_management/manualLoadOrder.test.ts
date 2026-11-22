@@ -1,33 +1,40 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, utimes, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 
 import { VortexGameId } from "@vortex/shared";
-import { describe, expect, vi } from "vitest";
+import { describe, expect, onTestFinished, vi } from "vitest";
 
 import { makePlugin } from "../../test-utils/builders";
+import { installDiskFS } from "../../test-utils/fsApi";
 import { test } from "../../test-utils/gamebryoTest";
 import { makeTempDir } from "../../test-utils/tempDir";
 import { setPluginOrder } from "./actions/loadOrder";
 import { setPluginList } from "./actions/plugins";
-import { setBetaLoadOrder } from "./actions/settings";
+import { setAutoSortEnabled, setBetaLoadOrder } from "./actions/settings";
+import { controlsPluginOrder } from "./betaLoadOrder";
 import {
   makeManualLoadOrder,
   registerManualLoadOrders,
   validateManualLoadOrder,
 } from "./manualLoadOrder";
-import { initGameSupport } from "./util/gameSupport";
+import { initGameSupport, pluginPath } from "./util/gameSupport";
+import PluginPersistor from "./util/PluginPersistor";
 
-const baseGamePlugins = {
-  enderal: "Skyrim.esm",
-  enderalspecialedition: "Skyrim.esm",
-  fallout3: "Fallout3.esm",
-  fallout4: "Fallout4.esm",
-  fallout4vr: "Fallout4.esm",
-  falloutnv: "FalloutNV.esm",
-  oblivion: "Oblivion.esm",
-  skyrim: "Skyrim.esm",
-  skyrimse: "Skyrim.esm",
-  skyrimvr: "Skyrim.esm",
+const gameFixtures = {
+  enderal: { master: "Skyrim.esm", folder: "Enderal", original: true },
+  enderalspecialedition: {
+    master: "Skyrim.esm",
+    folder: "Enderal Special Edition",
+    original: false,
+  },
+  fallout3: { master: "Fallout3.esm", folder: "Fallout3", original: true },
+  fallout4: { master: "Fallout4.esm", folder: "Fallout4", original: false },
+  fallout4vr: { master: "Fallout4.esm", folder: "Fallout4VR", original: false },
+  falloutnv: { master: "FalloutNV.esm", folder: "falloutnv", original: true },
+  oblivion: { master: "Oblivion.esm", folder: "oblivion", original: true },
+  skyrim: { master: "Skyrim.esm", folder: "Skyrim", original: true },
+  skyrimse: { master: "Skyrim.esm", folder: "Skyrim Special Edition", original: false },
+  skyrimvr: { master: "Skyrim.esm", folder: "Skyrim VR", original: false },
 };
 const entry = (id: string, overrides = {}) => ({
   id,
@@ -74,17 +81,33 @@ describe("Bethesda drag-and-drop load order adapter", () => {
     harness.api.ext.addLoadOrderPage = add;
     registerManualLoadOrders(harness.api);
     const ids = add.mock.calls.map(([registration]) => registration.gameId);
-    expect(ids.toSorted()).toEqual(Object.keys(baseGamePlugins).toSorted());
+    expect(ids.toSorted()).toEqual(Object.keys(gameFixtures).toSorted());
     expect(ids).not.toContain("starfield");
     expect(ids).not.toContain("oblivionremastered");
   });
-  test.for(Object.entries(baseGamePlugins))(
-    "round-trips the shared adapter for %s",
-    async ([gameId, basePlugin], { makeGamebryo }) => {
-      const harness = makeGamebryo({ gameId });
-      await initGameSupport(harness.api);
+  test.for(Object.entries(gameFixtures))(
+    "round-trips the shared adapter and game files for %s",
+    async ([gameId, { master: basePlugin, folder, original }], { makeGamebryo }) => {
       const root = await makeTempDir("vortex-manual-order-");
+      const localAppData = path.join(root, "Local");
+      const gameDir = path.join(root, "Game");
+      const dataDir = path.join(gameDir, "Data");
+      const gameFiles = path.join(localAppData, folder);
       const names = [basePlugin, "Alpha.esp", "Beta.esp"];
+      await Promise.all([
+        mkdir(dataDir, { recursive: true }),
+        mkdir(gameFiles, { recursive: true }),
+      ]);
+      const harness = makeGamebryo({ gameId, gamePath: gameDir });
+      await initGameSupport(harness.api);
+      vi.stubEnv("LOCALAPPDATA", localAppData);
+      onTestFinished(() => {
+        vi.unstubAllEnvs();
+      });
+      const { restore } = installDiskFS();
+      onTestFinished(restore);
+      expect(pluginPath(gameId)).toBe(gameFiles);
+      harness.api.store.dispatch(setAutoSortEnabled(false));
       for (const name of names) {
         const headerSize = gameId === "oblivion" ? 20 : 24;
         const headerDataSize = 12;
@@ -95,7 +118,7 @@ describe("Bethesda drag-and-drop load order adapter", () => {
         bytes.writeUInt16LE(headerDataSize, headerSize + 4);
         bytes.write("TES4");
         if (name.endsWith(".esm")) bytes.writeUInt32LE(1, 8);
-        await writeFile(path.join(root, name), bytes);
+        await writeFile(path.join(dataDir, name), bytes);
       }
       harness.api.store.dispatch(
         setPluginList(
@@ -103,7 +126,7 @@ describe("Bethesda drag-and-drop load order adapter", () => {
             names.map((name) => [
               name.toLowerCase(),
               makePlugin({
-                filePath: path.join(root, name),
+                filePath: path.join(dataDir, name),
                 deployed: true,
                 isNative: false,
               }),
@@ -119,6 +142,50 @@ describe("Bethesda drag-and-drop load order adapter", () => {
       const baseline = await adapter.deserializeLoadOrder();
       const reordered = [baseline[0], { ...baseline[2], enabled: false }, baseline[1]];
       await adapter.serializeLoadOrder(reordered, baseline);
+
+      const alpha = path.join(dataDir, "Alpha.esp");
+      const beta = path.join(dataDir, "Beta.esp");
+      await Promise.all([
+        utimes(alpha, 1_600_000_000, 1_600_000_000),
+        utimes(beta, 1_600_000_010, 1_600_000_010),
+      ]);
+
+      const header = "# Automatically generated by Vortex\r\n";
+      const pluginFile = path.join(gameFiles, "plugins.txt");
+      const orderFile = path.join(gameFiles, "loadorder.txt");
+      await Promise.all([
+        writeFile(
+          pluginFile,
+          header + (original ? "Alpha.esp\r\nBeta.esp\r\n" : "*Alpha.esp\r\n*Beta.esp\r\n"),
+        ),
+        writeFile(orderFile, header + names.join("\r\n")),
+      ]);
+      const writeError = vi.fn();
+      const persistor = new PluginPersistor(writeError, () =>
+        controlsPluginOrder(harness.getState()),
+      );
+      persistor.setResetCallback(() => Promise.resolve());
+      try {
+        await persistor.loadFiles(gameId);
+        persistor.setKnownPlugins(
+          Object.fromEntries(names.map((name) => [name.toLowerCase(), name])),
+        );
+        await persistor.syncFromState(gameId, harness.getGamebryoState().loadOrder);
+        expect(writeError).not.toHaveBeenCalled();
+        const entries = (file: string) =>
+          readFile(file, "latin1").then((data) => data.split(/\r?\n/).slice(1).filter(Boolean));
+        expect(await entries(orderFile)).toEqual([basePlugin, "Beta.esp", "Alpha.esp"]);
+        expect(await entries(pluginFile)).toEqual(
+          original ? [basePlugin, "Alpha.esp"] : ["Beta.esp", "*Alpha.esp"],
+        );
+        if (original) {
+          const earlier = await stat(beta);
+          const later = await stat(alpha);
+          expect(earlier.mtimeMs).toBeLessThan(later.mtimeMs);
+        }
+      } finally {
+        await persistor.disable();
+      }
       expect(harness.getState().loadOrder["beta.esp"]).toMatchObject({
         loadOrder: 1,
         enabled: false,
