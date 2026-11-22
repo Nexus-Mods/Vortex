@@ -36,6 +36,41 @@ const gameFixtures = {
   skyrimse: { master: "Skyrim.esm", folder: "Skyrim Special Edition", original: false },
   skyrimvr: { master: "Skyrim.esm", folder: "Skyrim VR", original: false },
 };
+const storeFixtures = [
+  { gameId: "skyrimse", store: "xbox", folder: "Skyrim Special Edition MS" },
+  { gameId: "fallout4", store: "xbox", folder: "Fallout4 MS" },
+  { gameId: "oblivion", store: "xbox", folder: "Oblivion" },
+  { gameId: "skyrimse", store: "gog", folder: "Skyrim Special Edition GOG" },
+  { gameId: "enderalspecialedition", store: "gog", folder: "Enderal Special Edition GOG" },
+  { gameId: "skyrimse", store: "epic", folder: "Skyrim Special Edition EPIC" },
+  { gameId: "fallout4", store: "epic", folder: "Fallout4 EPIC" },
+] as const;
+
+const persistenceFixtures = [
+  ...Object.entries(gameFixtures).map(([gameId, fixture]) => ({
+    label: gameId,
+    gameId,
+    ...fixture,
+    store: undefined,
+    gameFolder: "Game",
+  })),
+  ...storeFixtures.map(({ gameId, store, folder }) => ({
+    label: gameId + " on " + store,
+    gameId,
+    ...gameFixtures[gameId],
+    folder,
+    store,
+    gameFolder: "Game",
+  })),
+  {
+    label: "Enderal Special Edition installed over Skyrim",
+    gameId: "enderalspecialedition",
+    ...gameFixtures.enderalspecialedition,
+    folder: "Skyrim Special Edition",
+    store: "gog",
+    gameFolder: "skyrim-overlay",
+  },
+];
 const entry = (id: string, overrides = {}) => ({
   id,
   name: id,
@@ -85,12 +120,15 @@ describe("Bethesda drag-and-drop load order adapter", () => {
     expect(ids).not.toContain("starfield");
     expect(ids).not.toContain("oblivionremastered");
   });
-  test.for(Object.entries(gameFixtures))(
-    "round-trips the shared adapter and game files for %s",
-    async ([gameId, { master: basePlugin, folder, original }], { makeGamebryo }) => {
+  test.for(persistenceFixtures)(
+    "round-trips the shared adapter and game files for $label",
+    async (
+      { gameId, master: basePlugin, folder, original, store, gameFolder },
+      { makeGamebryo },
+    ) => {
       const root = await makeTempDir("vortex-manual-order-");
       const localAppData = path.join(root, "Local");
-      const gameDir = path.join(root, "Game");
+      const gameDir = path.join(root, gameFolder);
       const dataDir = path.join(gameDir, "Data");
       const gameFiles = path.join(localAppData, folder);
       const names = [basePlugin, "Alpha.esp", "Beta.esp"];
@@ -99,6 +137,11 @@ describe("Bethesda drag-and-drop load order adapter", () => {
         mkdir(gameFiles, { recursive: true }),
       ]);
       const harness = makeGamebryo({ gameId, gamePath: gameDir });
+      if (store !== undefined) {
+        harness.setState((state) => {
+          state.settings.gameMode.discovered[gameId].store = store;
+        });
+      }
       await initGameSupport(harness.api);
       vi.stubEnv("LOCALAPPDATA", localAppData);
       onTestFinished(() => {
