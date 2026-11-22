@@ -61,7 +61,7 @@ export const setShowGameArt = safeCreateAction("SET_SHOW_GAME_ART", (enabled: bo
 export const setReduceMotion = safeCreateAction("SET_REDUCE_MOTION", (enabled: boolean) => enabled);
 
 /**
- * remember the page open in a spine context: the game's when gameId is set, Home's otherwise
+ * remember the page open in a game, or on Home when gameId is unset
  */
 export const setLastPage = reduxAct.createAction(
   "SET_LAST_PAGE",

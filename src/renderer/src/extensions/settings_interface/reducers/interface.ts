@@ -41,13 +41,20 @@ const settingsReducer = actionsToPartialReducerSpec<ISettingsInterface, typeof a
     setShowGameArt: (state, payload) => setField(state, "showGameArt", payload),
     // Deliberately absent from the defaults above: unset means "follow the OS".
     setReduceMotion: (state, payload) => setField(state, "reduceMotion", payload),
-    setLastPage: (state, { pageId, gameId }) =>
-      gameId === undefined
-        ? { ...state, lastPage: { ...state.lastPage, home: pageId } }
+    setLastPage: (state, { pageId, gameId }) => {
+      const { lastPages } = state;
+      if (gameId === undefined) {
+        return lastPages?.home === pageId
+          ? state
+          : { ...state, lastPages: { ...lastPages, home: pageId } };
+      }
+      return lastPages?.games?.[gameId] === pageId
+        ? state
         : {
             ...state,
-            lastPage: { ...state.lastPage, games: { ...state.lastPage?.games, [gameId]: pageId } },
-          },
+            lastPages: { ...lastPages, games: { ...lastPages?.games, [gameId]: pageId } },
+          };
+    },
   },
 );
 

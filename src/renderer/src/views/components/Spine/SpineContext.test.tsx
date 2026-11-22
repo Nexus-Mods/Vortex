@@ -64,7 +64,7 @@ import { SpineProvider, useSpineContext } from "./SpineContext";
 
 let spine: ReturnType<typeof useSpineContext>;
 
-/** The pages the spine opened, ignoring the remembered-page bookkeeping it also dispatches. */
+/** Pages the spine opened, without its setLastPage dispatches. */
 const navigations = () =>
   store.dispatch.mock.calls
     .map(([action]: [{ type: string }]) => action)
@@ -99,7 +99,7 @@ const renderSpine = () => {
     store.state.activeProfileId = `${gameId}-profile`;
     update();
   };
-  return { navigate, activate };
+  return { navigate, activate, update };
 };
 
 describe("SpineProvider", () => {
@@ -112,7 +112,7 @@ describe("SpineProvider", () => {
       settings: { interface: {} as ISettingsInterface },
       session: { base: {} },
     };
-    // Applies the remembered page as the real reducer would, the way persisted state would hold it.
+    // Apply setLastPage through the real reducer.
     store.dispatch = vi.fn((action: { type: string; payload: never }) => {
       if (action.type === setLastPage.getType()) {
         store.state.settings.interface = interfaceReducer.reducers[action.type](
@@ -215,7 +215,7 @@ describe("SpineProvider", () => {
 
   it("reopens the active game's remembered page after a restart", () => {
     store.state.mainPage = sessionDefaultState.mainPage;
-    store.state.settings.interface.lastPage = { games: { [VortexGameId("skyrim")]: "health" } };
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "health" } };
     renderSpine();
 
     expect(navigations()).toEqual([setOpenMainPage("health", false)]);
@@ -223,19 +223,60 @@ describe("SpineProvider", () => {
 
   it("opens the game's first page when its remembered page can no longer be shown", () => {
     store.state.mainPage = sessionDefaultState.mainPage;
-    store.state.settings.interface.lastPage = { games: { [VortexGameId("skyrim")]: "removed" } };
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "removed" } };
     renderSpine();
 
     expect(navigations()).toEqual([setOpenMainPage("Mods", false)]);
   });
 
   it("returns a picked game to its remembered page from an earlier session", () => {
-    store.state.settings.interface.lastPage = { games: { [VortexGameId("stardew")]: "health" } };
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("stardew")]: "health" } };
     const { activate } = renderSpine();
 
     act(() => spine.selectGame(VortexGameId("stardew")));
     activate("stardew");
 
     expect(navigations().at(-1)).toEqual(setOpenMainPage("health", false));
+  });
+
+  // Fails if the spine subscribes to lastPages: each save would re-run the effect and leave the
+  // hidden page.
+  it("doesn't leave a hidden page when the remembered pages are saved", () => {
+    const { navigate, update } = renderSpine();
+    navigate("collection-view");
+
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "health" } };
+    update();
+
+    expect(navigations()).toEqual([]);
+  });
+
+  it("opens a picked game's first page when its remembered page can no longer be shown", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("stardew")]: "removed" } };
+    const { activate } = renderSpine();
+
+    act(() => spine.selectGame(VortexGameId("stardew")));
+    activate("stardew");
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("Mods", false));
+  });
+
+  it("opens the active game's first page from Home when its remembered page is gone", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "removed" } };
+    const { navigate } = renderSpine();
+    navigate("Dashboard");
+
+    act(() => spine.selectGame(VortexGameId("skyrim")));
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("Mods", false));
+  });
+
+  it("opens Home's first page when its remembered page is gone", () => {
+    store.state.settings.interface.lastPages = { home: "removed" };
+    renderSpine();
+
+    act(() => spine.selectHome());
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("Dashboard", false));
   });
 });

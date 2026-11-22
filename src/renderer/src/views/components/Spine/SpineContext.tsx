@@ -57,10 +57,10 @@ interface ISpineContext {
 const SpineContext = createContext<ISpineContext | undefined>(undefined);
 
 /** The page last open in a game, or on Home when no game is given. */
-const storedPage = (
-  lastPage: IState["settings"]["interface"]["lastPage"],
-  gameId?: VortexGameId,
-): string | undefined => (gameId === undefined ? lastPage?.home : lastPage?.games?.[gameId]);
+const storedPage = (state: IState, gameId?: VortexGameId): string | undefined => {
+  const pages = lastPagesSelector(state);
+  return gameId === undefined ? pages?.home : pages?.games?.[gameId];
+};
 
 export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
   children,
@@ -164,20 +164,34 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
         ? homePages
         : gamePages;
 
-  // The last page open on Home and in each game. Persisted, so a restart reopens it. Read
-  // through a ref: it changes on every navigation, and the effects below must not re-run for that.
-  const lastPage = useSelector(lastPagesSelector);
-  const lastPageRef = useRef(lastPage);
-  lastPageRef.current = lastPage;
-
-  // The game's (or Home's) last page, if it can still be shown; a page from a removed
-  // extension, or one hidden by a setting since, is not.
+  // Remembered pages persist in settings.interface.lastPages. Read them from the store, don't
+  // subscribe: a save on every navigation would re-run the effect below and kick the user off a
+  // hidden page like collection-view. The api goes through a ref for the same reason.
+  const apiRef = useRef(api);
+  apiRef.current = api;
   const rememberedPage = useCallback(
     (pages: IMainPage[], gameId?: VortexGameId): string | undefined => {
-      const page = storedPage(lastPageRef.current, gameId);
+      const page = storedPage(apiRef.current.getState(), gameId);
+      // Skip a page that's gone or hidden.
       return pages.some((p) => p.id === page) ? page : undefined;
     },
     [],
+  );
+
+  // A game picked in the spine that isn't active yet, and the page it last showed,
+  // taken before the switch records the current page as its own. That page opens
+  // once the game is active, after the profile switch or the profile picker.
+  const pendingGameRef = useRef<{ gameId: VortexGameId; page?: string } | undefined>(undefined);
+
+  // A page opened because nothing remembered could be shown. Not saved, or a page that becomes
+  // visible after startup would lose its place for good.
+  const fallbackPageRef = useRef<string | undefined>(undefined);
+  const openPage = useCallback(
+    (pageId: string, fallback: boolean) => {
+      fallbackPageRef.current = fallback ? pageId : undefined;
+      dispatch(setOpenMainPage(pageId, false));
+    },
+    [dispatch],
   );
 
   // Save the current page whenever it changes, but only if it's
@@ -188,6 +202,16 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       return;
     }
 
+    if (mainPage === fallbackPageRef.current) {
+      return;
+    }
+    fallbackPageRef.current = undefined;
+
+    // The picked game is active but its page isn't open yet; what's showing is the old game's.
+    if (pendingGameRef.current?.gameId === activeGameId) {
+      return;
+    }
+
     const isValidForContext = visiblePages.some((p) => p.id === mainPage);
     if (!isValidForContext) {
       return;
@@ -195,14 +219,17 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
 
     // A game selection is always the active game.
     const gameId = selection.type === "game" ? activeGameId : undefined;
-    if (storedPage(lastPageRef.current, gameId) !== mainPage) {
+    if (storedPage(api.getState(), gameId) !== mainPage) {
       dispatch(setLastPage({ pageId: mainPage, gameId }));
     }
-  }, [mainPage, selection, visiblePages, activeGameId, dispatch]);
+  }, [mainPage, selection, visiblePages, activeGameId, api, dispatch]);
 
   // When the spine selection changes (home↔game or between games), ensure
   // we're on a valid page for the new context. Uses a ref for mainPage so the
   // effect only fires on selection change, not on every page navigation.
+  //
+  // This also restores the remembered page at startup. That relies on the session starting on
+  // "Games" (not a game page) and the active game being known on the first render.
   const mainPageRef = useRef(mainPage);
   mainPageRef.current = mainPage;
 
@@ -217,12 +244,15 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       return;
     }
 
-    const target =
-      selection.type === "game"
-        ? (rememberedPage(visiblePages, activeGameId) ?? defaultGamePage)
-        : (rememberedPage(visiblePages) ?? defaultHomePage);
-    if (target !== undefined) {
-      dispatch(setOpenMainPage(target, false));
+    const remembered = rememberedPage(
+      visiblePages,
+      selection.type === "game" ? activeGameId : undefined,
+    );
+    const fallback = selection.type === "game" ? defaultGamePage : defaultHomePage;
+    if (remembered !== undefined) {
+      openPage(remembered, false);
+    } else if (fallback !== undefined) {
+      openPage(fallback, true);
     }
   }, [
     selection,
@@ -232,12 +262,8 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
     defaultGamePage,
     defaultHomePage,
     dispatch,
+    openPage,
   ]);
-
-  // A game picked in the spine that isn't active yet, and the page it last showed,
-  // taken before the switch records the current page as its own. That page opens
-  // once the game is active, after the profile switch or the profile picker.
-  const pendingGameRef = useRef<{ gameId: VortexGameId; page?: string } | undefined>(undefined);
 
   useEffect(() => {
     const pending = pendingGameRef.current;
@@ -245,22 +271,22 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       return;
     }
 
-    // Checked against the now active game's pages, which the page was taken without.
+    // Check against the new game's pages.
     const remembered = gamePages.some((p) => p.id === pending.page) ? pending.page : undefined;
-    const targetPage = remembered ?? defaultGamePage;
-    if (targetPage === undefined) {
+    if (remembered === undefined && defaultGamePage === undefined) {
       return;
     }
 
     pendingGameRef.current = undefined;
-    dispatch(setOpenMainPage(targetPage, false));
-  }, [activeGameId, gamePages, defaultGamePage, dispatch]);
+    openPage(remembered ?? defaultGamePage, remembered === undefined);
+  }, [activeGameId, gamePages, defaultGamePage, openPage]);
 
   const selectHome = useCallback(() => {
     if (defaultHomePage === undefined) return;
     pendingGameRef.current = undefined;
-    dispatch(setOpenMainPage(rememberedPage(homePages) ?? defaultHomePage, false));
-  }, [homePages, rememberedPage, defaultHomePage, dispatch]);
+    const remembered = rememberedPage(homePages);
+    openPage(remembered ?? defaultHomePage, remembered === undefined);
+  }, [homePages, rememberedPage, defaultHomePage, openPage]);
 
   const selectDownloads = useCallback(
     (gameId?: string) => {
@@ -280,7 +306,7 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       if (!profileExists) {
         // No usable last-active profile for this game — ask the
         // profile_management extension to show the profile picker dialog.
-        pendingGameRef.current = { gameId, page: storedPage(lastPageRef.current, gameId) };
+        pendingGameRef.current = { gameId, page: storedPage(api.getState(), gameId) };
         api?.events.emit("activate-game", gameId);
         return;
       }
@@ -290,14 +316,14 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       }
 
       if (gameId !== activeGameId) {
-        pendingGameRef.current = { gameId, page: storedPage(lastPageRef.current, gameId) };
+        pendingGameRef.current = { gameId, page: storedPage(api.getState(), gameId) };
         return;
       }
 
       pendingGameRef.current = undefined;
-      const targetPage = rememberedPage(gamePages, gameId) ?? defaultGamePage;
-      if (targetPage !== undefined) {
-        dispatch(setOpenMainPage(targetPage, false));
+      const remembered = rememberedPage(gamePages, gameId);
+      if (remembered !== undefined || defaultGamePage !== undefined) {
+        openPage(remembered ?? defaultGamePage, remembered === undefined);
       }
     },
     [
@@ -309,6 +335,7 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       rememberedPage,
       gamePages,
       defaultGamePage,
+      openPage,
     ],
   );
 

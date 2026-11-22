@@ -147,9 +147,25 @@ describe("setLastPage", () => {
       actions.setLastPage({ pageId: "health", gameId: VortexGameId("stardew") }).payload,
     );
 
-    expect(state.lastPage).toEqual({
+    expect(state.lastPages).toEqual({
       home: "Dashboard",
       games: { [VortexGameId("skyrim")]: "Mods", [VortexGameId("stardew")]: "health" },
     });
+  });
+});
+
+describe("setLastPage when the page is already remembered", () => {
+  it("returns the same state, so nothing re-renders or is written", () => {
+    const state = settingsReducer.reducers.SET_LAST_PAGE(
+      defaults,
+      actions.setLastPage({ pageId: "Mods", gameId: VortexGameId("skyrim") }).payload,
+    );
+
+    expect(
+      settingsReducer.reducers.SET_LAST_PAGE(
+        state,
+        actions.setLastPage({ pageId: "Mods", gameId: VortexGameId("skyrim") }).payload,
+      ),
+    ).toBe(state);
   });
 });
