@@ -81,4 +81,23 @@ describe("Bethesda collection load order", () => {
     expect(h.dialogCalls).toHaveLength(1);
     expect(activateProfile).not.toHaveBeenCalled();
   });
+  test.each([
+    ["Use Saved Order", "apply"],
+    ["Keep Current Sorting", "keep"],
+    ["Cancel", "cancel"],
+  ])("asks again when resuming in Classic and honors %s", async (action, expected) => {
+    const h = makeApiHarness();
+    h.setState((state) => {
+      state.persistent.profiles[profile.id] = profile;
+      state.settings.profiles.activeProfileId = profile.id;
+      state.settings.plugins = {
+        ...state.settings.plugins,
+        betaLoadOrder: { [profile.id]: false },
+      };
+    });
+    h.setNextDialog({ action, input: {} });
+
+    await expect(chooseCollectionLoadOrder(h.api, profile, {}, "apply")).resolves.toBe(expected);
+    expect(h.dialogCalls).toHaveLength(1);
+  });
 });

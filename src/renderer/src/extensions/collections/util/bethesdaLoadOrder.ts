@@ -51,14 +51,17 @@ export async function chooseCollectionLoadOrder(
   const apply = "Use Saved Order";
   const keep = "Keep Current Sorting";
   if (previousChoice === "keep") return "keep";
-  if (previousChoice === undefined && (!isNew || !isActive)) {
+  const returningFromClassic = previousChoice === "apply" && !isBetaLoadOrder(state, profile);
+  if (returningFromClassic || (previousChoice === undefined && (!isNew || !isActive))) {
     const choice = await api.showDialog(
       "question",
       "Use the collection's saved load order?",
       {
-        text: isActive
-          ? "This collection includes a manual plugin order. Using it enables Beta load order and rearranges the collection's plugins in this profile. Keeping your current sorting installs the collection without applying its saved order."
-          : "This collection includes a manual plugin order. Using it activates the selected profile, enables Beta load order and applies the saved order there.",
+        text: returningFromClassic
+          ? "This profile now uses Classic. Using the saved order switches it back to Beta and rearranges the collection's plugins. Keeping your current sorting resumes the install in Classic."
+          : isActive
+            ? "This collection includes a manual plugin order. Using it enables Beta load order and rearranges the collection's plugins in this profile. Keeping your current sorting installs the collection without applying its saved order."
+            : "This collection includes a manual plugin order. Using it activates the selected profile, enables Beta load order and applies the saved order there.",
         message: name,
       },
       [

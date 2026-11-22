@@ -38,7 +38,10 @@ import {
 import { discoveryByGame } from "../../gamemode_management/selectors";
 import { getGame } from "../../gamemode_management/util/getGame";
 import { addModRule, setFileOverride, setModAttribute } from "../../mod_management/actions/mods";
-import { setPendingPluginSort } from "../../mod_management/actions/transactions";
+import {
+  discardCollectionPluginSort,
+  setPendingPluginSort,
+} from "../../mod_management/actions/transactions";
 import { installPathForGame } from "../../mod_management/selectors";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { findModByRef } from "../../mod_management/util/findModByRef";
@@ -189,6 +192,16 @@ class InstallDriver {
     };
     emitCollectionInstallOutcome(this.mApi, outcome, ref, this.mTimeStarted, context);
     if (outcome !== "paused") this.storeSavedOrderChoice();
+
+    const profile = this.mProfile;
+    if (
+      outcome === "completed" &&
+      ref.collectionModId !== undefined &&
+      profile !== undefined &&
+      isBetaLoadOrder(this.mApi.getState(), profile)
+    ) {
+      this.mApi.store.dispatch(discardCollectionPluginSort(profile.id, ref.collectionModId));
+    }
 
     this.mApi.store.dispatch(
       installActions.finishInstallSession(this.mCurrentSessionId, outcome === "completed"),

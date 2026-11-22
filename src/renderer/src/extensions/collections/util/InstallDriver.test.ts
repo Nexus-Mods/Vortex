@@ -34,7 +34,10 @@ import type * as ErrorHandling from "../../../util/errorHandling";
 import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import type { IDownload } from "../../download_management/types/IDownload";
 import { setBetaLoadOrder } from "../../gamebryo_plugin_management/actions/settings";
-import { setPendingPluginSort } from "../../mod_management/actions/transactions";
+import {
+  discardCollectionPluginSort,
+  setPendingPluginSort,
+} from "../../mod_management/actions/transactions";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { selectedOptionalRules } from "../../mod_management/util/dependencies";
 import type { IProfile } from "../../profile_management/types/IProfile";
@@ -208,6 +211,36 @@ describe("InstallDriver session lifecycle", () => {
     expect(h.dispatched.some(({ type }) => type === markerType)).toBe(false);
   });
 
+  test.for([
+    { beta: true, clearsSort: true },
+    { beta: false, clearsSort: false },
+  ])(
+    "handles a paused Classic install completed with Beta set to $beta",
+    async ({ beta, clearsSort }, { startCollection }) => {
+      const h = await startCollection(defaultFixture);
+      const collectionId = defaultFixture.collection.id;
+      const clear = discardCollectionPluginSort(profile.id, collectionId);
+      h.driver.pause("user");
+      expect(h.dispatched).not.toContainEqual(clear);
+
+      h.setState((state) => {
+        state.settings.plugins = {
+          ...state.settings.plugins,
+          betaLoadOrder: { [profile.id]: beta },
+        };
+      });
+      await h.driver.start(profile, defaultFixture.collection);
+      setSessionStatus(h, [memberRule], "installed");
+      h.emit("did-install-dependencies", GAME_ID, collectionId, false);
+      await vi.waitFor(() => expect(h.driver.step).toBe("review"));
+      expect(h.dispatched).not.toContainEqual(clear);
+
+      await h.driver.continue();
+      expect(h.dispatched.some((action) => action.type === clear.type)).toBe(clearsSort);
+      if (clearsSort) expect(h.dispatched).toContainEqual(clear);
+    },
+  );
+
   test("refuses to start a second collection while one is still installing", async ({
     startCollection,
   }) => {
@@ -262,6 +295,12 @@ describe("InstallDriver saved plugin order on resume", () => {
       expect(decisions(otherProfile)).toHaveLength(1);
 
       const resumed = setup(paused);
+      resumed.setState((state) => {
+        state.settings.plugins = {
+          ...state.settings.plugins,
+          betaLoadOrder: { [profile.id]: appliesOrder },
+        };
+      });
       await resumed.driver.start(profile, paused);
       expect(decisions(resumed)).toHaveLength(0);
       expect(resumed.getState().session.collections.activeSession?.profileId).toBe(profile.id);

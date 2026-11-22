@@ -8,6 +8,7 @@ import { test } from "../../test-utils/gamebryoTest";
 import type { ILootHarness } from "../../test-utils/harnessTypes";
 import {
   clearPendingPluginSort,
+  discardCollectionPluginSort,
   setPendingPluginSort,
 } from "../mod_management/actions/transactions";
 import { updatePluginOrder } from "./actions/loadOrder";
@@ -62,6 +63,25 @@ describe("LootInterface doSort", () => {
     await harness.sort(true);
 
     expect(harness.dispatched).toContainEqual(clearPendingPluginSort(harness.profileId));
+    expect(pendingSort(harness)).toBeUndefined();
+  });
+
+  test("clears a completed collection's marker without touching other queued sorts", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    const { dispatch } = harness.api.store;
+    dispatch(setPendingPluginSort(harness.profileId, "completed", 1));
+    dispatch(setPendingPluginSort(harness.profileId, "other", 2));
+    dispatch(setPendingPluginSort("another-profile", "completed", 3));
+
+    dispatch(discardCollectionPluginSort(harness.profileId, "completed"));
+    expect(pendingSort(harness)).toEqual({ other: 2 });
+    expect(harness.getState().persistent.transactions.pendingPluginSort["another-profile"]).toEqual(
+      { completed: 3 },
+    );
+
+    dispatch(discardCollectionPluginSort(harness.profileId, "other"));
     expect(pendingSort(harness)).toBeUndefined();
   });
 
