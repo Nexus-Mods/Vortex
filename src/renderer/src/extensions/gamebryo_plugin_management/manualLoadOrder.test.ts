@@ -17,6 +17,18 @@ import {
 } from "./manualLoadOrder";
 import { initGameSupport } from "./util/gameSupport";
 
+const baseGamePlugins = {
+  enderal: "Skyrim.esm",
+  enderalspecialedition: "Skyrim.esm",
+  fallout3: "Fallout3.esm",
+  fallout4: "Fallout4.esm",
+  fallout4vr: "Fallout4.esm",
+  falloutnv: "FalloutNV.esm",
+  oblivion: "Oblivion.esm",
+  skyrim: "Skyrim.esm",
+  skyrimse: "Skyrim.esm",
+  skyrimvr: "Skyrim.esm",
+};
 const entry = (id: string, overrides = {}) => ({
   id,
   name: id,
@@ -62,88 +74,84 @@ describe("Bethesda drag-and-drop load order adapter", () => {
     harness.api.ext.addLoadOrderPage = add;
     registerManualLoadOrders(harness.api);
     const ids = add.mock.calls.map(([registration]) => registration.gameId);
-    expect(ids).toEqual(
-      expect.arrayContaining([
-        "skyrim",
-        "skyrimse",
-        "skyrimvr",
-        "fallout3",
-        "fallout4",
-        "fallout4vr",
-        "falloutnv",
-        "oblivion",
-      ]),
-    );
+    expect(ids.toSorted()).toEqual(Object.keys(baseGamePlugins).toSorted());
     expect(ids).not.toContain("starfield");
     expect(ids).not.toContain("oblivionremastered");
   });
-  test("serializes through the existing plugin reducer and refuses automatic mode", async ({
-    makeGamebryo,
-  }) => {
-    const harness = makeGamebryo({ gameId: "fallout4" });
-    await initGameSupport(harness.api);
-    const root = await makeTempDir("vortex-manual-order-");
-    const names = ["Fallout4.esm", "Alpha.esp", "Beta.esp"];
-    for (const name of names) {
-      const bytes = Buffer.alloc(24);
-      bytes.write("TES4");
-      if (name.endsWith(".esm")) bytes.writeUInt32LE(1, 8);
-      await writeFile(path.join(root, name), bytes);
-    }
-    harness.api.store.dispatch(
-      setPluginList(
-        Object.fromEntries(
-          names.map((name) => [
-            name.toLowerCase(),
-            makePlugin({
-              filePath: path.join(root, name),
-              deployed: true,
-              isNative: name === "Fallout4.esm",
-            }),
-          ]),
+  test.for(Object.entries(baseGamePlugins))(
+    "round-trips the shared adapter for %s",
+    async ([gameId, basePlugin], { makeGamebryo }) => {
+      const harness = makeGamebryo({ gameId });
+      await initGameSupport(harness.api);
+      const root = await makeTempDir("vortex-manual-order-");
+      const names = [basePlugin, "Alpha.esp", "Beta.esp"];
+      for (const name of names) {
+        const headerSize = gameId === "oblivion" ? 20 : 24;
+        const headerDataSize = 12;
+        const recordSize = 6 + headerDataSize;
+        const bytes = Buffer.alloc(headerSize + recordSize);
+        bytes.writeUInt32LE(recordSize, 4);
+        bytes.write("HEDR", headerSize);
+        bytes.writeUInt16LE(headerDataSize, headerSize + 4);
+        bytes.write("TES4");
+        if (name.endsWith(".esm")) bytes.writeUInt32LE(1, 8);
+        await writeFile(path.join(root, name), bytes);
+      }
+      harness.api.store.dispatch(
+        setPluginList(
+          Object.fromEntries(
+            names.map((name) => [
+              name.toLowerCase(),
+              makePlugin({
+                filePath: path.join(root, name),
+                deployed: true,
+                isNative: false,
+              }),
+            ]),
+          ),
         ),
-      ),
-    );
-    harness.api.store.dispatch(setPluginOrder(names, true));
-    const adapter = makeManualLoadOrder(harness.api, VortexGameId("fallout4"));
-    expect(adapter.condition()).toBe(false);
-    expect(await adapter.deserializeLoadOrder()).toEqual([]);
-    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
-    const baseline = await adapter.deserializeLoadOrder();
-    const reordered = [baseline[0], { ...baseline[2], enabled: false }, baseline[1]];
-    await adapter.serializeLoadOrder(reordered, baseline);
-    expect(harness.getState().loadOrder["beta.esp"]).toMatchObject({
-      loadOrder: 1,
-      enabled: false,
-    });
-    expect(harness.getState().loadOrder["alpha.esp"]).toMatchObject({
-      loadOrder: 2,
-      enabled: true,
-    });
-    expect((await adapter.deserializeLoadOrder())[0]).toMatchObject({
-      locked: true,
-      enabled: true,
-    });
-    const before = harness.getState().loadOrder;
-    await expect(adapter.serializeLoadOrder(baseline, baseline)).rejects.toThrow(
-      "The plugin order changed",
-    );
-    expect(harness.getState().loadOrder).toBe(before);
-    await expect(
-      adapter.serializeLoadOrder([reordered[1], reordered[0], reordered[2]], reordered),
-    ).rejects.toMatchObject({
-      validationResult: {
-        invalid: expect.arrayContaining([
-          expect.objectContaining({ reason: expect.stringContaining("Base game plugins") }),
-        ]),
-      },
-    });
-    expect(harness.getState().loadOrder).toBe(before);
-    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, false));
-    expect(adapter.condition()).toBe(false);
-    await expect(adapter.serializeLoadOrder(reordered, baseline)).rejects.toThrow();
-    expect(harness.getState().loadOrder).toBe(before);
-  });
+      );
+      harness.api.store.dispatch(setPluginOrder(names, true));
+      const adapter = makeManualLoadOrder(harness.api, VortexGameId(gameId));
+      expect(adapter.condition()).toBe(false);
+      expect(await adapter.deserializeLoadOrder()).toEqual([]);
+      harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+      const baseline = await adapter.deserializeLoadOrder();
+      const reordered = [baseline[0], { ...baseline[2], enabled: false }, baseline[1]];
+      await adapter.serializeLoadOrder(reordered, baseline);
+      expect(harness.getState().loadOrder["beta.esp"]).toMatchObject({
+        loadOrder: 1,
+        enabled: false,
+      });
+      expect(harness.getState().loadOrder["alpha.esp"]).toMatchObject({
+        loadOrder: 2,
+        enabled: true,
+      });
+      expect((await adapter.deserializeLoadOrder())[0]).toMatchObject({
+        locked: true,
+        enabled: true,
+      });
+      const before = harness.getState().loadOrder;
+      await expect(adapter.serializeLoadOrder(baseline, baseline)).rejects.toThrow(
+        "The plugin order changed",
+      );
+      expect(harness.getState().loadOrder).toBe(before);
+      await expect(
+        adapter.serializeLoadOrder([reordered[1], reordered[0], reordered[2]], reordered),
+      ).rejects.toMatchObject({
+        validationResult: {
+          invalid: expect.arrayContaining([
+            expect.objectContaining({ reason: expect.stringContaining("Base game plugins") }),
+          ]),
+        },
+      });
+      expect(harness.getState().loadOrder).toBe(before);
+      harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, false));
+      expect(adapter.condition()).toBe(false);
+      await expect(adapter.serializeLoadOrder(reordered, baseline)).rejects.toThrow();
+      expect(harness.getState().loadOrder).toBe(before);
+    },
+  );
   test("orders unflagged masters first and shows unreadable plugins without writing", async ({
     makeGamebryo,
   }) => {
