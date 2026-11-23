@@ -1,5 +1,6 @@
 import type { NexusGameDomain, VortexGameId } from "@vortex/shared";
 
+import type { OneClickSource } from "@/extensions/analytics/mixpanel/download_source/downloadSource";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
 import { buildNXMModUrl } from "../../NXMUrl";
@@ -16,6 +17,8 @@ export interface INexusFile {
   fileId: string;
   /** What the download is called until its own name is known. */
   name?: string;
+  /** The feature that started the download, which its analytics events report. */
+  downloadSource?: OneClickSource;
 }
 
 /**
@@ -25,13 +28,13 @@ export interface INexusFile {
  */
 export const downloadNexusFile = (
   api: IExtensionApi,
-  { gameDomain, gameId, modId, fileId, name }: INexusFile,
+  { gameDomain, gameId, modId, fileId, name, downloadSource }: INexusFile,
 ): Promise<string> =>
   new Promise<string>((resolve, reject) =>
     api.events.emit<"start-download">(
       "start-download",
       [buildNXMModUrl(gameDomain, modId, fileId)],
-      { game: gameId, name, fileId: Number(fileId), modId: Number(modId) },
+      { game: gameId, name, fileId: Number(fileId), modId: Number(modId), downloadSource },
       undefined,
       (err, id) => {
         if (err !== null || !id) {

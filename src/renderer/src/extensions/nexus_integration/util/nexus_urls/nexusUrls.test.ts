@@ -8,6 +8,7 @@ import {
   nexusModReportUrl,
   nexusModPageUrl,
   nexusSiteModPageUrl,
+  withVortexSource,
 } from "./nexusUrls";
 
 const SKYRIM = NexusGameDomain("skyrimspecialedition");
@@ -54,6 +55,24 @@ describe("nexusModCommentsUrl", () => {
   it("is the mod's Posts tab", () => {
     expect(nexusModCommentsUrl(SKYRIM, 12604)).toBe(
       "https://www.nexusmods.com/skyrimspecialedition/mods/12604?tab=posts",
+    );
+  });
+});
+
+describe("withVortexSource", () => {
+  it("adds the feature that sent the user, and the mod's position", () => {
+    expect(
+      withVortexSource({ url: nexusModPageUrl(SKYRIM, 12604), feature: "browse", position: 23 }),
+    ).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?source=vortex_browse&position=23",
+    );
+  });
+
+  it("keeps the link's own parameters", () => {
+    expect(
+      withVortexSource({ url: nexusFilePageUrl(SKYRIM, 12604, "42"), feature: "health_check" }),
+    ).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?tab=files&file_id=42&nmm=1&source=vortex_health_check",
     );
   });
 });

@@ -27,7 +27,7 @@ import {
   ModsDownloadFailedEvent,
   ModsDownloadStartedClientEvent,
 } from "./extensions/analytics/mixpanel/MixpanelEvents";
-import { makeModAnalyticsIdentity } from "./extensions/analytics/mixpanel/modAnalyticsIdentity";
+import { makeModDownloadIdentity } from "./extensions/analytics/mixpanel/mod_download_identity/modDownloadIdentity";
 import {
   addLocalDownload,
   downloadProgress,
@@ -387,14 +387,9 @@ export class IPCDownloadAdapter {
     const download = state.persistent.downloads.files?.[downloadId];
     const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-    // Mod downloads triggered by a collection install carry the parent collection's id and
-    // revision under `modInfo.nexus.parentCollectionId`/`parentRevisionId` (see
-    // InstallManager.downloadURL).
-    const parentCollectionId = download?.modInfo?.nexus?.parentCollectionId;
-    const modCollectionId =
-      isCollection || parentCollectionId === undefined ? null : parentCollectionId;
-    const parentRevisionId = download?.modInfo?.nexus?.parentRevisionId;
-    const modRevisionId = isCollection || parentRevisionId === undefined ? null : parentRevisionId;
+    // A mod's parent collection (see InstallManager.downloadURL) and where the download started
+    // come from what its record saved.
+    const modIdentity = () => makeModDownloadIdentity({ nexusIds, download });
 
     // Durable resume history (persisted on the record, accumulates across restarts).
     const pause_count = download?.pauseCount ?? 0;
@@ -404,9 +399,7 @@ export class IPCDownloadAdapter {
       if (isCollection || nexusIds.modId === undefined || nexusIds.fileId === undefined) return;
       this.#api.events.emit(
         "analytics-track-mixpanel-event",
-        new ModsDownloadStartedClientEvent(
-          makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
-        ),
+        new ModsDownloadStartedClientEvent(modIdentity()),
       );
       return;
     }
@@ -434,7 +427,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadCompletedEvent({
-            ...makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
+            ...modIdentity(),
             file_size,
             duration_ms,
             ...resumeInfo,
@@ -457,9 +450,7 @@ export class IPCDownloadAdapter {
       } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
-          new ModsDownloadCancelledEvent(
-            makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
-          ),
+          new ModsDownloadCancelledEvent(modIdentity()),
         );
       }
       return;
@@ -483,7 +474,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadFailedEvent({
-            ...makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
+            ...modIdentity(),
             error_code,
             error_message: message,
             ...resumeInfo,
