@@ -1,4 +1,5 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { downloadNexusIds } from "../../analytics/mixpanel/download_nexus_ids/downloadNexusIds";
 import { classifyErrorCode } from "../../analytics/mixpanel/error-code";
 import type {
   CollectionInstallOutcomeProps,
@@ -13,7 +14,6 @@ import {
   CollectionsInstallationStartedEvent,
 } from "../../analytics/mixpanel/MixpanelEvents";
 import { setModAttribute } from "../../mod_management/actions/mods";
-import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
 
 /**
  * Terminal outcome of a collection install. "paused" is resumable rather than a
@@ -153,7 +153,7 @@ function buildOutcomeProps(
   if (session == null || ref.archiveId == null) {
     return undefined;
   }
-  const nexusIds = nexusIdsFromDownloadId(state, ref.archiveId);
+  const nexusIds = downloadNexusIds(state, ref.archiveId);
   if (nexusIds?.collectionId == null) {
     return undefined;
   }
