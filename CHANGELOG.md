@@ -4,6 +4,83 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0-beta.1] - 2026-11-23
+
+_First beta of the 2.12 release._
+
+### Added
+
+- `info.json` schema and docs for extension authors ([#24985](https://github.com/Nexus-Mods/Vortex/pull/24985))
+- Status filter on the new Mods table, with an edited-view bar and sort saved per view ([#24958](https://github.com/Nexus-Mods/Vortex/pull/24958))
+- Option to hide extension columns on the new Mods table, kept hidden until the user shows them ([#24957](https://github.com/Nexus-Mods/Vortex/pull/24957))
+- `contributes` manifest types and schema for extensions ([#24955](https://github.com/Nexus-Mods/Vortex/pull/24955))
+- Before/after comparison sliders in Browse's mod gallery and descriptions ([#24951](https://github.com/Nexus-Mods/Vortex/pull/24951))
+- Properties panel on the new Mods table ([#24933](https://github.com/Nexus-Mods/Vortex/pull/24933))
+- Comments tab placeholder in Browse's mod details ([#24926](https://github.com/Nexus-Mods/Vortex/pull/24926))
+- Choice between a mod's Main files from Browse's Install when none is primary ([#24884](https://github.com/Nexus-Mods/Vortex/pull/24884))
+- One-time Browse feedback prompt, from the toolbar and under Load more, through a feedback modal shared with Health Check ([#24872](https://github.com/Nexus-Mods/Vortex/pull/24872))
+- … menu in Browse's mod details to copy the mod's link or report it; Save view renamed to Save as new view ([#24851](https://github.com/Nexus-Mods/Vortex/pull/24851))
+- Extension-registered columns on the new Mods table ([#24845](https://github.com/Nexus-Mods/Vortex/pull/24845))
+- Whole collection's download progress on the Downloads ring ([#24838](https://github.com/Nexus-Mods/Vortex/pull/24838))
+- Search Browse's mods by name ([#24837](https://github.com/Nexus-Mods/Vortex/pull/24837))
+- Explanation of why Browse's mod list is empty or has ended, with a way out ([#24833](https://github.com/Nexus-Mods/Vortex/pull/24833))
+- Downloaded, installed and update available states on Browse's mods ([#24775](https://github.com/Nexus-Mods/Vortex/pull/24775))
+- Resizable columns on the new Mods table ([#24764](https://github.com/Nexus-Mods/Vortex/pull/24764))
+- Adult content filter on Browse's mods ([#24754](https://github.com/Nexus-Mods/Vortex/pull/24754))
+- Dialog before managing a tier zero game ([#24746](https://github.com/Nexus-Mods/Vortex/pull/24746))
+- Saved custom views on Browse's Mods tab ([#24743](https://github.com/Nexus-Mods/Vortex/pull/24743))
+- Install, update or view a mod from Browse's mod details, with 1-click install for Premium and the upsell for everyone else ([#24732](https://github.com/Nexus-Mods/Vortex/pull/24732))
+- Detailed manual installer view ([#24730](https://github.com/Nexus-Mods/Vortex/pull/24730))
+
+### Changed
+
+- Upgraded Electron to 45.4.1 ([#24994](https://github.com/Nexus-Mods/Vortex/pull/24994))
+- Polished the new Mods table's Properties panel, and pinned it over the table when space is short ([#24983](https://github.com/Nexus-Mods/Vortex/pull/24983))
+- Removed `runThreaded` from the extension API ([#24979](https://github.com/Nexus-Mods/Vortex/pull/24979))
+- Upgraded Electron to 45.3.4 ([#24976](https://github.com/Nexus-Mods/Vortex/pull/24976))
+- Toolbar menu pins struck through while unpinned, and filled and brighter while pinned ([#24967](https://github.com/Nexus-Mods/Vortex/pull/24967))
+- Upgraded react-markdown to 9.1.0 ([#24963](https://github.com/Nexus-Mods/Vortex/pull/24963))
+- Endorse uses the Material thumb, which fills and pops with a burst as a mod becomes endorsed ([#24956](https://github.com/Nexus-Mods/Vortex/pull/24956))
+- `registerReducer` checks each reducer spec against the state at its path ([#24954](https://github.com/Nexus-Mods/Vortex/pull/24954))
+- Removed `IGame.overrides` ([#24953](https://github.com/Nexus-Mods/Vortex/pull/24953))
+- Browse's installed-mod button renamed to Manage mod, with Uninstall and Delete in its menu ([#24948](https://github.com/Nexus-Mods/Vortex/pull/24948))
+- Browse's install button always split once the user has the mod, with Delete to uninstall or delete its files ([#24937](https://github.com/Nexus-Mods/Vortex/pull/24937))
+- Upgraded Electron to 45.3.3 ([#24932](https://github.com/Nexus-Mods/Vortex/pull/24932))
+- Browse's mod search leaves out mods that require another mod ([#24916](https://github.com/Nexus-Mods/Vortex/pull/24916))
+- Upgraded Electron to 45.3.2 ([#24908](https://github.com/Nexus-Mods/Vortex/pull/24908))
+- Upgraded Electron to 45.3.1 ([#24900](https://github.com/Nexus-Mods/Vortex/pull/24900))
+- Game art shown to everyone, with a setting to turn it off ([#24885](https://github.com/Nexus-Mods/Vortex/pull/24885))
+- Upgraded Electron to 45.3.0 ([#24865](https://github.com/Nexus-Mods/Vortex/pull/24865))
+- Browse's mod list pauses every 3 pages with a Load more button ([#24847](https://github.com/Nexus-Mods/Vortex/pull/24847))
+- New Vortex game ids for tier zero games; a tier zero game that is already managed has to be removed and managed again ([#24835](https://github.com/Nexus-Mods/Vortex/pull/24835))
+- Polished the manual installer dialog ([#24825](https://github.com/Nexus-Mods/Vortex/pull/24825))
+- View names capped at 40 characters, with a character count inside the field ([#24822](https://github.com/Nexus-Mods/Vortex/pull/24822))
+- Browse only shows mods that support mod managers ([#24809](https://github.com/Nexus-Mods/Vortex/pull/24809))
+- Browse loads mods by cursor as the list scrolls ([#24807](https://github.com/Nexus-Mods/Vortex/pull/24807))
+- Collection uploads always use multipart upload ([#24806](https://github.com/Nexus-Mods/Vortex/pull/24806))
+- `IGame.id` and other Vortex game ids branded as `VortexGameId` ([#24804](https://github.com/Nexus-Mods/Vortex/pull/24804))
+- Only Nexus Mods images shown in the remaining user descriptions ([#24801](https://github.com/Nexus-Mods/Vortex/pull/24801))
+- Upgraded Electron to 45.2.3 ([#24779](https://github.com/Nexus-Mods/Vortex/pull/24779))
+- New table's sort arrow points up for A to Z, as in the legacy table ([#24761](https://github.com/Nexus-Mods/Vortex/pull/24761))
+- Upgraded Electron to 45.2.2 ([#24758](https://github.com/Nexus-Mods/Vortex/pull/24758))
+- Nexus Mods mod and file page links built through the shared URL helpers ([#24744](https://github.com/Nexus-Mods/Vortex/pull/24744))
+
+### Fixed
+
+- Each game's last page not remembered across restarts ([#25005](https://github.com/Nexus-Mods/Vortex/pull/25005))
+- Messages not staying up for 2–7s depending on their length ([#24982](https://github.com/Nexus-Mods/Vortex/pull/24982))
+- Unresolved `@/` imports in the published `vortex-api` declarations, which extensions saw as `any` ([#24968](https://github.com/Nexus-Mods/Vortex/pull/24968))
+- Browse's main file picker opening when a mod has only one Main file ([#24927](https://github.com/Nexus-Mods/Vortex/pull/24927))
+- Game art scrolling the window when a table scrolled to a row ([#24921](https://github.com/Nexus-Mods/Vortex/pull/24921))
+- Cancelling a load order file export, such as BG3's "Export to file", showing an error ([#24917](https://github.com/Nexus-Mods/Vortex/pull/24917))
+- Add-on collection overwriting a base collection's mod instead of installing a variant ([#24882](https://github.com/Nexus-Mods/Vortex/pull/24882))
+- "A plugin could not be parsed" for missing plugin files ([#24880](https://github.com/Nexus-Mods/Vortex/pull/24880))
+- Profile management comparing game domains to Vortex game ids ([#24867](https://github.com/Nexus-Mods/Vortex/pull/24867))
+- Manual installer: no conflict icon for tier zero games, a stuck dialog, and the batch choice ignored by queued installs ([#24823](https://github.com/Nexus-Mods/Vortex/pull/24823))
+- Game discovery using priority-based store detection instead of the user-selected game store ([#24767](https://github.com/Nexus-Mods/Vortex/pull/24767))
+- Another account's or out-of-date adult content preferences returned by `getUserInfo` ([#24765](https://github.com/Nexus-Mods/Vortex/pull/24765))
+- Switching account keeping the previous account's adult content preferences ([#24750](https://github.com/Nexus-Mods/Vortex/pull/24750))
+
 ## [2.11.0] - 2026-11-18
 
 _Stable 2.11 release. See the beta entries below for the full list of changes since 2.10._
@@ -2740,6 +2817,7 @@ _Yanked due to critical issue found with file overrides_
 - When providing feedback, users are treated as logged out if using OAuth
 - Changelog dashlet was incorrectly displaying markdown
 
+[2.12.0-beta.1]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.12.0-beta.1
 [2.11.0]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0
 [2.11.0-beta.5]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.5
 [2.11.0-beta.4]: https://github.com/Nexus-Mods/Vortex/releases/tag/2.11.0-beta.4
