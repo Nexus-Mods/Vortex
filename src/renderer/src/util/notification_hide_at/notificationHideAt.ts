@@ -6,11 +6,22 @@ const DEFAULT_DISPLAY_MS: Record<string, number> = {
   info: 5000,
 };
 
+export interface INotificationHideAtOptions {
+  /**
+   * Whether the view shows the notification's actions and dismiss button. Only a
+   * view that does can keep a notification up until the user acts on it.
+   */
+  interactive: boolean;
+}
+
 /**
  * How long a notification pops up for, or `null` to keep it up until the user
  * dismisses it.
  */
-function displayTime(item: INotification): number | null {
+function displayTime(
+  item: INotification,
+  { interactive }: INotificationHideAtOptions,
+): number | null {
   if (item.displayMS !== undefined) {
     return item.displayMS;
   }
@@ -18,7 +29,7 @@ function displayTime(item: INotification): number | null {
   // A notification with actions but no explicit displayMS requires the
   // user to choose. Auto-hiding it would silently strand the choice
   // (see INotification displayMS contract).
-  if (item.actions !== undefined && item.actions.length > 0) {
+  if (interactive && item.actions !== undefined && item.actions.length > 0) {
     return null;
   }
 
@@ -31,8 +42,11 @@ function displayTime(item: INotification): number | null {
  * that replaces an older notification with the same id gets its full time (an
  * activity counts from when it started).
  */
-export function notificationHideAt(item: INotification): number | null {
-  const ms = displayTime(item);
+export function notificationHideAt(
+  item: INotification,
+  options: INotificationHideAtOptions,
+): number | null {
+  const ms = displayTime(item, options);
   if (ms === null) {
     return null;
   }

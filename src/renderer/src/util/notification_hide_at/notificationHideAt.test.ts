@@ -14,31 +14,39 @@ const notification = (fields: Partial<INotification>): INotification => ({
 
 const edit = { title: "Edit", action: () => undefined };
 
+const interactive = { interactive: true };
+const readOnly = { interactive: false };
+
 describe("notificationHideAt", () => {
   it("counts displayMS from the last update, so a replacement gets its full time", () => {
-    expect(notificationHideAt(notification({ displayMS: 7000 }))).toBe(38_000);
+    expect(notificationHideAt(notification({ displayMS: 7000 }), interactive)).toBe(38_000);
   });
 
   it("falls back to the type's default time", () => {
-    expect(notificationHideAt(notification({ type: "error" }))).toBe(41_000);
+    expect(notificationHideAt(notification({ type: "error" }), interactive)).toBe(41_000);
   });
 
   it("keeps a notification with actions and no displayMS up until dismissed", () => {
     const noti = notification({ actions: [edit] });
-    expect(notificationHideAt(noti)).toBeNull();
+    expect(notificationHideAt(noti, interactive)).toBeNull();
+  });
+
+  it("hides a notification with actions on its type's time in a view that can't show them", () => {
+    const noti = notification({ type: "error", actions: [edit] });
+    expect(notificationHideAt(noti, readOnly)).toBe(41_000);
   });
 
   it("still hides a notification with actions when it sets displayMS", () => {
     const noti = notification({ actions: [edit], displayMS: 7000 });
-    expect(notificationHideAt(noti)).toBe(38_000);
+    expect(notificationHideAt(noti, interactive)).toBe(38_000);
   });
 
   it("counts an activity from when it started", () => {
     const noti = notification({ type: "activity", displayMS: 7000 });
-    expect(notificationHideAt(noti)).toBe(8_000);
+    expect(notificationHideAt(noti, interactive)).toBe(8_000);
   });
 
   it("hides an activity without displayMS 10s after it started", () => {
-    expect(notificationHideAt(notification({ type: "activity" }))).toBe(11_000);
+    expect(notificationHideAt(notification({ type: "activity" }), interactive)).toBe(11_000);
   });
 });

@@ -120,7 +120,7 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
     const now = Date.now();
     if (!isOpen) {
       newFiltered = newFiltered.filter((item) => {
-        const timeout = notificationHideAt(item);
+        const timeout = notificationHideAt(item, { interactive: true });
         if (timeout === null) {
           return true;
         }

@@ -336,7 +336,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       if (["activity", "silent"].includes(item.type) || shownAt < opened) {
         return false;
       }
-      const hideAt = notificationHideAt(item);
+      const hideAt = notificationHideAt(item, { interactive: false });
       return hideAt === null || hideAt > now;
     });
 
