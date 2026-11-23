@@ -1,5 +1,10 @@
 import { createAction } from "redux-act";
 
+export const setBetaLoadOrder = createAction(
+  "GAMEBRYO_SET_BETA_LOAD_ORDER",
+  (profileId: string, enabled: boolean) => ({ profileId, enabled }),
+);
+
 /**
  * enables or disables autosort
  */

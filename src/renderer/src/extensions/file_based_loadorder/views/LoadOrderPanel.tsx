@@ -11,6 +11,7 @@ import Spinner from "../../../controls/Spinner";
 import type { IState } from "../../../types/IState";
 import { DNDContainer } from "../../../views/DNDContainer";
 import type { IProfile } from "../../profile_management/types/IProfile";
+import { applyLoadOrderEdit } from "../handlers";
 import { RenderRowsCache } from "../renderRows";
 import {
   loadOrderForProfile,
@@ -33,6 +34,7 @@ interface IPanelState {
   loading: boolean;
   validationError: LoadOrderValidationError;
   filterText: string;
+  rejectedEdits: number;
 }
 
 export interface ILoadOrderPanelProps {
@@ -61,6 +63,7 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
   //  object identities, preserving the rows' React.memo and avoiding a layout
   //  measure in DraggableList.
   private mRenderRows: RenderRowsCache;
+  private mReadRequest = 0;
 
   constructor(props: IProps) {
     super(props);
@@ -68,8 +71,12 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
       loading: true,
       validationError: undefined,
       filterText: "",
+      rejectedEdits: 0,
     });
-    this.mRenderRows = new RenderRowsCache(props.gameEntry.loadOrderId);
+    this.mRenderRows = new RenderRowsCache(
+      props.gameEntry.loadOrderId,
+      props.gameEntry.writesOnUserEdit ? this.applyEdit : undefined,
+    );
   }
 
   public componentDidMount() {
@@ -77,7 +84,10 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
   }
 
   public componentDidUpdate(prevProps: IProps) {
-    if (prevProps.refreshId !== this.props.refreshId) {
+    if (
+      prevProps.refreshId !== this.props.refreshId ||
+      (this.props.gameEntry.writesOnUserEdit && prevProps.profile?.id !== this.props.profile?.id)
+    ) {
       void this.readFromGame();
       return;
     }
@@ -88,6 +98,10 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
           ? undefined
           : new LoadOrderValidationError(validationResult, loadOrder);
     }
+  }
+
+  public componentWillUnmount() {
+    ++this.mReadRequest;
   }
 
   public render(): JSX.Element {
@@ -114,6 +128,7 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
         this.renderWait()
       ) : enabled.length > 0 ? (
         <DraggableList
+          key={this.state.rejectedEdits}
           apply={this.onApply}
           disabled={this.props.disabled || this.state.filterText !== ""}
           id="mod-loadorder-draggable-list"
@@ -122,6 +137,7 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
           itemRenderer={chosenItemRenderer}
           items={enabled}
           itemTypeId="file-based-lo-draggable-entry"
+          reorderOnDirectHover={gameEntry.reorderOnDirectHover}
           virtualized={
             gameEntry.customItemRenderer === undefined || gameEntry.uniformRowHeight === true
           }
@@ -171,17 +187,34 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
   // Reads this load order from the game and shows it, invalid or not, so the user can fix it here.
   private readFromGame = (): Promise<void> => {
     const { gameEntry, onStartUp, onSetOrder, profile } = this.props;
+    const request = ++this.mReadRequest;
     return onStartUp(profile?.gameId, gameEntry.loadOrderId)
       .then((lo) => {
+        if (gameEntry.writesOnUserEdit && request !== this.mReadRequest) return;
         this.nextState.validationError = undefined;
         if (lo !== undefined) {
           onSetOrder(profile.id, lo, gameEntry.loadOrderId);
         }
       })
       .catch((err) => {
+        if (gameEntry.writesOnUserEdit && request !== this.mReadRequest) return;
         if (err instanceof LoadOrderValidationError) {
           this.nextState.validationError = err;
           onSetOrder(profile.id, err.loadOrder, gameEntry.loadOrderId);
+        }
+      });
+  };
+
+  private applyEdit = (order: LoadOrder): void => {
+    const { gameEntry, profile, onShowError, loadOrder } = this.props;
+    void applyLoadOrderEdit(this.context.api, profile.id, gameEntry, order, loadOrder)
+      .then(() => (this.nextState.validationError = undefined))
+      .catch((err) => {
+        this.nextState.rejectedEdits = this.state.rejectedEdits + 1;
+        if (err instanceof LoadOrderValidationError) {
+          this.nextState.validationError = err;
+        } else {
+          onShowError(profile.gameId, unknownToError(err), gameEntry.loadOrderId);
         }
       });
   };
@@ -199,6 +232,10 @@ class LoadOrderPanel extends ComponentEx<IProps, IPanelState> {
     }
     const { gameEntry, onSetOrder, onShowError, profile, validateLoadOrder } = this.props;
     const newLO = ordered.map((item) => item.loEntry);
+    if (gameEntry.writesOnUserEdit) {
+      this.applyEdit(newLO);
+      return;
+    }
     validateLoadOrder(profile, newLO, gameEntry.loadOrderId)
       .then(() => (this.nextState.validationError = undefined))
       .catch((err) => {

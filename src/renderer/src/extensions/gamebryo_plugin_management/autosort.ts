@@ -26,6 +26,7 @@ import { activeGameId, activeProfile } from "../profile_management/selectors";
 /* eslint-disable */
 import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
+import { isBetaLoadOrder } from "./betaLoadOrder";
 import { NAMESPACE } from "./statics";
 import { EdgeType, groupsPath } from "./types/ILoot";
 import type { ICycleEdge, ILootRef } from "./types/ILoot";
@@ -138,7 +139,7 @@ class LootInterface {
   private mLoot: { game: string; loot: LootAsync } | undefined;
   private mRestarts: number = MAX_RESTARTS;
   // a sort requested while an activity blocked it, run once the activity ends
-  private mDeferredSort: { manual: boolean } | undefined;
+  private mDeferredSort: { manual: boolean; explicit: boolean; profileId?: string } | undefined;
 
   constructor(api: IExtensionApi) {
     const store = api.store;
@@ -235,16 +236,32 @@ class LootInterface {
     if (this.mDeferredSort === undefined || this.shouldDeferLootActivities()) {
       return;
     }
-    const { manual } = this.mDeferredSort;
+    const { manual, explicit, profileId } = this.mDeferredSort;
     this.mDeferredSort = undefined;
-    void this.onSort(manual);
+    void this.onSort(manual, undefined, explicit ? undefined : "deployment", profileId);
   };
 
-  private onSort = async (manual: boolean, callback?: (err: Error) => void) => {
-    const outcome = await this.runSort(manual);
+  private onSort = async (
+    manual: boolean,
+    callback?: (err: Error) => void,
+    origin?: "deployment",
+    profileId?: string,
+  ) => {
+    const explicit = manual && origin !== "deployment";
+    const requestedIn = this.mExtensionApi.getState();
+    const requestingProfile =
+      profileId ??
+      (explicit && isBetaLoadOrder(requestedIn) ? activeProfile(requestedIn)?.id : undefined);
+    const result = await this.runSort(manual, undefined, explicit, requestingProfile);
+    const state = this.mExtensionApi.getState();
+    const outcome: SortOutcome =
+      result.result === "sorted" &&
+      ((!explicit && isBetaLoadOrder(state)) ||
+        (requestingProfile !== undefined && activeProfile(state)?.id !== requestingProfile))
+        ? { result: "skipped" }
+        : result;
     if (outcome.result === "sorted") {
       const { store } = this.mExtensionApi;
-      const state = store.getState();
       store.dispatch(updatePluginOrder(outcome.sorted, false, state.settings.plugins.autoEnable));
       const sortedProfileId = activeProfile(state)?.id;
       if (sortedProfileId !== undefined) {
@@ -298,9 +315,15 @@ class LootInterface {
   }
 
   /** The gates every sort passes before doSort; the API path supplies the files to sort. */
-  private async runSort(manual: boolean, pluginFilePaths?: string[]): Promise<SortOutcome> {
+  private async runSort(
+    manual: boolean,
+    pluginFilePaths?: string[],
+    explicit: boolean = manual,
+    profileId?: string,
+  ): Promise<SortOutcome> {
     const { store } = this.mExtensionApi;
     const { activeProfileId, nextProfileId } = store.getState().settings.profiles;
+    if (profileId !== undefined && profileId !== activeProfileId) return { result: "skipped" };
     // a state sort during a profile switch waits for the next profile's load order
     const switchPending = pluginFilePaths === undefined && nextProfileId !== activeProfileId;
     if (this.shouldDeferLootActivities() || switchPending) {
@@ -308,11 +331,18 @@ class LootInterface {
       // caller to answer, so a file sort is refused instead
       if (pluginFilePaths === undefined) {
         // a manual request stays manual so the deferred run is not gated by the autoSort setting
-        this.mDeferredSort = { manual: manual || (this.mDeferredSort?.manual ?? false) };
+        const pending = this.mDeferredSort;
+        const matching = pending?.profileId === undefined || pending.profileId === activeProfileId;
+        this.mDeferredSort = {
+          manual: manual || (matching && pending?.manual === true),
+          explicit: explicit || (matching && pending?.explicit === true),
+          profileId: matching ? (profileId ?? pending?.profileId) : profileId,
+        };
       }
       return { result: "deferred" };
     }
-    if (!manual && !store.getState().settings.plugins.autoSort) {
+    const state = store.getState();
+    if ((!manual && !state.settings.plugins.autoSort) || (!explicit && isBetaLoadOrder(state))) {
       return { result: "skipped" };
     }
     try {

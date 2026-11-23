@@ -6,6 +6,7 @@ import { shouldReorder } from "./dragReorder";
 
 export interface IDraggableListItemProps {
   disabled?: boolean;
+  reorderOnDirectHover?: boolean;
   index: number;
   item: any;
   isLocked: boolean;
@@ -35,6 +36,7 @@ export interface IDraggableListItemProps {
 
 const DraggableItem: React.FC<React.PropsWithChildren<IDraggableListItemProps>> = ({
   disabled,
+  reorderOnDirectHover = false,
   index,
   item,
   draggedItems,
@@ -100,7 +102,12 @@ const DraggableItem: React.FC<React.PropsWithChildren<IDraggableListItemProps>> 
     hover: (draggedItem: any, monitor) => {
       const { index: dragIndex, items, containerId: sourceContainerId } = draggedItem;
       const hoverIndex = index;
-      if (dragIndex === hoverIndex || isLocked || disabled || monitor.isOver({ shallow: true })) {
+      if (
+        dragIndex === hoverIndex ||
+        isLocked ||
+        disabled ||
+        monitor.isOver({ shallow: true }) !== reorderOnDirectHover
+      ) {
         return;
       }
 

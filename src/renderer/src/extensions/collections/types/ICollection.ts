@@ -1,3 +1,4 @@
+import type { ICollectionLoadOrder } from "../../file_based_loadorder/types/collections";
 import type {
   IChoiceType,
   IFileListItem,
@@ -83,7 +84,7 @@ export interface ICollectionTool {
   onStart: "hide" | "hide_recover" | "close";
 }
 
-export interface ICollection extends Partial<ICollectionGamebryo> {
+export interface ICollection extends Partial<ICollectionGamebryo>, Partial<ICollectionLoadOrder> {
   info: ICollectionInfo;
   mods: ICollectionMod[];
   modRules: ICollectionModRule[];

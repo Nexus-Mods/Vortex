@@ -42,5 +42,15 @@ export const transactionsReducer = actionsToPartialReducerSpec<IStateTransaction
       const { [profileId]: _, ...pendingPluginSort } = state.pendingPluginSort;
       return { ...state, pendingPluginSort };
     },
+    discardCollectionPluginSort: (state, payload) => {
+      const { profileId, collectionId } = payload;
+      const queued = state.pendingPluginSort?.[profileId];
+      if (queued === undefined || !Object.hasOwn(queued, collectionId)) return state;
+
+      const { [profileId]: _, ...pendingPluginSort } = state.pendingPluginSort;
+      const { [collectionId]: _removed, ...remaining } = queued;
+      if (Object.keys(remaining).length > 0) pendingPluginSort[profileId] = remaining;
+      return { ...state, pendingPluginSort };
+    },
   },
 );

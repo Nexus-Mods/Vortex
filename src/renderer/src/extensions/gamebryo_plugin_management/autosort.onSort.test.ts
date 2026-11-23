@@ -8,7 +8,7 @@ import { makeProfile } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
-import { setAutoSortEnabled } from "./actions/settings";
+import { setAutoSortEnabled, setBetaLoadOrder } from "./actions/settings";
 import LootInterface from "./autosort";
 
 // the five seams the autosort suites share; each factory delegates to lootMocks so the
@@ -68,6 +68,47 @@ describe("LootInterface autosort-plugins", () => {
     await vi.waitFor(() => expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(1));
   });
 
+  test("drops a deferred collection sort on switching to Beta and accepts explicit LOOT", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setAutoSortEnabled(false));
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+    await new Promise<void>((resolve) =>
+      harness.emit("autosort-plugins", true, resolve, "deployment"),
+    );
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+    await flushAsync();
+
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+    await harness.sort(true);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledExactlyOnceWith(["A.esp"]);
+  });
+
+  test("does not carry a deferred Beta LOOT request into another profile", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+    await harness.sort(true);
+    harness.setState((draft) => {
+      draft.persistent.profiles["new-profile"] = makeProfile({
+        id: "new-profile",
+        gameId: draft.persistent.profiles[harness.profileId].gameId,
+      });
+      draft.settings.profiles.activeProfileId = "new-profile";
+      draft.settings.profiles.nextProfileId = "new-profile";
+    });
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+    await flushAsync();
+
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+    await harness.sort(true);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledExactlyOnceWith(["A.esp"]);
+  });
+
   test("refuses a state sort while plugin management is off for the profile", async ({
     makeLoot,
   }) => {
@@ -87,6 +128,18 @@ describe("LootInterface autosort-plugins", () => {
     await harness.sort(false);
 
     expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+  });
+
+  test("Drag and Drop skips automatic sorting and still accepts Sort via LOOT", async ({
+    makeLoot,
+  }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    harness.api.store.dispatch(setBetaLoadOrder(harness.profileId, true));
+    await harness.sort(false);
+    expect(harness.loot.sortPlugins).not.toHaveBeenCalled();
+    await harness.sort(true);
+    expect(harness.loot.sortPlugins).toHaveBeenCalledWith(["A.esp"]);
   });
 
   test("defers sorting while a profile switch is pending", async ({ makeLoot }) => {

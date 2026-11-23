@@ -22,6 +22,9 @@ export interface IItemRendererProps {
   // The load order this entry belongs to; the primary when omitted.
   loadOrderId?: string;
 
+  /** Optional editor for rows whose order is written before it is displayed. */
+  onEditOrder?: (order: LoadOrder) => void;
+
   // Function components cannot be given refs, which means that DnD
   //  will not work when using the Vortex API's DraggableItem without
   //  forwarding the ref to the itemRenderer.
@@ -158,6 +161,10 @@ export interface ILoadOrderGameInfo {
    *  guarantees this, so custom renderers must opt in.
    */
   uniformRowHeight?: boolean;
+  /** Use the directly hovered row as the reorder target. */
+  reorderOnDirectHover?: boolean;
+  /** Serialize explicit edits only. Reads mirror the game order and never write it back. */
+  writesOnUserEdit?: boolean;
 
   /**
    * By default the FBLO extension will attempt to automatically generate the data

@@ -15,6 +15,7 @@ import { getGame } from "../../gamemode_management/util/getGame";
 import { setDeploymentNecessary } from "../../mod_management/actions/deployment";
 import { installPathForGame } from "../../mod_management/selectors";
 import { getCurrentActivator } from "../../mod_management/util/deploymentMethods";
+import { activeProfileId } from "../../profile_management/selectors";
 import { setPluginList } from "../actions/plugins";
 import { ESPFile } from "../esp/ESPFile";
 import type { IPlugins } from "../types/IPlugins";
@@ -37,6 +38,7 @@ async function updatePluginListImpl(
   newModList: IModStates,
   gameId: string,
   getPersistor: PersistorGetter,
+  targetProfileId?: string,
 ): Promise<void> {
   const state = store.getState();
 
@@ -148,7 +150,10 @@ async function updatePluginListImpl(
   }
 
   const deployedFileNames = await deployedScan;
-  if (deployedFileNames === undefined) {
+  if (
+    deployedFileNames === undefined ||
+    (targetProfileId !== undefined && activeProfileId(store.getState()) !== targetProfileId)
+  ) {
     return;
   }
   for (const fileName of deployedFileNames) {
@@ -199,13 +204,16 @@ export function makeUpdatePluginList(getPersistor: PersistorGetter) {
     store: ThunkStore<IStateWithGamebryo>,
     newModList: IModStates,
     gameId: string,
+    targetProfileId?: string,
   ): Promise<void> =>
     withActivityTracking(
       store.dispatch,
       "plugins",
       "update-plugin-list",
-      updatePluginListImpl(store, newModList, gameId, getPersistor).catch((err) => {
-        showError(store.dispatch, "Failed to update plugin list", err);
-      }),
+      updatePluginListImpl(store, newModList, gameId, getPersistor, targetProfileId).catch(
+        (err) => {
+          showError(store.dispatch, "Failed to update plugin list", err);
+        },
+      ),
     );
 }

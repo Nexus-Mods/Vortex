@@ -161,6 +161,7 @@ async function handleLoadOrderChange(
   previousLoadOrder: LoadOrder,
   nextLoadOrder: LoadOrder,
 ): Promise<void> {
+  if (gameEntry.writesOnUserEdit) return;
   const held = loadOrderHeldForDeploy(api.getState(), profile.id, gameEntry.loadOrderId);
   if (held !== undefined) {
     if (holdAwaitsMods(held) && holdCanRestore(held, nextLoadOrder)) {
@@ -182,6 +183,23 @@ async function handleLoadOrderChange(
   } catch (err) {
     return reportError(api, gameEntry, err);
   }
+}
+
+export async function applyLoadOrderEdit(
+  api: IExtensionApi,
+  profileId: string,
+  entry: IRegisteredLoadOrder,
+  next: LoadOrder,
+  previous?: LoadOrder,
+): Promise<void> {
+  const state = api.getState();
+  if (activeProfile(state)?.id !== profileId || !isInUse(entry)) {
+    throw new Error("The active load order changed. Try again on the current profile.");
+  }
+  await entry.serializeLoadOrder(
+    next,
+    previous ?? loadOrderForProfile(state, profileId, entry.loadOrderId),
+  );
 }
 
 // The active profile and its game's load orders in use, unless a collection is installing.
@@ -207,6 +225,7 @@ async function readActiveLoadOrdersFromGame(
 ): Promise<void> {
   const active = activeLoadOrders(api, registry);
   for (const gameEntry of active?.gameEntries ?? []) {
+    if (gameEntry.writesOnUserEdit) continue;
     try {
       dispatchLoadOrder(api, active.profile.id, gameEntry, await gameEntry.deserializeLoadOrder());
     } catch {
@@ -304,6 +323,7 @@ async function reconcileProfileLoadOrders(
   }
   logUnclaimedPrimaryOrder(api, registry, profileId, profile.gameId);
   for (const gameEntry of registry.entries(profile.gameId).filter(isInUse)) {
+    if (gameEntry.writesOnUserEdit) continue;
     try {
       const held = afterDeploy
         ? loadOrderHeldForDeploy(api.getState(), profileId, gameEntry.loadOrderId)
@@ -344,6 +364,7 @@ function holdLoadOrders(
   }
   const awaits = (entry: ILoadOrderEntry) => awaitedVortexModIds.includes(vortexModIdOf(entry));
   for (const gameEntry of registry.entries(profile.gameId).filter(isInUse)) {
+    if (gameEntry.writesOnUserEdit) continue;
     const loadOrder = loadOrderForProfile(state, profileId, gameEntry.loadOrderId);
     if (loadOrder.length > 0 && (awaitedVortexModIds.length === 0 || loadOrder.some(awaits))) {
       api.store.dispatch(
@@ -423,7 +444,10 @@ export async function onStartUp(
   const stored = storedLoadOrder(api, profileId, gameEntry);
   try {
     const loadOrder = await gameEntry.deserializeLoadOrder();
-    const validationResult: IValidationResult = await gameEntry.validate(stored, loadOrder);
+    const validationResult: IValidationResult = await gameEntry.validate(
+      gameEntry.writesOnUserEdit ? loadOrder : stored,
+      loadOrder,
+    );
     assertValidationResult(validationResult);
     if (validationResult !== undefined) {
       throw new LoadOrderValidationError(validationResult, loadOrder);

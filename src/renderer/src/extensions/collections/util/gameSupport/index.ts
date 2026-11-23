@@ -83,9 +83,10 @@ export function parseGameSpecifics(
   gameId: string,
   collection: ICollection,
   collectionMod: IMod,
+  profileId?: string,
 ): Promise<void> {
   if (gameSupport[gameId] !== undefined && gameSupport[gameId].parser !== undefined) {
-    return gameSupport[gameId].parser(api, gameId, collection, collectionMod);
+    return gameSupport[gameId].parser(api, gameId, collection, collectionMod, profileId);
   } else {
     return Promise.resolve();
   }

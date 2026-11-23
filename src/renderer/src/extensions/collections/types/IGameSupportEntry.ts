@@ -18,6 +18,7 @@ export interface IGameSupportEntry {
     gameId: string,
     collection: ICollection,
     collectionMod: IMod,
+    profileId?: string,
   ) => Promise<void>;
 
   interface: (props: IExtendedInterfaceProps) => JSX.Element;

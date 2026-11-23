@@ -9,7 +9,10 @@ const store = vi.hoisted(() => ({
     activeGameId: string | undefined;
     activeProfileId: string | undefined;
     lastActiveProfiles: Record<string, string>;
-    settings: { interface: object };
+    settings: {
+      interface: object;
+      plugins?: { betaLoadOrder: Record<string, boolean> };
+    };
     session: { base: object };
   },
   dispatch: vi.fn(),
@@ -38,7 +41,7 @@ const pages = vi.hoisted(() =>
     ["health", "per-game"],
     ["Downloads", "global"],
     ["collection-view", "hidden"],
-  ].map(([id, group]) => ({ id, group, visible: () => true })),
+  ].map(([id, group]) => ({ id, group, visible: (): boolean => true })),
 );
 
 vi.mock("../../../contexts", () => ({
@@ -179,5 +182,35 @@ describe("SpineProvider", () => {
     activate("stardew");
 
     expect(store.dispatch).toHaveBeenLastCalledWith(setOpenMainPage("health", false));
+  });
+  it("switches between Load order and Plugins when beta is toggled", () => {
+    const setBeta = (enabled: boolean) => {
+      store.state.settings.plugins = { betaLoadOrder: { profile: enabled } };
+    };
+    const isManual = () => store.state.settings.plugins?.betaLoadOrder.profile === true;
+    setBeta(true);
+    pages.push({
+      id: "file-based-loadorder",
+      group: "per-game",
+      visible: isManual,
+    });
+    pages.push({ id: "gamebryo-plugins", group: "per-game", visible: () => !isManual() });
+    const shown = (id: string) => spine.visiblePages.some((page) => page.id === id);
+    try {
+      const { rerender } = render(tree());
+      expect(shown("file-based-loadorder")).toBe(true);
+      expect(shown("gamebryo-plugins")).toBe(false);
+      setBeta(false);
+      rerender(tree());
+      expect(shown("file-based-loadorder")).toBe(false);
+      expect(shown("gamebryo-plugins")).toBe(true);
+      setBeta(true);
+      rerender(tree());
+      expect(shown("file-based-loadorder")).toBe(true);
+      expect(shown("gamebryo-plugins")).toBe(false);
+    } finally {
+      pages.pop();
+      pages.pop();
+    }
   });
 });

@@ -12,6 +12,7 @@
  * Skip attribution (premium/automatic and free-user) is no longer the driver's concern - it
  * moved to markCollectionMemberSkipped (see collectionSkip.test.ts).
  */
+import { VortexGameId } from "@vortex/shared";
 import { describe, expect, vi } from "vitest";
 
 import {
@@ -20,6 +21,7 @@ import {
   makeFileListItem,
   makeInstallerChoices,
   makeMod,
+  makeLoadOrderEntry,
   makePatches,
   makeReference,
   makeRule,
@@ -31,13 +33,23 @@ import { modRuleId } from "../../../util/collectionInstallSession";
 import type * as ErrorHandling from "../../../util/errorHandling";
 import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import type { IDownload } from "../../download_management/types/IDownload";
-import { setPendingPluginSort } from "../../mod_management/actions/transactions";
+import { setBetaLoadOrder } from "../../gamebryo_plugin_management/actions/settings";
+import {
+  discardCollectionPluginSort,
+  setPendingPluginSort,
+} from "../../mod_management/actions/transactions";
 import type { IMod, IModRule } from "../../mod_management/types/IMod";
 import { selectedOptionalRules } from "../../mod_management/util/dependencies";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { MOD_TYPE } from "../constants";
+import type { ICollection } from "../types/ICollection";
 import { applyPatches } from "./binaryPatching";
 import { deterministicReferenceTag } from "./deterministicReferenceTag";
+import { readCollection } from "./readCollection";
+
+vi.mock("./readCollection", () => ({
+  readCollection: vi.fn().mockRejectedValue(new Error("No fixture manifest")),
+}));
 
 // applyPatches is a single named collaborator that does binary file patching (fs). Stubbing it
 // at that boundary lets the member install-spec path run without touching disk while we still
@@ -178,6 +190,57 @@ describe("InstallDriver session lifecycle", () => {
     expect(typeof (marker?.payload as { time: unknown }).time).toBe("number");
   });
 
+  test("does not schedule a deferred sort for an ordinary collection on a Beta profile", async ({
+    makeDriver,
+  }) => {
+    const h = makeDriver({
+      mods: { [GAME_ID]: { [defaultFixture.collection.id]: defaultFixture.collection } },
+      downloads: { [defaultFixture.download.id]: defaultFixture.download },
+      profiles: { [profile.id]: profile },
+    });
+    h.setState((state) => {
+      state.settings.plugins = {
+        ...state.settings.plugins,
+        betaLoadOrder: { [profile.id]: true },
+      };
+    });
+    await h.driver.start(profile, defaultFixture.collection);
+
+    expect(h.getState().session.collections.activeSession?.profileId).toBe(profile.id);
+    const markerType = setPendingPluginSort(profile.id, defaultFixture.collection.id, 0).type;
+    expect(h.dispatched.some(({ type }) => type === markerType)).toBe(false);
+  });
+
+  test.for([
+    { beta: true, clearsSort: true },
+    { beta: false, clearsSort: false },
+  ])(
+    "handles a paused Classic install completed with Beta set to $beta",
+    async ({ beta, clearsSort }, { startCollection }) => {
+      const h = await startCollection(defaultFixture);
+      const collectionId = defaultFixture.collection.id;
+      const clear = discardCollectionPluginSort(profile.id, collectionId);
+      h.driver.pause("user");
+      expect(h.dispatched).not.toContainEqual(clear);
+
+      h.setState((state) => {
+        state.settings.plugins = {
+          ...state.settings.plugins,
+          betaLoadOrder: { [profile.id]: beta },
+        };
+      });
+      await h.driver.start(profile, defaultFixture.collection);
+      setSessionStatus(h, [memberRule], "installed");
+      h.emit("did-install-dependencies", GAME_ID, collectionId, false);
+      await vi.waitFor(() => expect(h.driver.step).toBe("review"));
+      expect(h.dispatched).not.toContainEqual(clear);
+
+      await h.driver.continue();
+      expect(h.dispatched.some((action) => action.type === clear.type)).toBe(clearsSort);
+      if (clearsSort) expect(h.dispatched).toContainEqual(clear);
+    },
+  );
+
   test("refuses to start a second collection while one is still installing", async ({
     startCollection,
   }) => {
@@ -191,6 +254,69 @@ describe("InstallDriver session lifecycle", () => {
     expect(h.driver.currentSessionId).toBe(firstSessionId);
     expect(h.getState().session.collections.activeSession?.collectionId).toBe("col-1");
   });
+});
+
+describe("InstallDriver saved plugin order on resume", () => {
+  test.for([["Use Saved Order", true] as const, ["Keep Current Sorting", false] as const])(
+    "remembers %s after pause and a new driver",
+    async ([action, appliesOrder], { makeDriver }) => {
+      const manifest = {
+        fbLoadOrders: [
+          { id: "bethesda-plugins", entries: [makeLoadOrderEntry({ id: "test.esp" })] },
+        ],
+      } as ICollection;
+      vi.mocked(readCollection)
+        .mockResolvedValueOnce(manifest)
+        .mockResolvedValueOnce(manifest)
+        .mockResolvedValueOnce(manifest);
+      const collectionId = defaultFixture.collection.id;
+      const other = { ...profile, id: "prof-2", name: "Other profile" };
+      const setup = (mod: IMod, active = profile) =>
+        makeDriver({
+          activeProfileId: active.id,
+          profiles: { [profile.id]: profile, [other.id]: other },
+          mods: { [GAME_ID]: { [collectionId]: mod } },
+          downloads: { [defaultFixture.download.id]: defaultFixture.download },
+          installPath: { [GAME_ID]: "C:/test-staging" },
+        });
+
+      const initial = setup(defaultFixture.collection);
+      const decisions = (h: IDriverHarness) =>
+        h.dialogCalls.filter((dialog) => dialog.title === "Use the collection's saved load order?");
+      initial.setNextDialog({ action, input: {} });
+      await initial.driver.start(profile, defaultFixture.collection);
+      expect(decisions(initial)).toHaveLength(1);
+      initial.driver.pause("user");
+
+      const paused = initial.getState().persistent.mods[GAME_ID][collectionId];
+      const otherProfile = setup(paused, other);
+      otherProfile.setNextDialog({ action: "Cancel", input: {} });
+      await otherProfile.driver.start(other, paused);
+      expect(decisions(otherProfile)).toHaveLength(1);
+
+      const resumed = setup(paused);
+      resumed.setState((state) => {
+        state.settings.plugins = {
+          ...state.settings.plugins,
+          betaLoadOrder: { [profile.id]: appliesOrder },
+        };
+      });
+      await resumed.driver.start(profile, paused);
+      expect(decisions(resumed)).toHaveLength(0);
+      expect(resumed.getState().session.collections.activeSession?.profileId).toBe(profile.id);
+      expect(
+        resumed.dispatched.some(({ type }) => type === setBetaLoadOrder(profile.id, true).type),
+      ).toBe(appliesOrder);
+      resumed.driver.cancel();
+
+      const cancelled = resumed.getState().persistent.mods[GAME_ID][collectionId];
+      const restarted = setup(cancelled);
+      restarted.setNextDialog({ action: "Cancel", input: {} });
+      vi.mocked(readCollection).mockResolvedValueOnce(manifest);
+      await restarted.driver.start(profile, cancelled);
+      expect(decisions(restarted)).toHaveLength(1);
+    },
+  );
 });
 
 describe("InstallDriver optional default-skip", () => {
@@ -621,6 +747,55 @@ describe("InstallDriver completion decision", () => {
     setSessionStatus(h, [memberRule], "failed");
 
     expect(h.driver.isInstallComplete(false)).toBe(true);
+  });
+});
+
+describe("InstallDriver import profile", () => {
+  test("opens a new collection on the profile that finishes switching after the prior install", async ({
+    makeDriver,
+  }) => {
+    const nextProfile = { ...profile, id: "prof-2", name: "Next profile" };
+    const next = buildCollectionFixture("next-collection", []);
+    const h = makeDriver({
+      mods: {
+        [GAME_ID]: {
+          [defaultFixture.collection.id]: defaultFixture.collection,
+          [next.collection.id]: next.collection,
+        },
+      },
+      downloads: {
+        [defaultFixture.download.id]: defaultFixture.download,
+        [next.download.id]: next.download,
+      },
+      profiles: { [profile.id]: profile, [nextProfile.id]: nextProfile },
+    });
+    await h.driver.start(profile, defaultFixture.collection);
+    setSessionStatus(h, [memberRule], "installed");
+    h.emit("did-install-dependencies", GAME_ID, defaultFixture.collection.id, false);
+    await vi.waitFor(() => expect(h.driver.step).toBe("review"));
+    await h.driver.continue();
+    expect(h.driver.collection).toBeUndefined();
+
+    const profileSwitch = Promise.withResolvers<string>();
+    const awaitProfileSwitch = vi.fn(() => profileSwitch.promise);
+    Object.assign(h.api.ext, { awaitProfileSwitch });
+    h.setState((state) => {
+      state.settings.profiles.activeProfileId = profile.id;
+      state.settings.profiles.nextProfileId = nextProfile.id;
+    });
+    const queried = h.driver.query(VortexGameId(GAME_ID), next.collection);
+    await vi.waitFor(() => expect(awaitProfileSwitch).toHaveBeenCalledOnce());
+    expect(h.driver.collection).toBeUndefined();
+
+    h.setState((state) => {
+      state.settings.profiles.activeProfileId = nextProfile.id;
+      state.settings.profiles.lastActiveProfile[GAME_ID] = nextProfile.id;
+    });
+    profileSwitch.resolve(nextProfile.id);
+    await queried;
+    expect(h.driver.step).toBe("query");
+    expect(h.driver.collection?.id).toBe(next.collection.id);
+    expect(h.driver.profile?.id).toBe(nextProfile.id);
   });
 });
 

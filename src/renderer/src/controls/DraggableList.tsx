@@ -16,6 +16,7 @@ import { moveItems } from "./dragReorder";
 
 export interface IDraggableListProps {
   disabled?: boolean;
+  reorderOnDirectHover?: boolean;
   id: string;
   itemTypeId: string;
   items: any[];
@@ -117,6 +118,7 @@ class DraggableList extends ComponentEx<IProps, IDraggableListState> {
             {ordered.slice(start, end + 1).map((item, idx) => (
               <DraggableItem
                 disabled={this.props.disabled}
+                reorderOnDirectHover={this.props.reorderOnDirectHover}
                 containerId={id}
                 key={this.itemId(item)}
                 item={item}

@@ -151,6 +151,7 @@ export async function parser(
   gameId: string,
   collection: ICollection,
   collectionMod: IMod,
+  profileId?: string,
 ) {
   const state: IStateWithLootLists = api.getState();
 
@@ -209,6 +210,7 @@ export async function parser(
 
   const stagingPath = selectors.installPathForGame(state, gameId);
   const includedPlugins = await getIncludedPlugins(gameId, stagingPath, mods, collectionModIds);
+  if (profileId !== undefined && selectors.activeProfileId(api.getState()) !== profileId) return;
   // the collection ships and deploys every included plugin, so one goes on unless the curator
   // listed it as off: a drag-and-drop manifest carries no plugins section at all, and a list
   // can lag a member update that added a plugin
