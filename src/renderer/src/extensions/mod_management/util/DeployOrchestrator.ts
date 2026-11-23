@@ -2,6 +2,7 @@ import { FileSourceKind, resolve, type Lockfile } from "@nexusmods/mod-pipeline"
 import {
   getErrorMessageOrDefault,
   parseError,
+  type VortexDeploymentMethodId,
   VortexGameId,
   VortexProfileId,
 } from "@vortex/shared";
@@ -15,7 +16,11 @@ import {
   type PlannerPlanFigures,
 } from "../../analytics/utils/plannerPlanEvent";
 import { gameIdOfProfile, lastActiveProfileForGame } from "../../profile_management/selectors";
-import { manifestFilesAfter, readManifestFiles, saveAppliedManifests } from "./appliedManifests";
+import {
+  manifestFilesAfter,
+  readManifestFiles,
+  recordDeploymentSavingManifests,
+} from "./appliedManifests";
 import { ApplyStatus, type ApplyResult } from "./apply/apply";
 import { deploymentFailures } from "./deploymentFailures";
 import {
@@ -161,15 +166,15 @@ export class DeployOrchestrator {
 
   /**
    * Runs the pending deployment's plan through Apply and reports its plan run. The run saves the
-   * game's manifests from its operations, for `activatorId`, before it ends; those entries come
-   * back with the result. A run whose operations all ran leaves its lockfile as the game's last
-   * deployed one; a refused or rolled back run keeps the previous one. Undefined when `plan` isn't
-   * pending.
+   * game's manifests from its operations, for `deploymentMethod`, before it ends; those entries
+   * come back with the result. An applied run leaves its lockfile as the game's last deployed one;
+   * a refused or rolled back run keeps the previous one; a run that leaves its journal keeps none,
+   * so the next plan seeds from the manifests. Undefined when `plan` isn't pending.
    */
   public async apply(
     plan: DeploymentPlan,
-    run: ApplyRun,
-    activatorId: string,
+    run: Omit<ApplyRun, "manifestSaveDetails" | "recordDeployment">,
+    deploymentMethod: VortexDeploymentMethodId,
   ): Promise<{ result: ApplyResult; savedManifestFiles?: ManifestFiles } | undefined> {
     const pending = this.#pending;
     if (pending?.destinations !== plan.destinations) {
@@ -177,32 +182,28 @@ export class DeployOrchestrator {
     }
     this.#pending = undefined;
     const { gameMode, current, figures } = pending;
-    const cleared = clearedDestinationsOf(plan.destinations);
     let savedManifestFiles: ManifestFiles | undefined;
     const result = await applyPlan(plan, {
       ...run,
-      recordDeployment: async (entries) => {
-        savedManifestFiles = await saveAppliedManifests(
-          this.#api,
-          gameMode,
-          run.fs,
-          entries,
-          cleared,
-          activatorId,
-        );
+      manifestSaveDetails: {
+        deploymentMethod,
+        clearedDestinations: clearedDestinationsOf(plan.destinations),
       },
+      recordDeployment: recordDeploymentSavingManifests(this.#api, gameMode, run.fs, (saved) => {
+        savedManifestFiles = saved;
+      }),
     });
     switch (result.status) {
       case ApplyStatus.Applied:
-      case ApplyStatus.Unfinished:
         this.#previousLockfiles.set(gameMode, current);
         break;
       case ApplyStatus.Refused:
       case ApplyStatus.RolledBack:
         this.#previousLockfiles.set(gameMode, plan.previous);
         break;
+      case ApplyStatus.Unfinished:
       case ApplyStatus.RollbackFailed:
-        // the journal says where the disk is; the next plan reseeds
+        this.#previousLockfiles.delete(gameMode);
         break;
       default: {
         const exhausted: never = result;

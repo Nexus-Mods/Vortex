@@ -10,6 +10,7 @@ import {
   OperationKind,
   type FileSource,
 } from "@nexusmods/mod-pipeline";
+import { VortexDeploymentMethodId } from "@vortex/shared";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { journalStorageAt } from "../journalStorage";
@@ -20,6 +21,7 @@ import {
   openJournal,
   readJournal,
   type JournalEntry,
+  type JournalHeaderDetails,
   type JournalStorage,
 } from "./journal";
 
@@ -77,8 +79,12 @@ const makeEntries = (): JournalEntry[] => [
 ];
 
 /** Starts a run's journal on storage that has none. */
-async function startJournal(entries = makeEntries(), runId = RUN_ID) {
-  const writer = await createJournal(storage, entries, runId);
+async function startJournal(
+  entries = makeEntries(),
+  runId = RUN_ID,
+  headerDetails?: JournalHeaderDetails,
+) {
+  const writer = await createJournal(storage, entries, runId, headerDetails);
   if (writer === undefined) {
     throw new Error("a journal was already there");
   }
@@ -115,6 +121,18 @@ describe("readJournal", () => {
       createdFolders: [],
       removedFolders: [],
     });
+  });
+
+  test("reads back the manifest update its run started with", async () => {
+    const manifestSaveDetails = {
+      deploymentMethod: VortexDeploymentMethodId("hardlink_activator"),
+      clearedDestinations: ["/fixture-root/game/gone.esp"],
+    };
+
+    const writer = await startJournal(makeEntries(), RUN_ID, { manifestSaveDetails });
+    await writer.close();
+
+    expect((await foundJournal()).manifestSaveDetails).toEqual(manifestSaveDetails);
   });
 
   test("reads back what a run recorded, without it being closed", async () => {
@@ -167,20 +185,27 @@ describe("readJournal", () => {
     expect(await fs.readFile(journalFile, "utf8")).toBe(before);
   });
 
-  const header = JSON.stringify({ type: "header", version: 1, runId: "run", count: 0 });
+  const header = JSON.stringify({ type: "header", version: 2, runId: "run", count: 0 });
 
   test.each([
     ["is empty", ""],
     ["is not JSON", "{ not json\n"],
-    ["has an unknown version", `${JSON.stringify({ type: "header", version: 2 })}\n`],
+    [
+      "was written by an earlier version",
+      `${JSON.stringify({ type: "header", version: 1, runId: "run", count: 0 })}\n`,
+    ],
+    [
+      "has an unknown version",
+      `${JSON.stringify({ type: "header", version: 3, runId: "run", count: 0 })}\n`,
+    ],
     [
       "has fewer entries than its header says",
-      `${JSON.stringify({ type: "header", version: 1, runId: "run", count: 1 })}\n`,
+      `${JSON.stringify({ type: "header", version: 2, runId: "run", count: 1 })}\n`,
     ],
     [
       "has a relative path",
       [
-        JSON.stringify({ type: "header", version: 1, runId: "run", count: 1 }),
+        JSON.stringify({ type: "header", version: 2, runId: "run", count: 1 }),
         JSON.stringify({
           operation: {
             kind: OperationKind.Restore,

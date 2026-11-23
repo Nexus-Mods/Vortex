@@ -2,6 +2,7 @@ import * as path from "path";
 
 import {
   getErrorCode,
+  parseError,
   unknownToError,
   VortexDeploymentMethodId,
   VortexGameId,
@@ -140,17 +141,12 @@ import {
   deploymentPlanningFor,
   keptFolderFor,
   planAndApplyDeployment,
+  settleLeftoverDeployment,
 } from "./util/applyDeploy";
 import { exposeApplyDevHandle } from "./util/applyDevHandle";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
-import {
-  activateSingleMod,
-  genSubDirFunc,
-  laterStagingFolders,
-  purgeMods,
-  purgeModsInPath,
-} from "./util/deploy";
+import { activateSingleMod, laterStagingFolders, purgeMods, purgeModsInPath } from "./util/deploy";
 import {
   deployPendingOnAutoApply,
   scheduleAutoDeploy,
@@ -180,6 +176,7 @@ import {
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
+import { genSubDirFunc } from "./util/modSubDirectory";
 import { doSortMods } from "./util/sort";
 import { setResolvedCB } from "./util/testModReference";
 import ActivationButton from "./views/ActivationButton";
@@ -820,6 +817,8 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 profile: profile?.id,
                 method: activator.name,
               });
+              const deployingVortexGameId = VortexGameId(gameId);
+              await settleLeftoverDeployment(api, deployingVortexGameId);
 
               // Wait for active mod installations to complete before deploying
               // so we don't deploy half-installed mods.
@@ -901,7 +900,6 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 lastDeployment,
               );
 
-              const deployingVortexGameId = VortexGameId(gameId);
               const planning = deploymentPlanningFor(
                 deployingVortexGameId,
                 VortexDeploymentMethodId(activator.id),
@@ -996,6 +994,8 @@ function genUpdateModDeployment(installManager: InstallManager) {
               api.showErrorNotification("Failed to deploy mods, please try again", err.message, {
                 allowReport: false,
               });
+            } else if (parseError(err).data.kind === "deployment:interrupted-run-unsettled") {
+              api.showErrorNotification("Failed to deploy mods", err, { allowReport: false });
             } else if (err instanceof CycleError) {
               api.sendNotification({
                 id: "mod-cycle-warning",
@@ -1306,6 +1306,7 @@ function onDeploySingleMod(api: IExtensionApi) {
     let deployed = false;
     await withActivationLock(async () => {
       try {
+        await settleLeftoverDeployment(api, VortexGameId(gameId));
         const normalize = await getNormalizeFunc(dataPath);
         const lastActivation = await loadActivation(
           api,
@@ -1365,7 +1366,8 @@ function onDeploySingleMod(api: IExtensionApi) {
           const userCanceled = err instanceof UserCanceled;
           api.showErrorNotification("Failed to deploy mod", err, {
             message: modId,
-            allowReport: !userCanceled,
+            allowReport:
+              !userCanceled && parseError(err).data.kind !== "deployment:interrupted-run-unsettled",
           });
         }
       }
@@ -1561,13 +1563,20 @@ function once(api: IExtensionApi) {
         });
         return;
       }
-      api.showErrorNotification("Failed to purge mods", err);
+      api.showErrorNotification("Failed to purge mods", err, {
+        allowReport: parseError(err).data.kind !== "deployment:interrupted-run-unsettled",
+      });
     });
   });
 
   api.events.on("purge-mods", (allowFallback: boolean, callback: (err: Error) => void) => {
     purgeMods(api)
-      .catch((err) => (allowFallback ? fallbackPurge(api) : Promise.reject(err)))
+      .catch((err) =>
+        // a fallback purge would remove files the unsettled run's journal still describes
+        allowFallback && parseError(err).data.kind !== "deployment:interrupted-run-unsettled"
+          ? fallbackPurge(api)
+          : Promise.reject(err),
+      )
       .then(() => callback(null))
       .catch((err) => callback(unknownToError(err)));
   });

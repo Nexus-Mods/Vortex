@@ -22,6 +22,7 @@ import {
   type JournalEntry,
   type JournalStorage,
   type JournalWriter,
+  type ManifestSaveDetails,
   type RemovedFolder,
 } from "./journal";
 
@@ -40,10 +41,13 @@ export interface RunOptions {
   fs: FileSystem;
   journal: JournalStorage;
   /**
-   * records what the run deployed, once every step ran and before its journal ends; a resumed run
-   * calls it again, so it is safe to repeat
+   * records what the run deployed, once every step ran and before its journal ends, with the
+   * manifest update its journal holds; a resumed run calls it again, so it is safe to repeat
    */
-  recordDeployment?: (entries: readonly JournalEntry[]) => Promise<void>;
+  recordDeployment?: (
+    entries: readonly JournalEntry[],
+    manifestSaveDetails: ManifestSaveDetails | undefined,
+  ) => Promise<void>;
   /**
    * the tag the run gives the folders a LINK makes; without it they are untagged and no folder the
    * run empties is removed
@@ -53,6 +57,8 @@ export interface RunOptions {
 
 export interface ApplyOptions extends RunOptions {
   stagedFiles: StagedFiles;
+  /** kept in its journal, for recordDeployment */
+  manifestSaveDetails?: ManifestSaveDetails;
   /**
    * where a BACKUP moves the game's original at `destinationPath` and a RESTORE finds it: absolute
    * and on the destination's drive
@@ -242,6 +248,7 @@ const refused = (reason: RefusalReason, details: Partial<RefusedResult> = {}): R
 interface Run {
   fs: FileSystem;
   folderTag: FolderTag | undefined;
+  manifestSaveDetails: ManifestSaveDetails | undefined;
   recordDeployment: RunOptions["recordDeployment"];
   writer: JournalWriter;
   entries: readonly JournalEntry[];
@@ -731,7 +738,7 @@ async function runForward(run: Run): Promise<ApplyResult> {
     }
   }
   try {
-    await run.recordDeployment?.(run.entries);
+    await run.recordDeployment?.(run.entries, run.manifestSaveDetails);
     await removeEmptiedTaggedFolders(run);
     await run.writer.finish();
     return { status: ApplyStatus.Applied, kept: keptFiles(run) };
@@ -747,6 +754,7 @@ const runOf = (
 ): Run => ({
   fs,
   folderTag,
+  manifestSaveDetails: journal.manifestSaveDetails,
   recordDeployment,
   writer,
   entries: journal.entries,
@@ -792,9 +800,10 @@ export async function apply(
     return entries;
   }
 
+  const headerDetails = { manifestSaveDetails: options.manifestSaveDetails };
   let writer: JournalWriter | undefined;
   try {
-    writer = await createJournal(options.journal, entries, runId);
+    writer = await createJournal(options.journal, entries, runId, headerDetails);
   } catch (cause) {
     return refused(RefusalReason.JournalUnavailable, { cause });
   }
@@ -803,6 +812,7 @@ export async function apply(
     return refused(RefusalReason.JournalExists);
   }
   const run = runOf(options, writer, {
+    ...headerDetails,
     entries,
     phase: JournalPhase.Applying,
     changing: new Set(),

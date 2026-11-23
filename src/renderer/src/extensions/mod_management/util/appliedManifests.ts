@@ -12,7 +12,7 @@ import { mapWithConcurrency } from "../LinkingDeployment";
 import { installPathForGame, modPathsForGame } from "../selectors";
 import type { IDeployedFile } from "../types/IDeploymentMethod";
 import { ownDeployedFiles, saveActivation } from "./activationStore";
-import { destinationOf } from "./apply/apply";
+import { destinationOf, type RunOptions } from "./apply/apply";
 import type { JournalEntry } from "./apply/journal";
 import { deployedFilePath } from "./deployedFilePath";
 import {
@@ -159,3 +159,30 @@ export async function saveAppliedManifests(
   }
   return manifestFiles;
 }
+
+/**
+ * An Apply run's recordDeployment for the game: saves the manifests its entries and its journal's
+ * manifest update describe, and hands `onSaved` the entries saved.
+ */
+export const recordDeploymentSavingManifests =
+  (
+    api: IExtensionApi,
+    gameMode: VortexGameId,
+    fs: FileSystem,
+    onSaved: (savedManifestFiles: ManifestFiles) => void = () => undefined,
+  ): NonNullable<RunOptions["recordDeployment"]> =>
+  async (entries, manifestSaveDetails) => {
+    if (manifestSaveDetails === undefined) {
+      throw new Error("the run's journal doesn't say how to save its manifests");
+    }
+    onSaved(
+      await saveAppliedManifests(
+        api,
+        gameMode,
+        fs,
+        entries,
+        manifestSaveDetails.clearedDestinations,
+        manifestSaveDetails.deploymentMethod,
+      ),
+    );
+  };

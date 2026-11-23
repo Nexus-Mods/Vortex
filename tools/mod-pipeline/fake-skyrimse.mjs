@@ -8,6 +8,7 @@
  *   node tools/mod-pipeline/fake-skyrimse.mjs tamper [--root dir]
  *   node tools/mod-pipeline/fake-skyrimse.mjs rollback [--root dir] [--port 9222] [--profile id] [--fail-at path] [--call name]
  *   node tools/mod-pipeline/fake-skyrimse.mjs manifests [--root dir] [--port 9222]
+ *   node tools/mod-pipeline/fake-skyrimse.mjs resume [--root dir] [--port 9222]
  *   node tools/mod-pipeline/fake-skyrimse.mjs journal [--root dir]
  *
  * setup deletes what an earlier run made, so every run starts fresh. It then builds <root>/game,
@@ -38,6 +39,14 @@
  * last. It keeps both, runs Apply to "Other" and back, and compares every file and folder in the
  * game and staging folders (content, file id, link count; a folder tag by content) and every
  * manifest entry.
+ *
+ * resume proves a run killed part-way is finished at the next start, on a Vortex that setup started
+ * with --files (a few thousand, so a run lasts long enough to kill) and with "Edge cases" deployed.
+ * It keeps the files and manifests a finished Apply run to "Other" leaves and deploys "Edge cases"
+ * again. A second run to "Other" then uses the journal Vortex settles at startup
+ * (<root>/userData/skyrimse/apply), and once that journal marks a step done the tool kills Vortex
+ * and starts it again. The run must be gone from its journal, reported as finished, and have left
+ * the same files, folders and manifests.
  *
  * journal prints the latest Apply run's journal: how the run ended and how far each operation got.
  * Finished runs' journals are kept under <root>/work/journals; a run that didn't end leaves its
@@ -70,7 +79,7 @@
  *                                     default-type mod sorted last
  */
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, realpathSync } from "node:fs";
 import { chmod, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -849,6 +858,14 @@ async function applyProfile(session, { profileId, fault }) {
 /** An Apply outcome for an error message, without its operations. */
 const reportOf = (outcome) => JSON.stringify({ ...outcome, operations: undefined });
 
+/** Runs a profile's plan through Apply, failing unless it applied. */
+async function applyProfileExpectingApplied(session, profileId) {
+  const outcome = await applyProfile(session, { profileId });
+  if (outcome.status !== "applied") {
+    throw new Error(`Apply ended ${outcome.status} for "${profileId}": ${reportOf(outcome)}`);
+  }
+}
+
 /** The game's manifests as one entry per manifest and per file it lists, without their save time. */
 async function manifestSnapshot() {
   const entries = new Map();
@@ -937,12 +954,7 @@ async function manifests() {
   try {
     const fromTodaysDeploy = await manifestSnapshot();
     const entriesFromTodaysDeploy = (await snapshotAll()).map(deployedEntriesIn);
-    const applyTo = async (profileId) => {
-      const outcome = await applyProfile(session, { profileId });
-      if (outcome.status !== "applied") {
-        throw new Error(`Apply ended ${outcome.status} for "${profileId}": ${reportOf(outcome)}`);
-      }
-    };
+    const applyTo = (profileId) => applyProfileExpectingApplied(session, profileId);
     await check(`Apply deploys "${PROFILE_OTHER}"`, () => applyTo(PROFILE_OTHER));
     // a run that saves nothing leaves today's manifests in place, so the later checks prove nothing
     await check("that run saved its manifests", async () => {
@@ -1044,6 +1056,158 @@ async function rollback() {
   endProof("rollback proven: the disk is as it was, nothing is left behind, the plan is the same");
 }
 
+/** Where Vortex keeps the fake game's Apply journal, and the files its runs set aside. */
+const gameJournalFile = path.join(userDataPath, GAME_ID, "apply", "journal.ndjson");
+const gameKeptFolder = path.join(path.dirname(stagingPath), "vortex-apply-kept", GAME_ID);
+
+function notificationMessages() {
+  return window.__fakeStore
+    .getState()
+    .session.notifications.notifications.map(({ message }) => message);
+}
+
+/** How many steps a journal holds and how many it marks done. */
+async function journalProgress(file) {
+  const { operations } = await describeJournal(file);
+  return {
+    count: operations.length,
+    done: operations.filter(({ state }) => state === "done").length,
+  };
+}
+
+/** The id of the process listening on the debug port: Vortex's main process. */
+function debugPortOwner() {
+  const { stdout } =
+    process.platform === "win32"
+      ? spawnSync(
+          "powershell",
+          [
+            "-NoProfile",
+            "-Command",
+            // the listener's state can read as 0 rather than Listen; closed ones belong to process 0
+            `(Get-NetTCPConnection -LocalPort ${port} | Where-Object OwningProcess -ne 0).OwningProcess`,
+          ],
+          { encoding: "utf8" },
+        )
+      : spawnSync("lsof", ["-t", `-iTCP:${port}`, "-sTCP:LISTEN"], { encoding: "utf8" });
+  const processId = Number.parseInt(stdout.trim().split(/\s+/)[0] ?? "", 10);
+  if (Number.isNaN(processId)) {
+    throw new Error(`no process listens on debug port ${port}`);
+  }
+  return processId;
+}
+
+/** Ends the Vortex on the debug port at once, as a crash does. */
+async function killVortex() {
+  const processId = debugPortOwner();
+  const { status } =
+    process.platform === "win32"
+      ? spawnSync("taskkill", ["/PID", String(processId), "/T", "/F"])
+      : spawnSync("kill", ["-KILL", String(processId)]);
+  if (status !== 0) {
+    throw new Error(`couldn't kill Vortex's process ${processId}`);
+  }
+  await waitFor("Vortex to end", async () => ((await vortexAnswers()) ? undefined : true), 30_000);
+}
+
+/**
+ * Proves a run killed part-way is finished at the next start: keeps the files and manifests a
+ * finished Apply run to "Other" leaves, kills a second run to "Other" once its journal marks a step
+ * done, starts Vortex again and compares.
+ */
+async function resume() {
+  const session = await connectToApplyHandle();
+  let finishedRunEntries;
+  let finishedRunManifests;
+  let progressAtKill;
+  try {
+    const applyTo = (profileId) => applyProfileExpectingApplied(session, profileId);
+    await check(`Apply deploys "${PROFILE_OTHER}"`, async () => {
+      await applyTo(PROFILE_OTHER);
+      finishedRunEntries = (await snapshotAll()).map(deployedEntriesIn);
+      finishedRunManifests = await manifestSnapshot();
+    });
+    await check(`Apply deploys "${PROFILE_EDGE_CASES}" again`, () => applyTo(PROFILE_EDGE_CASES));
+    await check(`a run to "${PROFILE_OTHER}" is killed part-way`, async () => {
+      // answers when the run ends, or fails once Vortex is killed
+      let runEnded = false;
+      let runOutcome;
+      void session
+        .evaluate(applyThroughDevHandle, {
+          profileId: PROFILE_OTHER,
+          journalFile: gameJournalFile,
+          keptFolder: gameKeptFolder,
+        })
+        .then(
+          (outcome) => {
+            runOutcome = outcome;
+          },
+          () => undefined,
+        )
+        .finally(() => {
+          runEnded = true;
+        });
+      const runState = await waitFor(
+        "the run to mark a step done",
+        async () => {
+          if (runEnded) {
+            return "ended";
+          }
+          return (await journalProgress(gameJournalFile)).done > 0 ? "running" : undefined;
+        },
+        60_000,
+      );
+      if (runOutcome !== undefined && runOutcome.status !== "applied") {
+        throw new Error(
+          `Apply ended ${runOutcome.status} for "${PROFILE_OTHER}": ${reportOf(runOutcome)}`,
+        );
+      }
+      if (runState === "running") {
+        await killVortex();
+      }
+      if (runState === "ended" || !existsSync(gameJournalFile)) {
+        throw new Error(
+          "the run finished before it could be killed; set up with --files 5000 (b in the terminal screen)",
+        );
+      }
+      // all steps done but the journal kept: killed while saving the manifests
+      progressAtKill = await journalProgress(gameJournalFile);
+      console.log(`killed after ${progressAtKill.done} of ${progressAtKill.count} steps`);
+    });
+  } finally {
+    session.close();
+  }
+
+  launchVortex();
+  const restartedSession = await connect();
+  try {
+    await waitFor("Vortex's store", () => restartedSession.evaluate(findStore));
+    await check("the next start finishes the run", async () => {
+      await waitFor(
+        "the journal to be settled",
+        async () => (existsSync(gameJournalFile) ? undefined : true),
+        120_000,
+      );
+      const messages = await restartedSession.evaluate(notificationMessages);
+      return messages.includes("Interrupted deployment finished")
+        ? []
+        : [`Vortex didn't say it finished the run; it showed ${JSON.stringify(messages)}`];
+    });
+    await check("its files and folders are the ones a finished run leaves", async () =>
+      folderDifferences(finishedRunEntries, (await snapshotAll()).map(deployedEntriesIn)),
+    );
+    await check("its manifests are the ones a finished run saves", async () =>
+      differencesBetween(finishedRunManifests, await manifestSnapshot()),
+    );
+  } finally {
+    restartedSession.close();
+  }
+  endProof(
+    `resume proven: a run killed after ${progressAtKill.done} of its ${progressAtKill.count} ` +
+      "steps was finished at the next start",
+  );
+}
+
 /** Where the setup goes, whether it and its Vortex are there, and how many journals are kept. */
 export const status = async () => ({
   root,
@@ -1053,7 +1217,7 @@ export const status = async () => ({
   journalCount: (await keptJournals()).length,
 });
 
-const commands = { setup, tamper, rollback, manifests, journal };
+const commands = { setup, tamper, rollback, manifests, resume, journal };
 // only when run as a script; real paths, since the module's URL resolves links
 const scriptPath = process.argv[1] === undefined ? "" : realpathSync(process.argv[1]);
 if (scriptPath === fileURLToPath(import.meta.url)) {

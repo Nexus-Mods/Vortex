@@ -24,9 +24,11 @@ const passedOptions = process.argv.slice(2);
 
 const ACTIONS = [
   { key: "s", label: "set up fresh and start Vortex", args: ["setup"] },
+  { key: "b", label: "set up fresh with 5,000 bulk files", args: ["setup", "--files", "5000"] },
   { key: "t", label: "tamper with the deployed files", args: ["tamper"] },
   { key: "r", label: "prove a rollback", args: ["rollback"] },
   { key: "m", label: "prove the manifests", args: ["manifests"] },
+  { key: "k", label: "prove a killed run recovers", args: ["resume"] },
   { key: "x", label: "delete the setup", args: ["setup", "--reset"] },
 ];
 

@@ -3,8 +3,10 @@ import * as path from "path";
 import {
   getErrorCode,
   getErrorMessageOrDefault,
+  parseError,
   unknownToError,
   VortexError,
+  VortexGameId,
 } from "@vortex/shared";
 import * as _ from "lodash";
 import type { RuleType } from "modmeta-db";
@@ -60,15 +62,18 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
-import { genSubDirFunc, purgeMods } from "./util/deploy";
+import { settleLeftoverDeployment } from "./util/applyDeploy";
+import { purgeMods } from "./util/deploy";
 import { reportRecordedFailures, resetDeploymentFailures } from "./util/deploymentFailures";
 import {
   getCurrentActivator,
   getSelectedActivator,
   getSupportedActivators,
 } from "./util/deploymentMethods";
+import { isGameWithPlannedDeployments } from "./util/DeployOrchestrator";
 import { dropMissingMods } from "./util/dropMissingMods";
 import modName from "./util/modName";
+import { genSubDirFunc } from "./util/modSubDirectory";
 import queryGameId from "./util/queryGameId";
 import refreshMods from "./util/refreshMods";
 
@@ -319,7 +324,17 @@ export function onGameModeActivated(
   let existingManifest: IDeploymentManifest;
 
   let initProm: () => Promise<void> = () =>
-    Promise.resolve(getManifest(api, "", gameId))
+    Promise.resolve(
+      isGameWithPlannedDeployments(VortexGameId(gameId))
+        ? withActivationLock(() => settleLeftoverDeployment(api, VortexGameId(gameId)))
+        : undefined,
+    )
+      .catch((err: unknown) => {
+        api.showErrorNotification("Interrupted deployment couldn't be settled", err, {
+          allowReport: parseError(err).data.kind !== "deployment:interrupted-run-unsettled",
+        });
+      })
+      .then(() => getManifest(api, "", gameId))
       .then((manifest: IDeploymentManifest) => {
         if (manifest.instance !== state.app.instanceId) {
           // if the manifest is from a different instance we do nothing with it, there
