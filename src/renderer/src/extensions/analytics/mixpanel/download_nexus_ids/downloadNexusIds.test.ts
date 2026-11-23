@@ -26,22 +26,29 @@ describe("downloadNexusIds", () => {
       dl1: { modInfo: { nexus: { ids: { ...IDS, gameId: "stardewvalley" } } } },
     });
 
-    expect(downloadNexusIds(state, "dl1")).toEqual(
-      expect.objectContaining({ numericGameId: 1303, modId: "55894", fileId: "192243" }),
-    );
+    expect(downloadNexusIds(state, "dl1")).toEqual({
+      gameDomainName: "stardewvalley",
+      numericGameId: 1303,
+      modId: "55894",
+      fileId: "192243",
+      collectionSlug: undefined,
+      collectionId: undefined,
+      revisionId: undefined,
+    });
   });
 
   it("takes the Nexus game from the game the download is for when the record names none", () => {
     const state = makeState({ dl1: { game: ["stardewvalley"], modInfo: { nexus: { ids: IDS } } } });
 
-    expect(downloadNexusIds(state, "dl1")).toEqual(
-      expect.objectContaining({
-        numericGameId: 1303,
-        gameDomainName: "stardewvalley",
-        modId: "55894",
-        fileId: "192243",
-      }),
-    );
+    expect(downloadNexusIds(state, "dl1")).toEqual({
+      gameDomainName: "stardewvalley",
+      numericGameId: 1303,
+      modId: "55894",
+      fileId: "192243",
+      collectionSlug: undefined,
+      collectionId: undefined,
+      revisionId: undefined,
+    });
   });
 
   it("is undefined when the game the download is for isn't on Nexus Mods", () => {
