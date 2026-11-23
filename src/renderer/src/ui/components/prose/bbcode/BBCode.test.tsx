@@ -278,6 +278,79 @@ describe("BBCode", () => {
     });
   });
 
+  // Written as JS strings, since JSX would turn the entities descriptions come with into characters.
+  describe("code", () => {
+    it("shows quotes, ampersands and angle brackets as written", () => {
+      const bbcode = "[code]{ &quot;a&quot;: &lt;b&gt; &amp; c }[/code]";
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe('{ "a": <b> & c }');
+    });
+
+    it.each([
+      ["before", "[code]{\n<br />  &quot;a&quot;: 1\n<br />}\n<br />[/code]"],
+      ["after", "[code]\n{<br />\n  &quot;a&quot;: 1<br />\n}<br />\n[/code]"],
+    ])("puts each line on its own line, without [br], with newlines %s the breaks", (_, bbcode) => {
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe('{\n  "a": 1\n}');
+    });
+
+    it("breaks the line at a line break that no newline follows", () => {
+      const { container } = render(<BBCode bbcode={"[code]a<br />b[/code]"} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe("a\nb");
+    });
+
+    it.each([["a\n<br />\n<br />b"], ["a<br />\n<br />\nb"], ["a<br /><br />b"]])(
+      "keeps a blank line made of two line breaks, in %j",
+      (lines) => {
+        const { container } = render(<BBCode bbcode={`[code]${lines}[/code]`} />);
+
+        expect(container.querySelector("pre")!.textContent).toBe("a\n\nb");
+      },
+    );
+
+    it("keeps brackets that look like a tag, and ends the block at its [/code]", () => {
+      const { container } = render(<BBCode bbcode={"[code]x = a[i] + b[i];[/code] after"} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe("x = a[i] + b[i];");
+      expect(container).toHaveTextContent(/after$/);
+    });
+
+    it("shows a tag in the block as written, rather than drawing it", () => {
+      const bbcode = "[code][url=https://example.com]docs[/url] [b]x[/b][/code]";
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe(
+        "[url=https://example.com]docs[/url] [b]x[/b]",
+      );
+      expect(container.querySelector("a")).toBeNull();
+    });
+
+    it("keeps an ini section header as text", () => {
+      const { container } = render(<BBCode bbcode={"[code][General]<br />\nbEnabled=1[/code]"} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe("[General]\nbEnabled=1");
+    });
+
+    it("shows inline code in a code element", () => {
+      const bbcode = "Set [code=inline]&quot;P&quot;[/code] here";
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(container.querySelector("code")!.textContent).toBe('"P"');
+      expect(container.querySelector("pre")).toBeNull();
+    });
+
+    it("marks a block with its language", () => {
+      const bbcode = "[code=json]{ &quot;a&quot;: 1 }[/code]";
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(container.querySelector("pre")).toHaveClass("prettyprint", "lang-json");
+      expect(container.querySelector("pre")!.textContent).toBe('{ "a": 1 }');
+    });
+  });
+
   describe("layout", () => {
     it("aligns [left] text, rather than showing the tag", () => {
       const { container } = render(<BBCode bbcode="[left]Hi[/left]" />);

@@ -1,26 +1,12 @@
-import React, { type ReactElement, type ReactNode } from "react";
+import React, { type ReactElement } from "react";
 
 import {
   ExternalImagePlaceholder,
   type IExternalImage,
-  type IExternalImagePlaceholderOptions,
 } from "@/ui/components/prose/external_image_placeholder/ExternalImagePlaceholder";
 import { webImageSrc } from "@/ui/utils/web_image_src/webImageSrc";
 
-/** A tag as the parser builds its tree, which its typings leave out. */
-interface IParsedTag {
-  name: string | null;
-  text: string;
-  params: Record<string, string | undefined>;
-  parent: IParsedTag | null;
-  children: IParsedTag[];
-  renderer: {
-    strip: (text: string) => string;
-    options: { externalImagePlaceholders?: IExternalImagePlaceholderOptions };
-  };
-  getContent: (raw?: boolean) => string;
-  toReact: () => ReactNode;
-}
+import type { IParsedTag } from "./types";
 
 /** The tags that link what they wrap. */
 const LINK_TAGS = ["url", "link"];

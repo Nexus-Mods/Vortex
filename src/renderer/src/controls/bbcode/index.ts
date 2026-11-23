@@ -4,6 +4,7 @@ import type * as React from "react";
 import type { IExternalImagePlaceholderOptions } from "@/ui/components/prose/external_image_placeholder/ExternalImagePlaceholder";
 
 import BrTag from "./BrTag";
+import CodeTag, { withLiteralCode } from "./CodeTag";
 import CompareTag from "./CompareTag";
 import EmbedLinkTag from "./EmbedLinkTag";
 import FontTag from "./FontTag";
@@ -70,6 +71,7 @@ const createFullParser = (safe: boolean) => {
   parser.registerTag("tooltip", TooltipTag);
   parser.registerTag("style", safe ? SafeStyleTag : StyleTag);
   parser.registerTag("left", LeftTag);
+  parser.registerTag("code", CodeTag);
 
   // The parser's own image tag loads whatever address it is given.
   if (safe) {
@@ -134,15 +136,18 @@ export function preProcess(input: string): string {
   );
 }
 
+/** Bbcode ready for our parsers: `preProcess`ed, with code blocks kept as written. */
+const prepare = (input: string) => withLiteralCode(preProcess(input));
+
 function render(parser: typeof fullParser, input: string, context?: unknown): React.ReactChild[] {
   if (input === undefined) {
     return [""];
   }
 
   if (context !== undefined) {
-    return parser["renderer"].context(context, () => parser.toReact(preProcess(input)));
+    return parser["renderer"].context(context, () => parser.toReact(prepare(input)));
   } else {
-    return parser.toReact(preProcess(input));
+    return parser.toReact(prepare(input));
   }
 }
 
@@ -167,7 +172,7 @@ export function stripBBCode(input: string): string {
 }
 
 export function bbcodeToHTML(input: string): string {
-  const res: string | string[] = fullParser.toHTML(preProcess(input));
+  const res: string | string[] = fullParser.toHTML(prepare(input));
   // according to the typings toHTML should return an array of strings but
   // in practice I found it to return just a string
   if (Array.isArray(res)) {
