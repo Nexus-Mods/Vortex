@@ -256,6 +256,85 @@ describe("BBCode", () => {
     });
   });
 
+  describe("code", () => {
+    it("shows a block's text as written, a line at a time", () => {
+      const { container } = render(
+        <BBCode bbcode={'[code]&quot;OpenMenuKey&quot;: "P",<br />\n"Other": 1 & 2[/code]'} />,
+      );
+
+      expect(container.querySelector("pre > code")?.textContent).toBe(
+        '"OpenMenuKey": "P",\n"Other": 1 & 2',
+      );
+    });
+
+    it("drops the blank lines a block starts and ends with", () => {
+      const { container } = render(
+        <BBCode bbcode={"[code]<br />\n<br />a\n<br />b<br />\n[/code]"} />,
+      );
+
+      expect(container.querySelector("pre > code")?.textContent).toBe("a\nb");
+    });
+
+    it("spaces a block itself, without the line breaks written around it", () => {
+      const { container } = render(
+        <BBCode bbcode={"Add:<br />\n<br />\n[code]a<br />b[/code]<br />\n<br />\nThen"} />,
+      );
+
+      const block = container.querySelector("pre");
+      expect(block?.previousElementSibling).toBeNull();
+      expect(block?.nextElementSibling).toBeNull();
+    });
+
+    it("keeps one-line code in its sentence, with the line breaks around it", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={
+            "Add [code]sResourceArchiveList2[/code] in<br />[code]<br />Skyrim.ini<br />[/code]:"
+          }
+        />,
+      );
+
+      const codes = container.querySelectorAll("code");
+      expect(container.querySelector("pre")).toBeNull();
+      expect([...codes].map((code) => code.textContent)).toEqual([
+        "sResourceArchiveList2",
+        "Skyrim.ini",
+      ]);
+      expect(codes[1].previousElementSibling?.tagName).toBe("BR");
+    });
+
+    it("keeps the spaces inside one-line code's tag between it and its sentence", () => {
+      const { container } = render(<BBCode bbcode="the line[code] List2 [/code]in it" />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("List2");
+      expect(code?.previousSibling?.textContent).toBe("the line ");
+      expect(code?.nextSibling?.textContent).toBe(" in it");
+    });
+
+    it("shows one-line code on a line of its own as a block", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={
+            "[i]English:[/i]<br />\n[code]UHDAP - MusicHQ.bsa[/code]<br />\n[*][code]a[/code]"
+          }
+        />,
+      );
+
+      expect([...container.querySelectorAll("pre")].map((block) => block.textContent)).toEqual([
+        "UHDAP - MusicHQ.bsa",
+        "a",
+      ]);
+    });
+
+    it("shows inline code in the line", () => {
+      const { container } = render(<BBCode bbcode='Set [code=inline]"P"[/code] to open it' />);
+
+      expect(container.querySelector("pre")).toBeNull();
+      expect(container.querySelector("code")?.textContent).toBe('"P"');
+    });
+  });
+
   describe("spoiler", () => {
     it("hides its text behind a button, labelled as the tag says", async () => {
       render(<BBCode bbcode='[spoiler label="Show detailed error"]Stack trace[/spoiler]' />);

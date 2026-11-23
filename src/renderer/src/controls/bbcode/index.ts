@@ -4,6 +4,8 @@ import type * as React from "react";
 import type { IExternalImagePlaceholderOptions } from "@/ui/components/prose/external_image_placeholder/ExternalImagePlaceholder";
 
 import BrTag from "./BrTag";
+import { codeAsWritten } from "./codeAsWritten";
+import CodeTag from "./CodeTag";
 import CompareTag from "./CompareTag";
 import EmbedLinkTag from "./EmbedLinkTag";
 import FontTag from "./FontTag";
@@ -57,6 +59,7 @@ const createFullParser = (safe: boolean) => {
 
   parser.registerTag("size", safe ? SafeSizeTag : SizeTag);
   parser.registerTag("br", BrTag);
+  parser.registerTag("code", CodeTag);
   parser.registerTag("email", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("link", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("url", safe ? SafeLinkTag : LinkTag);
@@ -128,9 +131,11 @@ const LEGACY_TAGS: Array<[RegExp, string]> = [
 ];
 
 export function preProcess(input: string): string {
-  return LEGACY_TAGS.reduce(
-    (text, [legacy, tag]) => text.replace(legacy, tag),
-    input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol),
+  return codeAsWritten(
+    LEGACY_TAGS.reduce(
+      (text, [legacy, tag]) => text.replace(legacy, tag),
+      input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol),
+    ),
   );
 }
 

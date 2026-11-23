@@ -11,7 +11,25 @@
 @source inline("{hover:,}text-on-scrim-{weak,subdued,moderate,strong}");
 @source inline("text-translucent-inverted");
 
+/* JetBrains Mono, bundled so code looks the same on every system. Its licence, which must ship
+   with it, is JetBrainsMono-OFL.txt beside it. */
+@font-face {
+    font-family: "JetBrains Mono";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("../fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
 @theme {
+    /* Inter's faces are declared in the legacy vortex/inter.scss. */
+    --font-sans:
+        "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono:
+        "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        "Courier New", monospace;
+
     /* Body */
     --text-body-xs: var(--text-2xs);
     --text-body-xs--line-height: var(--text-2xs--line-height);
