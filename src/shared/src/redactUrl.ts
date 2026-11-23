@@ -63,8 +63,11 @@ export function redactUrlForLog(url: string | URL): string {
   return out;
 }
 
-/** A URL in free text: scheme, then everything up to whitespace or a quote. */
-const URL_IN_TEXT_RE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>`]+/gi;
+/**
+ * A URL in free text: scheme, then everything up to whitespace or a quote, not ending on
+ * punctuation, so the `).` of `(see https://…).` stays outside it.
+ */
+const URL_IN_TEXT_RE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>`]*[^\s"'<>`)\]},.;:]/gi;
 
 /** {@link redactUrlForLog} for every URL in a piece of text, such as a command line. */
 export function redactUrlsInText(text: string): string {

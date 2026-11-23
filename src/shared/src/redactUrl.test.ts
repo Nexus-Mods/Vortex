@@ -85,6 +85,12 @@ describe("redactUrlsInText", () => {
     );
   });
 
+  it("keeps trailing punctuation outside the URL", () => {
+    expect(redactUrlsInText("(see https://example.com/a?sig=Zk3xQ9aLmN0p).")).toBe(
+      "(see https://example.com/a?sig=<redacted>).",
+    );
+  });
+
   it("leaves text without a URL alone", () => {
     const text = "C:\\Program Files\\Vortex\\Vortex.exe --user-data=C:\\data";
     expect(redactUrlsInText(text)).toBe(text);
