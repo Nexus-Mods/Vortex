@@ -115,8 +115,12 @@ import * as path from "path";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import "./util/application.electron";
-import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
-import { redactUrlForLog } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  redactUrlForLog,
+  unknownToError,
+} from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import Bluebird from "bluebird";

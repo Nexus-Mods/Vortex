@@ -32,7 +32,7 @@ import {
   DEBUG_PORT,
   getErrorMessageOrDefault,
   HTTP_HEADER_SIZE,
-  redactUrlsInText,
+  redactArgvForLog,
 } from "@vortex/shared";
 import { app, crashReporter, dialog } from "electron";
 import i18next from "i18next";
@@ -209,7 +209,7 @@ async function main(): Promise<void> {
     }
   };
 
-  traceElevation("main entry", { argv: process.argv.map(redactUrlsInText) });
+  traceElevation("main entry", { argv: redactArgvForLog(process.argv) });
 
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)

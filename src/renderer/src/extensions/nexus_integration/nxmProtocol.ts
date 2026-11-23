@@ -2,8 +2,7 @@ import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexu
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
 import { type NexusGameDomain, getErrorMessageOrDefault } from "@vortex/shared";
-import { parseError } from "@vortex/shared";
-import { redactUrlForLog } from "@vortex/shared";
+import { parseError, redactUrlForLog } from "@vortex/shared";
 import type { Action } from "redux";
 
 import { setDownloadModInfo } from "../../actions";

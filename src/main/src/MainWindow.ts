@@ -2,8 +2,7 @@ import { appendFileSync } from "node:fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
-import { redactUrlForLog } from "@vortex/shared";
+import { getErrorMessageOrDefault, redactUrlForLog } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 

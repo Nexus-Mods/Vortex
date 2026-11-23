@@ -1,5 +1,4 @@
-import { unknownToError } from "@vortex/shared";
-import { redactUrlForLog } from "@vortex/shared";
+import { redactUrlForLog, unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
 import minimatch from "minimatch";
 import type { ILookupResult, IReference, IRule } from "modmeta-db";

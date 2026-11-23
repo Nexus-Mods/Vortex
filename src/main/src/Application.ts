@@ -2,8 +2,13 @@ import { mkdirSync, statSync } from "node:fs";
 import { readFile, writeFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { getErrorCode, getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
-import { redactUrlsInText } from "@vortex/shared";
+import {
+  getErrorCode,
+  getErrorMessageOrDefault,
+  parseError,
+  redactArgvForLog,
+  unknownToError,
+} from "@vortex/shared";
 import type { IParameters, ISetItem } from "@vortex/shared/cli";
 import {
   DataInvalid,
@@ -242,7 +247,7 @@ class Application {
     });
 
     app.on("second-instance", (_event, secondaryArgv) => {
-      log("debug", "getting arguments from second instance", secondaryArgv.map(redactUrlsInText));
+      log("debug", "getting arguments from second instance", redactArgvForLog(secondaryArgv));
       this.applyArguments(parseCommandline(secondaryArgv, true)).catch((err: unknown) =>
         log("error", "error applying arguments", unknownToError(err)),
       );
@@ -464,7 +469,7 @@ class Application {
   private async regularStartInner(args: IParameters): Promise<void> {
     log("info", "--------------------------");
     log("info", "Vortex Version", app.getVersion());
-    log("info", "Parameters", redactUrlsInText(process.argv.join(" ")));
+    log("info", "Parameters", redactArgvForLog(process.argv).join(" "));
 
     this.testUserEnvironment();
     await this.validateFiles();

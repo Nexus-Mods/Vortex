@@ -2,8 +2,7 @@ import { randomUUID } from "node:crypto";
 import { access, copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import * as path from "node:path";
 
-import { unknownToError } from "@vortex/shared";
-import { redactUrlForLog } from "@vortex/shared";
+import { redactUrlForLog, unknownToError } from "@vortex/shared";
 import {
   AlreadyDownloaded,
   deserializeVortexError,
@@ -693,7 +692,7 @@ export class IPCDownloadAdapter {
 
       log("debug", "starting download", {
         url: redactUrlForLog(encodedUrl.url),
-        referer: encodedUrl.referer === undefined ? undefined : redactUrlForLog(encodedUrl.referer),
+        referer: redactUrlForLog(encodedUrl.referer),
         dest,
         collationId,
       });
@@ -1143,7 +1142,7 @@ export class IPCDownloadAdapter {
       log("debug", "resolving download via protocol handler", {
         scheme,
         url: redactUrlForLog(encodedUrl.url),
-        referer: encodedUrl.referer === undefined ? undefined : redactUrlForLog(encodedUrl.referer),
+        referer: redactUrlForLog(encodedUrl.referer),
       });
 
       const resolved = await Promise.resolve(handler(encodedUrl.url.toString()));
@@ -1154,7 +1153,7 @@ export class IPCDownloadAdapter {
       }
 
       log("debug", "download resolved", {
-        resolvedUrl: resolved.urls[0] === undefined ? undefined : redactUrlForLog(resolved.urls[0]),
+        resolvedUrl: redactUrlForLog(resolved.urls[0]),
         urls: resolved.urls.length,
       });
       return { probeEndpoint: { url: resolved.urls[0] } };
@@ -1163,7 +1162,7 @@ export class IPCDownloadAdapter {
     if (scheme === "http" || scheme === "https") {
       log("debug", "resolving download directly", {
         url: redactUrlForLog(encodedUrl.url),
-        referer: encodedUrl.referer === undefined ? undefined : redactUrlForLog(encodedUrl.referer),
+        referer: redactUrlForLog(encodedUrl.referer),
       });
       return { probeEndpoint: { url: encodedUrl.url.toString(), headers } };
     }
