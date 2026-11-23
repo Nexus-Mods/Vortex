@@ -66,12 +66,14 @@ individual reported dumps within the sweep limit, not affected sessions. Live
 process-gone reports can also describe the same crash; counting both report types
 does not give a count of unique crashes.
 
-Beyond the crash site, each report carries `crash.native.stack` and
+Beyond the crash site, a report sent with analytics consent carries `crash.native.stack` and
 `crash.native.stackModules`: up to 32 code addresses
 found on the faulting thread's stack, as `module+0xoffset`, and the name, version
 and symbol-server id of the modules they point into. This is a scan of the stack
 memory, not an unwind, so entries left over from earlier calls can appear between
-real return addresses. It is not part of the fingerprint.
+real return addresses. It is not part of the fingerprint. Without consent both keys
+are dropped and only the faulting module is sent; see
+[telemetry-otel.md](telemetry-otel.md#strict-mode-no-consent--deny-by-default).
 
 ## Error Reporting State (Main)
 

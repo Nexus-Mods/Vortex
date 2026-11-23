@@ -76,10 +76,9 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   "crash.native.moduleId",
   "crash.native.processType",
   "crash.native.fatalMessage",
-  // Code addresses from the faulting thread's stack, as module + offset, and
-  // the identity of those modules
-  "crash.native.stack",
-  "crash.native.stackModules",
+  // crash.native.stack and crash.native.stackModules are left out on purpose:
+  // they name up to 32 modules, third-party DLLs injected into Vortex among
+  // them, which says what else is installed. They are sent with consent only.
   // Ambient context (setErrorContext) — active game, extension + deployment context
   "context.gamemode",
   "context.extension_type",
@@ -156,14 +155,15 @@ const tokenizeWellKnownPaths = (text: string): string =>
 /** Strip install prefixes + OS username, then tokenise well-known folders. */
 const sanitizeText = (text: string): string => tokenizeWellKnownPaths(sanitizeFramePath(text));
 
+const isStringArray = (value: AttributeValue): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
+
 const sanitizeValue = (value: AttributeValue): AttributeValue => {
   if (typeof value === "string") {
     return sanitizeText(value);
   }
-  if (Array.isArray(value)) {
-    return value.map((item) =>
-      typeof item === "string" ? sanitizeText(item) : item,
-    ) as AttributeValue;
+  if (isStringArray(value)) {
+    return value.map(sanitizeText);
   }
   return value;
 };
