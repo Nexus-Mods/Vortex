@@ -53,6 +53,21 @@ const removeDownload = (api: IExtensionApi, downloadId: string): Promise<void> =
     ),
   );
 
+/**
+ * Deletes the archives, waiting for every one, so none is still going once its rows stop
+ * showing as removing. Reports each that couldn't be deleted; resolves to whether all were.
+ */
+const deleteArchives = async (api: IExtensionApi, archiveIds: string[]): Promise<boolean> => {
+  const results = await Promise.allSettled(
+    archiveIds.map((archiveId) => removeDownload(api, archiveId)),
+  );
+  const failures = results.filter((result) => result.status === "rejected");
+  failures.forEach((failure) =>
+    reportRemovalFailure(api, "Failed to delete archive", failure.reason),
+  );
+  return failures.length === 0;
+};
+
 /** Asks, as the classic table's Remove does, whether to remove the mods, their archives or both. */
 const askToRemove = (
   api: IExtensionApi,
@@ -141,15 +156,15 @@ export const confirmRemoveMods = async (
 
   try {
     if (result.input?.mod) {
-      await removeMods(api, gameId, installedIds);
+      try {
+        await removeMods(api, gameId, installedIds);
+      } catch (err) {
+        // The archives stay, as a mod that's still there may need them.
+        reportRemovalFailure(api, "Failed to remove mods", err);
+        return false;
+      }
     }
-    if (result.input?.archive) {
-      await Promise.all(archiveIds.map((archiveId) => removeDownload(api, archiveId)));
-    }
-    return true;
-  } catch (err) {
-    reportRemovalFailure(api, "Failed to remove mods", err);
-    return false;
+    return result.input?.archive ? await deleteArchives(api, archiveIds) : true;
   } finally {
     confirmed.forEach((modId) => api.store?.dispatch(stopActivity(REMOVING_ACTIVITY, modId)));
   }

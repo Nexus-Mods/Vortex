@@ -218,11 +218,48 @@ describe("confirmRemoveMods", () => {
     expect(await remove(api, ["dl"])).toBe(false);
 
     expect(api.showErrorNotification).toHaveBeenCalledWith(
-      "Failed to remove mods",
+      "Failed to delete archive",
       expect.any(Error),
       { allowReport: true },
     );
     expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "dl"));
+  });
+
+  it("reports only the archive when the mod was removed, and stays removing until every archive is done", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: true, archive: true });
+    const callbacks = new Map<string, (err: Error | null) => void>();
+    api.events.emit.mockImplementation((_event, id, cb) => void callbacks.set(id, cb));
+
+    const done = remove(api, ["a", "dl"]);
+    await vi.waitFor(() => expect(callbacks.size).toBe(2));
+
+    callbacks.get("archive-a")!(new Error("locked"));
+    // Lets the failure settle, as it would have ended the removal early.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(api.store.dispatch).not.toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
+
+    callbacks.get("dl")!(null);
+
+    expect(await done).toBe(false);
+    expect(removeMods).toHaveBeenCalledWith(api, GAME, ["a"]);
+    expect(api.showErrorNotification).toHaveBeenCalledTimes(1);
+    expect(api.showErrorNotification).toHaveBeenCalledWith(
+      "Failed to delete archive",
+      expect.any(Error),
+      { allowReport: true },
+    );
+    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
+  });
+
+  it("keeps the archives when the mods couldn't be removed", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: true, archive: true });
+    removeMods.mockRejectedValueOnce(new Error("boom"));
+
+    expect(await remove(api, ["a"])).toBe(false);
+
+    expect(api.events.emit).not.toHaveBeenCalled();
   });
 
   it("says nothing when the removal is cancelled, and warns when it can't go ahead", async () => {
