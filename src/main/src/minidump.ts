@@ -109,13 +109,14 @@ function assertReadable(length: number): void {
 
 function bufferSource(buffer: Buffer): IByteSource {
   return {
-    read: async (offset, length) => {
-      assertReadable(length);
-      if (offset + length > buffer.length) {
-        throw new RangeError("read past the end of the minidump");
-      }
-      return buffer.subarray(offset, offset + length);
-    },
+    read: (offset, length) =>
+      Promise.resolve().then(() => {
+        assertReadable(length);
+        if (offset + length > buffer.length) {
+          throw new RangeError("read past the end of the minidump");
+        }
+        return buffer.subarray(offset, offset + length);
+      }),
   };
 }
 
