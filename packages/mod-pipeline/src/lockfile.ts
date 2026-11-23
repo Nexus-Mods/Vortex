@@ -32,6 +32,7 @@ export interface FileEntry {
   destinationPath: string;
   fileHash: string;
   hashType: HashType;
+  stageModifiedTime?: Temporal.Instant;
 }
 
 /** A deployed file: its origin, its content's hash and its absolute destination. */
@@ -80,10 +81,17 @@ export interface Lockfile {
   files: FileSource[];
 }
 
+const instantSchema = z.codec(
+  z.iso.datetime({ offset: true }),
+  z.custom<Temporal.Instant>((value) => value instanceof Temporal.Instant),
+  { decode: (text) => Temporal.Instant.from(text), encode: (instant) => instant.toString() },
+);
+
 const fileFields = {
   fileHash: z.string(),
   hashType: z.enum(HashType),
   destinationPath: AbsolutePathSchema,
+  stageModifiedTime: instantSchema.optional(),
 };
 
 export const FileEntrySchema: z.ZodType<FileEntry> = z.object(fileFields);
