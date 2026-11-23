@@ -176,7 +176,7 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
     if (planned === undefined) {
       throw new Error("the deployment has no plan");
     }
-    const result = await orchestrator.apply(
+    const applied = await orchestrator.apply(
       planned,
       {
         fs: disk.fs,
@@ -187,7 +187,7 @@ async function makeGameWithStagedMod(enabled: boolean, otherMods: IMod[] = []) {
       "hardlink_activator",
     );
     await game.emitAndAwait("did-deploy", activeProfileId, {});
-    return result;
+    return applied?.result;
   };
   return {
     game,
@@ -456,7 +456,11 @@ test("a plan run logs its mismatches with a deployment as counts, without paths"
   }
 });
 
-test("a plan run is kept as its game's last plan, with the destinations that need nothing", async () => {
+test("a dev build's plan run is kept as its game's last plan, with the destinations that need nothing", async () => {
+  vi.stubEnv("NODE_ENV", "development");
+  onTestFinished(() => {
+    vi.unstubAllEnvs();
+  });
   const { game, deployedPath, deploy } = await makeGameWithStagedMod(true);
   await deploy();
 

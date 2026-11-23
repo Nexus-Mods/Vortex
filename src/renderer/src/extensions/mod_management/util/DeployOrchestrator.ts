@@ -40,6 +40,10 @@ import { compareWithManifests } from "./shadowComparison";
 /** The games whose deployments are planned. */
 const RESOLVED_GAMES: ReadonlySet<VortexGameId> = new Set([VortexGameId("skyrimse")]);
 
+/** Whether a game's deployments are planned. */
+export const isGameWithPlannedDeployments = (gameMode: VortexGameId): boolean =>
+  RESOLVED_GAMES.has(gameMode);
+
 /** Adds the files contributions declare for the state the lockfile was resolved from. */
 async function withGeneratedFiles(
   state: IState,
@@ -102,7 +106,7 @@ export class DeployOrchestrator {
   public async plan(profileId: VortexProfileId): Promise<DeploymentPlan | undefined> {
     this.#pending = undefined;
     const gameMode = gameIdOfProfile(this.#api.getState(), profileId);
-    if (gameMode === undefined || !RESOLVED_GAMES.has(gameMode)) {
+    if (gameMode === undefined || !isGameWithPlannedDeployments(gameMode)) {
       return undefined;
     }
     const figures: PlannerPlanFigures = {};
@@ -139,7 +143,10 @@ export class DeployOrchestrator {
       );
       figures.plan_ms = planMs;
       figures.operations = counts;
-      keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
+      // for the dev builds' Plan page
+      if (process.env.NODE_ENV === "development") {
+        keepLastPlan(gameMode, { plannedAt: Temporal.Now.instant(), destinations });
+      }
       this.#pending = { gameMode, current, destinations, manifestFilesBefore, figures };
       return deploymentPlanOf(current, previous, destinations);
     } catch (err) {
@@ -154,15 +161,16 @@ export class DeployOrchestrator {
 
   /**
    * Runs the pending deployment's plan through Apply and reports its plan run. The run saves the
-   * game's manifests from its operations, for `activatorId`, before it ends. A run whose
-   * operations all ran leaves its lockfile as the game's last deployed one; a refused or rolled
-   * back run keeps the previous one. Undefined when `plan` isn't pending.
+   * game's manifests from its operations, for `activatorId`, before it ends; those entries come
+   * back with the result. A run whose operations all ran leaves its lockfile as the game's last
+   * deployed one; a refused or rolled back run keeps the previous one. Undefined when `plan` isn't
+   * pending.
    */
   public async apply(
     plan: DeploymentPlan,
     run: ApplyRun,
     activatorId: string,
-  ): Promise<ApplyResult | undefined> {
+  ): Promise<{ result: ApplyResult; savedManifestFiles?: ManifestFiles } | undefined> {
     const pending = this.#pending;
     if (pending?.destinations !== plan.destinations) {
       return undefined;
@@ -170,10 +178,19 @@ export class DeployOrchestrator {
     this.#pending = undefined;
     const { gameMode, current, figures } = pending;
     const cleared = clearedDestinationsOf(plan.destinations);
+    let savedManifestFiles: ManifestFiles | undefined;
     const result = await applyPlan(plan, {
       ...run,
-      recordDeployment: (entries) =>
-        saveAppliedManifests(this.#api, gameMode, run.fs, entries, cleared, activatorId),
+      recordDeployment: async (entries) => {
+        savedManifestFiles = await saveAppliedManifests(
+          this.#api,
+          gameMode,
+          run.fs,
+          entries,
+          cleared,
+          activatorId,
+        );
+      },
     });
     switch (result.status) {
       case ApplyStatus.Applied:
@@ -197,7 +214,7 @@ export class DeployOrchestrator {
       manifest_diff: null,
       manifest_entry_diff: null,
     }));
-    return result;
+    return { result, savedManifestFiles };
   }
 
   // TODO(MOD-134): remove once Apply replaces today's deploy

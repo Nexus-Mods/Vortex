@@ -128,6 +128,11 @@ async function mergeArchive(
   await fs.removeAsync(resultPath);
 }
 
+export interface IMergeResultByType {
+  usedInMerge: string[];
+  mergeInfluences: { [outPath: string]: string[] };
+}
+
 export interface IMergeResult {
   // lists the files (paths relative to the mod base directory) used in merging.
   // These files will not be deployed individually

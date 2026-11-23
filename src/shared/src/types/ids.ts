@@ -88,3 +88,19 @@ export type VortexProfileId = Brand<string, "VortexProfileId">;
  * @public */
 export const VortexProfileId: Brander<VortexProfileId> =
   make<VortexProfileId>(validateNonEmptyString);
+
+/**
+ * The id of a deployment method, such as `hardlink_activator`: the `id` of an
+ * `IDeploymentMethod` and the `deploymentMethod` a manifest records.
+ *
+ * @public */
+export type VortexDeploymentMethodId = Brand<string, "VortexDeploymentMethodId">;
+
+/**
+ * Brands a string as a {@link VortexDeploymentMethodId}.
+ *
+ * @throws {@link VortexError} with kind `argument-invalid` for an empty string.
+ *
+ * @public */
+export const VortexDeploymentMethodId: Brander<VortexDeploymentMethodId> =
+  make<VortexDeploymentMethodId>(validateNonEmptyString);

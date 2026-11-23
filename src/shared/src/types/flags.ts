@@ -17,8 +17,9 @@ export const flagVariantSchemas = {
   "vortex-tier-0-game-support": {},
   // On/off gate for browsing mods on the Browse page; off shows a coming-soon panel instead.
   "laz-vortex-browse-mods": {},
-  // On/off gate for the planner_plan telemetry event.
-  "vortex-planner-telemetry": {},
+  // On/off gate for the mod pipeline: Skyrim SE deploys planned and run through Apply, and the
+  // planner_plan telemetry event.
+  "vortex-mod-pipeline": {},
 };
 
 type FlagVariantSchemas = typeof flagVariantSchemas;
