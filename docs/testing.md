@@ -55,6 +55,14 @@ renderer's test setup, `src/renderer/test-setup.mts`, enforces this: when React
 logs one, the test that logged it fails with
 `React updated X outside act()`.
 
+It also fails a test on a function or `React.memo` component that sets
+`defaultProps` (`X set defaultProps on a function or memo component`), which React 19 drops. In our
+code, use default parameter values instead. From a dependency, upgrade it. If the
+version that fixes it is ESM-only, the renderer can't `import` it while it
+compiles to CommonJS; load it the way
+`src/renderer/src/util/react_markdown/ReactMarkdown.tsx` loads
+react-markdown.
+
 The check is there because nothing else surfaces these warnings. Vitest's
 default reporter hides a test's console output, so a run that logs dozens of
 warnings still looks clean, and a passing CI log doesn't get read. The suite was
@@ -151,11 +159,13 @@ and `TooltipControls` use it.
 - An update that lands after testing-library's cleanup fails the next test in
   the file, or the file's `afterAll` after its last test, rather than the test
   that caused it.
-- The deprecation warnings that don't fail a test (`findDOMNode`,
-  `defaultProps`, and legacy context from react-bootstrap) come from older
-  code: class components in `src/renderer/src/controls/`, and old dependencies
-  such as `react-bootstrap` 0.33. Clearing them means changing that code, not
-  the tests.
+- Only the warnings above fail a test: `act()` and `defaultProps` wherever
+  they come from, and the legacy context, nesting and ref warnings when our own
+  code is to blame. The deprecation warnings still in the log (`findDOMNode`,
+  and legacy context from react-bootstrap) come from older code: class
+  components in `src/renderer/src/controls/`, and old dependencies such as
+  `react-bootstrap` 0.33. Clearing them means changing that code, not the
+  tests.
 
 ## Extension tests
 

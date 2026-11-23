@@ -15,21 +15,41 @@ import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { ApplicationData } from "./src/applicationData.js";
 
-// A React update outside act() fails the test it happened in; "React warnings" in docs/testing.md
-// says how to fix one. console.error is assigned rather than spied on so vi.restoreAllMocks()
-// leaves it be, and the check runs after testing-library's cleanup (vitest.config.mts runs hooks
-// last-registered first), so an update that lands while a test is torn down still counts.
-const componentsUpdatedOutsideAct = new Set<string>();
+// These React warnings fail the test they're logged in, wherever they come from; "React warnings"
+// in docs/testing.md says how to fix each. `logged` is part of the message React logs, and
+// `failure` says what went wrong given the components React named. console.error is assigned
+// rather than spied on so vi.restoreAllMocks() leaves it be, and the check runs after
+// testing-library's cleanup (vitest.config.mts runs hooks last-registered first), so a warning
+// logged while a test is torn down still counts.
+const failingWarnings: { logged: string; failure: (components: string) => string }[] = [
+  {
+    logged: "not wrapped in act",
+    failure: (components) => `React updated ${components} outside act()`,
+  },
+  {
+    // React logs one message for function components and another for memo components
+    logged: "Support for defaultProps will be removed from",
+    failure: (components) => `${components} set defaultProps on a function or memo component`,
+  },
+];
+let componentsByWarning = new Map<(typeof failingWarnings)[number], Set<string>>();
 const originalConsoleError = console.error;
 console.error = (...args: unknown[]) => {
-  if (typeof args[0] === "string" && args[0].includes("not wrapped in act")) {
+  const message = args[0];
+  const warning =
+    typeof message === "string"
+      ? failingWarnings.find(({ logged }) => message.includes(logged))
+      : undefined;
+  if (warning !== undefined) {
+    const components = componentsByWarning.get(warning) ?? new Set<string>();
     // React passes the component's name after the message
-    componentsUpdatedOutsideAct.add(typeof args[1] === "string" ? args[1] : "a component");
+    components.add(typeof args[1] === "string" ? args[1] : "a component");
+    componentsByWarning.set(warning, components);
   }
   originalConsoleError.apply(console, args);
 };
 
-// React warnings about our own code fail the test they're logged in, as act() warnings do above;
+// React warnings about our own code fail the test they're logged in, as the warnings above do;
 // "React warnings" in docs/testing.md says how to fix each. A warning is ours when the first
 // component in React's stack that has a file isn't in node_modules: react-bootstrap 0.33 logs
 // the same warnings about its own components, and those go when it does.
@@ -87,12 +107,11 @@ console.error = (...args: unknown[]) => {
  * to be blamed on the next test.
  */
 const failOnReactWarnings = () => {
-  const problems: string[] = [];
-  if (componentsUpdatedOutsideAct.size > 0) {
-    problems.push(`React updated ${[...componentsUpdatedOutsideAct].join(", ")} outside act()`);
-  }
+  const problems = [...componentsByWarning].map(([warning, components]) =>
+    warning.failure([...components].join(", ")),
+  );
   problems.push(...ourWarningsLogged);
-  componentsUpdatedOutsideAct.clear();
+  componentsByWarning = new Map();
   ourWarningsLogged.clear();
   if (problems.length > 0) {
     throw new Error(`${problems.join("; ")}; see "React warnings" in docs/testing.md`);
