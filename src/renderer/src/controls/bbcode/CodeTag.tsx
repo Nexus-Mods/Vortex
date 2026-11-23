@@ -1,15 +1,14 @@
 import { Tag } from "bbcode-to-react";
 import React from "react";
 
-import type { IParsedTag } from "./types";
-
 /**
  * Stands in for `[` in a code block until `CodeTag` draws it, so the parser takes nothing in the
  * block for a tag, such as the `[i]` in `a[i]`. A private-use character, so text won't have it.
  */
-const CODE_BRACKET = "";
+const CODE_BRACKET = String.fromCharCode(0xe000);
 
-const CODE_BLOCK_RE = /(\[code(?:[= ][^\]]*)?\])([\s\S]*?)(\[\/code\])/gi;
+/** A code block, up to its `[/code]`, or to the end for a block without one, as the parser reads it. */
+const CODE_BLOCK_RE = /(\[code(?:[= ][^\]]*)?\])([\s\S]*?)(\[\/code\]|$)/gi;
 
 /**
  * A line break, which `preProcess` makes of a `<br />`, with a newline either side of it. A
@@ -28,9 +27,8 @@ export const withLiteralCode = (input: string): string =>
       open + content.replace(LINE_BREAK_RE, "\n").replaceAll("[", CODE_BRACKET) + close,
   );
 
-/** A node's text, with a newline for a line break `withLiteralCode` didn't reach. */
-const textOf = (node: IParsedTag): string =>
-  node.name === "br" ? "\n" : node.text + node.children.map(textOf).join("");
+/** Text with the brackets `withLiteralCode` stood in for put back. */
+const withBrackets = (text: string): string => text.replaceAll(CODE_BRACKET, "[");
 
 /**
  * `[code]`, `[code=inline]` and `[code=<language>]`, showing their text as written. The parser's
@@ -41,8 +39,7 @@ class CodeTag extends Tag {
   constructor(renderer: unknown, settings: unknown) {
     super(renderer, settings);
     // As the parser's own code tag: a block drops the newline after it, since it ends its line.
-    // Assigned this way because the parser's typings leave `STRIP_OUTER` out.
-    Object.assign(this, { STRIP_OUTER: !this.#inline });
+    this.STRIP_OUTER = !this.#inline;
   }
 
   get #inline(): boolean {
@@ -54,12 +51,17 @@ class CodeTag extends Tag {
     return lang ? `prettyprint lang-${lang}` : "prettyprint";
   }
 
+  /** Only text, since `withLiteralCode` leaves the parser no tags to find in the block. */
   get #text(): string {
-    return (this as unknown as IParsedTag).children
-      .map(textOf)
-      .join("")
-      .replaceAll(CODE_BRACKET, "[")
-      .replace(/^(\r?\n)+|(\r?\n)+$/g, "");
+    return withBrackets(this.children.map((child) => child.text).join("")).replace(
+      /^(\r?\n)+|(\r?\n)+$/g,
+      "",
+    );
+  }
+
+  /** The block as bbcode, for a tag that shows what it wraps as text, such as `[more]`. */
+  public toText(contentAsHTML?: boolean): string {
+    return withBrackets(super.toText(contentAsHTML));
   }
 
   public toHTML(): string[] {

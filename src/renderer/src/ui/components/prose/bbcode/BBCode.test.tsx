@@ -334,6 +334,23 @@ describe("BBCode", () => {
       expect(container.querySelector("pre")!.textContent).toBe("[General]\nbEnabled=1");
     });
 
+    it("runs a block without a [/code] to the end, keeping the tags in it as written", () => {
+      const { container } = render(<BBCode bbcode={"[code]a[i] [b]x[/b]"} />);
+
+      expect(container.querySelector("pre")!.textContent).toBe("a[i] [b]x[/b]");
+    });
+
+    it("keeps the brackets of a block in a [more] popover", async () => {
+      const { container } = render(
+        <BBCode bbcode={"[more id=info name=Info][code]x = a[i];[/code][/more]"} />,
+      );
+
+      await userEvent.click(container.querySelector(".more-link button"));
+
+      expect(document.body).toHaveTextContent("x = a[i];");
+      expect(document.body.textContent).not.toContain(String.fromCharCode(0xe000));
+    });
+
     it("shows inline code in a code element", () => {
       const bbcode = "Set [code=inline]&quot;P&quot;[/code] here";
       const { container } = render(<BBCode bbcode={bbcode} />);

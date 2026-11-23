@@ -3,12 +3,17 @@ declare namespace BBCodeToReact {
     name: string;
     params: any;
     renderer: any;
+    /** The text of a text node, which has no name. */
+    text: string;
+    children: Tag[];
+    /** Drops the newline after the tag, for a tag that ends its line. */
+    STRIP_OUTER: boolean;
 
     constructor(renderer, settings);
 
     getComponents(): React.ReactChild[];
     getContent(raw?: boolean): string;
-    toText(contentAsHTML: string): string;
+    toText(contentAsHTML?: boolean): string;
     toHTML(): string[];
     toReact(): React.ReactChild[] | JSX.Element;
   }
