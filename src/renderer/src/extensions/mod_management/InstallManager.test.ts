@@ -1,3 +1,4 @@
+import { ProcessCanceled, UserCanceled, VortexError } from "@vortex/shared/errors";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { updateModStatus } from "../../actions/collectionInstallTracking";
@@ -16,6 +17,7 @@ import { resyncCollectionSessionRules } from "../../util/collectionSessionRecons
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import InstallManager from "./InstallManager";
 import type { IModReference } from "./types/IMod";
+import type { InstallFunc } from "./types/InstallFunc";
 import { lookupFromDownload } from "./util/dependencies";
 import type { InstallPhaseTracker } from "./util/InstallPhaseTracker";
 
@@ -623,5 +625,72 @@ describe("cleanupPendingInstalls session resync", () => {
   it("does not resync when the torn-down mod is not the active collection", () => {
     installManager.cleanupPendingInstalls("some-other-mod", true);
     expect(resyncCollectionSessionRules).not.toHaveBeenCalled();
+  });
+});
+
+describe("addInstaller", () => {
+  type InstallerEntry = { id: string; install: InstallFunc };
+
+  const makeManager = () => {
+    const state = {
+      persistent: { profiles: {}, mods: {}, downloads: { files: {} } },
+      session: { collections: {} },
+      settings: { downloads: {}, profiles: { activeProfileId: undefined, lastActiveProfile: {} } },
+    } as unknown as IState;
+    const api = {
+      getState: () => state,
+      store: { getState: () => state, dispatch: vi.fn() },
+      events: { emit: vi.fn(), on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      onAsync: vi.fn(),
+      onStateChange: vi.fn(),
+      sendNotification: vi.fn(),
+      dismissNotification: vi.fn(),
+      showErrorNotification: vi.fn(),
+      translate: vi.fn((key: string) => key),
+      registerInstaller: vi.fn(),
+    } as unknown as IExtensionApi;
+    return new InstallManager(api, vi.fn());
+  };
+
+  const registeredInstall = (manager: InstallManager, install: InstallFunc): InstallFunc => {
+    manager.addInstaller("test-installer", 50, vi.fn(), install);
+    const installers = (manager as unknown as { mInstallers: InstallerEntry[] }).mInstallers;
+    const entry = installers.find((inst) => inst.id === "test-installer");
+    if (entry === undefined) {
+      throw new Error("installer not registered");
+    }
+    return entry.install;
+  };
+
+  const runInstall = (install: InstallFunc) =>
+    Promise.resolve(install([], "temp", "game", () => undefined));
+
+  it("turns a plain user-canceled VortexError from an installer into UserCanceled", async () => {
+    const install = registeredInstall(makeManager(), () =>
+      Promise.reject(new VortexError("canceled", { kind: "user-canceled", skipped: true })),
+    );
+
+    const err: unknown = await runInstall(install).catch((caught: unknown) => caught);
+
+    expect(err).toBeInstanceOf(UserCanceled);
+    expect((err as UserCanceled).skipped).toBe(true);
+  });
+
+  it("turns a plain process-canceled VortexError thrown synchronously into ProcessCanceled", async () => {
+    const install = registeredInstall(makeManager(), () => {
+      throw new VortexError("stopped", { kind: "process-canceled" });
+    });
+
+    await expect(runInstall(install)).rejects.toBeInstanceOf(ProcessCanceled);
+  });
+
+  it("passes other errors and results through unchanged", async () => {
+    const failure = new Error("broken archive");
+    const failing = registeredInstall(makeManager(), () => Promise.reject(failure));
+    await expect(runInstall(failing)).rejects.toBe(failure);
+
+    const result = { instructions: [] };
+    const succeeding = registeredInstall(makeManager(), () => Promise.resolve(result));
+    await expect(runInstall(succeeding)).resolves.toBe(result);
   });
 });

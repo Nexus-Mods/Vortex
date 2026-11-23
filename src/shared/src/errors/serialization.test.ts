@@ -13,6 +13,7 @@ import {
   ORIGIN_REF_KEY,
   type ErrorOriginTracker,
   deserializeVortexError,
+  reviveCancelClass,
   serializeVortexError,
   toWireError,
 } from "./serialization";
@@ -333,5 +334,59 @@ describe("class reconstruction", () => {
 
     expect(wire.constructor).toBe(VortexError);
     expect(wire.data.kind).toBe("test:tag");
+  });
+});
+
+describe("reviveCancelClass", () => {
+  it("rebuilds a plain user-canceled error as UserCanceled", () => {
+    const cause = new Error("root");
+    const plain = new VortexError(
+      "Install canceled",
+      { kind: "user-canceled", skipped: true },
+      { cause },
+    );
+
+    const revived = reviveCancelClass(plain);
+
+    assert(revived instanceof UserCanceled);
+    expect(revived.skipped).toBe(true);
+    expect(revived.message).toBe("Install canceled");
+    expect(revived.data).toBe(plain.data);
+    expect(revived.cause).toBe(cause);
+    expect(revived.stack).toBe(plain.stack);
+  });
+
+  it("keeps skipped false for a plain cancel", () => {
+    const revived = reviveCancelClass(
+      new VortexError("x", { kind: "user-canceled", skipped: false }),
+    );
+
+    assert(revived instanceof UserCanceled);
+    expect(revived.skipped).toBe(false);
+  });
+
+  it("rebuilds a plain process-canceled error as ProcessCanceled with its extraInfo", () => {
+    const extraInfo = { alreadyReported: true };
+    const plain = new VortexError("Stopped", { kind: "process-canceled", extraInfo });
+
+    const revived = reviveCancelClass(plain);
+
+    assert(revived instanceof ProcessCanceled);
+    expect(revived.extraInfo).toBe(extraInfo);
+    expect(revived.message).toBe("Stopped");
+  });
+
+  it("returns everything else unchanged", () => {
+    const userCanceled = new UserCanceled(true);
+    const processCanceled = new ProcessCanceled("x");
+    const otherKind = new VortexError("x", { kind: "not-supported" });
+    const plainError = new Error("Canceled");
+
+    expect(reviveCancelClass(userCanceled)).toBe(userCanceled);
+    expect(reviveCancelClass(processCanceled)).toBe(processCanceled);
+    expect(reviveCancelClass(otherKind)).toBe(otherKind);
+    expect(reviveCancelClass(plainError)).toBe(plainError);
+    expect(reviveCancelClass(undefined)).toBeUndefined();
+    expect(reviveCancelClass("canceled")).toBe("canceled");
   });
 });
