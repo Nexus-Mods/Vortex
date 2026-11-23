@@ -68,6 +68,21 @@ describe("withVortexSource", () => {
     );
   });
 
+  it("leaves a link it can't parse as it is", () => {
+    expect(
+      withVortexSource({
+        url: "www.nexusmods.com/skyrimspecialedition/mods/12604",
+        feature: "browse",
+      }),
+    ).toBe("www.nexusmods.com/skyrimspecialedition/mods/12604");
+  });
+
+  it("leaves a link to another site as it is", () => {
+    expect(
+      withVortexSource({ url: "https://github.com/someone/mod", feature: "health_check" }),
+    ).toBe("https://github.com/someone/mod");
+  });
+
   it("keeps the link's own parameters", () => {
     expect(
       withVortexSource({ url: nexusFilePageUrl(SKYRIM, 12604, "42"), feature: "health_check" }),

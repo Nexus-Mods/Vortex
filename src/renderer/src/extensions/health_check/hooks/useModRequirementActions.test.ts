@@ -46,6 +46,20 @@ describe("useModRequirementActions", () => {
   });
 
   // A game with no Nexus domain mapping leaves the requirement without a page to open.
+  it("opens an author's own link as it is", () => {
+    const { result } = renderHook(() =>
+      useModRequirementActions(
+        api,
+        requirement({ modUrl: "www.nexusmods.com/skyrimspecialedition/mods/100" }),
+        identity,
+      ),
+    );
+
+    result.current.openModPage();
+
+    expect(openUrl).toHaveBeenCalledWith("www.nexusmods.com/skyrimspecialedition/mods/100");
+  });
+
   it("opens nothing when the mod has no page", () => {
     const { result } = renderHook(() =>
       useModRequirementActions(api, requirement({ modUrl: undefined }), identity),

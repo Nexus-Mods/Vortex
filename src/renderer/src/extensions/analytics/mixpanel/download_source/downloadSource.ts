@@ -20,6 +20,13 @@ const DOWNLOAD_SOURCES: readonly string[] = [
   ...VORTEX_FEATURES.map((feature): DownloadSource => `${feature}_website`),
 ] satisfies DownloadSource[];
 
+/**
+ * The query parameters Vortex adds to the website links it opens, and the website hands back on
+ * its nxm links: the feature that sent the user, and the mod's place in that feature's list.
+ */
+export const SOURCE_PARAM = "source";
+export const SOURCE_POSITION_PARAM = "source_position";
+
 /** The `source` a feature adds to the website links it opens. */
 export const vortexLinkSource = (feature: VortexFeature) => `vortex_${feature}`;
 
