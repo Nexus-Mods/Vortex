@@ -77,7 +77,29 @@ describe("downloadAndInstallNexusFile", () => {
     expect(emit).toHaveBeenCalledWith(
       "start-download",
       ["nxm://skyrimspecialedition/mods/3863/files/1000172397"],
-      expect.anything(),
+      { game: "skyrimse", name: "SkyUI", fileId: 1000172397, modId: 3863 },
+      undefined,
+      expect.any(Function),
+      undefined,
+      { allowInstall: false },
+    );
+  });
+
+  it("saves where the download started on its mod info", async () => {
+    const { emit, api } = apiAnswering([null, "download-1"], [null, "SkyUI-3863"]);
+
+    await downloadNexusFile(api, { ...file, downloadSource: "browse" });
+
+    expect(emit).toHaveBeenCalledWith(
+      "start-download",
+      ["nxm://skyrimspecialedition/mods/3863/files/1000172397"],
+      {
+        game: "skyrimse",
+        name: "SkyUI",
+        fileId: 1000172397,
+        modId: 3863,
+        downloadSource: "browse",
+      },
       undefined,
       expect.any(Function),
       undefined,

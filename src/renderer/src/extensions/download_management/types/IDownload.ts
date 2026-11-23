@@ -1,5 +1,7 @@
 import type { IFileInfo } from "@nexusmods/nexus-api";
 
+import type { DownloadSource } from "../../analytics/mixpanel/download_source/downloadSource";
+
 export type RedownloadMode = "always" | "never" | "ask" | "replace";
 
 export type DownloadState =
@@ -90,6 +92,8 @@ export interface IModInfo {
   referenceTags?: string[];
   revisionNumber?: number;
   source?: string;
+  /** Where the download started (a Vortex feature, or the website it sent the user to); analytics only. */
+  downloadSource?: DownloadSource;
   // Allow additional properties
   [key: string]: any;
 }

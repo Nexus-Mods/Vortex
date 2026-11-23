@@ -152,6 +152,27 @@ describe("nxm protocol resolver", () => {
       );
     });
 
+    test("marks a download a Vortex link sent the user to the site for", async ({ makeNxm }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+
+      await expect(
+        resolve(`${MOD_URL}?key=abc&expires=1700000000&source=vortex_browse`),
+      ).resolves.toMatchObject({ meta: { downloadSource: "browse_website" } });
+    });
+
+    test("leaves a cached request for the same file without the first link's source", async ({
+      makeNxm,
+    }) => {
+      const { harness, resolve } = makeNxm();
+      harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));
+
+      await resolve(`${MOD_URL}?source=vortex_browse`);
+      const { meta } = await resolve(MOD_URL);
+
+      expect(meta).not.toHaveProperty("downloadSource");
+    });
+
     test("serves a repeated request for the same file from the cache", async ({ makeNxm }) => {
       const { harness, resolve } = makeNxm();
       harness.getDownloadURLs.mockResolvedValue(downloadLink("https://cdn/file.7z"));

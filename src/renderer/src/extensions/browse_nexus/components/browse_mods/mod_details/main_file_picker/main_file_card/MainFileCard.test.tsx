@@ -187,7 +187,7 @@ describe("MainFileCard", () => {
     await userEvent.click(screen.getByTestId("main-file-card-details-link-42"));
 
     expect(openUrl).toHaveBeenCalledWith(
-      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files&file_id=42&nmm=1",
+      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files&file_id=42&nmm=1&source=vortex_browse",
     );
   });
 

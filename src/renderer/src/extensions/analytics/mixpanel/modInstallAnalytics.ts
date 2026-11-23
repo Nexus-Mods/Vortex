@@ -1,16 +1,16 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IMod } from "../../mod_management/types/IMod";
 import type { ReplaceChoice } from "../../mod_management/types/IReplaceChoice";
-import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
+import { downloadNexusIds } from "./download_nexus_ids/downloadNexusIds";
 import { classifyErrorCode } from "./error-code";
-import type { ModAnalyticsIdentity, ModInstallKind } from "./MixpanelEvents";
+import type { ModDownloadIdentity, ModInstallKind } from "./MixpanelEvents";
 import {
   ModsInstallationCancelledEvent,
   ModsInstallationCompletedEvent,
   ModsInstallationFailedEvent,
   ModsInstallationStartedEvent,
 } from "./MixpanelEvents";
-import { makeModAnalyticsIdentity } from "./modAnalyticsIdentity";
+import { makeModDownloadIdentity } from "./mod_download_identity/modDownloadIdentity";
 
 export type ModInstallOutcome = "completed" | "cancelled" | "failed";
 
@@ -61,19 +61,17 @@ export interface ModInstallOutcomeContext {
 function resolveModIdentity(
   api: IExtensionApi,
   archiveId: string,
-): ModAnalyticsIdentity | undefined {
+): ModDownloadIdentity | undefined {
   const state = api.getState();
-  const nexusIds = nexusIdsFromDownloadId(state, archiveId);
+  const nexusIds = downloadNexusIds(state, archiveId);
   const isCollection = nexusIds?.collectionSlug != null && nexusIds?.revisionId != null;
   if (nexusIds?.fileId == null || isCollection) {
     return undefined;
   }
-  const parent = state.persistent.downloads.files?.[archiveId]?.modInfo?.nexus;
-  return makeModAnalyticsIdentity(
+  return makeModDownloadIdentity({
     nexusIds,
-    parent?.parentCollectionId ?? null,
-    parent?.parentRevisionId ?? null,
-  );
+    download: state.persistent.downloads.files?.[archiveId],
+  });
 }
 
 /** Emits mods_installation_started for a mod (standalone or collection member). */
