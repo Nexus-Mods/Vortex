@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type * as FsPromises from "node:fs/promises";
 import { mkdtemp, rm, writeFile, truncate } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -8,11 +9,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import { parseMinidump, summarizeMinidumpFile } from "./minidump";
 
-// File position at which reads fail with EIO, to simulate a disk error
-const diskError = vi.hoisted(() => ({ at: -1 }));
+// File position at which reads fail, and the error they fail with
+const failingRead = vi.hoisted(() => ({
+  at: -1,
+  error: (): Error => Object.assign(new Error("i/o error"), { code: "EIO" }),
+}));
 
 vi.mock("node:fs/promises", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  const actual = await importOriginal<typeof FsPromises>();
   return {
     ...actual,
     open: async (...args: Parameters<typeof actual.open>) => {
@@ -24,8 +28,8 @@ vi.mock("node:fs/promises", async (importOriginal) => {
         position: number,
       ) => ReturnType<typeof handle.read>;
       handle.read = ((buffer: Buffer, offset: number, length: number, position: number) =>
-        position === diskError.at
-          ? Promise.reject(Object.assign(new Error("i/o error"), { code: "EIO" }))
+        position === failingRead.at
+          ? Promise.reject(failingRead.error())
           : read(buffer, offset, length, position)) as typeof handle.read;
       return handle;
     },
@@ -199,14 +203,35 @@ describe("summarizeMinidumpFile", () => {
     const dump = loadFixture("windows-renderer.dmp.gz");
     try {
       await writeFile(file, dump);
-      diskError.at = crashpadInfoRva(dump) + 36;
+      failingRead.at = crashpadInfoRva(dump) + 36;
       const result = await summarizeMinidumpFile(file);
       expect(result).toMatchObject({
         summary: { exceptionCode: "0xc0000005", module: "electron.exe", appVersion: "43.0.0" },
       });
       expect(result.summary?.processType).toBeUndefined();
     } finally {
-      diskError.at = -1;
+      failingRead.at = -1;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("tells parser bugs apart from disk errors", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "vortex-minidump-"));
+    const file = path.join(dir, "crash.dmp");
+    const { error } = failingRead;
+    try {
+      await writeFile(file, loadFixture("windows-renderer.dmp.gz"));
+      // the stream directory read, before any summary exists
+      failingRead.at = 0;
+      expect(await summarizeMinidumpFile(file)).toEqual({ unreadableReason: "read-failed" });
+      failingRead.error = () => new TypeError("cannot read properties of undefined");
+      expect(await summarizeMinidumpFile(file)).toEqual({
+        unreadableReason: "parser-error",
+        parserError: "cannot read properties of undefined",
+      });
+    } finally {
+      failingRead.at = -1;
+      failingRead.error = error;
       await rm(dir, { recursive: true, force: true });
     }
   });
