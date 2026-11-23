@@ -10,6 +10,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "happy-dom",
+    // Tests don't reach the network, such as an embedded YouTube player.
+    environmentOptions: { happyDOM: { settings: { disableIframePageLoading: true } } },
     // Expose beforeAll/afterEach/... as globals so @testing-library/react can
     // self-register its hooks (act environment + auto-cleanup). Tests should
     // still import from "vitest" explicitly.

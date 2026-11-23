@@ -50,6 +50,8 @@ export interface IBBCodeContext {
   isFromAdultContent?: boolean;
   /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
   externalImagePlaceholders?: IExternalImagePlaceholderOptions;
+  /** Plays `[youtube]` and `[video]` in a player; otherwise they're links, as where a player won't fit. */
+  embedVideos?: boolean;
 }
 
 const createFullParser = (safe: boolean) => {
@@ -65,7 +67,7 @@ const createFullParser = (safe: boolean) => {
   parser.registerTag("url", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("spoiler", safe ? SafeSpoilerTag : SpoilerTag);
   parser.registerTag("font", FontTag);
-  parser.registerTag("youtube", safe ? EmbedLinkTag : YoutubeTag);
+  parser.registerTag("youtube", YoutubeTag);
   parser.registerTag("line", LineTag);
   parser.registerTag("heading", HeadingTag);
   parser.registerTag("svg", SvgTag);
@@ -78,7 +80,8 @@ const createFullParser = (safe: boolean) => {
   if (safe) {
     parser.registerTag("img", SafeImageTag);
     parser.registerTag("compare", CompareTag);
-    ["video", "twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
+    parser.registerTag("video", YoutubeTag);
+    ["twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
     Object.entries(SAFE_SIMPLE_TAGS).forEach(([name, tag]) => parser.registerTag(name, tag));
   }
 
@@ -87,8 +90,8 @@ const createFullParser = (safe: boolean) => {
 
 const fullParser = createFullParser(false);
 
-// For bbcode we don't write ourselves: images only from Nexus Mods, embeds as links, and links only
-// to places they are allowed to go.
+// For bbcode we don't write ourselves: images only from Nexus Mods, videos in a sandboxed player
+// where asked, other embeds as links, and links only to places they are allowed to go.
 const safeParser = createFullParser(true);
 
 const stripParser = new bbcode.Parser();
@@ -155,7 +158,7 @@ function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
   return render(fullParser, input, context);
 }
 
-/** As `renderBBCode`, for bbcode we don't write ourselves: Nexus images, embeds as links, safe links. */
+/** As `renderBBCode`, for bbcode we don't write ourselves: Nexus images, sandboxed videos, safe links. */
 export function renderSafeBBCode(input: string, context?: unknown): React.ReactChild[] {
   return render(safeParser, input, context);
 }
