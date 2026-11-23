@@ -322,6 +322,14 @@ label, so selecting a tab stopped working as soon as the label was translated.
   page, see [design-system/page-migration.md](design-system/page-migration.md).
 - Optional menu extras are self-contained components (such as `menuBadge`) that
   subscribe to their own state.
+- The spine saves the last page open on Home and in each game by page id
+  (`settings.interface.lastPages`) and reopens it after a restart. So:
+    - The id defaults to the title. Renaming a page with no `id` sends users to
+      the first page once, so set an `id` if the title might change.
+    - `priority` orders the menu. It only picks where a game opens when nothing
+      is remembered for it.
+    - `visible()` must be right on the first render, or the remembered page is
+      skipped at startup.
 
 ## Accessibility
 
