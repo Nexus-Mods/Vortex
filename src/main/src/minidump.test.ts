@@ -6,6 +6,7 @@ import { gunzipSync } from "node:zlib";
 
 import { describe, expect, it } from "vitest";
 
+import type { IMinidumpSummary, MinidumpResult } from "./minidump";
 import { parseMinidump, summarizeMinidumpFile } from "./minidump";
 
 // Real Crashpad dumps written by Electron 43 (process.crash() in each process
@@ -14,8 +15,12 @@ import { parseMinidump, summarizeMinidumpFile } from "./minidump";
 const loadFixture = (name: string): Buffer =>
   gunzipSync(readFileSync(path.join(__dirname, "__fixtures__", name)));
 
+type CrashSiteResult =
+  | Exclude<MinidumpResult, { summary: IMinidumpSummary }>
+  | { summary: Omit<IMinidumpSummary, "stack" | "stackModules"> };
+
 /** The crash site alone: the stack scan has its own tests. */
-const crashSite = async (dump: Buffer): Promise<unknown> => {
+const crashSite = async (dump: Buffer): Promise<CrashSiteResult> => {
   const result = await parseMinidump(dump);
   if (result.summary === undefined) {
     return result;
