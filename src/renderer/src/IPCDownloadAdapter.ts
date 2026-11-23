@@ -3,6 +3,7 @@ import { access, copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import * as path from "node:path";
 
 import { unknownToError } from "@vortex/shared";
+import { redactUrlForLog } from "@vortex/shared";
 import {
   AlreadyDownloaded,
   deserializeVortexError,
@@ -691,7 +692,8 @@ export class IPCDownloadAdapter {
       const dest = path.join(dlPath, tempName);
 
       log("debug", "starting download", {
-        encodedUrl,
+        url: redactUrlForLog(encodedUrl.url),
+        referer: encodedUrl.referer === undefined ? undefined : redactUrlForLog(encodedUrl.referer),
         dest,
         collationId,
       });
@@ -1140,7 +1142,8 @@ export class IPCDownloadAdapter {
     if (handler !== undefined) {
       log("debug", "resolving download via protocol handler", {
         scheme,
-        encodedUrl,
+        url: redactUrlForLog(encodedUrl.url),
+        referer: encodedUrl.referer === undefined ? undefined : redactUrlForLog(encodedUrl.referer),
       });
 
       const resolved = await Promise.resolve(handler(encodedUrl.url.toString()));
@@ -1150,12 +1153,18 @@ export class IPCDownloadAdapter {
         this.#resolvedMeta.set(collationId, resolved.meta);
       }
 
-      log("debug", "download resolved", { resolvedUrl: resolved.urls[0] });
+      log("debug", "download resolved", {
+        resolvedUrl: resolved.urls[0] === undefined ? undefined : redactUrlForLog(resolved.urls[0]),
+        urls: resolved.urls.length,
+      });
       return { probeEndpoint: { url: resolved.urls[0] } };
     }
 
     if (scheme === "http" || scheme === "https") {
-      log("debug", "resolving download directly", { encodedUrl });
+      log("debug", "resolving download directly", {
+        url: redactUrlForLog(encodedUrl.url),
+        referer: encodedUrl.referer === undefined ? undefined : redactUrlForLog(encodedUrl.referer),
+      });
       return { probeEndpoint: { url: encodedUrl.url.toString(), headers } };
     }
 

@@ -1,6 +1,7 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { redactUrlForLog } from "@vortex/shared";
 import { shell } from "electron";
 
 import { log } from "./logging";
@@ -8,7 +9,7 @@ import { log } from "./logging";
 /** Opens the file using the default application registered for the protocol */
 export function openUrl(url: URL): void {
   shell.openExternal(url.toString()).catch((err: unknown) => {
-    log("error", "failed to open URL", { url: url.toString(), error: err });
+    log("error", "failed to open URL", { url: redactUrlForLog(url), error: err });
   });
 }
 
@@ -20,7 +21,7 @@ export function openUrl(url: URL): void {
 export function openUrlString(raw: string): void {
   const url = URL.parse(raw);
   if (url === null) {
-    log("warn", "not opening an invalid URL", { url: raw });
+    log("warn", "not opening an invalid URL", { url: redactUrlForLog(raw) });
     return;
   }
 

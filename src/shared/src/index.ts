@@ -1,5 +1,6 @@
 export * from "./constants";
 export * from "./Debouncer";
+export * from "./redactUrl";
 export * from "./errors";
 export * from "./types/ids";
 export type { Assert, MutuallyAssignable } from "./types/typeChecks";

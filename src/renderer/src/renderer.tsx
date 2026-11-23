@@ -116,6 +116,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import "./util/application.electron";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { redactUrlForLog } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { AppInitMetadata } from "@vortex/shared/ipc";
 import Bluebird from "bluebird";
@@ -724,7 +725,7 @@ async function init(): Promise<ExtensionManager | null> {
 
     const handler = extensions.getProtocolHandler(protocol);
     if (handler !== null) {
-      log("info", "handling url", { url });
+      log("info", "handling url", { url: redactUrlForLog(url) });
       handler(url, install);
     } else {
       store.dispatch(

@@ -31,7 +31,7 @@ import {
   getErrorStatusCode,
   unknownToError,
 } from "@vortex/shared";
-import { VortexError } from "@vortex/shared";
+import { redactUrlForLog, VortexError } from "@vortex/shared";
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import BluebirdPromise from "bluebird";
 import type { TFunction } from "i18next";
@@ -766,7 +766,7 @@ function startDownloadMod(
   handleErrors: boolean = true,
   referenceTag?: string,
 ): BluebirdPromise<string> {
-  log("info", "start download mod", { urlStr, allowInstall });
+  log("info", "start download mod", { url: redactUrlForLog(urlStr), allowInstall });
   let state = api.getState();
   const gameId = convertNXMIdReverse(knownGames(state), url.gameId);
   const pageId = nxmPageId(state, url.gameId);
