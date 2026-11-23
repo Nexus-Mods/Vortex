@@ -64,13 +64,10 @@ export type ITableProps<T, G extends ITableGroup<T> = ITableGroup<T>> = {
   label: string;
   /** Controls above the header row, in the sticky head: a page's tabs and actions. */
   toolbar?: ReactNode;
-  /**
-   * How far the toolbar reaches past the table's right edge, over a panel the page lays beside
-   * the table under it, so its controls end where the panel does. Unset, it ends with the table.
-   * It changes as fast as the app's transitions, so a panel sliding in at that speed keeps the
-   * toolbar's width the same throughout.
-   */
-  toolbarOverhang?: `${number}rem`;
+  /** A panel pinned over the right edge, outside the grid, hung from the view's top right. */
+  aside?: ReactNode;
+  /** The room the columns leave at their right for `aside`. */
+  asideWidth?: `${number}rem`;
   /** Along the bottom of the view, below the rows: a bar for the selected rows. */
   footer?: ReactNode;
   /** In place of the rows while there are none: what a search that matched nothing says. */

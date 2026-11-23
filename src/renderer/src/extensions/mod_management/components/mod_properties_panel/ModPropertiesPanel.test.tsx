@@ -29,7 +29,7 @@ const ONE_MOD: IModProperties = {
     summary: "A friendlier menu.",
     author: "schlangster",
     isAdult: false,
-    status: "downloaded",
+    status: "update",
   },
   sections: [
     {
@@ -73,16 +73,11 @@ const REGISTERED = {
   values: {} as unknown as RegisteredValues,
 };
 
-const renderPanel = (properties: IModProperties, onClose = vi.fn(), registered = REGISTERED) => {
+const renderPanel = (properties: IModProperties, registered = REGISTERED) => {
   vi.mocked(useModProperties).mockReturnValue(properties);
   return render(
     <Provider store={makeModsTableStore()}>
-      <ModPropertiesPanel
-        memberships={MEMBERSHIPS}
-        mods={MODS}
-        registered={registered}
-        onClose={onClose}
-      />
+      <ModPropertiesPanel memberships={MEMBERSHIPS} mods={MODS} registered={registered} />
     </Provider>,
   );
 };
@@ -137,7 +132,7 @@ const renderRegistered = (
       },
     ],
   };
-  const open = () => renderPanel(properties, vi.fn(), registered);
+  const open = () => renderPanel(properties, registered);
   return { view: open(), open, attribute, extension, externalData, values: registered.values };
 };
 
@@ -158,7 +153,7 @@ describe("ModPropertiesPanel", () => {
 
     const general = screen.getByRole("tabpanel");
     expect(within(general).getByTestId("mod-properties-card")).toBeInTheDocument();
-    expect(within(general).getByTestId("mod-status-downloaded")).toBeInTheDocument();
+    expect(within(general).getByTestId("mod-status-update")).toBeInTheDocument();
     expect(within(general).getByTestId("mod-property-version")).toHaveTextContent("5.2");
     expect(within(general).queryByTestId("mod-property-archiveName")).not.toBeInTheDocument();
   });
@@ -173,6 +168,35 @@ describe("ModPropertiesPanel", () => {
     expect(general).toHaveAttribute("aria-selected", "false");
     expect(screen.getByTestId("mod-property-archiveName")).toHaveTextContent("SkyUI.7z");
     expect(screen.queryByTestId("mod-properties-card")).not.toBeInTheDocument();
+  });
+
+  it("starts a tab it switches to at its top", async () => {
+    renderPanel(ONE_MOD);
+    const scrollArea = screen.getByTestId("mod-properties-scroll-area");
+    scrollArea.scrollTop = 400;
+
+    await userEvent.click(screen.getAllByRole("tab")[1]);
+
+    expect(scrollArea.scrollTop).toBe(0);
+  });
+
+  it("keeps its tabs out of what scrolls", () => {
+    renderPanel(ONE_MOD);
+
+    const scrollArea = screen.getByTestId("mod-properties-scroll-area");
+    expect(scrollArea).not.toContainElement(screen.getByRole("tablist"));
+    expect(scrollArea).toContainElement(screen.getByTestId("mod-properties-card"));
+  });
+
+  it("keeps several mods' count out of what scrolls", () => {
+    renderPanel({
+      count: 3,
+      sections: [{ id: "organise", tab: "general", layout: "list", properties: [CATEGORY] }],
+    });
+
+    const scrollArea = screen.getByTestId("mod-properties-scroll-area");
+    expect(scrollArea).not.toContainElement(screen.getByTestId("mod-properties-count"));
+    expect(scrollArea).toContainElement(screen.getByRole("button", { name: /^Category/ }));
   });
 
   it("has no Advanced tab with nothing on it", () => {
@@ -305,14 +329,5 @@ describe("ModPropertiesPanel", () => {
 
     expect(externalData).not.toHaveBeenCalled();
     expect(tableHears).not.toHaveBeenCalled();
-  });
-
-  it("closes", async () => {
-    const onClose = vi.fn();
-    renderPanel(ONE_MOD, onClose);
-
-    await userEvent.click(screen.getByTestId("mod-properties-close"));
-
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

@@ -500,6 +500,9 @@ catalogs:
     '@welldone-software/why-did-you-render':
       specifier: 7.0.1
       version: 7.0.1
+    ajv:
+      specifier: 8.18.0
+      version: 8.18.0
     babel-loader:
       specifier: 10.1.1
       version: 10.1.1
@@ -576,8 +579,8 @@ catalogs:
       specifier: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: 10.0.2
     electron:
-      specifier: 45.3.4
-      version: 45.3.4
+      specifier: 45.4.1
+      version: 45.4.1
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -2434,7 +2437,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@14.0.3)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)
@@ -3105,7 +3108,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
@@ -3609,7 +3612,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3831,7 +3834,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -4010,7 +4013,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -4043,7 +4046,7 @@ importers:
         version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@45.3.4)
+        version: 2.1.3(electron@45.4.1)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4545,13 +4548,13 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
       electron-extension-installer:
         specifier: 'catalog:'
-        version: 2.0.1(electron@45.3.4)
+        version: 2.0.1(electron@45.4.1)
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0
@@ -4572,7 +4575,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
 
   src/renderer:
     dependencies:
@@ -4600,7 +4603,7 @@ importers:
         version: 7.16.8(@babel/core@7.29.7)
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@45.3.4)
+        version: 2.1.3(electron@45.4.1)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4814,6 +4817,9 @@ importers:
       '@welldone-software/why-did-you-render':
         specifier: 'catalog:'
         version: 7.0.1(react@18.3.1)
+      ajv:
+        specifier: 'catalog:'
+        version: 8.18.0
       babel-loader:
         specifier: 'catalog:'
         version: 10.1.1(@babel/core@7.29.7)(webpack@5.108.4)
@@ -4876,7 +4882,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
       electron:
         specifier: 'catalog:'
-        version: 45.3.4(supports-color@10.2.2)
+        version: 45.4.1(supports-color@10.2.2)
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -9518,8 +9524,8 @@ packages:
   electron-updater@6.8.9:
     resolution: {integrity: sha512-ZhVxM9iGONUpZGI1FxdMRgJjUFXi7AYGVa5PwKlO1tV1/4zDxQmfKpXOHVztKrd6L9rLcFjERvi1Mf2vxyTkig==}
 
-  electron@45.3.4:
-    resolution: {integrity: sha512-cqU5u6arfGd9KJvCODjj32ckxkDQbweTL3v8J51tAsKGmDWYKcAqszvie0NDKBIGl6Ze19QTL74yIAUHrqNDig==}
+  electron@45.4.1:
+    resolution: {integrity: sha512-DjsJ/eQhovkjf1vYFFyh5GB8NMx+L5bdYaonvGOlWselg3DQ0fwIF0N/+2hrPsoS4whmmNswh21ym/8dgt1y5Q==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -10890,8 +10896,8 @@ packages:
   mdast-util-mdx-expression@2.0.1:
     resolution: {integrity: sha512-J6f+9hUp+ldTZqKRSg7Vw5V6MqjATc+3E4gf3CFNcuZNWD8XdyI6zQ8GqH7f8169MM6P7hMBRDVGnn7oHB9kXQ==}
 
-  mdast-util-mdx-jsx@3.2.1:
-    resolution: {integrity: sha512-oXp1GIa+E9IwIs3a106+tr3Bz2MlTTBvlXjOZMoIat11kk7vjqgmBnksB9WHmWv+gZh7k3IUgpAHlwHB7DH4GQ==}
+  mdast-util-mdx-jsx@3.2.2:
+    resolution: {integrity: sha512-/0FHaZMv2fSjIL3z/NYmXnQTSdzYyamPpI1BXpSCngTUqpSvMNIlERa26ABz+Z6UFQbrh3I5Yhzp448WZsPfMA==}
 
   mdast-util-mdxjs-esm@2.0.1:
     resolution: {integrity: sha512-EcmOpxsZ96CvlP03NghtH1EsLtr0n9Tm4lPUJUBccV9RwUOneqSycg19n5HGzCf+10LozMRSObtVr3ee1WoHtg==}
@@ -10902,8 +10908,8 @@ packages:
   mdast-util-to-hast@13.2.2:
     resolution: {integrity: sha512-l2pnmOuqs+SGLVpTVXnRLQu5v1AzvDe181404fbXzzqObVxrAnnVxapAP27pUwzLBL/ABIkgUhGlPVU7QSvIFg==}
 
-  mdast-util-to-markdown@2.2.3:
-    resolution: {integrity: sha512-dImdB6VZRMRac1SwAW6o1c0ESk/7pFFAMCMuKM+9v7LpTSthMM5nzXpqKw4Mjo66aXVKhNkyrP4bMB9MurPyWg==}
+  mdast-util-to-markdown@2.2.4:
+    resolution: {integrity: sha512-aCsogoZ2Oz1EItAlC12A+/uGuzp+CWlDU0xZ3o5jbJaepLsOu2tlxpvHslnX5dRhspD1gxNVkBtYG0yMiIpXoQ==}
 
   mdast-util-to-string@4.0.0:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
@@ -12522,8 +12528,8 @@ packages:
   string_decoder@1.3.0:
     resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
 
-  stringify-entities@4.0.4:
-    resolution: {integrity: sha512-IwfBptatlO+QCJUo19AqvrPNqlVMpW9YEL2LIVY+Rpv2qsjCGxaDLNRgeGsQWJhfItebuJhsGSLjaBbNSQ+ieg==}
+  stringify-entities@4.0.5:
+    resolution: {integrity: sha512-jNuI2fNNw5ecxrWmgm90R3iH0Kc/94AQwoQWoSUYphWzvmUA2pjFG34H56Z7Z3FkvH3FpYwwewKAa97oQnPFhw==}
 
   strip-ansi@3.0.1:
     resolution: {integrity: sha512-VhumSSbBqDTP8p2ZLKj40UjBCV4+v8bUSEpUb4KjRgWk9pbqGF4REFj6KEagidb2f/M6AzC0EmFyDNGaw9OCzg==}
@@ -13411,12 +13417,15 @@ packages:
 
   yuku-ast@0.8.3:
     resolution: {integrity: sha512-8x34yU5uhHUnJXzy2Qvjvec/vE9BzS0/2khVT1MsLmSLO/P8Q1Wp8IxHv+IhD+HMYETk6kherOSvP4JPWw2joQ==}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-codegen@0.8.3:
     resolution: {integrity: sha512-okdo5bb+TfebQa4JOjz9QxeT34D6CcBxu8dxaPUdFEKRdLkp+D2Fah2OanepK+XTyPXdmAJzAo9iXvYvZ/5rmg==}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   yuku-parser@0.8.3:
     resolution: {integrity: sha512-KPQcpF9aj77ywlJBIkQWCQ9DObdxnCA8AJdUOmA5CZZx042Xt4+dvbQmPJfWxF3E+KG5dVAZ2fBKuDJ8VsKWgA==}
+    deprecated: 'Yuku is now one package with one core. Use "yuku" instead: https://yuku.fyi/javascript/. Existing installs keep working but get no more fixes.'
 
   zip-stream@4.1.1:
     resolution: {integrity: sha512-9qv4rlDiopXg4E69k+vMHjNN63YFMe9sZMrdlvKnCjlCRWeCBswPPMPUfx+ipsAWq1LXHe70RcbaHdJJpS6hyQ==}
@@ -14354,9 +14363,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@45.3.4)':
+  '@electron/remote@2.1.3(electron@45.4.1)':
     dependencies:
-      electron: 45.3.4(supports-color@10.2.2)
+      electron: 45.4.1(supports-color@10.2.2)
 
   '@electron/universal@1.5.1':
     dependencies:
@@ -17800,9 +17809,9 @@ snapshots:
       pupa: 2.1.1
       unused-filename: 2.1.0
 
-  electron-extension-installer@2.0.1(electron@45.3.4):
+  electron-extension-installer@2.0.1(electron@45.4.1):
     dependencies:
-      electron: 45.3.4(supports-color@10.2.2)
+      electron: 45.4.1(supports-color@10.2.2)
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -17842,7 +17851,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@45.3.4(supports-color@10.2.2):
+  electron@45.4.1(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
       '@electron/get': 5.0.0(supports-color@10.2.2)
@@ -18623,7 +18632,7 @@ snapshots:
       estree-util-is-identifier-name: 3.0.0
       hast-util-whitespace: 3.0.0
       mdast-util-mdx-expression: 2.0.1
-      mdast-util-mdx-jsx: 3.2.1
+      mdast-util-mdx-jsx: 3.2.2
       mdast-util-mdxjs-esm: 2.0.1
       property-information: 7.2.0
       space-separated-tokens: 2.0.2
@@ -19324,11 +19333,11 @@ snapshots:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.1.0
-      mdast-util-to-markdown: 2.2.3
+      mdast-util-to-markdown: 2.2.4
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-mdx-jsx@3.2.1:
+  mdast-util-mdx-jsx@3.2.2:
     dependencies:
       '@types/estree-jsx': 1.0.5
       '@types/hast': 3.0.5
@@ -19337,9 +19346,9 @@ snapshots:
       ccount: 2.0.1
       devlop: 1.1.0
       mdast-util-from-markdown: 2.1.0
-      mdast-util-to-markdown: 2.2.3
+      mdast-util-to-markdown: 2.2.4
       parse-entities: 4.0.2
-      stringify-entities: 4.0.4
+      stringify-entities: 4.0.5
       unist-util-stringify-position: 4.0.0
       vfile-message: 4.0.4
     transitivePeerDependencies:
@@ -19352,7 +19361,7 @@ snapshots:
       '@types/mdast': 4.0.4
       devlop: 1.1.0
       mdast-util-from-markdown: 2.1.0
-      mdast-util-to-markdown: 2.2.3
+      mdast-util-to-markdown: 2.2.4
     transitivePeerDependencies:
       - supports-color
 
@@ -19373,7 +19382,7 @@ snapshots:
       unist-util-visit: 5.2.0
       vfile: 6.0.3
 
-  mdast-util-to-markdown@2.2.3:
+  mdast-util-to-markdown@2.2.4:
     dependencies:
       '@types/mdast': 4.0.4
       '@types/unist': 3.0.3
@@ -21155,7 +21164,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  stringify-entities@4.0.4:
+  stringify-entities@4.0.5:
     dependencies:
       character-entities-html4: 2.1.0
       character-entities-legacy: 3.0.0

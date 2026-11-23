@@ -30,15 +30,10 @@ export const modStatusDisplay = (t: TFunction, status: ModStatus): IModStatusDis
 };
 
 /**
- * The status to tag one of the user's own mods with: downloaded but not installed, or with an
- * update out. Never installed, which every other mod on the Mods page is, and nothing while it
- * installs.
+ * The status to tag one of the user's own mods with: an update out for one that's installed.
+ * Never installed or downloaded, which the Mods page shows its mods are already.
  */
 export const localModStatus = (mod: IMod): ModStatus | undefined => {
-  if (mod.state === "downloaded") {
-    return "downloaded";
-  }
-
   if (mod.state === "installed" && modHasUpdate(mod)) {
     return "update";
   }

@@ -1767,10 +1767,10 @@ describe("ModsTableSwitch", () => {
       expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
     });
 
-    it("closes from its own button, and stays closed", async () => {
+    it("closes from the toolbar's button, and stays closed", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
 
-      await userEvent.click(within(panel()!).getByTestId("mod-properties-close"));
+      await userEvent.click(toggle());
       slideShut();
 
       expect(panel()).toBeNull();

@@ -75,6 +75,34 @@ const camelCase = (property: string) =>
   property.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
 
 /**
+ * A table's children with each run of rows written straight in it put in a `<tbody>`, as the
+ * browser does when it parses the page. Drawn without one, React's tree wouldn't match the page.
+ * Rows already in a `[thead]` or `[tbody]` are left as they are.
+ */
+const rowsInBody = (children: React.ReactNode): React.ReactNode[] => {
+  const drawn: React.ReactNode[] = [];
+  let rows: React.ReactNode[] = [];
+  const endRows = () => {
+    if (rows.length > 0) {
+      drawn.push(React.createElement("tbody", { key: `rows-${drawn.length}` }, rows));
+      rows = [];
+    }
+  };
+
+  for (const child of React.Children.toArray(children)) {
+    if (React.isValidElement(child) && child.type === "tr") {
+      rows.push(child);
+    } else {
+      endRows();
+      drawn.push(child);
+    }
+  }
+  endRows();
+
+  return drawn;
+};
+
+/**
  * A plain tag, such as `[b]` or `[td]`, as its element with only the parameters it keeps. The
  * parser's own hands every parameter to the element, so `[td background=…]` would load an image
  * from any site and `[b style=…]` would fail to draw.
@@ -114,7 +142,12 @@ const safeSimpleTag = (
         );
       }
 
-      return React.createElement(element, props, this.getComponents());
+      const children = this.getComponents();
+      return React.createElement(
+        element,
+        props,
+        element === "table" ? rowsInBody(children) : children,
+      );
     }
   };
 

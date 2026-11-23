@@ -8,6 +8,7 @@ vi.mock("@/contexts", async (importOriginal) => ({
   useMainContext: () => ({ api: { events: { emit: vi.fn() } } }),
 }));
 
+import { NEXUS_BASE_URL } from "@/extensions/nexus_integration/constants";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { ITableAttribute } from "@/types/ITableAttribute";
 import type { TFunction } from "@/util/i18n";
@@ -38,6 +39,7 @@ const SKYUI = mod("skyui", {
     modId: 12604,
     fileId: 35407,
     variant: "Lite",
+    homepage: `${NEXUS_BASE_URL}/skyrimspecialedition/mods/12604/`,
   },
 });
 
@@ -80,13 +82,40 @@ describe("useModProperties", () => {
       description: "[b]SkyUI[/b] is an interface mod.",
       author: "schlangster",
       pictureUrl: "https://example.com/skyui.png",
+      pageUrl: `${NEXUS_BASE_URL}/skyrimspecialedition/mods/12604/`,
       isAdult: false,
       status: undefined,
     });
   });
 
-  it("tags a downloaded mod's card", () => {
-    expect(renderProperties([mod("a", { state: "downloaded" })]).card?.status).toBe("downloaded");
+  it("has no page where the one it keeps isn't on Nexus Mods", () => {
+    const elsewhere = mod("skyui", {
+      attributes: { ...SKYUI.attributes, homepage: "https://example.com/skyui" },
+    });
+
+    expect(renderProperties([elsewhere]).card?.pageUrl).toBeUndefined();
+  });
+
+  it("has no page for a mod that isn't from Nexus Mods", () => {
+    const local = mod("local", {
+      attributes: { name: "Local", source: "website", homepage: `${NEXUS_BASE_URL}/x/mods/1` },
+    });
+
+    expect(renderProperties([local]).card?.pageUrl).toBeUndefined();
+  });
+
+  it("tags the card of a mod with an update out", () => {
+    const outdated = mod("a", {
+      attributes: {
+        source: "nexus",
+        fileId: 1,
+        version: "1.0",
+        newestVersion: "1.1",
+        newestFileId: 2,
+      },
+    });
+
+    expect(renderProperties([outdated]).card?.status).toBe("update");
   });
 
   it("puts its version and times side by side on General", () => {
@@ -102,6 +131,13 @@ describe("useModProperties", () => {
       "enabledTime",
     ]);
     expect(propertyById(result, "version")).toMatchObject({ value: "5.2" });
+  });
+
+  // As a mod that's never been enabled keeps it, which would otherwise read as 1970.
+  it("leaves out a time of zero", () => {
+    const neverEnabled = mod("skyui", { ...SKYUI, enabledTime: 0 });
+
+    expect(propertyById(renderProperties([neverEnabled]), "enabledTime")).toBeUndefined();
   });
 
   it("lists a Nexus mod's ID on General, to copy", () => {
