@@ -17,6 +17,7 @@ import type {
 import { z } from "zod";
 
 import { clearDownloadCheckpoint, setDownloadCheckpoint } from "./actions/downloads";
+import { downloadNexusIds } from "./extensions/analytics/mixpanel/download_nexus_ids/downloadNexusIds";
 import { classifyErrorCode } from "./extensions/analytics/mixpanel/error-code";
 import {
   CollectionsDownloadCancelledEvent,
@@ -53,7 +54,6 @@ import {
 import { knownGames } from "./extensions/gamemode_management/selectors";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
 import { nxmUrlFromDownload } from "./extensions/nexus_integration/NXMUrl";
-import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
 import { convertGameIdReverse } from "./extensions/nexus_integration/util/convertGameId";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
@@ -381,7 +381,7 @@ export class IPCDownloadAdapter {
     error?: Error,
   ): void {
     const state = this.#api.getState();
-    const nexusIds = nexusIdsFromDownloadId(state, downloadId);
+    const nexusIds = downloadNexusIds(state, downloadId);
     if (!nexusIds?.numericGameId || isNaN(nexusIds.numericGameId)) return;
 
     const download = state.persistent.downloads.files?.[downloadId];
