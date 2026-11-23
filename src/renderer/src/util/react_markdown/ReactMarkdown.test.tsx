@@ -90,6 +90,7 @@ describe("ReactMarkdown", () => {
     ["held in the address", "data:image/png;base64,AAAA"],
     ["from the web", "https://example.com/icon.png"],
     ["from a file on this machine", "file:///C:/extension/icon.png"],
+    ["from a relative path", "images/icon.png"],
   ])("keeps the source of an image %s, as react-markdown 6 did", (_, src) => {
     render(<ReactMarkdown>{`![icon](${src})`}</ReactMarkdown>);
 
@@ -99,8 +100,16 @@ describe("ReactMarkdown", () => {
   it.each([
     ["a network path", "//attacker.example/share/x.png"],
     ["a file on a network share", "file://attacker.example/share/x.png"],
+    ["a network share in a file URL with no host", "file:////attacker.example/share/x.png"],
+    ["a network path with four slashes", "////attacker.example/share/x.png"],
+    ["a network share named by localhost", "file://localhost//attacker.example/share/x.png"],
+    ["a network path in backslashes", String.raw`\\attacker.example\share\x.png`],
+    ["a network path in four backslashes", String.raw`\\\\attacker.example\share\x.png`],
+    ["a network share in a file URL in backslashes", String.raw`file:\\\\attacker.example\x.png`],
+    ["a network share in escaped slashes", "file:///%2F%2Fattacker.example/share/x.png"],
   ])("drops the source of an image from %s", (_, src) => {
-    render(<ReactMarkdown>{`![icon](${src})`}</ReactMarkdown>);
+    // Markdown reads a backslash before punctuation as an escape, so each one is doubled.
+    render(<ReactMarkdown>{`![icon](${src.replaceAll("\\", "\\\\")})`}</ReactMarkdown>);
 
     expect(screen.getByRole("img")).not.toHaveAttribute("src");
   });

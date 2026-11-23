@@ -21,7 +21,11 @@ export type ReactMarkdownProps = ReactMarkdownModule.Options;
  * An image's source, if loading it can't reach another machine through the file system: a web
  * address, an image held in the address, or a file on this machine. `//host/share/x.png` and
  * `\\host\share\x.png` resolve against the app's `file://` page to a network share, which Windows
- * may sign in to with the user's credentials, so they're dropped.
+ * may sign in to with the user's credentials, so they're dropped. So is a file URL with no host
+ * whose path starts with two slashes, such as `file:////host/share/x.png` or `////host/share/x.png`,
+ * which Windows reads as the network path `\\host\share`. The path counts its separators whether
+ * they're slashes, backslashes or escaped as `%2F` or `%5C`, which is how the markdown parser
+ * passes on a backslash, so `\\host\share` and `file:\\\\host\share` are dropped too.
  */
 const imageSrc = (src: string): string | undefined => {
   const url = URL.parse(src, "file:///");
@@ -31,7 +35,9 @@ const imageSrc = (src: string): string | undefined => {
   if (["http:", "https:", "data:"].includes(url.protocol)) {
     return src;
   }
-  return url.protocol === "file:" && url.host === "" ? src : undefined;
+  const path = url.pathname.replace(/%2f|%5c/gi, "/");
+  const onThisMachine = url.protocol === "file:" && url.host === "" && !path.startsWith("//");
+  return onThisMachine ? src : undefined;
 };
 
 /**

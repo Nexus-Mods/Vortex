@@ -626,7 +626,8 @@ Vortex now supplies `react-markdown` **9.1.0** to extensions at runtime, in plac
 ### What changes
 
 - **Links only open if they go to a web page (`http`, `https`) or an email address (`mailto:`).** Any other link renders with no target and does nothing when clicked: app links (`steam:`, `nxm:`), `file:` and `tel:` links, relative links (`../run.exe`) and network paths (`//server/share`). This holds with your own `components.a` and your own `urlTransform` too: Vortex filters the URL after your transform runs.
-- **Images from network shares don't load.** An image keeps its source if it's a web address, a `data:` address, or a file on the user's machine (`file:///C:/...`, or a relative path). `//host/share/x.png` and `file://host/share/x.png` render with no source.
+- **Images from network shares don't load.** An image keeps its source if it's a web address, a `data:` address, or a file on the user's machine (`file:///C:/...`, or a relative path). Network paths such as `//host/share/x.png`, `\\host\share\x.png`, `file://host/share/x.png` and `file:////host/share/x.png` render with no source.
+- **Your own `components.a` and `components.img` can get `href` or `src` as `undefined`.** 6 always passed a string. Now a link or image Vortex filters out (see above) reaches your component with no `href` or `src`, so it renders inert. A component that calls a string method on it, such as `href.startsWith("http")` or `new URL(href)`, throws on a heading link (`#section`), a relative link or a `steam:` link. Check for `undefined` first.
 - **Links lose their `title`** when you use the default link component.
 - **6's removed props are ignored** and log a deprecation warning: `linkTarget`, `includeElementIndex`, `rawSourcePos`, `sourcePos`, and the ones 6 had already deprecated (`renderers`, `source`, `allowedTypes`, `disallowedTypes`, `allowNode`, `includeNodeIndex`, `escapeHtml`, `allowDangerousHtml`, `astPlugins`).
 
