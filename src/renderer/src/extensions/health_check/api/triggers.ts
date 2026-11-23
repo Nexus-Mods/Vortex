@@ -125,6 +125,16 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       },
     );
 
+    // A FOMOD option's availability turns on which plugins are present and active, so the
+    // plugin list is the trigger that matters for the installer-options check - installing
+    // Mod B only matters if it brings the plugin Mod A's option was waiting for. There is no
+    // api event for this: `plugins-changed` is a legacy test-run trigger, so the slice is
+    // watched directly.
+    api.onStateChange?.(["session", "plugins", "pluginList"], () => {
+      log("debug", "Plugin list changed, scheduling debounced health check");
+      modsChangedDebouncer.schedule();
+    });
+
     // Run health checks after collection post-processing finishes,
     // matching the pattern used by gamebryo-plugin-management for LOOT.
     api.events.on("collection-postprocess-complete", () => {

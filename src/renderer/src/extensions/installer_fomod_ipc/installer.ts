@@ -8,11 +8,13 @@ import { log } from "../../util/log";
 import { getGame } from "../gamemode_management/util/getGame";
 import { SharedDelegates } from "../installer_fomod_shared/delegates/SharedDelegates";
 import type { IChoices } from "../installer_fomod_shared/types/interface";
+import { OPTION_SNAPSHOT_ATTRIBUTE } from "../installer_fomod_shared/types/snapshot";
 import {
   getPluginPath,
   getStopPatterns,
   uniPatterns,
 } from "../installer_fomod_shared/utils/gameSupport";
+import { readOptionSnapshot } from "../installer_fomod_shared/utils/normaliseSnapshot";
 import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
 import { CSharpDelegates } from "./delegates/CSharpDelegates";
 import { createConnectionStrategies } from "./utils/connectionStrategy";
@@ -148,6 +150,18 @@ export const install = async (
         options: choices ?? fomodChoices,
       },
     });
+
+    // The condition snapshot is what lets a later check tell that an option which was
+    // unusable here has since become usable. This transport serialises PascalCase beneath
+    // the lower-case key, so it goes through the same normaliser as the native one.
+    const snapshot = readOptionSnapshot(result);
+    if (snapshot !== undefined) {
+      result.instructions.push({
+        type: "attribute",
+        key: OPTION_SNAPSHOT_ATTRIBUTE,
+        value: snapshot,
+      });
+    }
 
     return result;
   } catch (err: any) {
