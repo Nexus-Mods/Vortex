@@ -42,11 +42,13 @@ import { newJournal, unreadableJournal } from "../../../test-utils/journal";
 import { writeInto } from "../../../test-utils/tempDir";
 import type { IMergeResultByType } from "../modMerging";
 import { saveActivation } from "./activationStore";
-import type { JournalStorage } from "./apply/journal";
+import type { RunOptions } from "./apply/apply";
+import { JournalPhase, type JournalStorage } from "./apply/journal";
 import {
   DeploymentPlanning,
   deploymentPlanningFor,
   planAndApplyDeployment,
+  progressBarFor,
   settleLeftoverDeployment,
 } from "./applyDeploy";
 import { DeployOrchestrator } from "./DeployOrchestrator";
@@ -79,8 +81,15 @@ async function makeGameWithUndeployedMod() {
   /** Plans and applies the profile's deployment with this journal, merge result and profile. */
   const planAndApplyWith = async (
     journal: JournalStorage,
-    mergeResult: Record<VortexModTypeId, IMergeResultByType> = {},
-    profileId = VortexProfileId(game.profileId),
+    {
+      mergeResult = {},
+      profileId = VortexProfileId(game.profileId),
+      onProgress,
+    }: {
+      mergeResult?: Record<VortexModTypeId, IMergeResultByType>;
+      profileId?: VortexProfileId;
+      onProgress?: RunOptions["onProgress"];
+    } = {},
   ) =>
     planAndApplyDeployment(game.api, orchestrator, {
       profileId,
@@ -88,6 +97,7 @@ async function makeGameWithUndeployedMod() {
       journal,
       journalFile: JOURNAL_FILE,
       keptFolder: path.join(game.stagingPath, "..", "kept"),
+      onProgress,
     });
   const isModFileDeployed = async () =>
     (await disk.fs.stat(QualifiedPath.fromNative(deployedPath))).exists;
@@ -163,7 +173,7 @@ test("a deployment with merged files fails before Apply runs", async () => {
 
   await expect(
     planAndApplyWith(await newJournal(), {
-      [VortexModTypeId("")]: { usedInMerge: ["mod.esp"], mergeInfluences: {} },
+      mergeResult: { [VortexModTypeId("")]: { usedInMerge: ["mod.esp"], mergeInfluences: {} } },
     }),
   ).rejects.toThrow("merged");
 
@@ -174,7 +184,7 @@ test("a deployment that can't be planned fails, with no file work", async () => 
   const { planAndApplyWith, isModFileDeployed } = await makeGameWithUndeployedMod();
 
   await expect(
-    planAndApplyWith(await newJournal(), {}, VortexProfileId("no-such-profile")),
+    planAndApplyWith(await newJournal(), { profileId: VortexProfileId("no-such-profile") }),
   ).rejects.toThrow("couldn't be planned");
 
   expect(await isModFileDeployed()).toBe(false);
@@ -189,7 +199,10 @@ test("a run stopped before its journal recorded a step is finished by settling, 
   );
   expect(await isModFileDeployed()).toBe(false);
 
-  await settleLeftoverDeployment(game.api, VortexGameId(game.gameId), JOURNAL_FILE, journal);
+  await settleLeftoverDeployment(game.api, VortexGameId(game.gameId), {
+    journalFile: JOURNAL_FILE,
+    journal,
+  });
 
   expect(await isModFileDeployed()).toBe(true);
   expect(await game.recordedFiles()).toEqual(["mod.esp"]);
@@ -199,15 +212,64 @@ test("a run stopped before its journal recorded a step is finished by settling, 
   );
 });
 
+test("settling reports the progress of the run it finishes", async () => {
+  const { game, planAndApplyWith } = await makeGameWithUndeployedMod();
+  const journal = await newJournal();
+  await planAndApplyWith({ ...journal, append: () => Promise.reject(new Error("killed")) }).catch(
+    () => undefined,
+  );
+  const onProgress = vi.fn<NonNullable<RunOptions["onProgress"]>>();
+
+  await settleLeftoverDeployment(game.api, VortexGameId(game.gameId), {
+    journalFile: JOURNAL_FILE,
+    journal,
+    onProgress,
+  });
+
+  expect(onProgress).toHaveBeenLastCalledWith(1, 1, JournalPhase.Applying);
+});
+
+test("a deployment through Apply reports its progress as it links the mod's files", async () => {
+  const { planAndApplyWith } = await makeGameWithUndeployedMod();
+  const onProgress = vi.fn<NonNullable<RunOptions["onProgress"]>>();
+
+  await planAndApplyWith(await newJournal(), { onProgress });
+
+  expect(onProgress).toHaveBeenLastCalledWith(1, 1, JournalPhase.Applying);
+});
+
+test("Apply's progress moves the progress bar a whole percent at a time, labelled by its phase", () => {
+  const report = vi.fn<(label: string, percent: number) => void>();
+  const onProgress = progressBarFor(
+    report,
+    { [JournalPhase.Applying]: "Deploying mods", [JournalPhase.RollingBack]: "Undoing" },
+    50,
+    99,
+  );
+
+  for (let done = 1; done <= 1000; done++) {
+    onProgress(done, 1000, JournalPhase.Applying);
+  }
+  onProgress(1, 2, JournalPhase.RollingBack);
+  onProgress(2, 2, JournalPhase.RollingBack);
+
+  const deployingPercents = report.mock.calls
+    .filter(([label]) => label === "Deploying mods")
+    .map(([, percent]) => percent);
+  expect(deployingPercents).toEqual(Array.from({ length: 50 }, (_, offset) => 50 + offset));
+  expect(report.mock.calls.slice(-2)).toEqual([
+    ["Undoing", 74],
+    ["Undoing", 99],
+  ]);
+});
+
 test("settling a game with no journal changes nothing", async () => {
   const { game, isModFileDeployed } = await makeGameWithUndeployedMod();
 
-  await settleLeftoverDeployment(
-    game.api,
-    VortexGameId(game.gameId),
-    JOURNAL_FILE,
-    await newJournal(),
-  );
+  await settleLeftoverDeployment(game.api, VortexGameId(game.gameId), {
+    journalFile: JOURNAL_FILE,
+    journal: await newJournal(),
+  });
 
   expect(await isModFileDeployed()).toBe(false);
   expect(game.notifications).toEqual([]);
@@ -217,12 +279,10 @@ test("a journal settling can't use stops the game's deployments and purges", asy
   const { game } = await makeGameWithUndeployedMod();
   const journal = await unreadableJournal();
 
-  const settling = settleLeftoverDeployment(
-    game.api,
-    VortexGameId(game.gameId),
-    JOURNAL_FILE,
+  const settling = settleLeftoverDeployment(game.api, VortexGameId(game.gameId), {
+    journalFile: JOURNAL_FILE,
     journal,
-  );
+  });
 
   expect(parseError(await settling.catch((err: unknown) => err)).data.kind).toBe(
     "deployment:interrupted-run-unsettled",

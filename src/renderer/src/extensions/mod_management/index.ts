@@ -135,12 +135,14 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
+import { JournalPhase } from "./util/apply/journal";
 import {
   applyJournalFileFor,
   DeploymentPlanning,
   deploymentPlanningFor,
   keptFolderFor,
   planAndApplyDeployment,
+  progressBarFor,
   settleLeftoverDeployment,
 } from "./util/applyDeploy";
 import { exposeApplyDevHandle } from "./util/applyDevHandle";
@@ -818,7 +820,21 @@ function genUpdateModDeployment(installManager: InstallManager) {
                 method: activator.name,
               });
               const deployingVortexGameId = VortexGameId(gameId);
-              await settleLeftoverDeployment(api, deployingVortexGameId);
+              await settleLeftoverDeployment(api, deployingVortexGameId, {
+                onProgress: progressBarFor(
+                  (label, percent) => {
+                    // the Apply button shows progress only during the deployment activity
+                    api.store.dispatch(startActivity("mods", "deployment"));
+                    progress(label, percent);
+                  },
+                  {
+                    [JournalPhase.Applying]: t("Finishing an interrupted deployment"),
+                    [JournalPhase.RollingBack]: t("Undoing an interrupted deployment"),
+                  },
+                  0,
+                  99,
+                ),
+              });
 
               // Wait for active mod installations to complete before deploying
               // so we don't deploy half-installed mods.
@@ -922,7 +938,7 @@ function genUpdateModDeployment(installManager: InstallManager) {
               );
               await validateDeploymentTarget(api, undiscovered);
               if (planning === DeploymentPlanning.ThroughApply) {
-                progress(t("Deploying mods"), 50);
+                progress(t("Planning deployment"), 50);
                 const journalFile = applyJournalFileFor(deployingVortexGameId);
                 const savedManifestFiles = await planAndApplyDeployment(api, deployOrchestrator, {
                   profileId: deployingProfileId,
@@ -930,6 +946,15 @@ function genUpdateModDeployment(installManager: InstallManager) {
                   journal: journalStorageAt(journalFile),
                   journalFile,
                   keptFolder: keptFolderFor(stagingPath, deployingVortexGameId),
+                  onProgress: progressBarFor(
+                    progress,
+                    {
+                      [JournalPhase.Applying]: t("Deploying mods"),
+                      [JournalPhase.RollingBack]: t("Undoing the deployment"),
+                    },
+                    50,
+                    99,
+                  ),
                 });
                 for (const typeId of deployableModTypes(modPaths)) {
                   newDeployment[typeId] = savedManifestFiles.get(VortexModTypeId(typeId)) ?? [];
