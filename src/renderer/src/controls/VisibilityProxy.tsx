@@ -20,19 +20,49 @@ export interface IProps {
 /**
  * The componentClasses already warned about, and whether a proxy without one has been. Each
  * warning is logged once, not once per proxy: a list of thousands of entries would flood the log.
+ * Components go in a WeakSet so an extension's can be collected. A WeakSet can't hold a symbol,
+ * which is what `React.Fragment`, `Suspense`, `StrictMode` and `Profiler` are, so those and tag
+ * names go in a Set.
  */
 const sWarnedComponentClasses = new WeakSet<object>();
+const sWarnedOtherComponentClasses = new Set<unknown>();
 let sWarnedNoComponentClass = false;
+
+/** Whether this componentClass was warned about already, noting it as warned if not. */
+function warnedAlready(componentClass: unknown): boolean {
+  if (
+    typeof componentClass === "function" ||
+    (typeof componentClass === "object" && componentClass !== null)
+  ) {
+    if (sWarnedComponentClasses.has(componentClass)) {
+      return true;
+    }
+    sWarnedComponentClasses.add(componentClass);
+    return false;
+  }
+  if (sWarnedOtherComponentClasses.has(componentClass)) {
+    return true;
+  }
+  sWarnedOtherComponentClasses.add(componentClass);
+  return false;
+}
 
 interface INamedType {
   displayName?: string;
   name?: string;
 }
 
-/** A name for the log; a bare `React.memo(fn)` or `forwardRef` has none of its own. */
+/**
+ * A name for the log; a bare `React.memo(fn)` or `forwardRef` has none of its own, and a symbol
+ * such as `React.Fragment` goes by its description, `react.fragment`.
+ */
 function componentClassName(componentClass: React.ElementType): string {
   if (typeof componentClass === "string") {
     return componentClass;
+  }
+  const value: unknown = componentClass;
+  if (typeof value === "symbol") {
+    return value.description ?? "anonymous";
   }
   const type = componentClass as INamedType & { type?: INamedType; render?: INamedType };
   return (
@@ -61,11 +91,8 @@ function warnNoComponentClass() {
 
 /** Tells an extension author once per componentClass to pass its ref on before React 19. */
 function warnNoElement(componentClass: React.ElementType) {
-  if (typeof componentClass !== "string") {
-    if (sWarnedComponentClasses.has(componentClass)) {
-      return;
-    }
-    sWarnedComponentClasses.add(componentClass);
+  if (warnedAlready(componentClass)) {
+    return;
   }
   log(
     "warn",
@@ -278,15 +305,30 @@ class VisibilityProxy extends React.PureComponent<any> {
     }
     const remaining = VISIBLE_HOLD_MS - (Date.now() - this.mVisibleTime);
     if (remaining < 0) {
-      this.applyVisible(false);
+      this.hide();
     } else {
       this.#hideTimer = setTimeout(() => {
         this.#hideTimer = undefined;
         if (!this.#inView) {
-          this.applyVisible(false);
+          this.hide();
         }
       }, remaining);
     }
+  }
+
+  /**
+   * Hides the content, unless the element reported out of view has left the document. Then it
+   * was replaced, and the new one is observed instead: an element found with findDOMNode is only
+   * looked for again when this proxy renders, and a componentClass connected to the store, or
+   * one Fast Refresh remounts, can replace it without that. A detached element never comes back
+   * into view, so hiding on its report would leave the row blank.
+   */
+  private hide() {
+    if (this.#observed?.isConnected === false) {
+      this.observeElement();
+      return;
+    }
+    this.applyVisible(false);
   }
 
   private applyVisible(visible: boolean) {

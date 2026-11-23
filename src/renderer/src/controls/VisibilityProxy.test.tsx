@@ -292,6 +292,37 @@ describe("VisibilityProxy", () => {
     ]);
   });
 
+  // Fragment, like Suspense, StrictMode and Profiler, is a symbol rather than a component, and
+  // an extension may well try it, as the warning about a missing componentClass suggests one.
+  it("observes the first element of a Fragment componentClass's content, and warns once", () => {
+    const { getAllByTestId } = render(
+      <>
+        {[1, 2].map((key) => (
+          <VisibilityProxy
+            key={key}
+            componentClass={React.Fragment}
+            container={null}
+            content={() => null}
+            placeholder={() => <div data-testid="entry" />}
+            visible={false}
+            setVisible={() => undefined}
+          />
+        ))}
+      </>,
+    );
+
+    const entries = getAllByTestId("entry");
+    expect(calls).toEqual(entries.map((target) => ({ op: "observe", root: null, target })));
+    const warnings = vi
+      .mocked(log)
+      .mock.calls.filter(
+        ([, , meta]) => (meta as { componentClass?: string })?.componentClass === "react.fragment",
+      );
+    expect(warnings).toEqual([
+      ["warn", expect.stringContaining("doesn't pass its ref on"), expect.anything()],
+    ]);
+  });
+
   it("warns once per componentClass that gives no element, however many entries use it", () => {
     class Item extends React.Component<{ children?: React.ReactNode }> {
       public render() {
