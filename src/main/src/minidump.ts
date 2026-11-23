@@ -2,6 +2,8 @@ import type { FileHandle } from "node:fs/promises";
 import { open } from "node:fs/promises";
 import * as path from "node:path";
 
+import { getErrorCode, getErrorMessageOrDefault } from "@vortex/shared";
+
 /**
  * Minimal minidump reader. Extracts the crash facts that fit in an OTel
  * span — exception code, faulting module + offset, process type — without
@@ -90,6 +92,13 @@ const MD_OS_ANDROID = 0x8202; // why not? xD
 // file, so a corrupt field must not be able to request an arbitrary amount.
 const MAX_READ_SIZE = 1024 * 1024;
 
+// Crashpad annotation counts also come from the file, and every entry costs
+// a read or two, so the number of entries is capped as well as their size.
+// Electron's dumps carry one module and a few dozen annotations; a count past
+// these is corrupt.
+const MAX_CRASHPAD_MODULES = 64;
+const MAX_ANNOTATIONS = 1024;
+
 interface ILocation {
   size: number;
   rva: number;
@@ -139,7 +148,7 @@ function fileSource(handle: FileHandle): IByteSource {
 }
 
 export type MinidumpResult =
-  | { summary: IMinidumpSummary; unreadableReason?: never }
+  | { summary: IMinidumpSummary; unreadableReason?: never; parserError?: never }
   | {
       summary?: never;
       unreadableReason:
@@ -147,6 +156,15 @@ export type MinidumpResult =
         | "invalid-signature"
         | "missing-exception"
         | "malformed-dump";
+      parserError?: never;
+    }
+  | {
+      summary?: never;
+      /** The parser threw something other than a file system error or a
+       *  malformed-dump RangeError: a bug in this module, not in the dump */
+      unreadableReason: "parser-error";
+      /** The error message, for the log */
+      parserError: string;
     };
 
 export async function summarizeMinidumpFile(filePath: string): Promise<MinidumpResult> {
@@ -154,8 +172,12 @@ export async function summarizeMinidumpFile(filePath: string): Promise<MinidumpR
   try {
     handle = await open(filePath, "r");
     return await parse(fileSource(handle));
-  } catch {
-    return { unreadableReason: "read-failed" };
+  } catch (err) {
+    // file system errors carry a code (ENOENT, EIO, EBUSY, ...)
+    if (getErrorCode(err) !== null) {
+      return { unreadableReason: "read-failed" };
+    }
+    return { unreadableReason: "parser-error", parserError: getErrorMessageOrDefault(err) };
   } finally {
     await handle?.close().catch(() => {
       /* ignored */
@@ -336,6 +358,27 @@ function formatGuid(bytes: Buffer): string {
   );
 }
 
+/** Annotations collected so far, and how many more entries may be read. */
+interface IAnnotations {
+  values: Map<string, string>;
+  remaining: number;
+}
+
+/** Read the entry count of an annotation dictionary and charge it to the
+ *  budget shared by every dictionary in the dump. */
+async function readAnnotationCount(
+  source: IByteSource,
+  rva: number,
+  into: IAnnotations,
+): Promise<number> {
+  const count = (await source.read(rva, 4)).readUInt32LE(0);
+  if (count > into.remaining) {
+    throw new RangeError(`too many crashpad annotations: ${count}`);
+  }
+  into.remaining -= count;
+  return count;
+}
+
 /**
  * Every string annotation in the dump, process-level first, then per module
  * (where Chromium's crash keys such as ptype and LOG_FATAL live). The first
@@ -345,9 +388,9 @@ async function readCrashpadAnnotations(
   source: IByteSource,
   location: ILocation | undefined,
 ): Promise<Map<string, string>> {
-  const annotations = new Map<string, string>();
+  const annotations: IAnnotations = { values: new Map(), remaining: MAX_ANNOTATIONS };
   if (location === undefined) {
-    return annotations;
+    return annotations.values;
   }
 
   try {
@@ -364,9 +407,12 @@ async function readCrashpadAnnotations(
     // module_list_index(0), location(4, LOCATION)
     const listRva = info.readUInt32LE(12);
     if (listRva === 0) {
-      return annotations;
+      return annotations.values;
     }
     const moduleCount = (await source.read(listRva, 4)).readUInt32LE(0);
+    if (moduleCount > MAX_CRASHPAD_MODULES) {
+      throw new RangeError(`too many crashpad modules: ${moduleCount}`);
+    }
     const list = await source.read(listRva + 4, moduleCount * 12);
     for (let i = 0; i < moduleCount; i++) {
       const infoRva = list.readUInt32LE(i * 12 + 8);
@@ -384,14 +430,13 @@ async function readCrashpadAnnotations(
         annotations,
       );
     }
-  } catch (err) {
-    // annotations are best-effort, a failing disk is not
-    if (!(err instanceof RangeError)) {
-      throw err;
-    }
+  } catch {
+    // Annotations are optional: whatever was read before a corrupt record or
+    // a disk error is still reported, alongside the exception and module
+    // already in the summary.
   }
 
-  return annotations;
+  return annotations.values;
 }
 
 /** MinidumpSimpleStringDictionary: count(0), then entries[count]:
@@ -399,17 +444,17 @@ async function readCrashpadAnnotations(
 async function readSimpleAnnotations(
   source: IByteSource,
   location: ILocation,
-  into: Map<string, string>,
+  into: IAnnotations,
 ): Promise<void> {
   if (location.rva === 0 || location.size === 0) {
     return;
   }
-  const count = (await source.read(location.rva, 4)).readUInt32LE(0);
+  const count = await readAnnotationCount(source, location.rva, into);
   const entries = await source.read(location.rva + 4, count * 8);
   for (let i = 0; i < count; i++) {
     const key = await readUtf8String(source, entries.readUInt32LE(i * 8));
-    if (!into.has(key)) {
-      into.set(key, await readUtf8String(source, entries.readUInt32LE(i * 8 + 4)));
+    if (!into.values.has(key)) {
+      into.values.set(key, await readUtf8String(source, entries.readUInt32LE(i * 8 + 4)));
     }
   }
 }
@@ -423,12 +468,12 @@ const ANNOTATION_TYPE_STRING = 1;
 async function readAnnotationObjects(
   source: IByteSource,
   location: ILocation,
-  into: Map<string, string>,
+  into: IAnnotations,
 ): Promise<void> {
   if (location.rva === 0 || location.size === 0) {
     return;
   }
-  const count = (await source.read(location.rva, 4)).readUInt32LE(0);
+  const count = await readAnnotationCount(source, location.rva, into);
   const entries = await source.read(location.rva + 4, count * 12);
   for (let i = 0; i < count; i++) {
     const entry = i * 12;
@@ -436,8 +481,8 @@ async function readAnnotationObjects(
       continue;
     }
     const key = await readUtf8String(source, entries.readUInt32LE(entry));
-    if (!into.has(key)) {
-      into.set(key, await readUtf8String(source, entries.readUInt32LE(entry + 8)));
+    if (!into.values.has(key)) {
+      into.values.set(key, await readUtf8String(source, entries.readUInt32LE(entry + 8)));
     }
   }
 }
