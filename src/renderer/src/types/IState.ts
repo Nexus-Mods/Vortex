@@ -251,6 +251,8 @@ export interface ISettingsInterface {
     valid?: Record<VortexGameId, { [toolId: string]: boolean }>;
   };
   primaryTool?: { [gameId: string]: string };
+  /** The last page open on Home and in each game. The spine reopens it, also after a restart. */
+  lastPages?: { home?: string; games?: Record<VortexGameId, string> };
 }
 
 export interface ISettingsAutomation {
