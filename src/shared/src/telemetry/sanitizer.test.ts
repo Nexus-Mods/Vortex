@@ -103,8 +103,8 @@ describe("sanitizeSpanAttributes (strict / no consent)", () => {
   });
 
   it("keeps bounded unreadable-dump diagnostics without consent", () => {
-    expect(sanitizeSpanAttributes({ "crash.native.unreadableReason": "file-too-large" })).toEqual({
-      "crash.native.unreadableReason": "file-too-large",
+    expect(sanitizeSpanAttributes({ "crash.native.unreadableReason": "malformed-dump" })).toEqual({
+      "crash.native.unreadableReason": "malformed-dump",
     });
   });
 

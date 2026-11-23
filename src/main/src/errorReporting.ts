@@ -180,6 +180,12 @@ export async function sendPendingNativeCrashReport(): Promise<void> {
       continue;
     }
     const result = await summarizeMinidumpFile(dump.path);
+    if (result.parserError !== undefined) {
+      log("warn", "minidump parser failed", {
+        dump: path.basename(dump.path),
+        error: result.parserError,
+      });
+    }
     const { summary } = result;
     if (!isFromCurrentBuild(summary?.appVersion, app.getVersion(), dump.mtimeMs, installedAt)) {
       stale += 1;
