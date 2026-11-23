@@ -115,7 +115,6 @@ export const test = harnessTest.extend<ISharedFileFixtures>({
   // `task` is destructured + ignored only to satisfy vitest's object-pattern requirement
   makeSharedFile: async ({ task: _task }, use) => {
     // `use` is the vitest fixture callback, not React's use() hook.
-    // eslint-disable-next-line @eslint-react/rules-of-hooks
     await use(makeSharedFile);
   },
 });

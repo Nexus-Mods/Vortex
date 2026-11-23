@@ -68,7 +68,7 @@ type NotificationFunc = (dismiss: NotificationDismiss) => void;
 
 #### **Type `Any`**
 
-We have the ESLint rule `no-explicit-any` disabled, but this does not mean you can use `Any` freely.
+The `no-explicit-any` lint rule is only a warning in parts of the codebase, but this does not mean you can use `Any` freely.
 
 Use `Any` only when stricly necessary
 

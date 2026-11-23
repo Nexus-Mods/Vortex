@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* oxlint-disable typescript/unbound-method */
 import React from "react";
 import { useTranslation } from "react-i18next";
 

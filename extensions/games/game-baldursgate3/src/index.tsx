@@ -1,7 +1,6 @@
 import * as path from "path";
 
 import { fs, selectors, types, util } from "@nexusmods/vortex-api";
-/* eslint-disable */
 /**
  * Important - although we no longer define the info panel here,
  *  we still need to keep the index file's '.tsx' extension.

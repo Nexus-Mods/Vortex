@@ -107,7 +107,6 @@ export const test = installManagerTest.extend<IExternalChangesFixtures>({
   // `task` is destructured + ignored only to satisfy vitest's object-pattern requirement
   makeExternalChanges: async ({ task: _task }, use) => {
     // `use` is the vitest fixture callback, not React's use() hook.
-    // eslint-disable-next-line @eslint-react/rules-of-hooks
     await use(makeExternalChangesHarness);
   },
 });

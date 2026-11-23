@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { actions, selectors, types, util } from "@nexusmods/vortex-api";
 
 import { setModTypeConflictsSetting } from "../actions";

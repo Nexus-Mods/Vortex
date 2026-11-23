@@ -157,12 +157,12 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   // getState() read, so it treats the slice deps as "unnecessary" (they are not).
   const items = useMemo(
     () => selectListedEntries(api.getState()),
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
     [api, fileResult, modResult, hiddenFile, hiddenMod],
   );
   const installAllItems = useMemo(
     () => collectInstallAllItems(api.getState(), api),
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
     [api, fileResult, modResult, hiddenFile, hiddenMod],
   );
 

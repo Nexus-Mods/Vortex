@@ -8,9 +8,7 @@ import CategoryList from "./CategoryList";
 type UseCategoryTreeResult = ReturnType<typeof useCategoryTree>;
 
 vi.mock("react-dnd", () => ({
-  // eslint-disable-next-line @eslint-react/component-hook-factories
   useDrag: () => [{ isDragging: false }, vi.fn()],
-  // eslint-disable-next-line @eslint-react/component-hook-factories
   useDrop: () => [{ isOver: false, canDrop: false }, vi.fn()],
 }));
 

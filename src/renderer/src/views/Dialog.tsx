@@ -613,7 +613,6 @@ export const Dialog: React.FC<React.PropsWithChildren<unknown>> = () => {
           control: (
             <div
               className="dialog-content-html"
-              // eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
               dangerouslySetInnerHTML={{ __html: content.htmlText }}
               key="dialog-content-html-text"
             />

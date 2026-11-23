@@ -1,4 +1,21 @@
 {
   "$schema": "../../node_modules/oxlint/configuration_schema.json",
-  "extends": ["../../oxlint.base.config.json"]
+  "extends": ["./.oxlintrc.strict.json"],
+  "rules": {
+    "no-shadow": "warn",
+    "no-underscore-dangle": "warn",
+    "typescript/consistent-return": "warn",
+    "typescript/no-unsafe-type-assertion": "warn",
+    "unicorn/consistent-function-scoping": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["ci-report.ts"],
+      "rules": {
+        "typescript/no-unnecessary-type-assertion": "warn",
+        "typescript/no-unsafe-call": "warn",
+        "typescript/no-unsafe-member-access": "warn"
+      }
+    }
+  ]
 }

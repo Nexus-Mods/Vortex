@@ -7,9 +7,9 @@
   "scripts": {
     "build": "pnpm exec webpack --config ./webpack.config.cjs",
     "typecheck": "pnpm exec tsc -p tsconfig.json",
-    "lint": "pnpm exec eslint --quiet --concurrency auto .",
-    "lint:verbose": "pnpm exec eslint --concurrency auto .",
-    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs ./oxlintrc.json",
+    "lint": "pnpm exec oxlint --quiet",
+    "lint:verbose": "pnpm exec oxlint",
+    "lint:strict": "pnpm exec node ../../scripts/strict-lint.mjs ./.oxlintrc.strict.json",
     "api:dts": "pnpm exec rimraf ./lib && pnpm exec tsc -p tsconfig.api.json && pnpm exec node ./api-build.mjs",
     "test": "pnpm exec vitest run"
   },

@@ -23,7 +23,6 @@ import * as semver from "semver";
 
 import { setConflictDialog, setFileOverrideDialog } from "../actions";
 import { NAMESPACE } from "../statics";
-/* eslint-disable */
 import { IBiDirRule } from "../types/IBiDirRule";
 import { IConflict } from "../types/IConflict";
 import { RuleChoice } from "../util/getRuleTypes";

@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { actions, types, selectors, util } from "@nexusmods/vortex-api";
 
 import { setRemasterNoticeSeen } from "./actions";

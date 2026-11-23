@@ -57,7 +57,6 @@ icons/nucleo-standard-license.txt
 BuildState*.json
 tools/stackmap/*.vsix
 changelog_*.txt
-eslint.log
 log.txt
 
 # Claude piping into nul file on windows
@@ -96,9 +95,6 @@ playwright/.run-counter
 
 # api-extractor
 temp/
-
-# ESLint
-.eslintcache
 
 # oxlint CI results
 .lint-results.json

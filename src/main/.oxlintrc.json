@@ -1,12 +1,54 @@
 {
   "$schema": "../../node_modules/oxlint/configuration_schema.json",
-  "extends": ["../../oxlint.base.config.json"],
+  "extends": ["./.oxlintrc.strict.json"],
   "rules": {
-    "vitest/require-mock-type-parameters": "warn",
-    "unicorn/require-post-message-target-origin": "off"
+    "import/default": "warn",
+    "import/no-named-as-default-member": "warn",
+    "jsdoc/check-tag-names": "warn",
+    "no-new": "warn",
+    "no-shadow": "warn",
+    "no-underscore-dangle": "warn",
+    "no-unused-vars": "warn",
+    "no-useless-concat": "warn",
+    "no-useless-constructor": "warn",
+    "promise/always-return": "warn",
+    "promise/no-multiple-resolved": "warn",
+    "promise/no-promise-in-callback": "warn",
+    "typescript/consistent-return": "warn",
+    "typescript/no-extraneous-class": "warn",
+    "typescript/no-unnecessary-boolean-literal-compare": "warn",
+    "typescript/no-unnecessary-type-arguments": "warn",
+    "typescript/no-unnecessary-type-parameters": "warn",
+    "typescript/no-unsafe-type-assertion": "warn",
+    "typescript/require-array-sort-compare": "warn",
+    "unicorn/consistent-function-scoping": "warn",
+    "unicorn/no-array-reverse": "warn",
+    "unicorn/no-array-sort": "warn",
+    "unicorn/no-new-array": "warn",
+    "unicorn/no-useless-fallback-in-spread": "warn",
+    "vitest/expect-expect": "warn",
+    "vitest/no-conditional-expect": "warn",
+    "vitest/require-to-throw-message": "warn"
   },
-  "env": {
-    "builtin": true,
-    "node": true
-  }
+  "overrides": [
+    {
+      "files": [
+        "build.mjs",
+        "copy-assets.mjs",
+        "download-duckdb-extensions.ts",
+        "prepare-dist-package.mjs",
+        "sign.cjs",
+        "src/unleash/trim-spec.mjs"
+      ],
+      "rules": {
+        "typescript/no-require-imports": "warn",
+        "typescript/no-unsafe-argument": "warn",
+        "typescript/no-unsafe-assignment": "warn",
+        "typescript/no-unsafe-call": "warn",
+        "typescript/no-unsafe-member-access": "warn",
+        "typescript/no-unsafe-return": "warn",
+        "typescript/require-await": "warn"
+      }
+    }
+  ]
 }

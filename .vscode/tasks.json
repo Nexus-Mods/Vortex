@@ -31,9 +31,7 @@
       "type": "shell",
       "command": "pnpm",
       "args": ["run", "lint"],
-      "problemMatcher": {
-        "base": "$eslint-stylish"
-      }
+      "problemMatcher": []
     }
   ]
 }

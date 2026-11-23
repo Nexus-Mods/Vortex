@@ -120,7 +120,7 @@ describe("Database", () => {
 
       expect(persist.getDirtyTables).toHaveBeenCalled();
 
-      // eslint-disable-next-line @typescript-eslint/unbound-method
+      // oxlint-disable-next-line typescript/unbound-method
       expect(invalidator.notifyDirtyTables).toHaveBeenCalledWith(dirty);
     });
 

@@ -40,14 +40,12 @@ interface IComponentExProviderProps {
 // Hands MainContext on as old-style (legacy) context, for community extensions whose classes
 // declare contextTypes themselves instead of extending ComponentEx. The legacy context API is
 // only available to class components.
-// eslint-disable-next-line @eslint-react/no-class-component
 export class ComponentExProvider extends Component<IComponentExProviderProps> {
   public static contextType = MainContext;
   declare public context: IComponentContext;
 
   public static childContextTypes = legacyContextTypes;
 
-  // eslint-disable-next-line @eslint-react/no-unused-class-component-members
   public getChildContext(): IComponentContext {
     return this.context;
   }

@@ -3,7 +3,6 @@ import { VortexModId } from "@vortex/shared";
 import * as _ from "lodash";
 import { createSelector } from "reselect";
 
-/* eslint-disable */
 import { IModLookupInfo } from "./types/IModLookupInfo";
 
 const allMods = (state: types.IState) => state.persistent.mods;

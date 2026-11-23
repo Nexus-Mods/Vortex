@@ -2,7 +2,6 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "path";
 
 import { fs, log, selectors, types, util } from "@nexusmods/vortex-api";
-/* eslint-disable */
 import _ from "lodash";
 import { generate } from "shortid";
 import turbowalk from "turbowalk";
