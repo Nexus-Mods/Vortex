@@ -302,6 +302,25 @@ describe("useModRowActions", () => {
     expect(ids(result.current.actionsFor("b"))).toEqual(["Check for Update"]);
   });
 
+  it("offers Remove related only on a row that isn't being removed or uninstalled", () => {
+    const mods = {
+      a: { id: "a", archiveId: "archive-a" },
+      b: { id: "b", archiveId: "archive-b" },
+      c: { id: "c" },
+    };
+    const condition = vi.fn(() => true);
+    const { result } = renderRowActions([{ title: "Remove related", condition }], [], mods, {
+      "mods-removing": ["a"],
+      "mods-uninstalling": ["b"],
+    });
+
+    expect(ids(result.current.actionsFor("a"))).not.toContain("Remove related");
+    expect(ids(result.current.actionsFor("b"))).not.toContain("Remove related");
+    expect(ids(result.current.actionsFor("c"))).toContain("Remove related");
+    expect(condition).toHaveBeenCalledTimes(1);
+    expect(condition).toHaveBeenCalledWith(["c"]);
+  });
+
   // The Mod size column has nothing to click, so the size is worked out again from here.
   it("works out the mod's size again when Refresh content runs", () => {
     calculateModSize.mockClear();

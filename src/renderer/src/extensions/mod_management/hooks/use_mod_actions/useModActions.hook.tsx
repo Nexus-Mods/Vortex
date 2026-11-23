@@ -182,6 +182,9 @@ const OTHER_SECTION = "other";
 /** The mod-content extension's, which also works out the mods' sizes again here. */
 const REFRESH_CONTENT = "Refresh Content";
 
+/** The legacy table's, which removes straight away, without marking any row as removing. */
+const REMOVE_RELATED = "Remove related";
+
 type IMenuItems = Map<string, IRowMenuItem & { section: string; order: number }>;
 
 const menuItems = (menu: typeof ROW_MENU): IMenuItems =>
@@ -317,6 +320,23 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
             },
           };
 
+    // So Remove related can't start a second removal on a mod already being removed.
+    const notWhileBusy = (definition: IActionDefinition): IActionDefinition =>
+      definition.title !== REMOVE_RELATED
+        ? definition
+        : {
+            ...definition,
+            condition: (...args: Parameters<NonNullable<IActionDefinition["condition"]>>) => {
+              const [instanceIds] = args;
+              const modIds = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
+              const state = store.getState();
+              if (modIds.some((modId) => isRowBusy(state, modId))) {
+                return false;
+              }
+              return definition.condition?.(...args) ?? true;
+            },
+          };
+
     return [
       checkForUpdateAction,
       uninstallAction,
@@ -328,6 +348,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
       ...registered,
     ]
       .map(withSizeRefresh)
+      .map(notWhileBusy)
       .filter(
         (definition) =>
           definition.title !== undefined &&
