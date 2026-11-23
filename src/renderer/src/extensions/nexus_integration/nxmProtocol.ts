@@ -19,6 +19,7 @@ import {
 } from "../../util/CustomErrors";
 import { createKeyedCache } from "../../util/keyedCache";
 import { batchDispatch } from "../../util/util";
+import { websiteDownloadSource } from "../analytics/mixpanel/download_source/downloadSource";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
@@ -476,9 +477,14 @@ export class NxmProtocol {
         ? `mod_${url.modId}_${url.fileId}_${pageId}`
         : `collection_${url.collectionSlug}_${revisionNumber ?? "latest"}`;
 
+    // Per link, not per file, so it's kept out of the cache.
+    const downloadSource = websiteDownloadSource(url.getParam("source"));
+    const withSource = (meta: IResolvedURL["meta"]): IResolvedURL["meta"] =>
+      downloadSource ? { ...meta, downloadSource } : meta;
+
     const cached = this.#urlCache.get(cacheKey);
     if (cached !== undefined) {
-      return { urls: cached.urls, updatedUrl: input, meta: cached.meta };
+      return { urls: cached.urls, updatedUrl: input, meta: withSource(cached.meta) };
     }
 
     let found: IFoundDownload;
@@ -498,7 +504,7 @@ export class NxmProtocol {
     };
 
     this.#urlCache.set(cacheKey, { urls: resolved.urls, meta: resolved.meta });
-    return resolved;
+    return { ...resolved, meta: withSource(resolved.meta) };
   }
 
   async #modDownload(url: NXMUrl, pageId: string): Promise<IFoundDownload> {

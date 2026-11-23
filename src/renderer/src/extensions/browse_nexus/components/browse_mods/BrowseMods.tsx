@@ -17,6 +17,7 @@ import {
 } from "../../hooks/browse_mods_tracking/browseModsTracker";
 import { useBrowseModsTracker } from "../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 import { useBrowseModsViews } from "../../hooks/use_browse_mods_views/useBrowseModsViews.hook";
+import { ShownModPositionContext } from "../../hooks/use_browse_website_link/useBrowseWebsiteLink.hook";
 import { useChangeModFilters } from "../../hooks/use_change_mod_filters/useChangeModFilters.hook";
 import { useGameDomainName } from "../../hooks/use_game_domain_name/useGameDomainName.hook";
 import { useModBrowsingFeedback } from "../../hooks/use_mod_browsing_feedback/useModBrowsingFeedback.hook";
@@ -216,16 +217,20 @@ export const BrowseMods = ({ api, search, isShown }: IBrowseModsProps) => {
       );
     }
 
+    const position = mods.findIndex((mod) => mod.id === shownMod.id) + 1;
+
     return (
-      <ModDetails
-        api={api}
-        gallery={gallery}
-        key={shownMod.id}
-        mod={shownMod}
-        ref={detailsRef}
-        onFocusList={() => listRef.current?.focusOpenMod()}
-        onPick={setBackdrop}
-      />
+      <ShownModPositionContext.Provider value={position || undefined}>
+        <ModDetails
+          api={api}
+          gallery={gallery}
+          key={shownMod.id}
+          mod={shownMod}
+          ref={detailsRef}
+          onFocusList={() => listRef.current?.focusOpenMod()}
+          onPick={setBackdrop}
+        />
+      </ShownModPositionContext.Provider>
     );
   };
 

@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { openFilePage as openNexusFilePage } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
+import { withVortexSource } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import { makeModAndFileUIDs } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 
@@ -39,7 +40,7 @@ export function useModRequirementActions(
 
   const openModPage = useCallback(() => {
     if (mod.modUrl) {
-      window.api.shell.openUrl(mod.modUrl);
+      window.api.shell.openUrl(withVortexSource({ url: mod.modUrl, feature: "health_check" }));
     }
   }, [mod.modUrl]);
 

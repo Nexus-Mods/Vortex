@@ -40,7 +40,9 @@ describe("useModRequirementActions", () => {
 
     result.current.openModPage();
 
-    expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/100");
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/100?source=vortex_health_check",
+    );
   });
 
   // A game with no Nexus domain mapping leaves the requirement without a page to open.
@@ -61,6 +63,8 @@ describe("useModRequirementActions", () => {
 
     result.current.openFilePage();
 
-    expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/100");
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/100?source=vortex_health_check",
+    );
   });
 });
