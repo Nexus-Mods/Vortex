@@ -2,8 +2,8 @@ import type {
   ConditionSnapshot,
   OptionSnapshot,
   OptionType,
+  PatternSnapshot,
   PluginState,
-  ResolverSnapshot,
 } from "../types/snapshot";
 
 /**
@@ -104,6 +104,19 @@ export const evaluateCondition = (
 };
 
 /**
+ * The type an installer would resolve now, and - when a pattern is what decided it - which
+ * one.
+ *
+ * `matchedPattern` is undefined for a static resolver and for one that fell through to its
+ * default type: in both cases no condition is what made the option usable, so there is no
+ * pattern to name at the user.
+ */
+export interface IResolvedOptionType {
+  type: OptionType | undefined;
+  matchedPattern?: PatternSnapshot;
+}
+
+/**
  * Recompute the option type an installer would resolve now, or undefined when it cannot
  * be known.
  *
@@ -113,26 +126,32 @@ export const evaluateCondition = (
  * match, so neither continuing nor falling through is sound - and the caller falls back to
  * the type recorded at install time.
  */
-export const resolveOptionType = (
+export const resolveOptionPattern = (
   option: OptionSnapshot,
   context: IEvaluationContext,
-): OptionType | undefined => {
+): IResolvedOptionType => {
   const resolver = option.resolver;
   if (resolver.kind === "Static") {
-    return resolver.type;
+    return { type: resolver.type };
   }
 
   for (const pattern of resolver.patterns ?? []) {
     const fulfilled = evaluateCondition(pattern.condition, context);
     if (fulfilled === "Undecidable") {
-      return undefined;
+      return { type: undefined };
     }
     if (fulfilled === "True") {
-      return pattern.type;
+      return { type: pattern.type, matchedPattern: pattern };
     }
   }
-  return resolver.defaultType;
+  return { type: resolver.defaultType };
 };
+
+/** Just the type, for callers that do not need to know which pattern decided it. */
+export const resolveOptionType = (
+  option: OptionSnapshot,
+  context: IEvaluationContext,
+): OptionType | undefined => resolveOptionPattern(option, context).type;
 
 /** The types an option can be selected under, as opposed to refused. */
 const USABLE: ReadonlySet<OptionType> = new Set<OptionType>([
@@ -162,5 +181,3 @@ export const becameUsable = (option: OptionSnapshot, context: IEvaluationContext
   }
   return !isUsable(option.type) && isUsable(now);
 };
-
-export const resolverKind = (resolver: ResolverSnapshot): string => resolver.kind;

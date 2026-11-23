@@ -14,7 +14,8 @@ interface IListingRowProps {
   title: ReactNode;
   summary: ReactNode;
   detail: ReactNode;
-  entryActions: ReactNode;
+  /** Omitted by a check with no hide or feedback store, which has no actions to show. */
+  entryActions?: ReactNode;
   action?: ReactNode;
   onOpen: () => void;
 }

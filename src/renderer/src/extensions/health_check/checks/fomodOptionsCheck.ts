@@ -9,12 +9,12 @@ import {
   HealthCheckTrigger,
 } from "../../../types/IHealthCheck";
 import { activeGameId } from "../../../util/selectors";
+import toPluginId from "../../gamebryo_plugin_management/util/toPluginId";
 import { OPTION_SNAPSHOT_ATTRIBUTE } from "../../installer_fomod_shared/types/snapshot";
 import type { IEvaluationContext } from "../../installer_fomod_shared/utils/evaluateSnapshot";
 import {
   findNewlyUsable,
   type INewlyUsableOption,
-  replayFlags,
 } from "../../installer_fomod_shared/utils/findNewlyUsable";
 import { normaliseSnapshot } from "../../installer_fomod_shared/utils/normaliseSnapshot";
 import { pluginStateLookup, pluginsShippedBy } from "../utils/fomodSnapshot/pluginState";
@@ -102,7 +102,10 @@ export const checkFomodOptions = async (
       }
       modsChecked++;
 
-      const flags = replayFlags(snapshot);
+      // The producer records the flags in effect when the install completed, which is
+      // already exactly the selected options' flags: enableOption sets them and
+      // disableOption removes them. Replaying the options on top would reproduce this map.
+      const flags = new Map(snapshot.flags.map((flag) => [flag.name, flag.value]));
       const shipped = pluginsShippedBy(
         (attributes.fileList as { path: string }[] | undefined)?.map((entry) => entry.path),
       );
@@ -113,8 +116,10 @@ export const checkFomodOptions = async (
       };
 
       const newlyUsable = findNewlyUsable(snapshot, context).filter(
-        // An option waiting on the mod's own plugin is not a gap the user can close.
-        (option) => !shipped.has(option.reason.toLowerCase()),
+        // An option waiting on the mod's own plugin is not a gap the user can close. The
+        // reason is a plugin path as the FOMOD declared it, so it has to be reduced to the
+        // same id the file list was before the two can be compared.
+        (option) => !shipped.has(toPluginId(option.reason)),
       );
 
       if (newlyUsable.length === 0) {
@@ -170,11 +175,13 @@ export const fomodOptionsHealthCheck: IHealthCheck = {
     "Reports installer options that were unavailable when a mod was installed and are available now",
   category: HealthCheckCategory.Mods,
   severity: HealthCheckSeverity.Info,
-  // ModsChanged is the trigger that fires when the plugin list moves: the plugin-list
-  // watcher in api/triggers.ts schedules it, because an option's availability turns on
-  // which plugins are present and active. PluginsChanged is deliberately not listed -
-  // nothing dispatches it on this path, and a trigger that never fires is a lie.
+  // An option's availability turns on which plugins are present and active, so the
+  // plugin-list watcher in api/triggers.ts dispatches PluginsChanged for it. That is a
+  // separate trigger from ModsChanged on purpose: plugin writes are far more frequent than
+  // mod changes (every deploy, sort and warning update), and the two Nexus-backed checks
+  // carry ModsChanged, so sharing it would put them on this path too.
   triggers: [
+    HealthCheckTrigger.PluginsChanged,
     HealthCheckTrigger.ModsChanged,
     HealthCheckTrigger.Manual,
     HealthCheckTrigger.ProfileChanged,

@@ -1,12 +1,13 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { Button } from "@/ui/components/button/Button";
 import { Typography } from "@/ui/components/typography/Typography";
 import { activeGameId } from "@/util/selectors";
 
-import { changeInstallerOptions } from "../../../installer_fomod_shared/utils/changeInstallerOptions";
 import type { IFomodOptionIssue } from "../../checks/fomodOptionsCheck";
+import { changeInstallerOptions } from "../../utils/fomodSnapshot/changeInstallerOptions";
 import type { IDetailViewProps } from "../../views/content/types";
 import { Divider } from "../divider/Divider";
 
@@ -19,15 +20,14 @@ import { Divider } from "../divider/Divider";
  * knowingly rather than by clicking a fix.
  */
 export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
+  const { t } = useTranslation(["health_check", "common"]);
   const issue = entry.data as IFomodOptionIssue;
   const gameId = useSelector(activeGameId);
   const [busy, setBusy] = useState(false);
 
   const handleChangeOptions = async () => {
     const mod =
-      gameId !== undefined
-        ? api.getState().persistent.mods[gameId as string]?.[issue.modId]
-        : undefined;
+      gameId !== undefined ? api.getState().persistent.mods[gameId]?.[issue.modId] : undefined;
     if (mod === undefined) {
       return;
     }
@@ -47,8 +47,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
       <Typography typographyType="body-lg">{issue.modName}</Typography>
 
       <Typography appearance="subdued" typographyType="body-sm">
-        These options were unavailable when this mod was installed and are available now. Reopening
-        the installer keeps everything else as you chose it.
+        {t("detail::fomod_options::description")}
       </Typography>
 
       <Divider variant="and" />
@@ -60,7 +59,10 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
         >
           <Typography typographyType="body-sm">{option.optionName}</Typography>
           <Typography appearance="subdued" typographyType="body-sm">
-            {option.groupName} · available now that {option.reason} is active
+            {t("detail::fomod_options::option_reason", {
+              groupName: option.groupName,
+              reason: option.reason,
+            })}
           </Typography>
         </div>
       ))}
@@ -69,9 +71,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
       {issue.collectionManaged ? (
         <Typography appearance="subdued" typographyType="body-sm">
-          This mod is managed by a collection. Changing its options here would make your install
-          differ from the collection, so make the change from the collection's own mod page if you
-          want it.
+          {t("detail::fomod_options::collection_managed")}
         </Typography>
       ) : (
         <div>
@@ -82,7 +82,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
             leftIcon="tune"
             onClick={() => void handleChangeOptions()}
           >
-            Change options
+            {t("detail::fomod_options::change_options")}
           </Button>
         </div>
       )}

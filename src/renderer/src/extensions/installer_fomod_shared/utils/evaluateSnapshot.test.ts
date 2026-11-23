@@ -5,6 +5,7 @@ import {
   becameUsable,
   evaluateCondition,
   type IEvaluationContext,
+  resolveOptionPattern,
   resolveOptionType,
 } from "./evaluateSnapshot";
 
@@ -145,6 +146,40 @@ describe("resolveOptionType", () => {
   it("returns a static resolver's type", () => {
     const fixed = option({ resolver: { kind: "Static", type: "Optional" } });
     expect(resolveOptionType(fixed, context())).toBe("Optional");
+  });
+});
+
+describe("resolveOptionPattern", () => {
+  // The reason a user is shown names the plugin from the pattern that matched, so the walk
+  // has to report which one that was rather than leaving the caller to guess.
+  const alternatives = option({
+    resolver: {
+      kind: "Conditional",
+      defaultType: "NotUsable",
+      patterns: [
+        { type: "Required", condition: plugin("x.esp", "Active") },
+        { type: "Optional", condition: plugin("y.esp", "Active") },
+      ],
+    },
+  });
+
+  it("reports the pattern whose condition matched, not the first one listed", () => {
+    const resolved = resolveOptionPattern(alternatives, context({ "y.esp": "Active" }));
+
+    expect(resolved.type).toBe("Optional");
+    expect(resolved.matchedPattern?.condition.pluginPath).toBe("y.esp");
+  });
+
+  it("reports no pattern when the resolver fell through to its default", () => {
+    const resolved = resolveOptionPattern(alternatives, context());
+
+    expect(resolved.type).toBe("NotUsable");
+    expect(resolved.matchedPattern).toBeUndefined();
+  });
+
+  it("reports no pattern for a static resolver", () => {
+    const fixed = option({ resolver: { kind: "Static", type: "Optional" } });
+    expect(resolveOptionPattern(fixed, context()).matchedPattern).toBeUndefined();
   });
 });
 

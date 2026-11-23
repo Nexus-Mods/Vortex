@@ -1,12 +1,17 @@
 import type {
-  FlagSnapshot,
+  ConditionSnapshot,
   GroupSnapshot,
   InstallSnapshot,
   OptionSnapshot,
   OptionType,
   StepSnapshot,
 } from "../types/snapshot";
-import { becameUsable, type IEvaluationContext, resolveOptionType } from "./evaluateSnapshot";
+import {
+  becameUsable,
+  evaluateCondition,
+  type IEvaluationContext,
+  resolveOptionPattern,
+} from "./evaluateSnapshot";
 
 /** One option that has become selectable since the install that recorded the snapshot. */
 export interface INewlyUsableOption {
@@ -27,21 +32,64 @@ export interface INewlyUsableOption {
 }
 
 /**
- * Render the condition that made an option usable, for a user rather than a developer.
+ * The first plugin a condition tree names that is fulfilled now.
  *
- * Returns undefined when nothing in the tree can be named - an option that became usable
- * through a flag, say, where the flag's owner is the more useful thing to name and the
- * caller supplies that.
+ * Only a fulfilled leaf is worth naming: inside an `Or` the sibling that did not match
+ * would be a plugin the user does not have, and telling them the option is available
+ * because of it would be wrong.
  */
-const describeCondition = (option: OptionSnapshot): string | undefined => {
-  for (const pattern of option.resolver.patterns ?? []) {
-    const named = pattern.condition.conditions ?? [pattern.condition];
-    const plugin = named.find((node) => node.kind === "Plugin" && node.pluginPath !== undefined);
-    if (plugin !== undefined) {
-      return plugin.pluginPath;
+const pluginIn = (
+  condition: ConditionSnapshot,
+  context: IEvaluationContext,
+): string | undefined => {
+  if (condition.kind === "Plugin") {
+    return evaluateCondition(condition, context) === "True" ? condition.pluginPath : undefined;
+  }
+  for (const child of condition.conditions ?? []) {
+    const named = pluginIn(child, context);
+    if (named !== undefined) {
+      return named;
     }
   }
   return undefined;
+};
+
+/**
+ * Render the condition that made an option usable, for a user rather than a developer.
+ *
+ * Reads the pattern the resolver actually elected, not the first pattern that happens to
+ * name a plugin: a resolver listing several alternatives names the one that now matches,
+ * which is the only one the user can act on.
+ *
+ * Returns undefined when nothing in the elected pattern can be named - an option that
+ * became usable through a flag, say, or through falling through to its default type, where
+ * the caller supplies the group name instead.
+ */
+const describeCondition = (
+  option: OptionSnapshot,
+  context: IEvaluationContext,
+): string | undefined => {
+  const { matchedPattern } = resolveOptionPattern(option, context);
+  return matchedPattern === undefined ? undefined : pluginIn(matchedPattern.condition, context);
+};
+
+/**
+ * Whether a step's options are offered to the user now.
+ *
+ * The snapshot records whether the step was visible at install time, which is not the same
+ * question: a step gated on a plugin that has since been installed was hidden then and is
+ * visible now, and the options inside it are exactly the ones the user could not reach.
+ *
+ * Falls back to the recorded answer when the condition cannot be decided from a snapshot,
+ * which is what an environment condition is - guessing there would either raise a step the
+ * installer never offered or hide one it did.
+ */
+const stepIsVisibleNow = (step: StepSnapshot, context: IEvaluationContext): boolean => {
+  if (step.visibilityCondition === undefined) {
+    return step.visible;
+  }
+  const now = evaluateCondition(step.visibilityCondition, context);
+  return now === "Undecidable" ? step.visible : now === "True";
 };
 
 /**
@@ -61,11 +109,11 @@ export const findNewlyUsable = (
       if (!becameUsable(option, context)) {
         continue;
       }
-      const nowType = resolveOptionType(option, context);
+      const nowType = resolveOptionPattern(option, context).type;
       if (nowType === undefined) {
         continue;
       }
-      const named = describeCondition(option);
+      const named = describeCondition(option, context);
       found.push({
         stepName: step.name,
         groupName: group.name,
@@ -78,9 +126,9 @@ export const findNewlyUsable = (
   };
 
   for (const step of snapshot.steps) {
-    // An invisible step's options are not offered to the user at all, so an option inside
-    // one becoming usable is not something they can act on.
-    if (!step.visible) {
+    // A step that is still invisible offers none of its options, so nothing inside it is
+    // something the user can act on.
+    if (!stepIsVisibleNow(step, context)) {
       continue;
     }
     for (const group of step.groups) {
@@ -89,33 +137,4 @@ export const findNewlyUsable = (
   }
 
   return found;
-};
-
-/**
- * The flag values in effect for a snapshot, replayed from the options it records as
- * selected.
- *
- * Starts from the flags the installer recorded at completion and layers the selected
- * options' own flags over them, so a consumer can evaluate flag conditions without
- * re-running the installer's selection logic.
- */
-export const replayFlags = (snapshot: InstallSnapshot): Map<string, string> => {
-  const values = new Map<string, string>();
-  const record = (flags: FlagSnapshot[]): void => {
-    for (const flag of flags) {
-      values.set(flag.name, flag.value);
-    }
-  };
-
-  record(snapshot.flags);
-  for (const step of snapshot.steps) {
-    for (const group of step.groups) {
-      for (const option of group.options) {
-        if (option.selected) {
-          record(option.flags);
-        }
-      }
-    }
-  }
-  return values;
 };

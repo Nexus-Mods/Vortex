@@ -214,6 +214,10 @@ const step = (wire: Wire): StepSnapshot => {
  * carries them is bumped separately from this code. Reading it through here keeps the
  * consumer independent of that bump: when the typings catch up, this still works, and
  * until then nothing is cast and no declaration file is patched.
+ *
+ * TODO: delete once @nexusmods/fomod-installer-native is past 0.13.4, whose
+ * dist/types/InstallResult.d.ts has no `optionSnapshot` - read `result.optionSnapshot`
+ * directly then, and drop the `unknown` parameter this takes.
  */
 export const readOptionSnapshot = (result: unknown): InstallSnapshot | undefined => {
   const wire = asWire(result);

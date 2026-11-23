@@ -162,6 +162,109 @@ describe("checkFomodOptions", () => {
     expect(result.status).toBe("passed");
   });
 
+  it("says nothing about an option gated on the mod's own plugin in a subdirectory", async () => {
+    // The file list holds full paths and the condition holds a path too, so both have to be
+    // reduced to the same plugin id before they can be compared - comparing the condition's
+    // raw path against a set of basenames never matched.
+    const api = fakeApi({
+      mods: {
+        "mod-a": {
+          id: "mod-a",
+          attributes: {
+            [OPTION_SNAPSHOT_ATTRIBUTE]: snapshotWith([
+              gatedOption({
+                resolver: {
+                  kind: "Conditional",
+                  defaultType: "NotUsable",
+                  patterns: [
+                    { type: "Required", condition: pluginCondition("meshes/a.esp", "Active") },
+                  ],
+                },
+              }),
+            ]),
+            fileList: [{ path: "meshes/a.esp" }],
+          },
+        },
+      },
+      pluginList: { "a.esp": { isNative: false } },
+      loadOrder: { "a.esp": { enabled: true } },
+    });
+
+    const result = await checkFomodOptions(api);
+    expect(result.status).toBe("passed");
+  });
+
+  it("reads flag conditions from the flags the installer recorded", async () => {
+    // The producer records the flags in effect at completion, which is already exactly the
+    // selected options' flags, so the check reads them rather than replaying the options.
+    const flagGated = gatedOption({
+      resolver: {
+        kind: "Conditional",
+        defaultType: "NotUsable",
+        patterns: [
+          { type: "Required", condition: { kind: "Flag", flagName: "patch", flagValue: "yes" } },
+        ],
+      },
+    });
+
+    const api = fakeApi({
+      mods: {
+        "mod-a": {
+          id: "mod-a",
+          attributes: {
+            [OPTION_SNAPSHOT_ATTRIBUTE]: {
+              steps: [
+                {
+                  id: 0,
+                  name: "Step1",
+                  visible: true,
+                  groups: [{ name: "Compat", type: "SelectAny", options: [flagGated] }],
+                },
+              ],
+              flags: [{ name: "patch", value: "yes" }],
+            },
+          },
+        },
+      },
+    });
+
+    const result = await checkFomodOptions(api);
+    const metadata = result.metadata as IFomodOptionsCheckMetadata;
+
+    expect(metadata.issues).toHaveLength(1);
+    // A flag is not a plugin, so there is nothing to name and the group stands in.
+    expect(metadata.issues[0].options[0].reason).toBe("Compat");
+  });
+
+  it("names the plugin from the pattern that now matches", async () => {
+    const twoAlternatives = gatedOption({
+      resolver: {
+        kind: "Conditional",
+        defaultType: "NotUsable",
+        patterns: [
+          { type: "Required", condition: pluginCondition("x.esp", "Active") },
+          { type: "Optional", condition: pluginCondition("y.esp", "Active") },
+        ],
+      },
+    });
+
+    const api = fakeApi({
+      mods: {
+        "mod-a": {
+          id: "mod-a",
+          attributes: { [OPTION_SNAPSHOT_ATTRIBUTE]: snapshotWith([twoAlternatives]) },
+        },
+      },
+      pluginList: { "y.esp": { isNative: false } },
+      loadOrder: { "y.esp": { enabled: true } },
+    });
+
+    const result = await checkFomodOptions(api);
+    const metadata = result.metadata as IFomodOptionsCheckMetadata;
+
+    expect(metadata.issues[0].options[0].reason).toBe("y.esp");
+  });
+
   it("counts mods it could not check rather than failing", async () => {
     // An install from an installer that predates the snapshot records choices but no
     // snapshot. That is not an error, and the user should be told it is not covered.

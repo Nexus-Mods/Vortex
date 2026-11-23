@@ -1,7 +1,7 @@
 import { UserCanceled } from "@vortex/shared/errors";
 
-import type { IExtensionApi } from "../../../types/IExtensionContext";
-import type { IMod } from "../../mod_management/types/IMod";
+import type { IExtensionApi } from "../../../../types/IExtensionContext";
+import type { IMod } from "../../../mod_management/types/IMod";
 
 /**
  * Reopen a mod's installer with the choices it was installed with already selected.
