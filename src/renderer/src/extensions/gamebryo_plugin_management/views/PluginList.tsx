@@ -28,7 +28,7 @@ import More from "../../../controls/More";
 import Spinner from "../../../controls/Spinner";
 import Table, { type ITableRowAction } from "../../../controls/Table";
 import TableTextFilter from "../../../controls/table/TextFilter";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
+import ToolbarIcon from "../../../controls/toolbar_icon/ToolbarIcon";
 import * as tooltip from "../../../controls/TooltipControls";
 import Usage from "../../../controls/Usage";
 import { log } from "../../../logging";

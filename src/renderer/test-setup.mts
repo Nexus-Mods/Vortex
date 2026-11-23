@@ -11,6 +11,7 @@ install();
 
 import "@testing-library/jest-dom/vitest";
 import type { VortexPaths } from "@vortex/shared/ipc";
+import type * as ReactDOMModule from "react-dom";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { ApplicationData } from "./src/applicationData.js";
@@ -49,7 +50,34 @@ console.error = (...args: unknown[]) => {
   originalConsoleError.apply(console, args);
 };
 
-// React warnings about our own code fail the test they're logged in, as the warnings above do;
+// A call to findDOMNode from our own code fails the test it ran in; React 19 removes it, and
+// "React warnings" in docs/testing.md says what to use instead. React's own warning can't drive
+// this: it's logged once per test file, and react-bootstrap 0.33 and react-overlays still call
+// findDOMNode themselves, so theirs would hide ours. vi.mock only reaches the modules vitest
+// transforms, our source, and not the copy of react-dom those libraries require() for themselves.
+// The callers named in `allowedFindDOMNodeCallers` are let through.
+const { allowedFindDOMNodeCallers, findDOMNodeCallers } = vi.hoisted(() => ({
+  /**
+   * Functions that call findDOMNode on purpose until React 19, for extension components that
+   * don't pass a ref on. Each is named for that, so a new call elsewhere still fails.
+   */
+  allowedFindDOMNodeCallers: ["findDOMNodeUntilReact19"],
+  findDOMNodeCallers: new Set<string>(),
+}));
+vi.mock("react-dom", async (importOriginal) => {
+  const original = await importOriginal<typeof ReactDOMModule>();
+  const findDOMNode: typeof original.findDOMNode = (instance) => {
+    // the frame below this one is whoever called findDOMNode
+    const caller = new Error().stack?.split("\n")[2]?.trim().replace(/^at /, "");
+    if (!allowedFindDOMNodeCallers.some((allowed) => caller?.startsWith(`${allowed} `))) {
+      findDOMNodeCallers.add(caller ?? "unknown code");
+    }
+    return original.findDOMNode(instance);
+  };
+  return { ...original, findDOMNode, default: { ...original, findDOMNode } };
+});
+
+// React warnings about our own code fail the test they're logged in, as the checks above do;
 // "React warnings" in docs/testing.md says how to fix each. A warning is ours when the first
 // component in React's stack that has a file isn't in node_modules: react-bootstrap 0.33 logs
 // the same warnings about its own components, and those go when it does.
@@ -102,16 +130,20 @@ console.error = (...args: unknown[]) => {
 };
 
 /**
- * Fails the test for both checks above at once. Vitest skips the after-hooks left to run once
- * one throws, so with a hook each, a test failing one check would leave the other's findings
+ * Fails the test for every check above at once. Vitest skips the after-hooks left to run once
+ * one throws, so with a hook each, a test failing one check would leave the others' findings
  * to be blamed on the next test.
  */
 const failOnReactWarnings = () => {
   const problems = [...componentsByWarning].map(([warning, components]) =>
     warning.failure([...components].join(", ")),
   );
+  if (findDOMNodeCallers.size > 0) {
+    problems.push(`findDOMNode was called from ${[...findDOMNodeCallers].join(", ")}`);
+  }
   problems.push(...ourWarningsLogged);
   componentsByWarning = new Map();
+  findDOMNodeCallers.clear();
   ourWarningsLogged.clear();
   if (problems.length > 0) {
     throw new Error(`${problems.join("; ")}; see "React warnings" in docs/testing.md`);

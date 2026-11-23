@@ -2,7 +2,6 @@ import { clearTimeout } from "timers";
 
 import * as React from "react";
 import { MenuItem } from "react-bootstrap";
-import ReactDOM from "react-dom";
 import { Portal } from "react-overlays";
 
 import type { TFunction } from "../util/i18n";
@@ -11,6 +10,14 @@ import { ComponentEx } from "./ComponentEx";
 import { HOVER_DELAY } from "./constants";
 import Dropdown from "./Dropdown";
 import Icon from "./Icon";
+import { withDomRef } from "./with_dom_ref/withDomRef";
+
+/**
+ * The <a> a MenuItem renders, handed back through domRef: react-bootstrap 0.33's MenuItem
+ * doesn't pass a ref on. MenuItem renders an <li> around it, and a submenu opens next to that
+ * <li>, the <a>'s parent.
+ */
+const AnchorWithDomRef = withDomRef("a");
 
 export interface IMenuActionProps {
   t: TFunction;
@@ -115,9 +122,10 @@ function MenuAction(props: IMenuActionProps) {
     }, HOVER_DELAY);
   }, [setOpen]);
 
-  const setItemRef = (ref) => {
-    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
-  };
+  const setAnchorRef = React.useCallback((anchor: HTMLAnchorElement | null) => {
+    itemRef.current = anchor?.parentElement ?? undefined;
+  }, []);
+  const anchorProps = { componentClass: AnchorWithDomRef, domRef: setAnchorRef };
 
   return (
     <MenuItem
@@ -126,7 +134,7 @@ function MenuAction(props: IMenuActionProps) {
       onMouseEnter={action.subMenus !== undefined ? show : undefined}
       onMouseLeave={action.subMenus !== undefined ? hide : undefined}
       disabled={action.show !== true}
-      ref={setItemRef}
+      {...anchorProps}
       title={typeof action.show === "string" ? t(action.show) : undefined}
     >
       {action.component !== undefined ? (

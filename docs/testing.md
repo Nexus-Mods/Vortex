@@ -109,6 +109,24 @@ The usual sources:
   testing-library's, that microtask lands outside `act()`. Re-render inside an
   async `act()`: `await act(async () => { rerender(…); })`.
 
+### findDOMNode
+
+A test also fails when our own code calls `findDOMNode`, which React 19
+removes: `findDOMNode was called from X`, naming the caller. Put a ref on the
+element instead. Where the element belongs to a react-bootstrap 0.33 component,
+which doesn't pass refs on, hand it a `componentClass` made with `withDomRef`
+(`src/renderer/src/controls/with_dom_ref/withDomRef.ts`) and a `domRef` prop:
+`ToolbarIcon` and `ContextMenu` do this.
+
+The check catches the call, not React's warning. React logs that warning once
+per test file, and react-bootstrap and react-overlays still call `findDOMNode`
+themselves, so their warning would hide ours. Their calls don't fail a test.
+
+One call of ours is let through: `findDOMNodeUntilReact19` in
+`VisibilityProxy`, which finds the element of an extension's `componentClass`
+that doesn't pass its ref on. It goes when React 19 does. The names let through
+are listed in `allowedFindDOMNodeCallers` in the test setup.
+
 ### Legacy context, nesting and refs
 
 A test also fails when React warns that our own code:
@@ -159,13 +177,16 @@ and `TooltipControls` use it.
 - An update that lands after testing-library's cleanup fails the next test in
   the file, or the file's `afterAll` after its last test, rather than the test
   that caused it.
-- Only the warnings above fail a test: `act()` and `defaultProps` wherever
-  they come from, and the legacy context, nesting and ref warnings when our own
-  code is to blame. The deprecation warnings still in the log (`findDOMNode`,
-  and legacy context from react-bootstrap) come from older code: class
-  components in `src/renderer/src/controls/`, and old dependencies such as
-  `react-bootstrap` 0.33. Clearing them means changing that code, not the
-  tests.
+- Only these fail a test: `act()` and `defaultProps` warnings wherever they
+  come from, our own `findDOMNode` calls, and the legacy context, nesting and
+  ref warnings when our own code is to blame. The deprecation warnings still in
+  the log (`findDOMNode` and legacy context from react-bootstrap) come from
+  older code: class components in `src/renderer/src/controls/`, and old
+  dependencies such as `react-bootstrap` 0.33. Clearing them means changing
+  that code, not the tests.
+- The `findDOMNode` check only sees code that runs in a test. The renderer
+  still has calls outside the tested paths, such as `Dropdown`,
+  `ActionDropdown`, `OverlayTrigger` and `DraggableList`.
 
 ## Extension tests
 
