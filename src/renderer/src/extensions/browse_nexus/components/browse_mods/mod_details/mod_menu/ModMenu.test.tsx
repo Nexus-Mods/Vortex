@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { toastDuration } from "@/util/message";
 
 import { ModMenu } from "./ModMenu";
 
@@ -59,9 +60,15 @@ describe("ModMenu", () => {
     );
     await waitFor(() =>
       expect(api.sendNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "browse-mods-mod-link-copied", type: "success" }),
+        expect.objectContaining({
+          id: "browse-mods-mod-link-copied",
+          type: "success",
+          localize: { message: false },
+        }),
       ),
     );
+    const [sent] = vi.mocked(api.sendNotification).mock.calls[0];
+    expect(sent.displayMS).toBe(toastDuration(sent.message.length));
     expect(propertiesOf("browse_mods_mod_link_copied")).toEqual([{ mod_uid: "1704-12604" }]);
   });
 

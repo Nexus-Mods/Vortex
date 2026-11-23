@@ -19,6 +19,7 @@ import type { INotification } from "../../../types/INotification";
 import type { IState } from "../../../types/IState";
 import Debouncer from "../../../util/Debouncer";
 import { log } from "../../../util/log";
+import { notificationHideAt } from "../../../util/notification_hide_at/notificationHideAt";
 import { truthy } from "../../../util/util";
 import { Notification } from "../../../views/Notification";
 import { closeBrowser } from "../actions";
@@ -316,22 +317,6 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     );
   }
 
-  private displayTime = (item: INotification) => {
-    if (item.displayMS !== undefined) {
-      return item.displayMS;
-    }
-
-    return (
-      {
-        warning: 10000,
-        error: 10000,
-        success: 5000,
-        info: 5000,
-        activity: null,
-      }[item.type] || 5000
-    );
-  };
-
   private updateFiltered() {
     const { notifications } = this.props;
     const { opened } = this.state;
@@ -345,11 +330,14 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
     const now = Date.now();
 
     const filtered = notifications.filter((item) => {
-      if (["activity", "silent"].includes(item.type) || item.createdTime < opened) {
+      // updatedTime, not createdTime: a notification that replaces an older one with
+      // the same id keeps the older createdTime, but it's new to the user.
+      const shownAt = item.updatedTime ?? item.createdTime;
+      if (["activity", "silent"].includes(item.type) || shownAt < opened) {
         return false;
       }
-      const displayTime = this.displayTime(item);
-      return displayTime === null || item.createdTime + displayTime > now;
+      const hideAt = notificationHideAt(item, { interactive: false });
+      return hideAt === null || hideAt > now;
     });
 
     if (!_.isEqual(this.state.filtered, filtered)) {
