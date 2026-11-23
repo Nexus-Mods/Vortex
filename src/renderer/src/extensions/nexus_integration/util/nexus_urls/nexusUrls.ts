@@ -56,7 +56,7 @@ export const withVortexSource = ({ url, feature, position }: IVortexSourceLink) 
   withSource.searchParams.set("source", vortexLinkSource(feature));
 
   if (position) {
-    withSource.searchParams.set("position", String(position));
+    withSource.searchParams.set("source_position", String(position));
   }
 
   return withSource.toString();

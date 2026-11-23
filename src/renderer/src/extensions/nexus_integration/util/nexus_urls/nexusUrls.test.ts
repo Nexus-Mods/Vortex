@@ -64,7 +64,7 @@ describe("withVortexSource", () => {
     expect(
       withVortexSource({ url: nexusModPageUrl(SKYRIM, 12604), feature: "browse", position: 23 }),
     ).toBe(
-      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?source=vortex_browse&position=23",
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?source=vortex_browse&source_position=23",
     );
   });
 

@@ -14,7 +14,7 @@ describe("useBrowseWebsiteLink", () => {
 
     const { result } = renderHook(() => useBrowseWebsiteLink(), { wrapper });
 
-    expect(result.current(MOD_PAGE)).toBe(`${MOD_PAGE}?source=vortex_browse&position=23`);
+    expect(result.current(MOD_PAGE)).toBe(`${MOD_PAGE}?source=vortex_browse&source_position=23`);
   });
 
   it("says only that Browse sent the user when the position isn't known", () => {
