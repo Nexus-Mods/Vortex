@@ -12,6 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { Html } from "@/ui/components/prose/html/Html";
 import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import type { ILink } from "../actions";
@@ -611,11 +612,11 @@ export const Dialog: React.FC<React.PropsWithChildren<unknown>> = () => {
         controls.push({
           id: "htmlText",
           control: (
-            <div
+            <Html
               className="dialog-content-html"
-              // eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
-              dangerouslySetInnerHTML={{ __html: content.htmlText }}
+              html={content.htmlText}
               key="dialog-content-html-text"
+              size="sm"
             />
           ),
         });
