@@ -596,7 +596,9 @@ describe("ModsTableSwitch", () => {
     });
 
     it("installs a mod only downloaded from the button in its switch's place", async () => {
-      renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) });
+      renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) }, [], {
+        downloads: { a: { state: "finished" } },
+      });
 
       const [row] = bodyRows(screen.getByRole("grid"));
       expect(
@@ -612,7 +614,9 @@ describe("ModsTableSwitch", () => {
     });
 
     it("says what installing does, under its title", async () => {
-      renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) });
+      renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) }, [], {
+        downloads: { a: { state: "finished" } },
+      });
 
       const [row] = bodyRows(screen.getByRole("grid"));
       await hoverRow(row);
@@ -686,6 +690,21 @@ describe("ModsTableSwitch", () => {
 
       const [row] = bodyRows(screen.getByRole("grid"));
       expect(installButton(row)).toBeDisabled();
+    });
+
+    it("keeps an archive removing once deleted, until the list drops its row", async () => {
+      renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) }, [], {
+        downloads: {},
+      });
+
+      const [row] = bodyRows(screen.getByRole("grid"));
+      expect(installButton(row)).toBeDisabled();
+
+      await hoverRow(row);
+      await userEvent.hover(installButton(row).parentElement!);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "modsTable::rowActions::removing",
+      );
     });
 
     it("keeps the switch for an installed mod nothing is happening to", () => {

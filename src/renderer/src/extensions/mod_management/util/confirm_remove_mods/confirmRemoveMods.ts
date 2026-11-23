@@ -6,9 +6,12 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { toPromise } from "@/util/util";
 
-import modName from "../modName";
+import { modsForGame } from "../../selectors";
+import filterModInfo from "../filterModInfo";
+import modName, { modNameFromAttributes } from "../modName";
 import { removeMods } from "../removeMods";
-import { reportRemovalFailure, UNINSTALLING_ACTIVITY } from "../uninstall_mods/uninstallMods";
+import { reportRemovalFailure } from "../report_removal_failure/reportRemovalFailure";
+import { UNINSTALLING_ACTIVITY } from "../uninstall_mods/uninstallMods";
 
 /**
  * The activity group each mod being removed is listed in, by id, for its row to show it.
@@ -17,7 +20,7 @@ import { reportRemovalFailure, UNINSTALLING_ACTIVITY } from "../uninstall_mods/u
 export const REMOVING_ACTIVITY = "mods-removing";
 
 /** Whether a mod is being removed or uninstalled, so no other removal should start on it. */
-export const isRowBusy = (state: IState, modId: string): boolean => {
+export const isBeingRemoved = (state: IState, modId: string): boolean => {
   const activity = state.session?.base?.activity;
   return (
     !!activity?.[REMOVING_ACTIVITY]?.includes(modId) ||
@@ -25,20 +28,16 @@ export const isRowBusy = (state: IState, modId: string): boolean => {
   );
 };
 
-/** The game's installed mods, by id. */
-const installedMods = (state: IState, gameId: VortexGameId) =>
-  state.persistent.mods?.[gameId] ?? {};
-
 /**
  * The mods Remove can start on now: installed ones, and archives only downloaded, whose row
  * has the archive's id. One still installing, or already being removed or uninstalled, is left
  * out, as the classic table offered Remove only once a mod was installed.
  */
 export const removableMods = (state: IState, gameId: VortexGameId, modIds: string[]): string[] => {
-  const installed = installedMods(state, gameId);
+  const installed = modsForGame(state, gameId);
   const downloads = state.persistent.downloads?.files ?? {};
   return modIds.filter((modId) => {
-    if (isRowBusy(state, modId)) {
+    if (isBeingRemoved(state, modId)) {
       return false;
     }
     const mod = installed[modId];
@@ -68,21 +67,34 @@ const deleteArchives = async (api: IExtensionApi, archiveIds: string[]): Promise
   return failures.length === 0;
 };
 
+const NAME_OPTIONS = { version: true, variant: true };
+
+/** An archive-only row's name, from what the archive says of its mod, as its row has it. */
+const archiveName = async (state: IState, archiveId: string): Promise<string> => {
+  const download = state.persistent.downloads?.files?.[archiveId];
+  if (download === undefined) {
+    return archiveId;
+  }
+  const info = await filterModInfo({ download, meta: download.modInfo?.meta }, undefined);
+  return modNameFromAttributes(info, NAME_OPTIONS);
+};
+
 /** Asks, as the classic table's Remove does, whether to remove the mods, their archives or both. */
-const askToRemove = (
+const askToRemove = async (
   api: IExtensionApi,
   gameId: VortexGameId,
   modIds: string[],
 ): Promise<IDialogResult | undefined> => {
   const t = api.translate;
   const state = api.getState();
-  const installed = installedMods(state, gameId);
-  const downloads = state.persistent.downloads?.files ?? {};
+  const installed = modsForGame(state, gameId);
 
-  const names = modIds.map((modId) =>
-    installed[modId] !== undefined
-      ? modName(installed[modId], { version: true, variant: true })
-      : `${downloads[modId]?.localPath ?? modId} ${t("(Archive only)")}`,
+  const names = await Promise.all(
+    modIds.map(async (modId) =>
+      installed[modId] !== undefined
+        ? modName(installed[modId], NAME_OPTIONS)
+        : `${await archiveName(state, modId)} ${t("(Archive only)")}`,
+    ),
   );
 
   const archivesOnly = modIds.every((modId) => installed[modId] === undefined);
@@ -95,26 +107,24 @@ const askToRemove = (
 
   const insert = " [style=dialog-danger-text]" + t("from all profiles") + "[/style]";
 
-  return Promise.resolve(
-    api.showDialog?.(
-      "question",
-      "Confirm removal",
-      {
-        bbcode: t("Do you really want to remove this mod{{insert}}?", {
-          count: modIds.length,
-          replace: { insert },
-        }),
-        message: names.join("\n"),
-        checkboxes,
-      },
-      [{ label: "Cancel" }, { label: "Remove" }],
-    ),
+  return api.showDialog?.(
+    "question",
+    "Confirm removal",
+    {
+      bbcode: t("Do you really want to remove this mod{{insert}}?", {
+        count: modIds.length,
+        replace: { insert },
+      }),
+      message: names.join("\n"),
+      checkboxes,
+    },
+    [{ label: "Cancel" }, { label: "Remove" }],
   );
 };
 
 /** The installed mods among these, and the archives they and any archive-only rows come from. */
 const removalTargets = (state: IState, gameId: VortexGameId, modIds: string[]) => {
-  const installed = installedMods(state, gameId);
+  const installed = modsForGame(state, gameId);
   return {
     installedIds: modIds.filter((modId) => installed[modId] !== undefined),
     archiveIds: modIds
@@ -139,7 +149,13 @@ export const confirmRemoveMods = async (
     return false;
   }
 
-  const result = await askToRemove(api, gameId, asked);
+  let result: IDialogResult | undefined;
+  try {
+    result = await askToRemove(api, gameId, asked);
+  } catch (err) {
+    reportRemovalFailure(api, "Failed to remove mods", err);
+    return false;
+  }
   if (result?.action !== "Remove") {
     return false;
   }

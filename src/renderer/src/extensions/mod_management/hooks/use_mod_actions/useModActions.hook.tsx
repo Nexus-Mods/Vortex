@@ -16,7 +16,7 @@ import { activeGameId } from "@/util/selectors";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
-import { isRowBusy, removableMods } from "../../util/confirm_remove_mods/confirmRemoveMods";
+import { isBeingRemoved, removableMods } from "../../util/confirm_remove_mods/confirmRemoveMods";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
 import { useRemoveMods } from "../use_remove_mods/useRemoveMods.hook";
 import { useUninstallMods } from "../use_uninstall_mods/useUninstallMods.hook";
@@ -273,7 +273,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
         return (
           archiveId !== undefined &&
           state.persistent.downloads.files[archiveId] !== undefined &&
-          !isRowBusy(state, modId)
+          !isBeingRemoved(state, modId)
         );
       });
     };
@@ -330,7 +330,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
               const [instanceIds] = args;
               const modIds = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
               const state = store.getState();
-              if (modIds.some((modId) => isRowBusy(state, modId))) {
+              if (modIds.some((modId) => isBeingRemoved(state, modId))) {
                 return false;
               }
               return definition.condition?.(...args) ?? true;

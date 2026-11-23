@@ -44,8 +44,9 @@ const BUSY_LABEL: Record<RowBusy, string> = {
  * only when its own answer changes, not on every write to the store.
  *
  * The list catches up with the store after a debounce, so a row can outlive what it shows:
- * an archive a mod in the store now comes from has just been installed, and a mod gone from
- * the store has just been uninstalled. Either stays loading until its new row takes over.
+ * an archive a mod in the store now comes from has just been installed, a mod gone from the
+ * store has just been uninstalled, and an archive gone from the downloads has just been
+ * removed. Each stays loading until the list catches up.
  */
 const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined =>
   useSelector((state: IState) => {
@@ -59,7 +60,9 @@ const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | 
       return "installing";
     }
 
-    if (activity?.[REMOVING_ACTIVITY]?.includes(modId)) {
+    const archiveGone =
+      modState === "downloaded" && state.persistent.downloads?.files?.[modId] === undefined;
+    if (activity?.[REMOVING_ACTIVITY]?.includes(modId) || archiveGone) {
       return "removing";
     }
 

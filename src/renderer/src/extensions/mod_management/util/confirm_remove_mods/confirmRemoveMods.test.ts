@@ -9,7 +9,13 @@ const { removeMods } = vi.hoisted(() => ({ removeMods: vi.fn() }));
 
 vi.mock("../removeMods", () => ({ removeMods }));
 
+import { registerAttributeExtractor } from "../filterModInfo";
 import { confirmRemoveMods, REMOVING_ACTIVITY } from "./confirmRemoveMods";
+
+// Names a download by its file, or from its mod info, as the download manager's extractor does.
+registerAttributeExtractor(100, (input: { download?: { localPath?: string; modInfo?: object } }) =>
+  Promise.resolve({ fileName: input.download?.localPath, ...input.download?.modInfo }),
+);
 
 const GAME = VortexGameId("game");
 
@@ -28,6 +34,11 @@ const MODS = {
 const DOWNLOADS = {
   "archive-a": { state: "finished", localPath: "alpha.zip" },
   dl: { state: "finished", localPath: "delta.7z" },
+  named: {
+    state: "finished",
+    localPath: "epsilon.zip",
+    modInfo: { logicalFileName: "Epsilon", version: "5.0" },
+  },
   pending: { state: "started", localPath: "pending.zip" },
 };
 
@@ -131,6 +142,20 @@ describe("confirmRemoveMods", () => {
     expect(api.store.dispatch).not.toHaveBeenCalled();
   });
 
+  it("reports a dialog that fails to open, rather than rejecting", async () => {
+    const { api } = makeApi();
+    api.showDialog.mockRejectedValue(new Error("no window"));
+
+    expect(await remove(api, ["a"])).toBe(false);
+
+    expect(api.showErrorNotification).toHaveBeenCalledWith(
+      "Failed to remove mods",
+      expect.any(Error),
+      { allowReport: true },
+    );
+    expect(api.store.dispatch).not.toHaveBeenCalled();
+  });
+
   it("skips mods already being removed or uninstalled", async () => {
     const { api } = makeApi({ [REMOVING_ACTIVITY]: ["a"], "mods-uninstalling": ["dl"] });
     confirmWith(api, { mod: true });
@@ -201,13 +226,22 @@ describe("confirmRemoveMods", () => {
     expect(await remove(api, ["dl"])).toBe(true);
 
     expect(api.showDialog.mock.calls[0][2]).toMatchObject({
-      message: "delta.7z (Archive only)",
+      message: "delta.7z (v?) (Archive only)",
       checkboxes: [{ id: "archive", text: "Delete Archive", value: true }],
     });
     expect(removeMods).not.toHaveBeenCalled();
     expect(api.events.emit).toHaveBeenCalledWith("remove-download", "dl", expect.any(Function), {
       confirmed: true,
     });
+  });
+
+  it("names an archive-only row from its mod info, as the classic table does", async () => {
+    const { api } = makeApi();
+    api.showDialog.mockResolvedValue({ action: "Cancel" });
+
+    await remove(api, ["named"]);
+
+    expect(api.showDialog.mock.calls[0][2].message).toBe("Epsilon (v5.0) (Archive only)");
   });
 
   it("reports an archive that couldn't be deleted, and stops listing it as removing", async () => {
