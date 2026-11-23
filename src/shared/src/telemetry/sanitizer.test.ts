@@ -102,6 +102,26 @@ describe("sanitizeSpanAttributes (strict / no consent)", () => {
     expect(sanitizeSpanAttributes(attributes)).toEqual(attributes);
   });
 
+  it("sends the native stack scan with consent only", () => {
+    // the scan names third-party modules loaded into Vortex
+    const stack = {
+      "crash.native.stack": ["KERNELBASE.dll+0x52bdc", "Vortex.exe+0x398fe0"],
+      "crash.native.stackModules": ["Vortex.exe|2.11.0.0|E9212FAA5978A9E44C4C44205044422E1"],
+    };
+    expect(sanitizeSpanAttributes(stack)).toEqual({});
+    expect(sanitizeSpanAttributes(stack, false)).toEqual(stack);
+  });
+
+  it("sanitises strings inside array values", () => {
+    // an array item gets the same treatment as a plain string value
+    const text = "C:\\Program Files\\Vortex\\a.dll+0x1";
+    const asString = sanitizeSpanAttributes({ "error.message": text })["error.message"];
+    expect(asString).not.toBe(text);
+    expect(sanitizeSpanAttributes({ "crash.native.stack": [text, "a.dll+0x2"] }, false)).toEqual({
+      "crash.native.stack": [asString, "a.dll+0x2"],
+    });
+  });
+
   it("keeps bounded unreadable-dump diagnostics without consent", () => {
     expect(sanitizeSpanAttributes({ "crash.native.unreadableReason": "malformed-dump" })).toEqual({
       "crash.native.unreadableReason": "malformed-dump",

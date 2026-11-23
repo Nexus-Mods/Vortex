@@ -76,6 +76,9 @@ export const SPAN_ATTRIBUTE_ALLOWLIST: ReadonlySet<string> = new Set([
   "crash.native.moduleId",
   "crash.native.processType",
   "crash.native.fatalMessage",
+  // crash.native.stack and crash.native.stackModules are left out on purpose:
+  // they name up to 32 modules, third-party DLLs injected into Vortex among
+  // them, which says what else is installed. They are sent with consent only.
   // Ambient context (setErrorContext) — active game, extension + deployment context
   "context.gamemode",
   "context.extension_type",
@@ -152,8 +155,18 @@ const tokenizeWellKnownPaths = (text: string): string =>
 /** Strip install prefixes + OS username, then tokenise well-known folders. */
 const sanitizeText = (text: string): string => tokenizeWellKnownPaths(sanitizeFramePath(text));
 
-const sanitizeValue = (value: AttributeValue): AttributeValue =>
-  typeof value === "string" ? sanitizeText(value) : value;
+const isStringArray = (value: AttributeValue): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
+
+const sanitizeValue = (value: AttributeValue): AttributeValue => {
+  if (typeof value === "string") {
+    return sanitizeText(value);
+  }
+  if (isStringArray(value)) {
+    return value.map(sanitizeText);
+  }
+  return value;
+};
 
 /**
  * Process span attributes. In `strict` mode (no consent) only allow-listed keys

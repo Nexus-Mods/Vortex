@@ -218,7 +218,7 @@ async function reportNativeDump(dumpPath: string, result: MinidumpResult): Promi
   const primary = result.summary;
   const sourceProcess = dumpReportProcess(primary);
   const title = `${sourceProcess} crash`;
-  const attributes: Record<string, string | number> = {};
+  const attributes: CrashAttributes = {};
   if (result.unreadableReason !== undefined) {
     attributes["crash.native.unreadableReason"] = result.unreadableReason;
   }
@@ -242,6 +242,12 @@ async function reportNativeDump(dumpPath: string, result: MinidumpResult): Promi
     }
     if (primary.fatalMessage !== undefined) {
       attributes["crash.native.fatalMessage"] = sanitizeFramePath(primary.fatalMessage);
+    }
+    if (primary.stack !== undefined) {
+      attributes["crash.native.stack"] = primary.stack;
+    }
+    if (primary.stackModules !== undefined) {
+      attributes["crash.native.stackModules"] = primary.stackModules;
     }
   }
 
@@ -390,7 +396,11 @@ async function collectCrashDumps(): Promise<IDumpFile[]> {
   return found;
 }
 
-/** What identifies a crash site when there is no JavaScript stack to hash. */
+type CrashAttributes = Record<string, string | number | boolean | string[]>;
+
+/** What identifies a crash site when there is no JavaScript stack to hash.
+ *  The stack scan is left out on purpose: it varies between crashes at the
+ *  same site, and adding it would split their fingerprints. */
 const CRASH_IDENTITY_ATTRIBUTES = [
   "crash.sourceProcess",
   "crash.exitCode",
@@ -407,7 +417,7 @@ export function crashFingerprint(
   appVersion: string,
   type: CrashType,
   error: ReportableError,
-  attributes: Record<string, string | number | boolean>,
+  attributes: CrashAttributes,
 ): string {
   return computeIdentityFingerprint(
     appVersion,
@@ -427,7 +437,7 @@ export async function reportCrash(
   context?: Record<string, string>,
   sourceProcess?: string,
   consentGiven = false,
-  attributes?: Record<string, string | number | boolean>,
+  attributes?: CrashAttributes,
 ): Promise<void> {
   const resource = createVortexResource("report");
 
@@ -450,7 +460,7 @@ export async function reportCrash(
 
   try {
     const tracer = provider.getTracer("vortex.crash");
-    const spanAttributes: Record<string, string | number | boolean> = {
+    const spanAttributes: CrashAttributes = {
       "crash.type": type,
       "crash.sourceProcess": sourceProcess ?? "unknown",
       "error.message": sanitizeFramePath(error.message),

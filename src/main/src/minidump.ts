@@ -40,6 +40,14 @@ export interface IMinidumpSummary {
   appVersion?: string;
   /** Chromium's LOG(FATAL) / CHECK message, when the crash was one */
   fatalMessage?: string;
+  /** Code addresses found on the faulting thread's stack, nearest first, as
+   *  "module+0xoffset". This is a scan, not an unwind: every stack word that
+   *  points into a loaded module is listed, so stale entries can appear
+   *  between real return addresses. */
+  stack?: string[];
+  /** The modules named in {@link stack}, as "name|version|id", so each offset
+   *  can be resolved against a symbol store */
+  stackModules?: string[];
 }
 
 /** Exception code Chromium raises for DumpWithoutCrashing(): a dump was
@@ -48,11 +56,13 @@ export const DUMP_WITHOUT_CRASHING_CODE = "0x517a7ed";
 
 const MINIDUMP_SIGNATURE = 0x504d444d; // "MDMP"
 
+const STREAM_THREAD_LIST = 3;
 const STREAM_MODULE_LIST = 4;
 const STREAM_EXCEPTION = 6;
 const STREAM_SYSTEM_INFO = 7;
 const STREAM_CRASHPAD_INFO = 0x43500001;
 
+const THREAD_ENTRY_SIZE = 48;
 const MODULE_ENTRY_SIZE = 108;
 const VS_FIXEDFILEINFO_SIGNATURE = 0xfeef04bd;
 
@@ -91,6 +101,18 @@ const MD_OS_ANDROID = 0x8202; // why not? xD
 // Largest single record read from a dump. Sizes and counts come from the
 // file, so a corrupt field must not be able to request an arbitrary amount.
 const MAX_READ_SIZE = 1024 * 1024;
+
+// Most stack entries one crash report carries
+const MAX_STACK_FRAMES = 32;
+// How far up the stack to look for code addresses
+const MAX_STACK_SCAN_SIZE = 256 * 1024;
+
+// MINIDUMP_SYSTEM_INFO ProcessorArchitecture values, each with the offset of
+// the stack pointer inside that architecture's thread context record
+const STACK_POINTER_OFFSET: Record<number, number> = {
+  9: 0x98, // AMD64: CONTEXT.Rsp
+  12: 0x100, // ARM64: CONTEXT.Sp
+};
 
 // Crashpad annotation counts also come from the file, and every entry costs
 // a read or two, so the number of entries is capped as well as their size.
@@ -228,12 +250,22 @@ async function parse(source: IByteSource): Promise<MinidumpResult> {
     };
 
     const modules = await readModules(source, streams.get(STREAM_MODULE_LIST));
-    const faulting = modules.find((m) => address >= m.base && address < m.base + m.size);
+    const names = moduleNameReader(source);
+    const faulting = findModule(modules, address);
     if (faulting !== undefined) {
-      summary.module = path.win32.basename(await readUtf16String(source, faulting.nameRva));
+      summary.module = await names(faulting);
       summary.moduleVersion = faulting.version;
       summary.moduleOffset = hex(address - faulting.base);
       summary.moduleId = await readModuleId(source, faulting.debugRecord);
+    }
+
+    const frames = await bestEffort(() => readFaultingStack(source, streams, exception, modules));
+    if (frames !== undefined && frames.length > 0) {
+      const described = await bestEffort(() => describeStack(source, frames, names));
+      if (described !== undefined) {
+        summary.stack = described.stack;
+        summary.stackModules = described.modules;
+      }
     }
 
     const annotations = await readCrashpadAnnotations(source, streams.get(STREAM_CRASHPAD_INFO));
@@ -264,6 +296,20 @@ async function parse(source: IByteSource): Promise<MinidumpResult> {
 }
 
 const hex = (value: number): string => `0x${value.toString(16)}`;
+
+/** Run a step whose result the summary can do without. A malformed dump or a
+ *  disk error there loses that detail, not the summary read so far; any other
+ *  error is a parser bug and is passed up to be reported as one. */
+async function bestEffort<T>(step: () => Promise<T>): Promise<T | undefined> {
+  try {
+    return await step();
+  } catch (err) {
+    if (err instanceof RangeError || getErrorCode(err) !== null) {
+      return undefined;
+    }
+    throw err;
+  }
+}
 
 /** Pick the name table by dump origin: MINIDUMP_SYSTEM_INFO PlatformId(20)
  *  distinguishes NT status codes from POSIX signal numbers. */
@@ -326,6 +372,116 @@ async function readModules(
   }
 
   return modules;
+}
+
+const findModule = (modules: IModule[], address: number): IModule | undefined =>
+  modules.find((m) => address >= m.base && address < m.base + m.size);
+
+/** Reads module basenames, each from the file at most once. */
+function moduleNameReader(source: IByteSource): (module: IModule) => Promise<string> {
+  const known = new Map<number, string>();
+  return async (module) => {
+    let name = known.get(module.nameRva);
+    if (name === undefined) {
+      name = path.win32.basename(await readUtf16String(source, module.nameRva));
+      known.set(module.nameRva, name);
+    }
+    return name;
+  };
+}
+
+interface IStackFrame {
+  module: IModule;
+  offset: number;
+}
+
+/**
+ * Code addresses on the stack of the thread that raised the exception, from
+ * its stack pointer upwards. Without unwind info the frames can't be walked,
+ * so this lists every stack word that points into a loaded module.
+ */
+async function readFaultingStack(
+  source: IByteSource,
+  streams: Map<number, ILocation>,
+  exception: ILocation,
+  modules: IModule[],
+): Promise<IStackFrame[]> {
+  const systemInfo = streams.get(STREAM_SYSTEM_INFO);
+  const threadList = streams.get(STREAM_THREAD_LIST);
+  if (systemInfo === undefined || threadList === undefined || modules.length === 0) {
+    return [];
+  }
+  const stackPointerOffset =
+    STACK_POINTER_OFFSET[(await source.read(systemInfo.rva, 2)).readUInt16LE(0)];
+  if (stackPointerOffset === undefined) {
+    return [];
+  }
+
+  // MINIDUMP_EXCEPTION_STREAM: ThreadId(0), ..., ThreadContext(160, LOCATION)
+  const threadId = (await source.read(exception.rva, 4)).readUInt32LE(0);
+  const contextRva = (await source.read(exception.rva + 160, 8)).readUInt32LE(4);
+  const stackPointer = Number(
+    (await source.read(contextRva + stackPointerOffset, 8)).readBigUInt64LE(0),
+  );
+
+  // MINIDUMP_THREAD_LIST: NumberOfThreads(0), then MINIDUMP_THREAD[n]:
+  // ThreadId(0), ..., Stack(24): StartOfMemoryRange(0), DataSize(8), Rva(12)
+  const count = (await source.read(threadList.rva, 4)).readUInt32LE(0);
+  const threads = await source.read(threadList.rva + 4, count * THREAD_ENTRY_SIZE);
+  let entry = -1;
+  for (let i = 0; i < count && entry < 0; i++) {
+    if (threads.readUInt32LE(i * THREAD_ENTRY_SIZE) === threadId) {
+      entry = i * THREAD_ENTRY_SIZE;
+    }
+  }
+  if (entry < 0) {
+    return [];
+  }
+  const stackStart = Number(threads.readBigUInt64LE(entry + 24));
+  const stackSize = threads.readUInt32LE(entry + 32);
+  const stackRva = threads.readUInt32LE(entry + 36);
+
+  // the captured stack normally starts below the faulting frame, because the
+  // exception dispatcher was already running on it when the dump was written
+  const skip =
+    stackPointer >= stackStart && stackPointer < stackStart + stackSize
+      ? stackPointer - stackStart
+      : 0;
+  const scanSize = Math.min(stackSize - skip, MAX_STACK_SCAN_SIZE);
+  const stack = await source.read(stackRva + skip, scanSize - (scanSize % 8));
+
+  const lowest = Math.min(...modules.map((m) => m.base));
+  const highest = Math.max(...modules.map((m) => m.base + m.size));
+  const frames: IStackFrame[] = [];
+  for (let at = 0; at < stack.length && frames.length < MAX_STACK_FRAMES; at += 8) {
+    const value = Number(stack.readBigUInt64LE(at));
+    if (value < lowest || value >= highest) {
+      continue;
+    }
+    const module = findModule(modules, value);
+    if (module !== undefined) {
+      frames.push({ module, offset: value - module.base });
+    }
+  }
+  return frames;
+}
+
+async function describeStack(
+  source: IByteSource,
+  frames: IStackFrame[],
+  nameOf: (module: IModule) => Promise<string>,
+): Promise<{ stack: string[]; modules: string[] }> {
+  const stack: string[] = [];
+  const modules = new Map<IModule, string>();
+  for (const frame of frames) {
+    const name = await nameOf(frame.module);
+    stack.push(`${name}+${hex(frame.offset)}`);
+    if (!modules.has(frame.module)) {
+      const id = await readModuleId(source, frame.module.debugRecord);
+      modules.set(frame.module, [name, frame.module.version ?? "", id ?? ""].join("|"));
+    }
+  }
+  return { stack, modules: [...modules.values()] };
 }
 
 /** The module's debug identity as a symbol server spells it: CodeView
