@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import type { VortexGameId } from "@vortex/shared";
-import type { GameFolderCheckInput, GameFolderCheckLimits } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput, IGameFolderCheckLimits } from "@vortex/shared/ipc";
 
 import type { IState } from "../../../types/IState";
 import { normPath } from "../../../util/normPath";
@@ -76,9 +76,9 @@ export function canCheckSteamFolder(state: IState, gameId: VortexGameId): boolea
 export async function steamCheckInput(
   state: IState,
   gameId: VortexGameId,
-  limits: GameFolderCheckLimits,
+  limits: IGameFolderCheckLimits,
   fullVerify: boolean,
-): Promise<GameFolderCheckInput | undefined> {
+): Promise<IGameFolderCheckInput | undefined> {
   if (!canCheckSteamFolder(state, gameId)) return undefined;
   const entry = steamEntryFor(state, gameId);
   const data = entry?.installData;

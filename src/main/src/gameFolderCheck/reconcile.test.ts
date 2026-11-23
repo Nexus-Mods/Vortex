@@ -1,4 +1,4 @@
-import type { GameFolderFileReport } from "@vortex/shared/ipc";
+import type { IGameFolderFileReport } from "@vortex/shared/ipc";
 import { describe, expect, it } from "vitest";
 
 import { pathKey, type IBaseline } from "./baseline";
@@ -6,7 +6,7 @@ import type { IListing } from "./listing";
 import { reconcile, reportedFiles } from "./reconcile";
 import type { IVerification } from "./verify";
 
-const unknown = (relPath: string, size = 10): GameFolderFileReport => ({
+const unknown = (relPath: string, size = 10): IGameFolderFileReport => ({
   relPath,
   kind: "unknown",
   size,

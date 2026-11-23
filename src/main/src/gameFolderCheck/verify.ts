@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import { open, stat, type FileHandle } from "node:fs/promises";
 
 import type {
-  GameFolderCheckLimits,
+  IGameFolderCheckLimits,
   GameFolderDetection,
   GameFolderPartStatus,
 } from "@vortex/shared/ipc";
@@ -59,7 +59,7 @@ export interface IVerification {
 
 export interface IVerifyOptions {
   fullVerify: boolean;
-  limits: GameFolderCheckLimits;
+  limits: IGameFolderCheckLimits;
   /** When the check started; `maxDurationMs` counts from here */
   startedAt: number;
   signal: AbortSignal;
