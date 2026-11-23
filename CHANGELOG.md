@@ -61,7 +61,7 @@ _First beta of the 2.12 release._
 ### Fixed
 
 - Each game's last page not remembered across restarts ([#25005](https://github.com/Nexus-Mods/Vortex/pull/25005))
-- Messages not staying up for 2–7s depending on their length ([#24982](https://github.com/Nexus-Mods/Vortex/pull/24982))
+- Timed success messages going to the notification bell instead of showing as a toast ([#24982](https://github.com/Nexus-Mods/Vortex/pull/24982))
 - Unresolved `@/` imports in the published `vortex-api` declarations, which extensions saw as `any` ([#24968](https://github.com/Nexus-Mods/Vortex/pull/24968))
 - Browse's main file picker opening when a mod has only one Main file ([#24927](https://github.com/Nexus-Mods/Vortex/pull/24927))
 - Game art scrolling the window when a table scrolled to a row ([#24921](https://github.com/Nexus-Mods/Vortex/pull/24921))
@@ -70,7 +70,7 @@ _First beta of the 2.12 release._
 - "A plugin could not be parsed" for missing plugin files ([#24880](https://github.com/Nexus-Mods/Vortex/pull/24880))
 - Profile management comparing game domains to Vortex game ids ([#24867](https://github.com/Nexus-Mods/Vortex/pull/24867))
 - Manual installer: no conflict icon for tier zero games, a stuck dialog, and the batch choice ignored by queued installs ([#24823](https://github.com/Nexus-Mods/Vortex/pull/24823))
-- Game discovery using priority-based store detection instead of the user-selected game store ([#24767](https://github.com/Nexus-Mods/Vortex/pull/24767))
+- Games page's "Recently used" sort out of order when a managed game was never activated ([#24777](https://github.com/Nexus-Mods/Vortex/pull/24777))
 - Another account's or out-of-date adult content preferences returned by `getUserInfo` ([#24765](https://github.com/Nexus-Mods/Vortex/pull/24765))
 - Switching account keeping the previous account's adult content preferences ([#24750](https://github.com/Nexus-Mods/Vortex/pull/24750))
 
