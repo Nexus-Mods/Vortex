@@ -12,6 +12,7 @@ import RadialProgress from "../controls/RadialProgress";
 import { useExtensionContext } from "../ExtensionProvider";
 import type { INotification, INotificationAction } from "../types/INotification";
 import Debouncer from "../util/Debouncer";
+import { notificationHideAt } from "../util/notification_hide_at/notificationHideAt";
 import { notifications as notificationsSelector } from "../util/selectors";
 import { Notification } from "./Notification";
 
@@ -31,29 +32,6 @@ const sortValue = (noti: INotification): number => {
 
 const inverseSort = (lhs: INotification, rhs: INotification) => {
   return sortValue(lhs) - sortValue(rhs);
-};
-
-const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
-  warning: 10000,
-  error: 10000,
-  success: 5000,
-  info: 5000,
-  activity: null,
-};
-
-const displayTime = (item: INotification): number | null => {
-  if (item.displayMS !== undefined) {
-    return item.displayMS;
-  }
-
-  // A notification with actions but no explicit displayMS requires the
-  // user to choose. Auto-hiding it would silently strand the choice
-  // (see INotification displayMS contract).
-  if (item.actions !== undefined && item.actions.length > 0) {
-    return null;
-  }
-
-  return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
 };
 
 export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> = ({ hide }) => {
@@ -142,12 +120,11 @@ export const NotificationButton: React.FC<React.PropsWithChildren<IBaseProps>> =
     const now = Date.now();
     if (!isOpen) {
       newFiltered = newFiltered.filter((item) => {
-        const dispTime = displayTime(item);
-        if (dispTime === null) {
+        const timeout = notificationHideAt(item);
+        if (timeout === null) {
           return true;
         }
 
-        const timeout = (item.type === "activity" ? item.createdTime : item.updatedTime) + dispTime;
         if (timeout > now) {
           if (nextTimeout === null || timeout < nextTimeout) {
             nextTimeout = timeout;

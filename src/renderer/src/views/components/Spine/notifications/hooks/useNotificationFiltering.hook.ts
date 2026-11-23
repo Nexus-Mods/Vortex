@@ -1,31 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { INotification } from "@/types/INotification";
+import { notificationHideAt } from "@/util/notification_hide_at/notificationHideAt";
 
 import Debouncer from "../../../../../util/Debouncer";
-
-const NOTIFICATION_TIMEOUTS: Record<string, number | null> = {
-  warning: 10000,
-  error: 10000,
-  success: 5000,
-  info: 5000,
-  activity: null,
-};
-
-const displayTime = (item: INotification): number | null => {
-  if (item.displayMS !== undefined) {
-    return item.displayMS;
-  }
-
-  // A notification with actions but no explicit displayMS requires the
-  // user to choose. Auto-hiding it would silently strand the choice
-  // (see INotification displayMS contract).
-  if (item.actions !== undefined && item.actions.length > 0) {
-    return null;
-  }
-
-  return NOTIFICATION_TIMEOUTS[item.type] ?? 10000;
-};
 
 interface UseNotificationFilteringProps {
   notifications: INotification[];
@@ -59,12 +37,11 @@ export const useNotificationFiltering = ({
     const now = Date.now();
     if (!isOpen) {
       newFiltered = newFiltered.filter((item) => {
-        const dispTime = displayTime(item);
-        if (dispTime === null) {
+        const timeout = notificationHideAt(item);
+        if (timeout === null) {
           return true;
         }
 
-        const timeout = (item.type === "activity" ? item.createdTime : item.updatedTime) + dispTime;
         if (timeout > now) {
           if (nextTimeout === null || timeout < nextTimeout) {
             nextTimeout = timeout;

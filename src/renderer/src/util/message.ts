@@ -37,6 +37,12 @@ function clamp(min: number, value: number, max: number): number {
  * Japanese and Chinese for example where a single symbol has much more meaning
  * than a latin character the reading speed per symbol will be lower.
  *
+ * Returns 2 to 7 seconds. As a notification's `displayMS`, 5 seconds or less shows it
+ * as a toast, and more puts it in the notification bell, which removes it when the
+ * time is up. So don't use it on a notification with `actions`: its buttons would
+ * disappear after as little as 2 seconds. Leave `displayMS` off instead, and the
+ * notification stays until the user picks an action or dismisses it.
+ *
  * @export
  * @param {number} messageLength
  * @returns
@@ -54,9 +60,12 @@ export const MAX_TOAST_MS = 5000;
 /**
  * `calcDuration`, capped so the message is always shown as a toast, however long
  * its translation turns out to be.
+ *
+ * @param textLength the length of everything the toast shows. A toast with a title
+ *   shows `title:\nmessage`, so count both, not just the message.
  */
-export function toastDuration(messageLength: number) {
-  return Math.min(calcDuration(messageLength), MAX_TOAST_MS);
+export function toastDuration(textLength: number) {
+  return Math.min(calcDuration(textLength), MAX_TOAST_MS);
 }
 
 /**

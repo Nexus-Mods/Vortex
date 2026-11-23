@@ -64,6 +64,8 @@ export const ModMenu = ({ api, mod, modPageUrl }: IModMenuProps) => {
               type: "success",
               message,
               displayMS: toastDuration(message.length),
+              // Already translated, so the toast mustn't translate it again.
+              localize: { message: false },
             });
           }}
         >

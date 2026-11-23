@@ -60,7 +60,11 @@ describe("ModMenu", () => {
     );
     await waitFor(() =>
       expect(api.sendNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "browse-mods-mod-link-copied", type: "success" }),
+        expect.objectContaining({
+          id: "browse-mods-mod-link-copied",
+          type: "success",
+          localize: { message: false },
+        }),
       ),
     );
     const [sent] = vi.mocked(api.sendNotification).mock.calls[0];

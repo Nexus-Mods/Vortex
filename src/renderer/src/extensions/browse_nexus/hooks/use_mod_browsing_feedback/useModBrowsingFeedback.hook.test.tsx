@@ -87,6 +87,7 @@ describe("useModBrowsingFeedback", () => {
       expect.objectContaining({
         id: "browse-mods-feedback-sent",
         type: "success",
+        localize: { message: false },
       }),
     );
     const [sent] = sendNotification.mock.calls[0];

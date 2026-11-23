@@ -45,15 +45,21 @@ describe("addNotification timing", () => {
     vi.useRealTimers();
   });
 
-  test("stamps updatedTime to the millisecond, so a timed one gets its full displayMS", async ({
+  test("stamps a timed notification's updatedTime to the millisecond, not the second", ({
     makeApi,
   }) => {
     const harness = makeApi();
     const now = new Date("2026-11-23T12:00:00.950Z").getTime();
-    vi.useFakeTimers({ toFake: ["Date"], now });
+    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"], now });
 
-    await harness.api.store.dispatch(
-      actions.addNotification({ id: "__timed", type: "success", message: "sample" }),
+    // Not awaited: it resolves only once displayMS has passed and it's dismissed.
+    void harness.api.store.dispatch(
+      actions.addNotification({
+        id: "__timed",
+        type: "success",
+        message: "sample",
+        displayMS: 2000,
+      }),
     );
 
     const [added] = harness.dispatched;

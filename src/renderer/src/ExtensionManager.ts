@@ -104,6 +104,7 @@ import {
 } from "./util/CustomErrors";
 import { runElevated } from "./util/elevated";
 import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
+import { fillPlaceholders } from "./util/fill_placeholders/fillPlaceholders";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import type { i18n } from "./util/i18n";
@@ -794,7 +795,10 @@ class ExtensionManager {
       events: this.mEventEmitter,
       translate: (input, options?) => {
         if (this.mTranslator == null) {
-          return Array.isArray(input) ? input[0].toString() : input.toString();
+          // i18n hasn't loaded yet (e.g. a notification sent during startup). Show the
+          // English text, but still fill in its placeholders.
+          const text = Array.isArray(input) ? input[0].toString() : input.toString();
+          return fillPlaceholders(text, options?.replace);
         }
         if (options == null) {
           options = {};
@@ -1042,7 +1046,10 @@ class ExtensionManager {
       }
       if (this.canBeToast(noti)) {
         try {
-          const toastFunc = noti.type === "error" ? toast.error : toast.success;
+          // Only an error or a success gets the red or green style and icon; anything
+          // else (info, global) gets a neutral toast so it doesn't read as a success.
+          const toastFunc =
+            noti.type === "error" ? toast.error : noti.type === "success" ? toast.success : toast;
           const toastOptions: ToastOptions = {
             id: noti.id,
             duration: noti.displayMS,
