@@ -1,16 +1,22 @@
 import { createAction } from "redux-act";
 
-export const addRule = createAction("ADD_USERLIST_RULE", (pluginId, reference, type) => ({
-  pluginId,
-  reference,
-  type,
-}));
+export const addRule = createAction(
+  "ADD_USERLIST_RULE",
+  (pluginId: string, reference: string, type: string) => ({
+    pluginId,
+    reference,
+    type,
+  }),
+);
 
-export const removeRule = createAction("REMOVE_USERLIST_RULE", (pluginId, reference, type) => ({
-  pluginId,
-  reference,
-  type,
-}));
+export const removeRule = createAction(
+  "REMOVE_USERLIST_RULE",
+  (pluginId: string, reference: string, type: string) => ({
+    pluginId,
+    reference,
+    type,
+  }),
+);
 
 export const addGroup = createAction("ADD_PLUGIN_GROUP", (group: string) => ({
   group,

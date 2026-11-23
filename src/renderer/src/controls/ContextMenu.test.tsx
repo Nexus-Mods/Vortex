@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MainContext } from "../contexts/main_context/MainContext";
+import type { IComponentContext } from "../types/IComponentContext";
 import type { IActionDefinitionEx } from "./ActionControl";
 import ContextMenu from "./ContextMenu";
 
@@ -10,29 +11,15 @@ import ContextMenu from "./ContextMenu";
 // item shows one.
 vi.mock("./Icon", () => ({ default: () => null }));
 
-// ContextMenu extends ComponentEx which reads api/menuLayer/getModifiers from
-// the legacy context; provide the minimum via a legacy-context provider.
-class LegacyContextProvider extends React.Component<{
-  menuLayer: HTMLElement;
-  children: React.ReactNode;
-}> {
-  public static childContextTypes = {
-    api: PropTypes.object,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
-
-  public getChildContext() {
-    return {
-      api: { events: { on: () => undefined, off: () => undefined } },
-      menuLayer: this.props.menuLayer,
-      getModifiers: () => ({}),
-    };
-  }
-
-  public render() {
-    return this.props.children;
-  }
+// ContextMenu extends ComponentEx, which reads api, menuLayer and getModifiers from
+// MainContext; provide the minimum.
+function ContextProvider(props: { menuLayer: HTMLElement; children: React.ReactNode }) {
+  const context = {
+    api: { events: { on: () => undefined, off: () => undefined } },
+    menuLayer: props.menuLayer,
+    getModifiers: () => ({ alt: false, ctrl: false, shift: false }),
+  } as unknown as IComponentContext;
+  return <MainContext.Provider value={context}>{props.children}</MainContext.Provider>;
 }
 
 const testAction: IActionDefinitionEx = {
@@ -53,7 +40,7 @@ function Harness(props: { menuLayer: HTMLElement; actions?: any[] }) {
   const onHide = React.useCallback(() => setVisible(false), []);
 
   return (
-    <LegacyContextProvider menuLayer={props.menuLayer}>
+    <ContextProvider menuLayer={props.menuLayer}>
       <div data-testid="row" onContextMenu={onContext} />
       <ContextMenu
         visible={visible}
@@ -62,7 +49,7 @@ function Harness(props: { menuLayer: HTMLElement; actions?: any[] }) {
         instanceId="test-instance"
         actions={props.actions ?? [testAction]}
       />
-    </LegacyContextProvider>
+    </ContextProvider>
   );
 }
 

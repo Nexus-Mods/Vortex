@@ -1,7 +1,9 @@
 import * as _ from "lodash";
 import * as React from "react";
-import { OverlayTrigger } from "react-bootstrap";
+import type { OverlayTrigger } from "react-bootstrap";
 import * as ReactDOM from "react-dom";
+
+import { MainContextOverlayTrigger } from "./main_context_overlay/MainContextOverlay";
 
 export interface IBaseProps {
   triggerRef?: (ref: HTMLElement) => void;
@@ -48,14 +50,14 @@ class MyOverlayTrigger extends React.Component<IProps, { placement: string }> {
     const { placement } = this.state;
     const relayProps: any = _.omit(this.props, ["getBounds", "placement", "onEnter", "triggerRef"]);
     return (
-      <OverlayTrigger
+      <MainContextOverlayTrigger
         placement={placement}
         onEnter={this.onEnter}
         ref={this.props.triggerRef}
         {...relayProps}
       >
         {this.props.children}
-      </OverlayTrigger>
+      </MainContextOverlayTrigger>
     );
   }
 

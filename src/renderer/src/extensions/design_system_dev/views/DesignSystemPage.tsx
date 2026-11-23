@@ -13,6 +13,7 @@ import { ButtonDemo } from "@/ui/components/button/Button.demo";
 import { CompareSliderDemo } from "@/ui/components/compare_slider/CompareSlider.demo";
 import { ContextMenuDemo } from "@/ui/components/context_menu/ContextMenu.demo";
 import { DropdownDemo } from "@/ui/components/dropdown/Dropdown.demo";
+import { EndorseButtonDemo } from "@/ui/components/endorse_button/EndorseButton.demo";
 import { FeedbackModalDemo } from "@/ui/components/feedback_modal/FeedbackModal.demo";
 import { FileTreeDemo } from "@/ui/components/file_tree/FileTree.demo";
 import { CheckboxFieldDemo } from "@/ui/components/form/checkbox_field/CheckboxField.demo";
@@ -80,6 +81,7 @@ const DEMO_GROUPS: IDemoGroup[] = [
       { id: "split-button", name: "Split button", Demo: SplitButtonDemo },
       { id: "view-picker", name: "View picker", Demo: ViewPickerDemo },
       { id: "toolbar", name: "Toolbar", Demo: ToolbarDemo },
+      { id: "endorse-button", name: "Endorse button", Demo: EndorseButtonDemo },
     ],
   },
   {

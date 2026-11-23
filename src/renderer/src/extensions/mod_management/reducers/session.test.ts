@@ -2,6 +2,7 @@ import { VortexModStagingFolder } from "@vortex/shared";
 import { expect, test } from "vitest";
 
 import { makeFileChange } from "../../../test-utils/builders";
+import { setExternalChangeAction } from "../actions/session";
 import { changeToEntry } from "../util/externalChanges";
 import { sessionReducer } from "./session";
 
@@ -19,8 +20,8 @@ const changes = [MOD_A, MOD_B].map((source) =>
 
 test("an action chosen for one mod's file leaves another mod's file at the same path", () => {
   const result = sessionReducer.reducers.SET_EXTERNAL_CHANGE_ACTION(
-    { changes },
-    { filePaths: ["ModInfo.xml"], action: "import", source: MOD_A },
+    { ...sessionReducer.defaults, changes },
+    setExternalChangeAction(["ModInfo.xml"], "import", MOD_A).payload,
   );
 
   expect(result).toMatchObject({

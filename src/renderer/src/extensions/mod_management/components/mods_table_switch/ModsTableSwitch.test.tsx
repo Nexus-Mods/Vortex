@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { VortexModId } from "@vortex/shared";
 import React from "react";
 import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -842,6 +843,7 @@ describe("ModsTableSwitch", () => {
             name: "Endorsed",
             placement: "table",
             isToggleable: true,
+            isDefaultVisible: true,
             position: 45,
             calc: () => "Undecided",
             edit: {},
@@ -877,6 +879,7 @@ describe("ModsTableSwitch", () => {
             name: "Endorsed",
             placement: "table",
             isToggleable: true,
+            isDefaultVisible: true,
             customRenderer: () => (
               <button title="Undecided" type="button">
                 <svg />
@@ -1261,7 +1264,7 @@ describe("ModsTableSwitch", () => {
     it("shows a mod a saved filter hides when asked to, leaving the filter saved", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) }, undefined, {
         ...filteredView("custom-1"),
-        focusedModId: "a",
+        focusedModId: VortexModId("a"),
       });
 
       expect(shownIds()).toEqual(["a", "b"]);
@@ -1520,6 +1523,7 @@ describe("ModsTableSwitch", () => {
           name: "Compatibility",
           placement: "table",
           isToggleable: true,
+          isDefaultVisible: true,
           calc: (row: IModWithState) =>
             new Promise<string>((resolve) => {
               resolvers[row.id] = resolve;
@@ -1763,10 +1767,10 @@ describe("ModsTableSwitch", () => {
       expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
     });
 
-    it("closes from its own button, and stays closed", async () => {
+    it("closes from the toolbar's button, and stays closed", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
 
-      await userEvent.click(within(panel()!).getByTestId("mod-properties-close"));
+      await userEvent.click(toggle());
       slideShut();
 
       expect(panel()).toBeNull();

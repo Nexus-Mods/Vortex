@@ -35,6 +35,12 @@ const COLUMNS: Array<ITableColumn<IRow>> = [
 const renderTable = () =>
   render(<Table columns={COLUMNS} getRowId={(row) => row.id} label="Files" rows={ROWS} />);
 
+/** The element that lays the grid out, which carries its tracks and styles. */
+const layoutOf = (grid: HTMLElement) => grid.parentElement as HTMLElement;
+
+/** The last track: the right gutter, and room for an aside. */
+const END_TRACK = "calc(var(--nxm-table-gutter) + var(--nxm-table-aside-width))";
+
 describe("Table", () => {
   it("is a grid named by its label, with a header row and a row per item", () => {
     renderTable();
@@ -65,8 +71,8 @@ describe("Table", () => {
   it("makes its tracks from the column widths, between the gutters", () => {
     renderTable();
 
-    expect(screen.getByRole("grid").style.gridTemplateColumns).toBe(
-      "var(--nxm-table-gutter-start) minmax(280px, 1fr) 80px var(--nxm-table-gutter)",
+    expect(layoutOf(screen.getByRole("grid")).style.gridTemplateColumns).toBe(
+      `var(--nxm-table-gutter-start) minmax(280px, 1fr) 80px ${END_TRACK}`,
     );
   });
 
@@ -156,7 +162,7 @@ describe("Table", () => {
       />,
     );
 
-    const table = screen.getByRole("grid");
+    const table = layoutOf(screen.getByRole("grid"));
     expect(table).toHaveAttribute("data-sticky-reveal");
     expect(table.style.getPropertyValue("--nxm-table-sticky-reveal")).toBe("72px");
 
@@ -168,7 +174,7 @@ describe("Table", () => {
         rows={ROWS}
       />,
     );
-    expect(screen.getByRole("grid")).not.toHaveAttribute("data-sticky-reveal");
+    expect(layoutOf(screen.getByRole("grid"))).not.toHaveAttribute("data-sticky-reveal");
   });
 
   // A sticky column fades what passes under it, so the table's edge needn't.
@@ -517,7 +523,9 @@ describe("Table with selectable rows", () => {
 
       await userEvent.click(cell("Alpha"));
       await clickWith("Gamma", "Control");
-      await userEvent.click(screen.getByRole("grid"));
+      // On the element that lays the grid out, as a browser targets empty space: the grid adds
+      // no box of its own.
+      await userEvent.click(layoutOf(screen.getByRole("grid")));
 
       expect(selected()).toEqual([]);
     });
@@ -660,7 +668,7 @@ describe("Table with resizable columns", () => {
 
   type Widths = { [columnId: string]: number | undefined };
 
-  const tracks = () => (screen.getByRole("grid") as HTMLElement).style.gridTemplateColumns;
+  const tracks = () => layoutOf(screen.getByRole("grid")).style.gridTemplateColumns;
 
   const renderResizable = ({
     columns = RESIZABLE,
@@ -714,7 +722,7 @@ describe("Table with resizable columns", () => {
     renderResizable({ columns: [COLUMNS[1]], resizes: false });
 
     expect(screen.queryByRole("separator")).toBeNull();
-    expect(tracks()).toBe("var(--nxm-table-gutter-start) 80px var(--nxm-table-gutter)");
+    expect(tracks()).toBe(`var(--nxm-table-gutter-start) 80px ${END_TRACK}`);
   });
 
   it("draws a column at the width it was resized to", () => {
@@ -839,25 +847,62 @@ describe("Table with a toolbar", () => {
     expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
   });
 
-  it("lets its toolbar reach past its right edge by the overhang it's given", () => {
-    const renderWith = (toolbarOverhang?: `${number}rem`) => (
+  it("leaves the room it's given at the columns' right for an aside", () => {
+    const renderWith = (asideWidth?: `${number}rem`) => (
       <Table
+        asideWidth={asideWidth}
         columns={COLUMNS}
         getRowId={(row) => row.id}
         label="Files"
         rows={ROWS}
-        toolbar={<button type="button">Search</button>}
-        toolbarOverhang={toolbarOverhang}
       />
     );
     const { rerender } = render(renderWith("27rem"));
 
-    const overhang = () =>
-      screen.getByRole("grid").style.getPropertyValue("--nxm-table-toolbar-overhang");
-    expect(overhang()).toBe("27rem");
+    const layout = () => layoutOf(screen.getByRole("grid"));
+    expect(layout().style.getPropertyValue("--nxm-table-aside-width")).toBe("27rem");
+    expect(layout()).toHaveAttribute("data-aside");
 
     rerender(renderWith());
-    expect(overhang()).toBe("");
+    expect(layout().style.getPropertyValue("--nxm-table-aside-width")).toBe("");
+    expect(layout()).not.toHaveAttribute("data-aside");
+  });
+
+  it("lays its aside out with it but outside the grid", () => {
+    render(
+      <Table
+        aside={<button type="button">Close</button>}
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const close = screen.getByRole("button", { name: "Close" });
+    expect(grid).not.toContainElement(close);
+    expect(layoutOf(grid)).toContainElement(close);
+  });
+
+  it("keeps the selection when its aside is clicked", async () => {
+    const onSelectedIdsChange = vi.fn();
+    render(
+      <Table
+        aside={<button type="button">Close</button>}
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        selectable
+        selectedIds={new Set(["a"])}
+        onSelectedIdsChange={onSelectedIdsChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onSelectedIdsChange).not.toHaveBeenCalled();
   });
 
   it("tells how far below its top the header row starts, under the toolbar", () => {
@@ -1026,6 +1071,26 @@ describe("Table with groups", () => {
     await userEvent.click(toggle);
 
     expect(screen.getAllByRole("row")).toHaveLength(6);
+  });
+
+  // So the sticky column's shadow runs on under the last row, whatever that row is.
+  it("has a strip for the sticky column's shadow below its rows, only with a sticky column", () => {
+    const { unmount } = renderGrouped();
+    expect(document.querySelector(".nxm-table-end")).toBeNull();
+    unmount();
+
+    render(
+      <Table
+        columns={[GROUPED_COLUMNS[0], { ...GROUPED_COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        groups={GROUPS}
+        label="Files"
+      />,
+    );
+
+    const strip = document.querySelector(".nxm-table-end");
+    expect(strip).toHaveAttribute("aria-hidden");
+    expect(screen.getByRole("treegrid")).not.toContainElement(strip as HTMLElement);
   });
 });
 

@@ -91,7 +91,7 @@ function OnBoardingDashletWrapper(props: {
   const { onCardClick, steps, getMoreMods } = props;
   const { t } = useTranslation();
   const completedSteps = useSelector<IState, { [key: string]: boolean }>(
-    (state) => (state.settings as any).onboardingsteps.steps,
+    (state) => state.settings.onboardingsteps.steps,
   );
 
   const completedStepsValues = Object.values(completedSteps);

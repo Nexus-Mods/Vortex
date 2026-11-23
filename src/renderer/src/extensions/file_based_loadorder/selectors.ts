@@ -16,11 +16,14 @@ const allLoadOrders = (state: IState) => state?.persistent?.["loadOrder"] || {};
 
 export const currentLoadOrderForProfile = createSelector(
   [allLoadOrders, (_, profileId: string) => profileId],
-  (loadOrders, profileId: string) => {
+  (loadOrders, profileId: string): LoadOrder => {
     if (!loadOrders || !profileId) {
       return [];
     }
-    return Array.isArray(loadOrders[profileId]) ? loadOrders[profileId] : [];
+    const loadOrder = loadOrders[profileId];
+    // persistent.loadOrder is shared with other load order systems; a file-based game's profile
+    // holds an array of file-based entries
+    return Array.isArray(loadOrder) ? (loadOrder as LoadOrder) : [];
   },
 );
 

@@ -14,13 +14,6 @@ const identity = <T>(input: T): T => input;
  */
 export const setKnownGames = createAction("SET_KNOWN_GAMES", identity<IGameStored[]>);
 
-export const clearGameDisabled = createAction("CLEAR_GAME_DISABLED");
-
-export const setGameDisabled = createAction(
-  "SET_GAME_DISABLED",
-  (gameId: string, disabledBy: string) => ({ gameId, disabledBy }),
-);
-
 export const setShowHiddenGames = createAction("SET_SHOW_HIDDEN_GAMES", identity<boolean>);
 
 /**

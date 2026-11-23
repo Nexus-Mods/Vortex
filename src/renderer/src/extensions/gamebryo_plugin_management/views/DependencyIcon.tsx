@@ -1,6 +1,5 @@
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import type I18next from "i18next";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Button, Overlay, Popover } from "react-bootstrap";
 import type {
@@ -30,7 +29,7 @@ import { addRule, removeRule } from "../actions/userlist";
 import { setCreateRule, setQuickEdit, setSource, setTarget } from "../actions/userlistEdit";
 import { NAMESPACE } from "../statics";
 import type { ILOOTList, ILOOTPlugin, ILootReference } from "../types/ILOOTList";
-import type { IPluginCombined } from "../types/IPlugins";
+import type { IPluginCombined, UserlistRuleType } from "../types/IPlugins";
 
 type TranslationFunction = typeof I18next.t;
 
@@ -55,7 +54,7 @@ interface IConnectedProps {
 interface IActionProps {
   onSetSource: (id: string, pos: { x: number; y: number }) => void;
   onSetTarget: (id: string, pos: { x: number; y: number }) => void;
-  onEditDialog: (referenceId: string, reference: string, defaultType: string) => void;
+  onEditDialog: (referenceId: string, reference: string, defaultType: UserlistRuleType) => void;
   onAddRule: (referenceId: string, reference: string, type: string) => void;
   onRemoveRule: (referenceId: string, reference: string, type: string) => void;
   onQuickEdit: (pluginId: string, mode: string) => void;
@@ -191,10 +190,6 @@ function collectDrop(dropConnect: DropTargetConnector, monitor: DropTargetMonito
 const RE_MATCH = /[:\*?|]/;
 
 class DependencyIcon extends ComponentEx<IProps, IComponentState> {
-  public static contextTypes: React.ValidationMap<any> = {
-    getModifiers: PropTypes.func,
-  };
-
   private mRef: JSX.Element;
 
   constructor(props: IProps) {

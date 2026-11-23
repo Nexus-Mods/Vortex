@@ -1,23 +1,28 @@
 import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "./actions";
+import type { IFNISSettings } from "./types";
 
 /**
  * reducer for changes to ephemeral session state
  */
-const settingsReducer: types.IReducerSpec = {
-  reducers: {
-    [actions.setAutoRun as any]: (state, payload) => util.setSafe(state, ["autoRun"], payload),
-    [actions.setPatches as any]: (state, payload) =>
-      util.setSafe(state, ["patches", payload.profileId], payload.patches),
-    [actions.setNeedToRun as any]: (state, payload) =>
-      util.setSafe(state, ["needToRun", payload.profileId], payload.force),
-  },
-  defaults: {
+const settingsReducer: types.IReducerSpec<IFNISSettings> = util.actionsToReducerSpec<
+  IFNISSettings,
+  typeof actions
+>(
+  {
     autoRun: false,
     patches: {},
     needToRun: {},
   },
-};
+  actions,
+  {
+    setAutoRun: (state, payload) => util.setSafe(state, ["autoRun"], payload),
+    setPatches: (state, payload) =>
+      util.setSafe(state, ["patches", payload.profileId], payload.patches),
+    setNeedToRun: (state, payload) =>
+      util.setSafe(state, ["needToRun", payload.profileId], payload.force),
+  },
+);
 
 export default settingsReducer;

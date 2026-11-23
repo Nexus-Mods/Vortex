@@ -24,11 +24,13 @@
   "exports": {
     ".": {
       "types": "./lib/api.d.ts"
-    }
+    },
+    "./info.schema.json": "./schemas/info.schema.json"
   },
   "files": [
     "lib",
     "bin",
+    "schemas",
     "README.md",
     "docs"
   ],

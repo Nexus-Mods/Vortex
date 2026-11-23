@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
@@ -277,7 +278,8 @@ function mapDispatchToProps(dispatch): IActionProps {
   return {
     onSetSource: (id, pos) => dispatch(setSource(id, pos)),
     onSetTarget: (id, pos) => dispatch(setTarget(id, pos)),
-    onEditDialog: (gameId, source, target) => dispatch(setCreateTransfer(gameId, source, target)),
+    onEditDialog: (gameId, source, target) =>
+      dispatch(setCreateTransfer(VortexGameId(gameId), source, target)),
   };
 }
 

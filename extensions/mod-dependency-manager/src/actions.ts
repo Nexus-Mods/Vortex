@@ -2,6 +2,7 @@ import { IReference, RuleType } from "modmeta-db";
 import { createAction } from "redux-act";
 
 import { IBiDirRule } from "./types/IBiDirRule";
+import type { IConflict } from "./types/IConflict";
 
 export const setSource = createAction(
   "SET_MOD_CONNECTION_SOURCE",
@@ -29,7 +30,9 @@ export const setType = createAction<RuleType, {}>("SET_MOD_RULE_TYPE");
 
 export const highlightConflictIcon = createAction<boolean, {}>("HIGHLIGHT_CONFLICT_ICON");
 
-export const setConflictInfo = createAction<any, {}>("SET_CONFLICT_INFO");
+export const setConflictInfo = createAction<{ [modId: string]: IConflict[] } | undefined, {}>(
+  "SET_CONFLICT_INFO",
+);
 
 export const setConflictDialog = createAction(
   "SET_CONFLICT_DIALOG",

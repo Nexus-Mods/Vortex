@@ -1,10 +1,11 @@
 import update from "immutability-helper";
 import * as _ from "lodash";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { ButtonGroup, Dropdown, MenuItem } from "react-bootstrap";
 
+import { MainContext } from "../contexts/main_context/MainContext";
 import type { IActionDefinition } from "../types/IActionDefinition";
+import type { IComponentContext } from "../types/IComponentContext";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
 import type { TFunction } from "../util/i18n";
 import { setdefault } from "../util/util";
@@ -167,11 +168,8 @@ function IconBarIcon(props: IIconBarIconProps) {
  * @extends {ComponentEx<IProps, {}>}
  */
 class IconBar extends React.Component<IProps, { open: boolean }> {
-  public static contextTypes: React.ValidationMap<any> = {
-    menuLayer: PropTypes.object,
-  };
-
-  declare public context: { menuLayer: JSX.Element };
+  public static contextType = MainContext;
+  declare public context: IComponentContext;
 
   private portalTargetRef: Element;
   private mBackgroundClick: (evt: React.MouseEvent<ButtonGroup>) => void;

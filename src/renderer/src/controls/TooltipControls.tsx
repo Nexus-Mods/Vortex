@@ -5,12 +5,12 @@ import {
   Button as BootstrapButton,
   NavItem as BootstrapNavItem,
   Overlay,
-  OverlayTrigger,
   Popover,
 } from "react-bootstrap";
 
 import SvgIcon from "./Icon";
 import type { ButtonType } from "./IconBar";
+import { MainContextOverlayTrigger } from "./main_context_overlay/MainContextOverlay";
 
 export interface ITooltipProps {
   tooltip: string | React.ReactElement<any>;
@@ -41,14 +41,14 @@ export class Button extends React.PureComponent<ButtonProps, {}> {
     } else {
       const tooltipCtrl = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
       return (
-        <OverlayTrigger
+        <MainContextOverlayTrigger
           overlay={tooltipCtrl}
           placement={this.props.placement || "bottom"}
           delayShow={300}
           delayHide={150}
         >
           <BootstrapButton {...relayProps}>{this.props.children}</BootstrapButton>
-        </OverlayTrigger>
+        </MainContextOverlayTrigger>
       );
     }
   }
@@ -133,7 +133,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
     } else {
       const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
       return (
-        <OverlayTrigger
+        <MainContextOverlayTrigger
           overlay={tooltip}
           placement={this.props.placement || "bottom"}
           delayShow={300}
@@ -143,7 +143,7 @@ export class IconButton extends React.Component<IconButtonProps, {}> {
             <SvgIcon name={this.props.icon} {...iconProps} />
             {this.props.children}
           </BootstrapButton>
-        </OverlayTrigger>
+        </MainContextOverlayTrigger>
       );
     }
   }
@@ -188,7 +188,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
       const tooltipContent = React.isValidElement(tooltipText) ? tooltipText : null;
       const tooltip = <Popover id={this.props.id}>{tooltipContent}</Popover>;
       return (
-        <OverlayTrigger
+        <MainContextOverlayTrigger
           overlay={tooltip}
           placement={this.props.placement || "bottom"}
           delayShow={300}
@@ -201,7 +201,7 @@ export class ToggleButton extends React.Component<ToggleButtonProps, {}> {
             ) : null}
             {this.props.children}
           </BootstrapButton>
-        </OverlayTrigger>
+        </MainContextOverlayTrigger>
       );
     }
   }
@@ -224,14 +224,14 @@ export class NavItem extends React.Component<NavItemProps, {}> {
     } else {
       const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
       return (
-        <OverlayTrigger
+        <MainContextOverlayTrigger
           overlay={tooltip}
           placement={this.props.placement || "bottom"}
           delayShow={300}
           delayHide={150}
         >
           <BootstrapNavItem {...relayProps}>{this.props.children}</BootstrapNavItem>
-        </OverlayTrigger>
+        </MainContextOverlayTrigger>
       );
     }
   }
@@ -285,7 +285,7 @@ export class Icon extends React.Component<IconProps, {}> {
       const tooltip = <Popover id={this.props.id}>{this.props.tooltip}</Popover>;
 
       return (
-        <OverlayTrigger
+        <MainContextOverlayTrigger
           overlay={tooltip}
           placement={this.props.placement || "bottom"}
           delayShow={300}
@@ -294,7 +294,7 @@ export class Icon extends React.Component<IconProps, {}> {
           <a className={classes.join(" ")}>
             <SvgIcon {...relayProps} />
           </a>
-        </OverlayTrigger>
+        </MainContextOverlayTrigger>
       );
     }
   }

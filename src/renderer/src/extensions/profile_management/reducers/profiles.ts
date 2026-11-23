@@ -1,60 +1,110 @@
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { log } from "../../../util/log";
-import { deleteOrNop, getSafe, setSafe } from "../../../util/storeHelper";
-import * as actions from "../actions/profiles";
-import type { IProfile } from "../types/IProfile";
+import { actionsToReducerSpec } from "../../../reducers/builder";
+import type { IPersistentState } from "../../../types/IState";
+import {
+  forgetMod,
+  removeProfile,
+  setFeature,
+  setModEnabled,
+  setProfile,
+  setProfileActivated,
+  willRemoveProfile,
+} from "../actions/profiles";
+
+const profileActions = {
+  setProfile,
+  removeProfile,
+  willRemoveProfile,
+  setModEnabled,
+  setProfileActivated,
+  forgetMod,
+  setFeature,
+};
 
 /**
- * reducer for changes to ephemeral session state
+ * reducer for changes to the profiles (persistent.profiles, keyed by profile id)
  */
-export const profilesReducer: IReducerSpec = {
-  reducers: {
-    [actions.setProfile as any]: (state, payload: IProfile) =>
-      setSafe(state, [payload.id], {
-        ...getSafe(state, [payload.id], {}),
-        ...payload,
-      }),
-    [actions.removeProfile as any]: (state, payload) => deleteOrNop(state, [payload]),
-    [actions.willRemoveProfile as any]: (state, payload) => {
-      if (state[payload] === undefined) {
+export const profilesReducer = actionsToReducerSpec<
+  IPersistentState["profiles"],
+  typeof profileActions
+>(
+  {},
+  profileActions,
+  {
+    setProfile: (state, payload) => ({
+      ...state,
+      [payload.id]: { ...state[payload.id], ...payload },
+    }),
+    removeProfile: (state, payload) => {
+      if (!Object.hasOwn(state, payload)) {
         return state;
       }
-      return setSafe(state, [payload, "pendingRemove"], true);
+      const { [payload]: _, ...rest } = state;
+      return rest;
     },
-    [actions.setModEnabled as any]: (state, payload) => {
+    willRemoveProfile: (state, payload) => {
+      const profile = state[payload];
+      if (profile === undefined) {
+        return state;
+      }
+      return { ...state, [payload]: { ...profile, pendingRemove: true } };
+    },
+    setModEnabled: (state, payload) => {
       const { profileId, modId, enable } = payload;
 
-      if (state[profileId] === undefined) {
+      const profile = state[profileId];
+      if (profile === undefined) {
         return state;
       }
 
       // Stamp only the timestamp for this transition; the other is left intact so the analytics
       // can measure how long the mod spent in the prior state.
       const timeKey = enable ? "enabledTime" : "disabledTime";
-      state = setSafe(state, [profileId, "modState", modId, timeKey], Date.now());
-
-      return setSafe(state, [profileId, "modState", modId, "enabled"], enable);
+      return {
+        ...state,
+        [profileId]: {
+          ...profile,
+          modState: {
+            ...profile.modState,
+            [modId]: { ...profile.modState?.[modId], [timeKey]: Date.now(), enabled: enable },
+          },
+        },
+      };
     },
-    [actions.setProfileActivated as any]: (state, payload) => {
-      if (state[payload] === undefined) {
+    setProfileActivated: (state, payload) => {
+      const profile = state[payload];
+      if (profile === undefined) {
         return state;
       }
-      return setSafe(state, [payload, "lastActivated"], Date.now());
+      return { ...state, [payload]: { ...profile, lastActivated: Date.now() } };
     },
-    [actions.forgetMod as any]: (state, payload) =>
-      deleteOrNop(state, [payload.profileId, "modState", payload.modId]),
-    [actions.setFeature as any]: (state, payload) => {
+    forgetMod: (state, payload) => {
+      const { profileId, modId } = payload;
+      const profile = state[profileId];
+      if (
+        profile === undefined ||
+        profile.modState === undefined ||
+        !Object.hasOwn(profile.modState, modId)
+      ) {
+        return state;
+      }
+      const { [modId]: _, ...modState } = profile.modState;
+      return { ...state, [profileId]: { ...profile, modState } };
+    },
+    setFeature: (state, payload) => {
       const { profileId, featureId, value } = payload;
 
-      if (state[profileId] === undefined) {
+      const profile = state[profileId];
+      if (profile === undefined) {
         return state;
       }
 
-      return setSafe(state, [profileId, "features", featureId], value);
+      return {
+        ...state,
+        [profileId]: { ...profile, features: { ...profile.features, [featureId]: value } },
+      };
     },
   },
-  defaults: {},
-  verifiers: {
+  {
     _: {
       type: "object",
       deleteBroken: true,
@@ -88,4 +138,4 @@ export const profilesReducer: IReducerSpec = {
       },
     },
   },
-};
+);

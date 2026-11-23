@@ -123,11 +123,11 @@ export const removeDownloadSilent = createAction("REMOVE_DOWNLOAD_SILENT", (id: 
  */
 export const setDownloadSpeed = createAction(
   "SET_DOWNLOAD_SPEED",
-  (speed) => speed,
+  (speed: number) => speed,
   () => ({ forward: false, scope: "local" }),
 );
 
-export const setDownloadSpeeds = createAction("SET_DOWNLOAD_SPEEDS", (speeds) => speeds);
+export const setDownloadSpeeds = createAction("SET_DOWNLOAD_SPEEDS", (speeds: number[]) => speeds);
 
 /**
  * add a file that has been found on disk but where we weren't involved

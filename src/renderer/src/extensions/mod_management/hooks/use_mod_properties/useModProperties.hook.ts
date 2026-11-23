@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
+import { NEXUS_DOMAIN } from "@/extensions/nexus_integration/constants";
 import type { IState } from "@/types/IState";
 import type { ITableAttribute } from "@/types/ITableAttribute";
+import type { SymbolName } from "@/ui/components/icon/Icon";
 import { preT } from "@/util/i18n";
 
 import { modAuthor } from "../../components/mod_author/ModAuthor";
@@ -31,14 +33,25 @@ export interface IModPropertiesCard {
   summary?: string;
   /** Its whole description from the site, in BBCode, if it came with one. */
   description?: string;
+  /** Its page on the site, if it came from Nexus Mods, where its description's images show. */
+  pageUrl?: string;
   /** Its author, or its uploader where the author isn't known. */
   author?: string;
   /** Its picture from the site, if it came from one. */
   pictureUrl?: string;
   /** Whether the site marks it adult, so its picture blurs as the user has asked. */
   isAdult: boolean;
-  /** Its status tag: downloaded but not installed, or with an update out. */
+  /** Its status tag, for an update out. */
   status?: ModStatus;
+}
+
+/** An icon button beside a property's control. */
+export interface IModPropertyAction {
+  /** Its icon. */
+  icon: SymbolName;
+  /** What it does, as its tooltip and accessible name. */
+  label: string;
+  onClick: () => void;
 }
 
 /** One of a select's choices: what it saves, and what the user reads. */
@@ -92,6 +105,8 @@ export type ModProperty = IModPropertyBase &
         required?: boolean;
         /** Saves a pick, "" for none, to every selected mod. */
         onChange: (value: string) => void;
+        /** An icon button beside the dropdown, such as one managing its choices. */
+        action?: IModPropertyAction;
       }
     | {
         kind: "switch";
@@ -172,8 +187,8 @@ const valueProperty = (
   id: string,
   label: string,
   value: string | undefined,
-  copyable?: boolean,
-): ModProperty[] => (value ? [{ kind: "value", id, label, value, copyable }] : []);
+  options: { copyable?: boolean } = {},
+): ModProperty[] => (value ? [{ kind: "value", id, label, value, ...options }] : []);
 
 /** A time as a property that ages on screen; none where there's no valid one. */
 const timeProperty = (
@@ -181,15 +196,40 @@ const timeProperty = (
   label: string,
   value: string | number | Date | undefined,
 ): ModProperty[] => {
-  const timestamp = value === undefined ? Number.NaN : new Date(value).getTime();
-  return Number.isNaN(timestamp) ? [] : [{ kind: "time", id, label, timestamp }];
+  const timestamp = value ? new Date(value).getTime() : undefined;
+  if (!timestamp) {
+    return [];
+  }
+
+  return [{ kind: "time", id, label, timestamp }];
 };
 
-/** The mod's card: its picture, status, name, summary and author. */
+/** Whether an address is on Nexus Mods. */
+const isOnNexusMods = (address: string) => {
+  try {
+    const { hostname } = new URL(address);
+    return hostname === NEXUS_DOMAIN || hostname.endsWith(`.${NEXUS_DOMAIN}`);
+  } catch {
+    return false;
+  }
+};
+
+/** A Nexus Mods mod's page, as kept when it was downloaded; none for one from anywhere else. */
+const pageUrlOf = (mod: IModWithState) => {
+  const homepage = textOf(mod.attributes?.homepage);
+  if (mod.attributes?.source !== "nexus" || !homepage || !isOnNexusMods(homepage)) {
+    return undefined;
+  }
+
+  return homepage;
+};
+
+/** The mod's card: its picture, status, name, summary, author and page. */
 const cardOf = (mod: IModWithState): IModPropertiesCard => ({
   name: displayName(mod),
   summary: textOf(mod.attributes?.shortDescription),
   description: textOf(mod.attributes?.description) || undefined,
+  pageUrl: pageUrlOf(mod),
   author: modAuthor(mod),
   pictureUrl: textOf(mod.attributes?.pictureUrl),
   isAdult: mod.attributes?.adultContent === true,
@@ -222,7 +262,7 @@ const collectionIdProperties = (mod: IModWithState, t: TFunction) => {
     "nexusCollectionId",
     t("modsTable::properties::nexusCollectionId"),
     id ?? t("modsTable::properties::notPublished"),
-    id !== undefined,
+    { copyable: id !== undefined },
   );
 };
 
@@ -237,7 +277,7 @@ const linkProperties = (mod: IModWithState, memberships: IMod[], t: TFunction) =
     mod.attributes?.source === "nexus" && mod.type !== "collection"
       ? textOf(mod.attributes?.modId)
       : undefined,
-    true,
+    { copyable: true },
   ),
   ...collectionIdProperties(mod, t),
   ...valueProperty(
@@ -258,7 +298,7 @@ const fileProperties = (mod: IModWithState, download: IDownload | undefined, t: 
     "nexusFileId",
     t("modsTable::properties::nexusFileId"),
     mod.attributes?.source === "nexus" ? textOf(mod.attributes?.fileId) : undefined,
-    true,
+    { copyable: true },
   ),
 ];
 

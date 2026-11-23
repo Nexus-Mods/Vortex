@@ -34,6 +34,7 @@ import { setImportStep } from "../actions/session";
 import { FILENAME, LOCAL, MOD_ID, MOD_NAME, MOD_VERSION } from "../importedModAttributes";
 import { ModsCapacityMap, ICapacityInfo } from "../types/capacityTypes";
 import { IModEntry, ModsMap, ParseError, ProgressCB } from "../types/nmmEntries";
+import type { ImportStep } from "../types/state";
 import { getCategories } from "../util/categories";
 import findInstances from "../util/findInstances";
 import importArchives from "../util/import";
@@ -50,7 +51,7 @@ import {
   validate,
 } from "../util/util";
 
-type Step = "start" | "setup" | "working" | "review";
+type Step = ImportStep;
 
 interface IConnectedProps {
   gameId: string;

@@ -10,6 +10,8 @@ For packaging and distributing extensions, see [How to package a game extension]
 
 For API changes between versions, see the [Changelog](CHANGELOG.md).
 
+For the fields of an extension's `info.json`, including `contributes`, see the [`info.json` Reference](docs/INFO-JSON.md).
+
 For a full list of events extensions can listen to or emit, see the [Events Reference](docs/EVENTS.md).
 
 For notable open-source extensions with advanced patterns, see the [Example Extensions](docs/EXAMPLES.md).
@@ -30,10 +32,7 @@ A Vortex extension is a JavaScript module that exports an `init` function. The f
 
 `info.json`
 
-- `name` - the display name of your extension.
-- `author` - the extension author's name.
-- `version` - the version of your extension.
-- `description` - a short description of what your extension does.
+- Describes your extension to Vortex: its name, version, and the games it contributes. See the [`info.json` reference](docs/INFO-JSON.md) for every field and the JSON Schema that gives your editor completion.
 
 `index.js`
 

@@ -2,9 +2,10 @@ import type { TFunction } from "i18next";
 import type { ElementAttributes } from "interweave";
 import Interweave, { Filter } from "interweave";
 import * as React from "react";
-import { ControlLabel, FormGroup, OverlayTrigger, Popover } from "react-bootstrap";
+import { ControlLabel, FormGroup, Popover } from "react-bootstrap";
 
 import { ComponentEx } from "../../../controls/ComponentEx";
+import { MainContextOverlayTrigger } from "../../../controls/main_context_overlay/MainContextOverlay";
 import { IconButton } from "../../../controls/TooltipControls";
 import { getSafe } from "../../../util/storeHelper";
 import { truthy } from "../../../util/util";
@@ -74,14 +75,19 @@ class VersionChangelogButton extends ComponentEx<IProps, {}> {
     );
 
     return (
-      <OverlayTrigger trigger="click" rootClose placement="right" overlay={popoverBottom}>
+      <MainContextOverlayTrigger
+        trigger="click"
+        rootClose
+        placement="right"
+        overlay={popoverBottom}
+      >
         <IconButton
           className="btn-embed"
           icon="changelog"
           id={`btn-changelog-${mod.id}`}
           tooltip={t("Changelog")}
         />
-      </OverlayTrigger>
+      </MainContextOverlayTrigger>
     );
   }
 

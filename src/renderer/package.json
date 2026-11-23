@@ -133,6 +133,7 @@
     "@vortex/nexus-api-v3": "workspace:*",
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
+    "ajv": "catalog:",
     "babel-loader": "catalog:",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",

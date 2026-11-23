@@ -7,9 +7,9 @@ import type { IExtensionWithState } from "../../types/extensions";
 import type { IExtensionLoadFailure } from "../../types/IState";
 import type { ITableAttribute } from "../../types/ITableAttribute";
 import { getSafe } from "../../util/storeHelper";
-import { SITE_ID } from "../gamemode_management/constants";
+import { SITE_GAME_ID } from "../gamemode_management/constants";
 import type { EndorseMod } from "../nexus_integration/attributes";
-import EndorseModButton from "../nexus_integration/views/EndorseModButton";
+import { EndorseModButton } from "../nexus_integration/views/endorse_mod_button/EndorseModButton";
 
 interface IAttributesContext {
   onSetExtensionEnabled: (extensionName: string, enabled: boolean) => void;
@@ -48,7 +48,7 @@ function createEndorsedIcon(ext: IExtensionWithState, onEndorse: EndorseMod, t: 
     <EndorseModButton
       endorsedStatus={endorsed}
       t={t}
-      gameId={SITE_ID}
+      gameId={SITE_GAME_ID}
       modId={ext.modId.toString()}
       onEndorseMod={onEndorse}
     />

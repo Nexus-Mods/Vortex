@@ -181,13 +181,42 @@ describe("useRegisteredModsColumns", () => {
     expect(columns.map(({ width }) => width)).toEqual(["96px", "96px"]);
   });
 
-  // As the legacy table shows a game's Compatibility column, which says nothing of toggling.
-  it("always shows a column the user can't toggle, if it's shown by default", () => {
-    registered.attributes = [attribute({ id: "sdv-compatibility", isToggleable: undefined })];
+  // As a game's Compatibility column, which says nothing of toggling but asks to be shown.
+  it("lets the user toggle a column that doesn't say whether they can", () => {
+    registered.attributes = [
+      attribute({ id: "sdv-compatibility", isToggleable: undefined, isDefaultVisible: true }),
+    ];
 
     const { columns, defaultShown } = renderRegistered();
 
-    expect(columns).toMatchObject([{ id: "sdv-compatibility", isToggleable: false }]);
+    expect(columns).toMatchObject([{ id: "sdv-compatibility", isToggleable: true }]);
+    expect(defaultShown).toEqual(["sdv-compatibility"]);
+  });
+
+  // So an extension hiding it on the legacy table, with `setAttributeVisible`, doesn't hide it
+  // here.
+  it("follows the view, not the legacy table, for a column with isToggleable unset", () => {
+    const cssClass = vi.fn((_mod: IModWithState, enabled: boolean) => (enabled ? "shown" : ""));
+    registered.attributes = [attribute({ id: "sdv", isToggleable: undefined, cssClass })];
+    const store = makeModsTableStore({
+      tables: { mods: { attributes: { sdv: { enabled: false } } } },
+    });
+
+    const { result } = renderHook(() => useRegisteredModsColumns(NO_IDS, NO_MODS, true), {
+      wrapper: storeWrapper(store),
+    });
+
+    expect(result.current.columns).toMatchObject([{ id: "sdv", isToggleable: true }]);
+    expect(result.current.defaultShown).toEqual([]);
+    expect(result.current.rowClassName(row(), () => true)).toBe("shown");
+  });
+
+  it("always shows a column the user can't toggle, if it's shown by default", () => {
+    registered.attributes = [attribute({ id: "fixed", isToggleable: false })];
+
+    const { columns, defaultShown } = renderRegistered();
+
+    expect(columns).toMatchObject([{ id: "fixed", isToggleable: false }]);
     expect(defaultShown).toEqual([]);
   });
 
@@ -252,18 +281,18 @@ describe("useRegisteredModsColumns", () => {
     expect(result.current.columns).toEqual([]);
   });
 
-  // As in the legacy table, a column is shown unless it says not to be.
+  // Unlike the legacy table, a column is hidden unless it asks to be shown.
   it("names the columns to show until the user hides them", () => {
     registered.attributes = [
       attribute({ id: "endorsed" }),
       attribute({ id: "tracked", isDefaultVisible: false }),
       attribute({ id: "content", isDefaultVisible: true }),
-      attribute({ id: "category" }),
+      attribute({ id: "category", isDefaultVisible: true }),
     ];
 
     const { defaultShown } = renderRegistered(new Set(["category"]));
 
-    expect(defaultShown).toEqual(["endorsed", "content"]);
+    expect(defaultShown).toEqual(["content"]);
   });
 
   // As the legacy table asks every attribute, the table's own columns and those not in it too.

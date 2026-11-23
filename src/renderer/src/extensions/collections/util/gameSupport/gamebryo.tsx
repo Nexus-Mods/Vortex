@@ -23,8 +23,8 @@ import type { ICollection } from "../../types/ICollection";
 import type { IExtendedInterfaceProps } from "../../types/IExtendedInterfaceProps";
 
 interface IGamebryoLO {
-  name: string;
-  enabled: boolean;
+  name?: string;
+  enabled: boolean | "ghost";
   loadOrder: number;
 }
 
@@ -40,7 +40,7 @@ function getEnabledPlugins(
     }))
     .filter((lo) => lo !== undefined && lo.name !== undefined && lo.enabled === true)
     .sort((lhs, rhs) => lhs.loadOrder - rhs.loadOrder)
-    .map((lo) => ({ name: lo.name, enabled: lo.enabled }));
+    .map((lo) => ({ name: lo.name, enabled: lo.enabled === true }));
 }
 
 interface IUserlistEntry {
@@ -339,7 +339,7 @@ interface ILOOTGroup {
 }
 
 interface ILOOTList {
-  globals: IMessage[];
+  globals?: IMessage[];
   plugins: ILOOTPlugin[];
   groups: ILOOTGroup[];
 }
