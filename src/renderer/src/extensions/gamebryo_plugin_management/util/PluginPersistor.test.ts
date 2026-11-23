@@ -237,6 +237,72 @@ describe("PluginPersistor", () => {
       expect(onExternalChange).not.toHaveBeenCalled();
     });
 
+    describe("Skyrim SE rewriting plugins.txt as it starts", () => {
+      const GAME_NOTE = "# Please do not modify this file.";
+
+      // Vortex holds two active plugins and one inactive one between them
+      beforeEach(async () => {
+        persistor.setKnownPlugins({
+          "old.esp": "Old.esp",
+          "parked.esp": "Parked.esp",
+          "main.esp": "Main.esp",
+        });
+        await persistor.syncFromState("skyrimse", { "main.esp": { enabled: true, loadOrder: 2 } });
+        await settleWrites();
+        expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(
+          `${VORTEX_HEADER}\r\n*Old.esp\r\nParked.esp\r\n*Main.esp\r\n`,
+        );
+      });
+
+      /** Rewrites plugins.txt the way the game does: its own header, LF line ends. */
+      const gameRewrite = async (...entries: string[]) => {
+        nodeFs.writeFileSync(pluginsFile(), [SKYRIM_HEADER, GAME_NOTE, ...entries, ""].join("\n"), {
+          encoding: "latin1",
+        });
+        await persistor.loadFiles("skyrimse");
+        await settle(SETTLE_MS);
+      };
+
+      it("stays quiet when the game only moves an inactive plugin to the top", async () => {
+        const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+        persistor.setExternalChangeCallback(onExternalChange);
+
+        await gameRewrite("Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).not.toHaveBeenCalled();
+        // the load order Vortex manages is left as it was
+        expect(persistor.entry("parked.esp")).toMatchObject({ enabled: false, loadOrder: 1 });
+        expect(persistor.entry("main.esp")).toMatchObject({ enabled: true, loadOrder: 2 });
+      });
+
+      it("still asks when the game's rewrite activates a plugin", async () => {
+        const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+        persistor.setExternalChangeCallback(onExternalChange);
+
+        await gameRewrite("*Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
+      it("still asks when the game's rewrite reorders the active plugins", async () => {
+        const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+        persistor.setExternalChangeCallback(onExternalChange);
+
+        await gameRewrite("Parked.esp", "*Main.esp", "*Old.esp");
+
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
+      it("still asks when the game's rewrite drops a plugin", async () => {
+        const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+        persistor.setExternalChangeCallback(onExternalChange);
+
+        await gameRewrite("*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+    });
+
     // with nothing known to compare against, an empty file cannot be judged unchanged
     it("still asks when the file is empty and it has no plugin list to compare", async () => {
       const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
