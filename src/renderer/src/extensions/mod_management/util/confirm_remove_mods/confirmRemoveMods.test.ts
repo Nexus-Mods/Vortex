@@ -13,10 +13,17 @@ import { confirmRemoveMods, REMOVING_ACTIVITY } from "./confirmRemoveMods";
 
 const GAME = VortexGameId("game");
 
-// Installed "a" and "b", "a" from its archive; "dl" is an archive only downloaded.
+// Installed "a" and "b", "a" from its archive, and "c" still installing; "dl" is an archive
+// only downloaded.
 const MODS = {
-  a: { id: "a", archiveId: "archive-a", attributes: { name: "Alpha", version: "1.0" } },
-  b: { id: "b", attributes: { name: "Beta", version: "2.0" } },
+  a: {
+    id: "a",
+    state: "installed",
+    archiveId: "archive-a",
+    attributes: { name: "Alpha", version: "1.0" },
+  },
+  b: { id: "b", state: "installed", attributes: { name: "Beta", version: "2.0" } },
+  c: { id: "c", state: "installing", attributes: { name: "Gamma", version: "3.0" } },
 };
 const DOWNLOADS = {
   "archive-a": { state: "finished", localPath: "alpha.zip" },
@@ -138,7 +145,7 @@ describe("confirmRemoveMods", () => {
   it("asks nothing when every mod is already busy, or can't be removed", async () => {
     const { api } = makeApi({ [REMOVING_ACTIVITY]: ["a"] });
 
-    expect(await remove(api, ["a", "pending", "unknown"])).toBe(false);
+    expect(await remove(api, ["a", "c", "pending", "unknown"])).toBe(false);
 
     expect(api.showDialog).not.toHaveBeenCalled();
   });

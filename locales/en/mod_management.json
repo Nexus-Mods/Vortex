@@ -155,6 +155,7 @@
       "installDescription": "Installs the mod into your game, where it can be enabled or disabled.",
       "installing": "Installing…",
       "uninstalling": "Uninstalling…",
+      "removing": "Removing…",
       "installMod": "Install {{name}}",
       "enabled": "{{name}} enabled",
       "menu": "{{name}} actions"

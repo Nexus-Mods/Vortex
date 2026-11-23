@@ -65,6 +65,7 @@ import {
   RegisteredModsInputsProvider,
   useRegisteredModsColumns,
 } from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
+import { useRemoveMods } from "../../hooks/use_remove_mods/useRemoveMods.hook";
 import type { IModWithState } from "../../types/IModProps";
 import { filterModsByStatus } from "../../util/mods_table_filters/modsTableFilters";
 import {
@@ -102,8 +103,6 @@ interface IModsTableSwitchProps {
   alternatives?: { [modId: string]: IModWithState[] };
   /** Switches from a mod to another of its versions or variants, by id. */
   onSelectVersion?: (modId: string, alternativeId: string) => void;
-  /** Removes one of a mod's versions or variants, by id, asking first. */
-  onRemoveVersion?: (alternativeId: string) => void;
 }
 
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
@@ -183,7 +182,6 @@ export const ModsTableSwitch = ({
   rowActions = NO_ROW_ACTIONS,
   alternatives = NO_ALTERNATIVES,
   onSelectVersion = nop,
-  onRemoveVersion,
 }: IModsTableSwitchProps) => {
   const { t } = useTranslation("mod_management");
   const newTable = useSelector(betaTable);
@@ -205,6 +203,12 @@ export const ModsTableSwitch = ({
   const enableInstalled = useCallback((ids: string[]) => setEnabled(ids, true), [setEnabled]);
   const installMods = useInstallMods(enableInstalled);
   const install = useCallback((modId: string) => void installMods([modId]), [installMods]);
+  // Through the table's own Remove, as the row menu's, so a version can't be removed twice.
+  const removeMods = useRemoveMods();
+  const removeVersion = useCallback(
+    (alternativeId: string) => void removeMods([alternativeId]),
+    [removeMods],
+  );
 
   const {
     setGroupEnabled,
@@ -393,7 +397,7 @@ export const ModsTableSwitch = ({
           <ModVersion
             alternatives={alternatives[mod.id]}
             mod={mod}
-            onRemove={onRemoveVersion}
+            onRemove={removeVersion}
             onSelect={onSelectVersion}
           />
         ),
@@ -412,8 +416,8 @@ export const ModsTableSwitch = ({
       install,
       isEnabled,
       multiSelected,
-      onRemoveVersion,
       onSelectVersion,
+      removeVersion,
       setEnabled,
       setGroupEnabled,
       shownPins,

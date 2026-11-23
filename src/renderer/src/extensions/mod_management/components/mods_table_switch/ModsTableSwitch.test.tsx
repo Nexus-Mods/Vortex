@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
   installMods: vi.fn(),
+  removeMods: vi.fn(),
   registeredColumns: [] as unknown[],
 }));
 
@@ -29,6 +30,10 @@ vi.mock("@/controls/Icon", () => ({ default: () => null }));
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useInstallMods: () => mocks.installMods,
+}));
+
+vi.mock("../../hooks/use_remove_mods/useRemoveMods.hook", () => ({
+  useRemoveMods: () => mocks.removeMods,
 }));
 
 // Spied on, still working them out, to see which mods the panel's properties are worked out for.
@@ -638,6 +643,41 @@ describe("ModsTableSwitch", () => {
       await hoverRow(row);
       await userEvent.hover(installButton(row).parentElement!);
       expect(await screen.findByRole("tooltip")).toBeInTheDocument();
+    });
+
+    it("shows a mod being removed with the install button, loading, saying it's removing", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true, { state: "installed" }) }, [], {
+        activity: { "mods-removing": ["a"] },
+        mods: { a: {} },
+      });
+
+      const [row] = bodyRows(screen.getByRole("grid"));
+      expect(
+        within(row).queryByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+      ).toBeNull();
+      expect(installButton(row)).toBeDisabled();
+      expect(installButton(row)).toHaveClass("nxm-button-weak");
+
+      await hoverRow(row);
+      await userEvent.hover(installButton(row).parentElement!);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "modsTable::rowActions::removing",
+      );
+    });
+
+    it("shows an archive being removed as removing, not as one to install", async () => {
+      renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) }, [], {
+        activity: { "mods-removing": ["a"] },
+      });
+
+      const [row] = bodyRows(screen.getByRole("grid"));
+      expect(installButton(row)).toBeDisabled();
+
+      await hoverRow(row);
+      await userEvent.hover(installButton(row).parentElement!);
+      expect(await screen.findByRole("tooltip")).toHaveTextContent(
+        "modsTable::rowActions::removing",
+      );
     });
 
     // The list catches up after a debounce, so the row outlives the mod for a moment.
@@ -1994,8 +2034,9 @@ describe("ModsTableSwitch", () => {
       expect(onSelectVersion).toHaveBeenCalledWith("a", "a1");
     });
 
-    it("removes one of a mod's versions from its row, as ModList does", async () => {
-      const onRemoveVersion = vi.fn();
+    // Through the table's own Remove, so the version shows as removing and isn't removed twice.
+    it("removes one of a mod's versions from its row through the table's Remove", async () => {
+      mocks.removeMods.mockClear();
       const current = mod("a", "Alpha", true, { attributes: { name: "Alpha", version: "2.0" } });
       const older = mod("a1", "Alpha", false, { attributes: { name: "Alpha", version: "1.0" } });
       render(
@@ -2004,7 +2045,6 @@ describe("ModsTableSwitch", () => {
             alternatives={{ a: [current, older] }}
             legacy={<div />}
             mods={{ a: current }}
-            onRemoveVersion={onRemoveVersion}
             onSetModsEnabled={vi.fn()}
           />
         </Provider>,
@@ -2016,7 +2056,7 @@ describe("ModsTableSwitch", () => {
         within(screen.getByRole("menuitemradio", { name: /^1\.0 / })).getByRole("button"),
       );
 
-      expect(onRemoveVersion).toHaveBeenCalledWith("a1");
+      expect(mocks.removeMods).toHaveBeenCalledWith(["a1"]);
     });
   });
 

@@ -19,6 +19,7 @@ import { INSTALLING_ACTIVITY } from "../../hooks/use_install_mods/useInstallMods
 import { MOD_ROW_PINNING_ID } from "../../hooks/use_mod_actions/useModActions.hook";
 import { MODS_TABLE_TOOLBARS } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import type { IModWithState } from "../../types/IModProps";
+import { REMOVING_ACTIVITY } from "../../util/confirm_remove_mods/confirmRemoveMods";
 import { UNINSTALLING_ACTIVITY } from "../../util/uninstall_mods/uninstallMods";
 
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
@@ -29,8 +30,14 @@ const storedArchiveIds = createSelector(
   (stored) => new Set(Object.values(stored ?? {}).map((mod) => mod.archiveId)),
 );
 
-/** A mod being installed or uninstalled, which its row shows on the install button. */
-type RowBusy = "installing" | "uninstalling";
+/** A mod being installed, uninstalled or removed, which its row shows on the install button. */
+type RowBusy = "installing" | "uninstalling" | "removing";
+
+const BUSY_LABEL: Record<RowBusy, string> = {
+  installing: "modsTable::rowActions::installing",
+  uninstalling: "modsTable::rowActions::uninstalling",
+  removing: "modsTable::rowActions::removing",
+};
 
 /**
  * What a row's mod is under way with, if anything, as a plain value, so a row re-renders
@@ -50,6 +57,10 @@ const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | 
       justInstalled
     ) {
       return "installing";
+    }
+
+    if (activity?.[REMOVING_ACTIVITY]?.includes(modId)) {
+      return "removing";
     }
 
     const stored = storedMods(state);
@@ -109,8 +120,8 @@ const ROW_CONTROL = "data-row-control";
  *
  * While several rows are selected, only the switch shows, in the same place, as at rest.
  *
- * A mod that's only downloaded has an Install button in the switch's place; one being installed
- * or uninstalled has it loading.
+ * A mod that's only downloaded has an Install button in the switch's place; one being installed,
+ * uninstalled or removed has it loading.
  */
 export const ModRowActions = memo(
   ({
@@ -165,12 +176,7 @@ export const ModRowActions = memo(
                   />
                 ),
               }
-            : {
-                content:
-                  busy === "installing"
-                    ? t("modsTable::rowActions::installing")
-                    : t("modsTable::rowActions::uninstalling"),
-              })}
+            : { content: t(BUSY_LABEL[busy]) })}
         >
           <span className="flex w-8 shrink-0">
             <Button
