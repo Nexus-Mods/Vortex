@@ -6,7 +6,6 @@ import renderModName from "../../extensions/mod_management/util/modName";
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { calcDuration } from "../../util/message";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
@@ -74,7 +73,9 @@ export async function initFromProfile(api: IExtensionApi, profileId?: string) {
       id: "collection-created",
       title: updated ? "Collection updated" : "Collection created",
       message: name,
-      displayMS: calcDuration(name.length + 20),
+      // It has an Edit action, so it always goes to notifications rather than a toast;
+      // a fixed 7s leaves time to click Edit, even for a short name.
+      displayMS: 7000,
       actions: [
         {
           title: "Edit",

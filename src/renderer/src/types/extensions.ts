@@ -1,5 +1,6 @@
 import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
 
+import type { Contributes } from "../extensions/extension_manager/contributes";
 import type { IExtensionContext, IReducerSpec } from "./IExtensionContext";
 import type { IExtensionLoadFailure, IExtensionState } from "./IState";
 
@@ -42,6 +43,13 @@ export interface ExtensionInfo {
 
   /** Namespace for localization support. */
   namespace?: string;
+
+  /**
+   * What the extension declares it contributes. Set means the extension is in
+   * manifest mode, unset means legacy mode (no `contributes` in info.json, or
+   * one that failed validation).
+   */
+  contributes?: Contributes;
 
   /** @deprecated not read from info.json anymore */
   type?: ExtensionType;

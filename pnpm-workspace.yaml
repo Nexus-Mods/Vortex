@@ -116,6 +116,7 @@ catalog:
   "@vitest/coverage-v8": 4.1.9
   "@vitest/ui": 4.1.9
   "@welldone-software/why-did-you-render": 7.0.1
+  ajv: 8.18.0
   babel-loader: 10.1.1
   bbcode-to-react: github:TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
@@ -141,7 +142,7 @@ catalog:
   dnd-core: 9.5.1
   draggabilly: 2.4.1
   drivelist: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 45.3.4
+  electron: 45.4.1
   electron-builder: 24.13.3
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1

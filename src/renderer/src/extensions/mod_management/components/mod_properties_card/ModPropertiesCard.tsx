@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/ui/components/button/Button";
 import { AdultAwareImage } from "@/ui/components/image/AdultAwareImage";
+import { Modal } from "@/ui/components/modal/Modal";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { Typography } from "@/ui/components/typography/Typography";
 
@@ -15,10 +16,10 @@ interface IModPropertiesCardProps {
 
 /**
  * The mod as Browse's mod card shows one, heading the Properties panel: its picture with its
- * status tag, its name and summary, its whole description a click away, as the legacy pane has
- * it, then its author and whether it's adult. Its picture blurs as the user has asked, if it's
- * adult; a mod without one shows the broken picture icon, as its row's thumbnail does. The
- * description shows no images from outside Nexus Mods, as there's no room to stand in for them.
+ * status tag, its name and summary, its whole description a click away in a modal, then its
+ * author and whether it's adult. Its picture blurs as the user has asked, if it's adult; a mod
+ * without one shows the broken picture icon, as its row's thumbnail does. The description's images
+ * from outside Nexus Mods show as placeholders opening its page, or not at all without one.
  */
 export const ModPropertiesCard = ({ card }: IModPropertiesCardProps) => {
   const { t } = useTranslation("mod_management");
@@ -52,25 +53,39 @@ export const ModPropertiesCard = ({ card }: IModPropertiesCardProps) => {
         </div>
 
         {!!card.description && (
-          <div className="flex flex-col items-start gap-y-2">
+          <>
             <Button
-              appearance="weak"
+              appearance="subdued"
               brand="neutral"
+              className="self-start"
               data-testid="mod-properties-description-toggle"
               size="sm"
-              onClick={() => setShowDescription(!showDescription)}
+              onClick={() => setShowDescription(true)}
             >
-              {showDescription
-                ? t("modsTable::properties::hideDescription")
-                : t("modsTable::properties::showDescription")}
+              {t("modsTable::properties::showDescription")}
             </Button>
 
-            {showDescription && (
-              <div className="w-full" data-testid="mod-properties-description">
-                <BBCode bbcode={card.description} isFromAdultContent={card.isAdult} size="sm" />
+            <Modal
+              isOpen={showDescription}
+              size="lg"
+              title={card.name}
+              onClose={() => setShowDescription(false)}
+            >
+              <div
+                className="max-h-[60vh] overflow-y-auto pr-2"
+                data-testid="mod-properties-description"
+              >
+                <BBCode
+                  bbcode={card.description}
+                  externalImagePlaceholders={
+                    card.pageUrl ? { websiteUrl: card.pageUrl } : undefined
+                  }
+                  isFromAdultContent={card.isAdult}
+                  size="sm"
+                />
               </div>
-            )}
-          </div>
+            </Modal>
+          </>
         )}
 
         {(!!card.author || card.isAdult) && (

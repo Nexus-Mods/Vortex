@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/ui/components/button/Button";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { TabBar } from "@/ui/components/tabs/TabBar";
 import { TabButton } from "@/ui/components/tabs/TabButton";
@@ -32,12 +31,19 @@ interface IModPropertiesPanelProps {
   memberships: { [modId: string]: IMod[] };
   /** The fields extensions registered for the legacy details pane. */
   registered: IRegisteredDetails;
-  onClose: () => void;
   /** Classes for its frame, which the page sizes and places. */
   className?: string;
 }
 
 const TABS: ModPropertiesTab[] = ["general", "advanced"];
+
+/** Its fixed header, its gutter lined up with its scroll area's, with room for focus rings. */
+const HEADER_CLASSES =
+  "-mt-1 mr-1.5 flex shrink-0 scrollbar-gutter-stable overflow-hidden pt-1 pr-1.5 pb-4 pl-5";
+
+/** Where its contents scroll and fade out at the foot, as Browse's mod details do. */
+const SCROLL_CLASSES =
+  "mr-1.5 min-h-0 flex-1 scrollbar-gutter-stable overflow-y-auto scroll-fade pr-1.5 pb-9 pl-5 scroll-fade-9";
 
 /** The sections on a tab, ruled off from each other. */
 const sectionsOn = (properties: IModProperties, tab: ModPropertiesTab) =>
@@ -49,13 +55,13 @@ const sectionsOn = (properties: IModProperties, tab: ModPropertiesTab) =>
  * The selected mods' properties, beside the new Mods table, some of them to change. One mod's are
  * on two tabs: General, headed by its card, and Advanced, left out while it has nothing. Several
  * mods show their count and what they can all change, and none an empty state. The tab the user
- * picked stays as the selection changes, falling back to General where it's gone.
+ * picked stays as the selection changes, falling back to General where it's gone; switching tabs
+ * starts the new one at its top.
  */
 export const ModPropertiesPanel = ({
   mods,
   memberships,
   registered,
-  onClose,
   className,
 }: IModPropertiesPanelProps) => {
   const { t } = useTranslation("mod_management");
@@ -72,6 +78,7 @@ export const ModPropertiesPanel = ({
   // show them. It's only ever beside the new table.
   const versions = useExternalDataVersions(detailsOnly, true, values, true);
   const [picked, setPicked] = useState<ModPropertiesTab>("general");
+  const tabScrollRef = useRef<HTMLDivElement>(null);
 
   // Each written out, so the strings can be found.
   const tabLabels: Record<ModPropertiesTab, string> = {
@@ -86,28 +93,11 @@ export const ModPropertiesPanel = ({
   );
   const tab = tabs.includes(picked) ? picked : "general";
 
-  const closeButton = (
-    <Button
-      appearance="weak"
-      brand="neutral"
-      className="ml-auto"
-      data-testid="mod-properties-close"
-      leftIcon="close"
-      size="sm"
-      title={t("modsTable::properties::close")}
-      onClick={onClose}
-    />
-  );
-
   const body = () => {
     if (properties.count === 0) {
       return (
-        <div className="flex items-start gap-x-2">
-          <div className="flex-1" data-testid="mod-properties-empty">
-            <NoResults icon="info" title={t("modsTable::properties::noSelection")} />
-          </div>
-
-          {closeButton}
+        <div className={SCROLL_CLASSES} data-testid="mod-properties-empty">
+          <NoResults className="py-8" icon="info" title={t("modsTable::properties::noSelection")} />
         </div>
       );
     }
@@ -116,18 +106,18 @@ export const ModPropertiesPanel = ({
     if (properties.count > 1) {
       return (
         <>
-          <div className="flex items-center gap-x-2 pb-4">
+          <div className={joinClasses([HEADER_CLASSES, "items-center"])}>
             <Typography appearance="moderate" data-testid="mod-properties-count">
               {t("modsTable::properties::count", { count: properties.count })}
             </Typography>
-
-            {closeButton}
           </div>
 
           {/* General's then Advanced's, in one run, as there are no tabs to put them on. */}
-          <div className="flex flex-col divide-y divide-stroke-weak">
-            {sectionsOn(properties, "general")}
-            {sectionsOn(properties, "advanced")}
+          <div className={SCROLL_CLASSES} data-testid="mod-properties-scroll-area">
+            <div className="flex flex-col divide-y divide-stroke-weak">
+              {sectionsOn(properties, "general")}
+              {sectionsOn(properties, "advanced")}
+            </div>
           </div>
         </>
       );
@@ -138,9 +128,14 @@ export const ModPropertiesPanel = ({
         tab={tab}
         tabListId="mod-properties"
         tabType="secondary"
-        onSetSelectedTab={(next) => setPicked(next as ModPropertiesTab)}
+        onSetSelectedTab={(next) => {
+          setPicked(next as ModPropertiesTab);
+          if (tabScrollRef.current) {
+            tabScrollRef.current.scrollTop = 0;
+          }
+        }}
       >
-        <div className="flex items-center gap-x-1 pb-4">
+        <div className={joinClasses([HEADER_CLASSES, "items-center"])}>
           <TabBar className="min-w-0 flex-1">
             {tabs.map((id) => (
               <TabButton
@@ -152,21 +147,21 @@ export const ModPropertiesPanel = ({
               />
             ))}
           </TabBar>
-
-          {closeButton}
         </div>
 
-        {tabs.map((id) => (
-          <TabPanel className="flex flex-col divide-y divide-stroke-weak" id={id} key={id}>
-            {id === "general" && !!properties.card && (
-              <div className="pb-4">
-                <ModPropertiesCard card={properties.card} />
-              </div>
-            )}
+        <div className={SCROLL_CLASSES} data-testid="mod-properties-scroll-area" ref={tabScrollRef}>
+          {tabs.map((id) => (
+            <TabPanel className="flex flex-col divide-y divide-stroke-weak" id={id} key={id}>
+              {id === "general" && !!properties.card && (
+                <div className="pb-4">
+                  <ModPropertiesCard card={properties.card} />
+                </div>
+              )}
 
-            {sectionsOn(properties, id)}
-          </TabPanel>
-        ))}
+              {sectionsOn(properties, id)}
+            </TabPanel>
+          ))}
+        </div>
       </TabProvider>
     );
   };
@@ -174,7 +169,7 @@ export const ModPropertiesPanel = ({
   return (
     <aside
       aria-label={t("modsTable::properties::label")}
-      className={joinClasses(["flex min-h-0 flex-col overflow-y-auto px-5 pb-4", className])}
+      className={joinClasses(["flex min-h-0 flex-col", className])}
       data-testid="mod-properties-panel"
     >
       <RegisteredModsVersionsProvider versions={versions}>{body()}</RegisteredModsVersionsProvider>
