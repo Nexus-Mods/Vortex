@@ -19,7 +19,7 @@ _First beta of the 2.12 release._
 - Comments tab placeholder in Browse's mod details ([#24926](https://github.com/Nexus-Mods/Vortex/pull/24926))
 - Choice between a mod's Main files from Browse's Install when none is primary ([#24884](https://github.com/Nexus-Mods/Vortex/pull/24884))
 - One-time Browse feedback prompt, from the toolbar and under Load more, through a feedback modal shared with Health Check ([#24872](https://github.com/Nexus-Mods/Vortex/pull/24872))
-- … menu in Browse's mod details to copy the mod's link or report it; Save view renamed to Save as new view ([#24851](https://github.com/Nexus-Mods/Vortex/pull/24851))
+- Copy link and Report mod options in Browse's mod details, and Save view renamed to Save as new view ([#24851](https://github.com/Nexus-Mods/Vortex/pull/24851))
 - Extension-registered columns on the new Mods table ([#24845](https://github.com/Nexus-Mods/Vortex/pull/24845))
 - Whole collection's download progress on the Downloads ring ([#24838](https://github.com/Nexus-Mods/Vortex/pull/24838))
 - Search Browse's mods by name ([#24837](https://github.com/Nexus-Mods/Vortex/pull/24837))
