@@ -6,7 +6,6 @@ import {
   unknownToError,
   VortexDeploymentMethodId,
   VortexGameId,
-  VortexModId,
   VortexModTypeId,
   VortexProfileId,
   VortexStagingFolder,
@@ -74,10 +73,7 @@ import {
   setModEnabled,
   forgetMod,
 } from "../profile_management/actions/profiles";
-import {
-  enabledModCountForProfile,
-  lastActiveProfileForGame,
-} from "../profile_management/selectors";
+import { enabledModCountForProfile } from "../profile_management/selectors";
 import type { IProfile } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 import { setDeploymentNecessary, setDeploymentPurged } from "./actions/deployment";
@@ -86,7 +82,9 @@ import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
 import { CollectionUpdateWarning } from "./components/collection_update_warning/CollectionUpdateWarning";
 import {
+  type DeployProfile,
   onAddMod,
+  onDeploySingleMod,
   onGameModeActivated,
   onModsChanged,
   onPathsChanged,
@@ -149,7 +147,7 @@ import {
 import { exposeApplyDevHandle } from "./util/applyDevHandle";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
-import { activateSingleMod, laterStagingFolders, purgeMods, purgeModsInPath } from "./util/deploy";
+import { purgeMods, purgeModsInPath } from "./util/deploy";
 import {
   deployPendingOnAutoApply,
   scheduleAutoDeploy,
@@ -1291,120 +1289,6 @@ function onModsEnabled(api: IExtensionApi, deploymentTimer: Debouncer) {
   };
 }
 
-function onDeploySingleMod(api: IExtensionApi) {
-  return async (gameId: string, modId: string, enable?: boolean) => {
-    const state: IState = api.store.getState();
-    const game = getGame(gameId);
-    const discovery = getSafe(state, ["settings", "gameMode", "discovered", gameId], undefined);
-    if (game === undefined || discovery === undefined || discovery.path === undefined) {
-      return;
-    }
-    const mod: IMod = getSafe(state, ["persistent", "mods", game.id, modId], undefined);
-    if (mod === undefined) {
-      return;
-    }
-    const activator = getCurrentActivator(state, gameId, false);
-
-    if (activator === undefined) {
-      return;
-    }
-
-    const dataPath = game.getModPaths(discovery.path)[mod.type || ""];
-    if (!truthy(dataPath)) {
-      return;
-    }
-    const stagingPath: string = installPathForGame(state, gameId);
-    let modPath: string;
-
-    try {
-      modPath = path.join(stagingPath, mod.installationPath);
-    } catch (err) {
-      err["StagingPath"] = stagingPath || "<undefined>";
-      err["InstallPath"] = mod.installationPath || "<undefined>";
-      err["GameId"] = gameId || "<undefined>";
-      api.showErrorNotification("Failed to deploy mod", err, {
-        message: modId,
-      });
-      return;
-    }
-
-    const subdir = genSubDirFunc(game, getModType(mod.type));
-    let deployed = false;
-    await withActivationLock(async () => {
-      try {
-        await settleLeftoverDeployment(api, VortexGameId(gameId));
-        const normalize = await getNormalizeFunc(dataPath);
-        const lastActivation = await loadActivation(
-          api,
-          gameId,
-          mod.type,
-          dataPath,
-          stagingPath,
-          activator,
-        );
-        await api.emitAndAwait("will-deploy-single-mod", gameId, modId, enable);
-        resetDeploymentFailures(api, gameId);
-        if (enable !== false) {
-          const profile = profileById(state, lastActiveProfileForGame(state, gameId));
-          const sorted =
-            profile !== undefined
-              ? await doSortMods(api, profile, state.persistent.mods[gameId], VortexModId(mod.id))
-              : [];
-          await activateSingleMod({
-            method: activator,
-            game,
-            dataPath,
-            normalize,
-            lastActivation,
-            mod,
-            modPath,
-            subDir: subdir(mod),
-            laterSources: laterStagingFolders(sorted, mod),
-          });
-        } else {
-          await activator.prepare(dataPath, false, lastActivation, normalize);
-          await activator.deactivate(modPath, subdir(mod), mod.installationPath);
-        }
-        const newActivation = await activator.finalize(gameId, dataPath, stagingPath);
-        await doSaveActivation(
-          api,
-          gameId,
-          mod.type,
-          dataPath,
-          stagingPath,
-          newActivation,
-          activator.id,
-        );
-        reportRecordedFailures(api, gameId);
-        deployed = true;
-      } catch (unknownErr) {
-        if (activator.cancel !== undefined) {
-          activator.cancel(gameId, dataPath, stagingPath);
-        }
-        const err = unknownToError(unknownErr);
-        if (err instanceof ProcessCanceled) {
-          api.sendNotification({
-            type: "warning",
-            title: "Deployment interrupted",
-            message: err.message,
-          });
-        } else {
-          const userCanceled = err instanceof UserCanceled;
-          api.showErrorNotification("Failed to deploy mod", err, {
-            message: modId,
-            allowReport:
-              !userCanceled && parseError(err).data.kind !== "deployment:interrupted-run-unsettled",
-          });
-        }
-      }
-    });
-    // outside the activation lock, so a listener can deploy again
-    if (deployed) {
-      await api.emitAndAwait("did-deploy-single-mod", gameId, modId, enable);
-    }
-  };
-}
-
 function onNeedToDeploy(api: IExtensionApi, current: any) {
   const deploy = () => {
     api.events.emit(
@@ -1502,6 +1386,9 @@ function once(api: IExtensionApi) {
   }
 
   const updateModDeployment = genUpdateModDeployment(installManager);
+  // a deploy-mods request from a did-deploy listener waits for itself
+  const deployProfile: DeployProfile = (profileId) =>
+    updateModDeployment(api, false, profileId, undefined, { failOnError: true });
   const deploymentTimer = new Debouncer(
     (
       manual: boolean,
@@ -1566,7 +1453,7 @@ function once(api: IExtensionApi) {
     },
   );
 
-  api.onAsync("deploy-single-mod", onDeploySingleMod(api));
+  api.onAsync("deploy-single-mod", onDeploySingleMod(api, deployProfile));
 
   api.onAsync("purge-mods-in-path", (gameId: string, modType: string, modPath: string) => {
     return purgeModsInPath(api, gameId, modType, modPath).catch((err) => {
@@ -1773,7 +1660,16 @@ function once(api: IExtensionApi) {
   api.events.on(
     "remove-mod",
     (gameId: string, modId: string, cb?: (error: Error) => void, options?: IRemoveModOptions) =>
-      onRemoveMod(api, getAllActivators(), installManager, gameId, modId, cb, options),
+      onRemoveMod(
+        api,
+        getAllActivators(),
+        installManager,
+        deployProfile,
+        gameId,
+        modId,
+        cb,
+        options,
+      ),
   );
 
   api.events.on(
@@ -1784,7 +1680,16 @@ function once(api: IExtensionApi) {
       cb?: (error: Error) => void,
       options?: IRemoveModOptions,
     ) => {
-      onRemoveMods(api, getAllActivators(), installManager, gameId, modIds, cb, options);
+      onRemoveMods(
+        api,
+        getAllActivators(),
+        installManager,
+        deployProfile,
+        gameId,
+        modIds,
+        cb,
+        options,
+      );
     },
   );
 

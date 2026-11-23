@@ -5,6 +5,7 @@ import safeCreateAction from "../../../actions/safeCreateAction";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { batchDispatch } from "../../../util/util";
 import type { ModChangeReason } from "../../analytics/mixpanel/MixpanelEvents";
+import { profileById } from "../selectors";
 import type { IProfile } from "../types/IProfile";
 
 /**
@@ -76,8 +77,6 @@ const setModsEnabled = (() => {
     enableIn: boolean,
     optionsIn?: IEnableOptions,
   ) => {
-    const { profileById } = require("../selectors");
-
     if (ppFunc === undefined) {
       ppFunc = api.withPrePost(
         "enable-mods",

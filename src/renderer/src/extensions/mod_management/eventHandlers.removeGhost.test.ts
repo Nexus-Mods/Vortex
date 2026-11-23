@@ -28,7 +28,7 @@ vi.mock("./selectors", () => ({
 }));
 
 import { makeApiHarness, makeMod } from "../../test-utils/builders";
-import { onRemoveMods } from "./eventHandlers";
+import { type DeployProfile, onRemoveMods } from "./eventHandlers";
 import type InstallManager from "./InstallManager";
 import type { IMod } from "./types/IMod";
 
@@ -40,7 +40,7 @@ const installManager = { markRecentRemoval: vi.fn() } as unknown as InstallManag
 function remove(mods: Record<string, IMod>, modIds: string[]) {
   const harness = makeApiHarness({ mods: { [GAME]: mods } });
   return new Promise<typeof harness>((resolve, reject) => {
-    onRemoveMods(harness.api, [], installManager, GAME, modIds, (err) =>
+    onRemoveMods(harness.api, [], installManager, vi.fn<DeployProfile>(), GAME, modIds, (err) =>
       err == null ? resolve(harness) : reject(err),
     );
   });

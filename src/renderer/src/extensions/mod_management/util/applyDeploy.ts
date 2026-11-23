@@ -72,6 +72,12 @@ export function deploymentPlanningFor(
     : DeploymentPlanning.Unplanned;
 }
 
+/** Whether the game's deployments by this deployment method run through Apply. */
+export const isDeployingThroughApply = (
+  gameMode: VortexGameId,
+  deploymentMethodId: VortexDeploymentMethodId,
+) => deploymentPlanningFor(gameMode, deploymentMethodId) === DeploymentPlanning.ThroughApply;
+
 /** Where the journal of a game's Apply runs is kept, one per game. */
 export const applyJournalFileFor = (gameMode: VortexGameId) =>
   path.join(getVortexPath("userData"), gameMode, "apply", "journal.ndjson");
