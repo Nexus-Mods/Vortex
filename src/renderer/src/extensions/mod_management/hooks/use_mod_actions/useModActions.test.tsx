@@ -10,9 +10,10 @@ import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { nxmCollection } from "@/ui/icon-paths";
 
-const { registered, uninstall, calculateModSize } = vi.hoisted(() => ({
+const { registered, uninstall, remove, calculateModSize } = vi.hoisted(() => ({
   registered: { current: {} as { [group: string]: IActionDefinition[] } },
   uninstall: vi.fn(),
+  remove: vi.fn(),
   calculateModSize: vi.fn(() => Promise.resolve()),
 }));
 
@@ -20,6 +21,10 @@ vi.mock("../../util/calculate_mod_size/calculateModSize.util", () => ({ calculat
 
 vi.mock("../use_uninstall_mods/useUninstallMods.hook", () => ({
   useUninstallMods: () => uninstall,
+}));
+
+vi.mock("../use_remove_mods/useRemoveMods.hook", () => ({
+  useRemoveMods: () => remove,
 }));
 
 // The key with its namespace, where a call names one, so a test can see which it read from.
@@ -61,9 +66,10 @@ const renderRowActions = (
   rowActions: ITableRowAction[],
   extensions: IActionDefinition[] = [],
   mods: { [modId: string]: object } = {},
+  activity: { [group: string]: string[] } = {},
 ) => {
   registered.current = { "mods-action-icons": extensions };
-  const store = makeModsTableStore({ mods, downloads: ARCHIVES });
+  const store = makeModsTableStore({ mods, downloads: ARCHIVES, activity });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
@@ -79,7 +85,7 @@ describe("useModRowActions", () => {
   it("lays the actions out as the design's menu does, single-row ones only", () => {
     const { result } = renderRowActions(
       [
-        { title: "Remove", position: 5 },
+        { title: "Install", position: 5 },
         { title: "Enable", singleRowAction: false },
         { title: "Combine", position: 70, multiRowAction: true, singleRowAction: false },
         { title: "Reinstall", position: 60 },
@@ -88,22 +94,22 @@ describe("useModRowActions", () => {
     );
 
     expect(ids(result.current.actionsFor("a"))).toEqual([
+      "Install",
       "Reinstall",
-      "Remove",
       "Open on Nexus Mods",
     ]);
   });
 
   it("names and sections each action as the design does", () => {
     const { result } = renderRowActions(
-      [{ title: "Remove" }],
+      [{ title: "Reinstall" }],
       [{ title: "Create Report" }, { title: "Open in File Manager" }],
     );
 
     expect(
       result.current.actionsFor("a").map(({ label, section }) => `${section}: ${label}`),
     ).toEqual([
-      "manage: modsTable::actions::remove",
+      "manage: modsTable::actions::reinstall",
       "open: modsTable::actions::openInFileManager",
       "maintenance: modsTable::actions::generateModReport",
     ]);
@@ -135,7 +141,7 @@ describe("useModRowActions", () => {
 
   it("puts any action the design doesn't list last, by position", () => {
     const { result } = renderRowActions(
-      [{ title: "Remove" }],
+      [{ title: "Reinstall" }],
       [
         { title: "Later", position: 200 },
         { title: "Sooner", position: 10 },
@@ -143,7 +149,7 @@ describe("useModRowActions", () => {
     );
 
     expect(result.current.actionsFor("a").map(({ id, section }) => `${section}: ${id}`)).toEqual([
-      "manage: Remove",
+      "manage: Reinstall",
       "other: Sooner",
       "other: Later",
     ]);
@@ -171,7 +177,8 @@ describe("useModRowActions", () => {
       "Remove",
       "Check for Update",
     ]);
-    expect(ids(result.current.actionsFor("b"))).toEqual(["Remove"]);
+    // Neither installed nor downloaded, so there's nothing to remove either.
+    expect(ids(result.current.actionsFor("b"))).toEqual([]);
   });
 
   it("leaves Uninstall out for an installed mod without its archive, as it couldn't come back", () => {
@@ -208,11 +215,11 @@ describe("useModRowActions", () => {
 
   it("leaves out components, classic-only actions and a repeated title", () => {
     const { result } = renderRowActions(
-      [{ title: "Remove" }, { title: "Check for Update", component: Dummy }],
-      [{ title: "Remove" }, { title: "Legacy", options: { isClassicOnly: true } }],
+      [{ title: "Reinstall" }, { title: "Check for Update", component: Dummy }],
+      [{ title: "Reinstall" }, { title: "Legacy", options: { isClassicOnly: true } }],
     );
 
-    expect(ids(result.current.actionsFor("a"))).toEqual(["Remove"]);
+    expect(ids(result.current.actionsFor("a"))).toEqual(["Reinstall"]);
   });
 
   it("leaves out an action that rules itself out, and disables one that says why", () => {
@@ -227,7 +234,7 @@ describe("useModRowActions", () => {
   it("keeps a pinned action that rules itself out, disabled, so every row has its button", () => {
     const { result, store } = renderRowActions([
       { title: "Install", condition: (ids) => ids[0] === "a" },
-      { title: "Remove" },
+      { title: "Reinstall" },
     ]);
 
     act(() => {
@@ -236,15 +243,15 @@ describe("useModRowActions", () => {
       );
     });
 
-    expect(ids(result.current.actionsFor("a"))).toEqual(["Install", "Remove"]);
-    expect(ids(result.current.actionsFor("b"))).toEqual(["Install (disabled)", "Remove"]);
+    expect(ids(result.current.actionsFor("a"))).toEqual(["Install", "Reinstall"]);
+    expect(ids(result.current.actionsFor("b"))).toEqual(["Install (disabled)", "Reinstall"]);
     expect(result.current.pinnedCount).toBe(1);
   });
 
   it("checks and runs an action against the mod's id", () => {
     const condition = vi.fn(() => true);
     const action = vi.fn();
-    const { result } = renderRowActions([{ title: "Remove", condition, action }]);
+    const { result } = renderRowActions([{ title: "Reinstall", condition, action }]);
 
     result.current.actionsFor("a")[0].onClick?.();
 
@@ -254,7 +261,7 @@ describe("useModRowActions", () => {
 
   it("works a mod's actions out again only once the store changes", () => {
     const condition = vi.fn(() => true);
-    const { result, store } = renderRowActions([{ title: "Remove", condition }]);
+    const { result, store } = renderRowActions([{ title: "Reinstall", condition }]);
 
     const first = result.current.actionsFor("a");
     expect(result.current.actionsFor("a")).toBe(first);
@@ -265,6 +272,34 @@ describe("useModRowActions", () => {
 
     expect(result.current.actionsFor("a")).not.toBe(first);
     expect(condition).toHaveBeenCalledTimes(2);
+  });
+
+  it("removes through the table's own Remove, not the classic one", () => {
+    const classic = vi.fn();
+    const { result } = renderRowActions([{ title: "Remove", position: 5, action: classic }], [], {
+      a: { id: "a" },
+    });
+
+    act(() =>
+      result.current
+        .actionsFor("a")
+        .find(({ id }) => id === "Remove")
+        ?.onClick?.(),
+    );
+
+    expect(remove).toHaveBeenCalledWith(["a"]);
+    expect(classic).not.toHaveBeenCalled();
+  });
+
+  it("offers neither Remove nor Uninstall on a row that's being removed or uninstalled", () => {
+    const mods = { a: { id: "a", archiveId: "archive-a" }, b: { id: "b", archiveId: "archive-b" } };
+    const { result } = renderRowActions([], [], mods, {
+      "mods-removing": ["a"],
+      "mods-uninstalling": ["b"],
+    });
+
+    expect(ids(result.current.actionsFor("a"))).toEqual(["Check for Update"]);
+    expect(ids(result.current.actionsFor("b"))).toEqual(["Check for Update"]);
   });
 
   // The Mod size column has nothing to click, so the size is worked out again from here.
@@ -297,9 +332,10 @@ describe("useModSelectionActions", () => {
     rowActions: ITableRowAction[],
     modIds: string[],
     extensions: IActionDefinition[] = [],
+    activity: { [group: string]: string[] } = {},
   ) => {
     registered.current = { "mods-multirow-actions": extensions };
-    const store = makeModsTableStore({ mods: SELECTION_MODS, downloads: ARCHIVES });
+    const store = makeModsTableStore({ mods: SELECTION_MODS, downloads: ARCHIVES, activity });
     const wrapper = ({ children }: { children: ReactNode }) => (
       <Provider store={store}>{children}</Provider>
     );
@@ -397,6 +433,7 @@ describe("useModSelectionActions", () => {
       "Check for Update (disabled)",
       "Reinstall (disabled)",
       "Uninstall (disabled)",
+      "Remove (disabled)",
     ]);
 
     act(() => {
@@ -409,15 +446,22 @@ describe("useModSelectionActions", () => {
       );
     });
 
-    expect(ids(result.current)).toEqual(["Check for Update (disabled)", "Uninstall (disabled)"]);
+    expect(ids(result.current)).toEqual([
+      "Check for Update (disabled)",
+      "Uninstall (disabled)",
+      "Remove (disabled)",
+    ]);
   });
 
   it("checks and runs an action against every selected mod", () => {
     const condition = vi.fn(() => true);
     const action = vi.fn();
-    const { result } = renderSelectionActions([{ title: "Remove", condition, action }], ["a", "b"]);
+    const { result } = renderSelectionActions(
+      [{ title: "Reinstall", condition, action }],
+      ["a", "b"],
+    );
 
-    result.current.find(({ id }) => id === "Remove")?.onClick?.();
+    result.current.find(({ id }) => id === "Reinstall")?.onClick?.();
 
     expect(condition).toHaveBeenCalledWith(["a", "b"]);
     expect(action).toHaveBeenCalledWith(["a", "b"]);
@@ -437,6 +481,26 @@ describe("useModSelectionActions", () => {
     expect(result.current.find(({ id }) => id === "Uninstall")).toMatchObject({
       disabled: true,
     });
+  });
+
+  it("disables the pinned Remove and Uninstall while every selected mod is being removed", () => {
+    const { result } = renderSelectionActions([], ["a"], [], { "mods-removing": ["a"] });
+
+    expect(ids(result.current)).toEqual([
+      "Check for Update",
+      "Uninstall (disabled)",
+      "Remove (disabled)",
+    ]);
+  });
+
+  it("removes the selected mods while any of them can be, leaving the busy ones to the removal", () => {
+    const { result } = renderSelectionActions([], ["a", "c"], [], { "mods-removing": ["a"] });
+
+    const removeAction = result.current.find(({ id }) => id === "Remove");
+    expect(removeAction?.disabled).toBe(false);
+    act(() => removeAction?.onClick?.());
+
+    expect(remove).toHaveBeenCalledWith(["a", "c"]);
   });
 
   it("works out every selected mod's size again when Refresh content runs", () => {

@@ -1130,49 +1130,51 @@ describe("ModsTableSwitch", () => {
     });
 
     it("opens a row's menu of its actions, run against that mod", async () => {
-      const remove = vi.fn();
+      const reinstall = vi.fn();
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
-        { title: "Remove", action: remove },
+        { title: "Reinstall", action: reinstall },
       ]);
 
       await openMenu("Beta");
-      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::actions::reinstall" }),
+      );
 
-      expect(remove).toHaveBeenCalledWith(["b"]);
+      expect(reinstall).toHaveBeenCalledWith(["b"]);
     });
 
     it("puts an action pinned from one row's menu on every row", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
-        { title: "Remove", action: vi.fn() },
+        { title: "Reinstall", action: vi.fn() },
       ]);
 
       await openMenu("Alpha");
       // reached through its menu row, as the test `t` leaves every pin's label alike
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
-          "button",
-        ),
+        within(
+          screen.getByRole("menuitem", { name: /^modsTable::actions::reinstall\b/ }),
+        ).getByRole("button"),
       );
       await userEvent.keyboard("{Escape}");
 
       expect(
-        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::remove" }),
+        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::reinstall" }),
       ).toBeInTheDocument();
 
       await hoverRow(rowOf("Beta"));
       expect(
-        within(rowOf("Beta")).getByRole("button", { name: "modsTable::actions::remove" }),
+        within(rowOf("Beta")).getByRole("button", { name: "modsTable::actions::reinstall" }),
       ).toBeInTheDocument();
     });
 
     it("shows a pinned action before the switch, and the menu after it", async () => {
-      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Reinstall", action: vi.fn() }]);
 
       await openMenu("Alpha");
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
-          "button",
-        ),
+        within(
+          screen.getByRole("menuitem", { name: /^modsTable::actions::reinstall\b/ }),
+        ).getByRole("button"),
       );
       await userEvent.keyboard("{Escape}");
 
@@ -1182,7 +1184,7 @@ describe("ModsTableSwitch", () => {
       ).map((control) => control.getAttribute("aria-label"));
       // the switch by its untranslated label, which `t` leaves uninterpolated here
       expect(controls).toEqual([
-        "modsTable::actions::remove",
+        "modsTable::actions::reinstall",
         "modsTable::rowActions::enabled",
         "More actions",
       ]);
@@ -1397,18 +1399,18 @@ describe("ModsTableSwitch", () => {
     });
 
     it("runs a bar action against every selected mod", async () => {
-      const remove = vi.fn();
+      const reinstall = vi.fn();
       renderSwitch(
         { a: mod("a", "Alpha", true), b: mod("b", "Beta", true), c: mod("c", "Gamma", true) },
-        [{ title: "Remove", action: remove }],
+        [{ title: "Reinstall", action: reinstall }],
       );
 
       await selectWithCtrl("Alpha", "Gamma");
       await userEvent.click(
-        within(bar()!).getByRole("button", { name: "modsTable::actions::remove" }),
+        within(bar()!).getByRole("button", { name: "modsTable::actions::reinstall" }),
       );
 
-      expect(remove).toHaveBeenCalledWith(["a", "c"]);
+      expect(reinstall).toHaveBeenCalledWith(["a", "c"]);
     });
 
     it("shows the bar's switch part on for a mix, and disables them all from it", async () => {
@@ -1426,7 +1428,7 @@ describe("ModsTableSwitch", () => {
 
     it("shows only the rows' switches while several mods are selected", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
-        { title: "Remove", action: vi.fn() },
+        { title: "Reinstall", action: vi.fn() },
       ]);
       const rowOf = (name: string) =>
         bodyRows(screen.getByRole("grid")).find((row) => within(row).queryByText(name))!;
@@ -1434,20 +1436,20 @@ describe("ModsTableSwitch", () => {
       await hoverRow(rowOf("Alpha"));
       await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
-          "button",
-        ),
+        within(
+          screen.getByRole("menuitem", { name: /^modsTable::actions::reinstall\b/ }),
+        ).getByRole("button"),
       );
       await userEvent.keyboard("{Escape}");
 
       await userEvent.click(screen.getByText("Alpha"));
       expect(
-        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::remove" }),
+        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::reinstall" }),
       ).toBeInTheDocument();
 
       await selectWithCtrl("Alpha", "Beta");
       expect(
-        within(rowOf("Alpha")).queryByRole("button", { name: "modsTable::actions::remove" }),
+        within(rowOf("Alpha")).queryByRole("button", { name: "modsTable::actions::reinstall" }),
       ).toBeNull();
       expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
       expect(
@@ -1694,7 +1696,7 @@ describe("ModsTableSwitch", () => {
 
     it("offers no pin toggle for Properties in a menu, though its other items have one", () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
-        { title: "Remove", action: vi.fn() },
+        { title: "Reinstall", action: vi.fn() },
       ]);
 
       fireEvent.contextMenu(rowAt(BETA));
@@ -2348,7 +2350,7 @@ describe("ModsTableSwitch", () => {
 
   describe("a row's context menu", () => {
     it("changes the row's pins from its pin toggles", async () => {
-      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Reinstall", action: vi.fn() }]);
       const pins = () =>
         within(screen.getByRole("menu", { name: "modsTable::rowActions::menu" }))
           .getAllByRole("button", { name: /the row/ })
@@ -2369,13 +2371,13 @@ describe("ModsTableSwitch", () => {
     });
 
     it("opens the row's own menu, as its … has it, its pins for the row", () => {
-      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Reinstall", action: vi.fn() }]);
 
       fireEvent.contextMenu(screen.getByText("Alpha"));
 
       const menu = screen.getByRole("menu", { name: "modsTable::rowActions::menu" });
       expect(
-        within(menu).getByRole("menuitem", { name: /^modsTable::actions::remove\b/ }),
+        within(menu).getByRole("menuitem", { name: /^modsTable::actions::reinstall\b/ }),
       ).toBeInTheDocument();
       expect(within(menu).getAllByRole("button", { name: /the row/ }).length).toBeGreaterThan(0);
     });
@@ -2413,15 +2415,17 @@ describe("ModsTableSwitch", () => {
     });
 
     it("reports a row's action from its … menu, as the row toolbar's overflow", async () => {
-      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Reinstall", action: vi.fn() }]);
 
       await hoverRow(rowOf("Alpha"));
       await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
-      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::actions::reinstall" }),
+      );
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
         expect.objectContaining({
-          action: "Remove",
+          action: "Reinstall",
           toolbar: "mods-table-row",
           surface: "overflow",
         }),
@@ -2429,13 +2433,19 @@ describe("ModsTableSwitch", () => {
     });
 
     it("reports a row's action from its right-click menu", async () => {
-      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
+      renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Reinstall", action: vi.fn() }]);
 
       fireEvent.contextMenu(rowOf("Alpha"), { clientX: 10, clientY: 10 });
-      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::actions::reinstall" }),
+      );
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
-        expect.objectContaining({ action: "Remove", toolbar: "mods-table-row", surface: "menu" }),
+        expect.objectContaining({
+          action: "Reinstall",
+          toolbar: "mods-table-row",
+          surface: "menu",
+        }),
       ]);
     });
 
