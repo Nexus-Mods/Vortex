@@ -55,8 +55,8 @@ Check is the model: `src/renderer/src/extensions/health_check/hooks/healthCheckT
 - Each method emits on the `analytics-track-mixpanel-event` bus. The analytics extension
   handles consent and queueing, so trackers don't check either.
 - Don't repeat super properties, and send IDs rather than names (see above).
-- Drop `undefined` values before emitting, so an optional property is left off rather than
-  sent as null.
+- Drop `undefined` values before emitting, so a property with no value is left off. Send `null`
+  only on purpose, where "none" is itself worth reporting.
 - When many events share scope, such as the issue a Health Check event belongs to, supply it
   from a React context
   (`src/renderer/src/extensions/health_check/hooks/HealthCheckTracking.context.tsx`) instead
