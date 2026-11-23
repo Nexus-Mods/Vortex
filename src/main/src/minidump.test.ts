@@ -1,13 +1,41 @@
 import { readFileSync } from "node:fs";
+import type * as FsPromises from "node:fs/promises";
 import { mkdtemp, rm, writeFile, truncate } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { gunzipSync } from "node:zlib";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { IMinidumpSummary, MinidumpResult } from "./minidump";
 import { parseMinidump, summarizeMinidumpFile } from "./minidump";
+
+// File position at which reads fail, and the error they fail with
+const failingRead = vi.hoisted(() => ({
+  at: -1,
+  error: (): Error => Object.assign(new Error("i/o error"), { code: "EIO" }),
+}));
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromises>();
+  return {
+    ...actual,
+    open: async (...args: Parameters<typeof actual.open>) => {
+      const handle = await actual.open(...args);
+      const read = handle.read.bind(handle) as (
+        buffer: Buffer,
+        offset: number,
+        length: number,
+        position: number,
+      ) => ReturnType<typeof handle.read>;
+      handle.read = ((buffer: Buffer, offset: number, length: number, position: number) =>
+        position === failingRead.at
+          ? Promise.reject(failingRead.error())
+          : read(buffer, offset, length, position)) as typeof handle.read;
+      return handle;
+    },
+  };
+});
 
 // Real Crashpad dumps written by Electron 43 (process.crash() in each process
 // type) on Windows and Linux, with captured process memory and usernames
@@ -28,6 +56,18 @@ const crashSite = async (dump: Buffer): Promise<CrashSiteResult> => {
   const { stack: _stack, stackModules: _stackModules, ...site } = result.summary;
   return { summary: site };
 };
+
+/** Offset of the MinidumpCrashpadInfo record in a dump. */
+function crashpadInfoRva(dump: Buffer): number {
+  const streamCount = dump.readUInt32LE(8);
+  const directory = dump.readUInt32LE(12);
+  for (let i = 0; i < streamCount; i++) {
+    if (dump.readUInt32LE(directory + i * 12) === 0x43500001) {
+      return dump.readUInt32LE(directory + i * 12 + 8);
+    }
+  }
+  throw new Error("fixture has no crashpad stream");
+}
 
 describe("parseMinidump", () => {
   it("parses a Windows main-process crash", async () => {
@@ -138,6 +178,39 @@ describe("parseMinidump", () => {
       unreadableReason: "malformed-dump",
     });
   });
+
+  it("keeps the exception when a crashpad count is corrupt", async () => {
+    // a crashpad module list whose 50k entries all point at the one valid
+    // module record: every entry is readable, but walking them all would
+    // cost over a million reads
+    const original = loadFixture("windows-renderer.dmp.gz");
+    const info = crashpadInfoRva(original);
+    const entry = original.subarray(original.readUInt32LE(info + 48) + 4).subarray(0, 12);
+    const count = 50_000;
+    const list = Buffer.alloc(4 + count * 12);
+    list.writeUInt32LE(count);
+    for (let i = 0; i < count; i++) {
+      entry.copy(list, 4 + i * 12);
+    }
+    const dump = Buffer.concat([original, list]);
+    dump.writeUInt32LE(list.length, info + 44);
+    dump.writeUInt32LE(original.length, info + 48);
+    const result = await parseMinidump(dump);
+    expect(result).toMatchObject({
+      summary: { exceptionCode: "0xc0000005", module: "electron.exe" },
+    });
+    // ptype lives in the module annotations, which were refused
+    expect(result.summary?.processType).toBeUndefined();
+
+    const objects = loadFixture("windows-renderer.dmp.gz");
+    const moduleList = objects.readUInt32LE(crashpadInfoRva(objects) + 48);
+    const moduleInfo = objects.readUInt32LE(moduleList + 4 + 8);
+    objects.writeUInt32LE(50_000, objects.readUInt32LE(moduleInfo + 24));
+    expect((await parseMinidump(objects)).summary).toMatchObject({
+      exceptionCode: "0xc0000005",
+      module: "electron.exe",
+    });
+  });
 });
 
 describe("summarizeMinidumpFile", () => {
@@ -161,6 +234,45 @@ describe("summarizeMinidumpFile", () => {
       await writeFile(file, corrupt);
       expect(await summarizeMinidumpFile(file)).toEqual({ unreadableReason: "malformed-dump" });
     } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports what it read when the disk fails in the annotations", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "vortex-minidump-"));
+    const file = path.join(dir, "crash.dmp");
+    const dump = loadFixture("windows-renderer.dmp.gz");
+    try {
+      await writeFile(file, dump);
+      failingRead.at = crashpadInfoRva(dump) + 36;
+      const result = await summarizeMinidumpFile(file);
+      expect(result).toMatchObject({
+        summary: { exceptionCode: "0xc0000005", module: "electron.exe", appVersion: "43.0.0" },
+      });
+      expect(result.summary?.processType).toBeUndefined();
+    } finally {
+      failingRead.at = -1;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("tells parser bugs apart from disk errors", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "vortex-minidump-"));
+    const file = path.join(dir, "crash.dmp");
+    const { error } = failingRead;
+    try {
+      await writeFile(file, loadFixture("windows-renderer.dmp.gz"));
+      // the stream directory read, before any summary exists
+      failingRead.at = 0;
+      expect(await summarizeMinidumpFile(file)).toEqual({ unreadableReason: "read-failed" });
+      failingRead.error = () => new TypeError("cannot read properties of undefined");
+      expect(await summarizeMinidumpFile(file)).toEqual({
+        unreadableReason: "parser-error",
+        parserError: "cannot read properties of undefined",
+      });
+    } finally {
+      failingRead.at = -1;
+      failingRead.error = error;
       await rm(dir, { recursive: true, force: true });
     }
   });

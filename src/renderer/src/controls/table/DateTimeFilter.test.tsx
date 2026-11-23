@@ -1,8 +1,9 @@
 import { render } from "@testing-library/react";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { MainContext } from "../../contexts/main_context/MainContext";
+import type { IComponentContext } from "../../types/IComponentContext";
 import { DateTimeFilterComponent } from "./DateTimeFilter";
 
 function makeApi(locale: string) {
@@ -17,24 +18,13 @@ interface IProviderProps {
   children: React.ReactNode;
 }
 
-class ApiContextProvider extends React.Component<IProviderProps> {
-  public static childContextTypes = {
-    api: PropTypes.object,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
-
-  public getChildContext() {
-    return {
-      api: this.props.api,
-      menuLayer: document.createElement("div"),
-      getModifiers: () => ({}),
-    };
-  }
-
-  public render() {
-    return this.props.children;
-  }
+function ApiContextProvider(props: IProviderProps) {
+  const context = {
+    api: props.api,
+    menuLayer: document.createElement("div"),
+    getModifiers: () => ({ alt: false, ctrl: false, shift: false }),
+  } as unknown as IComponentContext;
+  return <MainContext.Provider value={context}>{props.children}</MainContext.Provider>;
 }
 
 function renderWith(locale: string, value: string = "") {

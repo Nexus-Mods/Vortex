@@ -142,7 +142,7 @@ catalog:
   dnd-core: 9.5.1
   draggabilly: 2.4.1
   drivelist: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
-  electron: 45.3.4
+  electron: 45.4.1
   electron-builder: 24.13.3
   electron-context-menu: 3.6.1
   electron-extension-installer: 2.0.1
@@ -220,7 +220,7 @@ catalog:
   react-dom: 18.3.1
   react-hot-toast: 2.6.0
   react-i18next: 11.18.6
-  react-markdown: 6.0.3
+  react-markdown: 9.1.0
   react-overlays: 1.2.0
   react-redux: 7.2.9
   react-refresh: 0.18.0

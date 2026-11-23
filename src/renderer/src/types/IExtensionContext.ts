@@ -184,6 +184,9 @@ export interface IMainPageOptions {
   /**
    * id for this page. If none is specified the page title is used. Use the id to avoid
    * name collisions if another extension is already using the same title.
+   *
+   * The spine saves the id as a game's last page. Changing it (or the title, with no id set)
+   * sends users to the game's first page once.
    */
   id?: string;
   /**
@@ -195,6 +198,10 @@ export interface IMainPageOptions {
    * in the format required by electron
    */
   hotkeyRaw?: string;
+  /**
+   * Whether the page shows in the menu. Must be right on the first render, or a remembered page
+   * is skipped at startup.
+   */
   visible?: () => boolean;
   group: "dashboard" | "global" | "per-game" | "support" | "hidden";
   isClassicOnly?: boolean;
@@ -210,6 +217,10 @@ export interface IMainPageOptions {
    * follows a change to it rather than being fixed when the page registered.
    */
   newLayout?: boolean | (() => boolean);
+  /**
+   * Menu position, lowest first. The first visible page is also where a game opens when nothing
+   * is remembered for it.
+   */
   priority?: number;
   props?: PropsCallback;
   badge?: ReduxProp<any>;

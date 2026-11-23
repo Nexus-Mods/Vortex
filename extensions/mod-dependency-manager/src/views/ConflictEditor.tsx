@@ -148,6 +148,7 @@ function VisibilityProxyWrap(props: IVisibilityProxyWrapProps) {
 
   return (
     <VisibilityProxy
+      componentClass="div"
       container={container}
       content={content}
       placeholder={placeholder}

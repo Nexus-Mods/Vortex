@@ -612,3 +612,36 @@ const interfaceReducer = util.actionsToPartialReducerSpec<
 ### Building the path at runtime
 
 `registerReducer` needs the path as a literal, such as `["settings", "myExtension"]`, so it can look the slice up. A path held in a `string[]` variable fails the typecheck. Pass the literal at the call.
+
+## Vortex 2.x: `react-markdown` 9
+
+Vortex now supplies `react-markdown` **9.1.0** to extensions at runtime, in place of 6.0.3. If your extension bundles its own copy, nothing changes. If it uses Vortex's copy (`require("react-markdown")`, or an import your bundler leaves external), read on.
+
+### What keeps working
+
+- Every way of importing 6: `require`, `import ReactMarkdown from`, `import * as` and `import =`. You get a component that is also its own `.default`, and carries 9's other exports (`defaultUrlTransform`, `MarkdownAsync`, `MarkdownHooks`) and 6's `uriTransformer`. `MarkdownAsync` and `MarkdownHooks` filter links and images as the component does.
+- `transformLinkUri` and `transformImageUri` still run, as 9's `urlTransform` would. They log a deprecation warning.
+- `plugins` still runs, as `remarkPlugins`, unless you pass `remarkPlugins` too, as in 6. It logs a deprecation warning.
+
+### What changes
+
+- **Links only open if they go to a web page (`http`, `https`) or an email address (`mailto:`).** Any other link renders with no target and does nothing when clicked: app links (`steam:`, `nxm:`), `file:` and `tel:` links, relative links (`../run.exe`) and network paths (`//server/share`). This holds with your own `components.a` and your own `urlTransform` too: Vortex filters the URL after your transform runs.
+- **Images from network shares don't load.** An image keeps its source if it's a web address, a `data:` address, or a file on the user's machine (`file:///C:/...`, or a relative path). Network paths such as `//host/share/x.png`, `\\host\share\x.png`, `file://host/share/x.png` and `file:////host/share/x.png` render with no source.
+- **Your own `components.a` and `components.img` can get `href` or `src` as `undefined`.** 6 always passed a string. Now a link or image Vortex filters out (see above) reaches your component with no `href` or `src`, so it renders inert. A component that calls a string method on it, such as `href.startsWith("http")` or `new URL(href)`, throws on a heading link (`#section`), a relative link or a `steam:` link. Check for `undefined` first.
+- **Links lose their `title`** when you use the default link component.
+- **6's removed props are ignored** and log a deprecation warning: `linkTarget`, `includeElementIndex`, `rawSourcePos`, `sourcePos`, and the ones 6 had already deprecated (`renderers`, `source`, `allowedTypes`, `disallowedTypes`, `allowNode`, `includeNodeIndex`, `escapeHtml`, `allowDangerousHtml`, `astPlugins`).
+
+### What you need to change
+
+| react-markdown 6                                                                            | react-markdown 9                                                                          |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `linkTarget="_blank"`                                                                       | `components={{ a: ... }}`                                                                 |
+| `transformLinkUri`, `transformImageUri`                                                     | `urlTransform={(url, key, node) => ...}`                                                  |
+| `ReactMarkdown.uriTransformer`                                                              | `defaultUrlTransform`                                                                     |
+| `plugins`                                                                                   | `remarkPlugins`                                                                           |
+| `inline`, `level`, `ordered`, `index`, `checked` and `isHeader` props on a custom component | gone: use a component per tag (`h1`, `h2`, ...), or read the element from the `node` prop |
+| remark and rehype plugins made for 6                                                        | versions made for 9, such as `remark-gfm` 4                                               |
+
+Plugins made for 6 (for example `remark-gfm` 1.x) throw under 9. Vortex runs your `remarkPlugins` and `rehypePlugins` on the markdown on their own first. If they throw, it shows the markdown without them and logs a warning, so tables and other syntax the plugin added show as plain text until you update it. It checks again whenever the markdown or the plugins change. An error from your own components isn't caught: it goes up to your error boundary, as it did in 6.
+
+A custom component that reads a prop 9 no longer passes gets `undefined`: a `code` that checks `inline` renders inline code as a block, for example.
