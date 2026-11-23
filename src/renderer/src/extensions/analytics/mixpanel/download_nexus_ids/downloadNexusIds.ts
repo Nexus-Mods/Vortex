@@ -1,4 +1,4 @@
-import { type NexusGameDomain, type NexusGameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 
 import type { IDownload } from "@/extensions/download_management/types/IDownload";
 import { getGame } from "@/extensions/gamemode_management/util/getGame";
@@ -8,13 +8,13 @@ import type { IState } from "@/types/IState";
 
 import { numericNexusGameId } from "../numericGameId";
 
-/** A download's Nexus ids, from the game it's for. */
-interface IDownloadGameIds {
+/** A download's Nexus ids, for its analytics events. */
+interface IDownloadNexusIds {
   /** The Nexus Mods domain of the game the download is for. */
   gameDomainName: NexusGameDomain | undefined;
   fileId: string | undefined;
   modId: string | undefined;
-  /** The Nexus Mods id of the game the download is for. */
+  /** The game's Nexus Mods id; NaN when the games list doesn't have the game yet. */
   numericGameId: NexusGameId;
   collectionSlug: string | undefined;
   collectionId: string | undefined;
@@ -30,7 +30,7 @@ interface IDownloadGameIds {
  * Not `convertId`: it reads the stored game's `nexus` ids, which a game whose extension declares
  * no Nexus domain never gets (Stardew Valley's), so it would find nothing for those downloads.
  */
-function idsFromDownloadGame(download: IDownload | undefined): IDownloadGameIds | undefined {
+function idsFromDownloadGame(download: IDownload | undefined): IDownloadNexusIds | undefined {
   const storedGameId = download?.game?.[0];
   const ids = download?.modInfo?.nexus?.ids;
 
@@ -60,6 +60,19 @@ function idsFromDownloadGame(download: IDownload | undefined): IDownloadGameIds 
  * A download's Nexus ids for its analytics events: those its record names, else those from the
  * game it's for, so a download that finishes before its metadata lookup is still tracked.
  */
-export const downloadNexusIds = (state: IState, downloadId: string) =>
-  nexusIdsFromDownloadId(state, downloadId) ??
-  idsFromDownloadGame(state.persistent.downloads.files?.[downloadId]);
+export const downloadNexusIds = (
+  state: IState,
+  downloadId: string,
+): IDownloadNexusIds | undefined => {
+  const recorded = nexusIdsFromDownloadId(state, downloadId);
+
+  if (!recorded) {
+    return idsFromDownloadGame(state.persistent.downloads.files?.[downloadId]);
+  }
+
+  return {
+    ...recorded,
+    gameDomainName: recorded.gameDomainName ? NexusGameDomain(recorded.gameDomainName) : undefined,
+    numericGameId: NexusGameId(recorded.numericGameId),
+  };
+};
