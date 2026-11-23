@@ -35,8 +35,9 @@
  *
  * manifests proves an Apply deployment leaves the files and saves the manifests today's deployment
  * does, on a Vortex that setup started and whose "Edge cases" profile today's deployment deployed
- * last. It keeps both, runs Apply to "Other" and back, and compares every file in the game and
- * staging folders (content, file id, link count) and every manifest entry.
+ * last. It keeps both, runs Apply to "Other" and back, and compares every file and folder in the
+ * game and staging folders (content, file id, link count; a folder tag by content) and every
+ * manifest entry.
  *
  * journal prints the latest Apply run's journal: how the run ended and how far each operation got.
  * Finished runs' journals are kept under <root>/work/journals; a run that didn't end leaves its
@@ -754,6 +755,8 @@ export async function describeJournal(file) {
     notes: [],
   }));
   let rolledBack = false;
+  // the emptied tagged folders the run removed after its steps
+  const removedFolders = [];
   for (const line of lines
     .slice(1 + operations.length)
     .map(parse)
@@ -761,6 +764,8 @@ export async function describeJournal(file) {
     const step = operations[line.index];
     if (line.type === "phase") {
       rolledBack = line.phase === "rolling-back";
+    } else if (line.type === "removed-folder" && line.path !== undefined) {
+      removedFolders.push(belowGame(line.path));
     } else if (step === undefined) {
       continue;
     } else if (line.type === "folder") {
@@ -787,6 +792,7 @@ export async function describeJournal(file) {
         ? "rollback stopped"
         : "unfinished",
     operations,
+    removedFolders,
   };
 }
 
@@ -797,7 +803,7 @@ async function journal() {
   if (latest === undefined) {
     throw new Error("no Apply run of this setup has a journal yet; run rollback or manifests");
   }
-  const { runId, outcome, operations } = await describeJournal(latest);
+  const { runId, outcome, operations, removedFolders } = await describeJournal(latest);
   console.log(`journal ${journalFiles.length} of ${journalFiles.length}: ${latest}`);
   console.log(`run ${runId}, ${operations.length} operations, ${outcome}`);
   for (const { index, kind, destination, state, notes } of operations) {
@@ -805,6 +811,9 @@ async function journal() {
       `${String(index).padStart(3)}  ${kind.padEnd(7)} ${state.padEnd(8)} ${destination}` +
         (notes.length > 0 ? `  (${notes.join("; ")})` : ""),
     );
+  }
+  for (const folder of removedFolders) {
+    console.log(`     removed the emptied folder ${folder}`);
   }
 }
 
@@ -902,14 +911,21 @@ function endProof(proven) {
   console.log(proven);
 }
 
-/** A disk snapshot's files without the manifests and their staging copies, which carry a save time. */
-// TODO(MOD-147): compare folders too once Apply removes the ones it empties
-const deployedFilesIn = (snapshot) =>
+/** The names today's deployment gives the tag in a folder it makes, by platform. */
+const FOLDER_TAGS = new Set(["__folder_managed_by_vortex", ".__folder_managed_by_vortex"]);
+
+/**
+ * A disk snapshot without the manifests and their staging copies, which carry a save time, and
+ * with each folder tag by its content only, as a run writes it anew.
+ */
+const deployedEntriesIn = (snapshot) =>
   new Map(
-    [...snapshot].filter(
-      ([relPath, entry]) =>
-        entry !== "folder" && !path.basename(relPath).startsWith("vortex.deployment."),
-    ),
+    [...snapshot]
+      .filter(([relPath]) => !path.basename(relPath).startsWith("vortex.deployment."))
+      .map(([relPath, entry]) => [
+        relPath,
+        FOLDER_TAGS.has(path.basename(relPath)) ? entry.split(",")[0] : entry,
+      ]),
   );
 
 /**
@@ -920,7 +936,7 @@ async function manifests() {
   const session = await connectToApplyHandle();
   try {
     const fromTodaysDeploy = await manifestSnapshot();
-    const filesFromTodaysDeploy = (await snapshotAll()).map(deployedFilesIn);
+    const entriesFromTodaysDeploy = (await snapshotAll()).map(deployedEntriesIn);
     const applyTo = async (profileId) => {
       const outcome = await applyProfile(session, { profileId });
       if (outcome.status !== "applied") {
@@ -936,16 +952,16 @@ async function manifests() {
     });
     await check(`Apply deploys "${PROFILE_EDGE_CASES}" again`, () => applyTo(PROFILE_EDGE_CASES));
     const fromApply = await manifestSnapshot();
-    const filesFromApply = (await snapshotAll()).map(deployedFilesIn);
+    const entriesFromApply = (await snapshotAll()).map(deployedEntriesIn);
     await check("its manifests are the ones today's deployment saved", () =>
       differencesBetween(fromTodaysDeploy, fromApply),
     );
-    await check("its files are the ones today's deployment left", () =>
-      folderDifferences(filesFromTodaysDeploy, filesFromApply),
+    await check("its files and folders are the ones today's deployment left", () =>
+      folderDifferences(entriesFromTodaysDeploy, entriesFromApply),
     );
-    const [gameFiles] = filesFromApply;
+    const [gameEntries] = entriesFromApply;
     endProof(
-      `manifests proven: Apply left the ${gameFiles.size} game folder files and saved the ` +
+      `manifests proven: Apply left the ${gameEntries.size} game folder entries and saved the ` +
         `${fromApply.size} manifest entries today's deployment did`,
     );
   } finally {

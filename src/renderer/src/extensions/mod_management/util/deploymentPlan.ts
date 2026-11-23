@@ -18,12 +18,13 @@ import type { VortexGameId, VortexProfileId } from "@vortex/shared";
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { getGame } from "../../gamemode_management/util/getGame";
-import { BACKUP_TAG } from "../LinkingDeployment";
+import LinkingActivator, { BACKUP_TAG, FOLDER_TAG_CONTENTS } from "../LinkingDeployment";
 import type { DeployedOperation } from "./appliedManifests";
 import {
   apply,
   type ApplyOptions,
   type ApplyResult,
+  type FolderTag,
   type RunOptions,
   type StagedFiles,
 } from "./apply/apply";
@@ -243,11 +244,18 @@ export function deploymentPlanOf(
   };
 }
 
+/** The tag today's deployment writes into the folders it makes, and its purge reads. */
+export const DEPLOYMENT_FOLDER_TAG: FolderTag = {
+  name: LinkingActivator.NEW_TAG_NAME,
+  contents: FOLDER_TAG_CONTENTS,
+};
+
 /** Runs a plan's operations through Apply, with the backup paths they were planned with. */
 export function applyPlan(plan: DeploymentPlan, run: ApplyRun): Promise<ApplyResult> {
   return apply(operationsInApplyOrder(plan.destinations), {
     ...run,
     stagedFiles: plan.stagedFiles,
     backupPathOf,
+    folderTag: DEPLOYMENT_FOLDER_TAG,
   });
 }

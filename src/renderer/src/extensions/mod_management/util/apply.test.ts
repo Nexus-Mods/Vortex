@@ -5,9 +5,10 @@ import {
   InMemoryFSBuilder,
   QualifiedPath,
   type FileSystem,
+  type InMemoryStore,
   type StatResult,
 } from "@vortex/shared/filesystem";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import { newJournal, startJournal, unreadableJournal } from "@/test-utils/journal";
 import { makeNexusFileSource } from "@/test-utils/lockfileBuilders";
@@ -28,6 +29,7 @@ import {
   type RunOptions,
   type StagedFiles,
 } from "./apply/apply";
+import { FIXTURE_FOLDER_TAG } from "./apply/fixtureDisk";
 import { JournalReadStatus, readJournal, type JournalStorage } from "./apply/journal";
 
 const ROOT = "/fixture-root";
@@ -86,6 +88,71 @@ class TwoDrivesFS extends InMemoryFS {
       : status;
   }
 }
+
+const busy = () => Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" });
+
+/**
+ * Removing `heldFolder` takes its tag and then fails, as when another program has the folder open;
+ * while `tagWritesFail`, so does writing a tag.
+ */
+class HeldFolderFS extends InMemoryFS {
+  isHeld = true;
+  tagWritesFail = false;
+
+  constructor(
+    store: InMemoryStore,
+    readonly heldFolder: string,
+  ) {
+    super(store);
+  }
+
+  override async deleteRecursive(folder: QualifiedPath): Promise<void> {
+    if (this.isHeld && folder.path === this.heldFolder) {
+      await super.delete(folder.join(FIXTURE_FOLDER_TAG.name));
+      throw busy();
+    }
+    return super.deleteRecursive(folder);
+  }
+
+  override writeFile(filePath: QualifiedPath, contents: Uint8Array): Promise<void> {
+    return this.tagWritesFail && filePath.basename === FIXTURE_FOLDER_TAG.name
+      ? Promise.reject(busy())
+      : super.writeFile(filePath, contents);
+  }
+}
+
+/** A folder holding a deployed file and its tag, whose removal a held folder disk fails. */
+function heldTaggedFolder() {
+  const tagPath = inGame(`SkyUI/${FIXTURE_FOLDER_TAG.name}`);
+  const builder = seeded({
+    staged: ["SkyUI/a.dll"],
+    other: { [tagPath]: FIXTURE_FOLDER_TAG.contents },
+  });
+  const fs = new HeldFolderFS(builder.store, inGame("SkyUI"));
+  const withDeployedFile = async () => {
+    await fs.createLink(
+      qualified(inStaging("SkyUI/a.dll")),
+      qualified(inGame("SkyUI/a.dll")),
+      "hardlink",
+    );
+    return fs;
+  };
+  return { tagPath, withDeployedFile };
+}
+
+const unlinkInHeldFolder = (
+  fs: FileSystem,
+  journal: JournalStorage,
+  recordDeployment?: () => Promise<void>,
+) =>
+  apply([unlink("SkyUI/a.dll")], {
+    ...optionsOn(fs, journal),
+    backupPathOf,
+    keptPathOf,
+    stagedFiles,
+    folderTag: FIXTURE_FOLDER_TAG,
+    recordDeployment,
+  });
 
 /** Files as `contents#id`, folders as `folder`. */
 async function snapshot(fs: FileSystem): Promise<Record<string, string>> {
@@ -206,6 +273,68 @@ describe("apply", () => {
 
     expectStatus(result, ApplyStatus.RolledBack);
     expect(recorded).toEqual([]);
+  });
+
+  test("tags again an emptied folder whose removal took only its tag, and ends applied", async () => {
+    const { tagPath, withDeployedFile } = heldTaggedFolder();
+    const fs = await withDeployedFile();
+
+    const result = await unlinkInHeldFolder(fs, await newJournal());
+
+    expectStatus(result, ApplyStatus.Applied);
+    const after = await snapshot(fs);
+    expect(after[inGame("SkyUI/a.dll")]).toBeUndefined();
+    expect(after[tagPath]).toMatch(/^a folder Vortex made#/);
+  });
+
+  test("records its deployment and ends applied when an emptied folder can neither be removed nor tagged again", async () => {
+    const { withDeployedFile } = heldTaggedFolder();
+    const fs = await withDeployedFile();
+    fs.tagWritesFail = true;
+    const recordDeployment = vi.fn(() => Promise.resolve());
+
+    const result = await unlinkInHeldFolder(fs, await newJournal(), recordDeployment);
+
+    expectStatus(result, ApplyStatus.Applied);
+    expect(recordDeployment).toHaveBeenCalledOnce();
+  });
+
+  test("a resumed run removes a folder it recorded whose removal took only its tag", async () => {
+    const { withDeployedFile } = heldTaggedFolder();
+    const fs = await withDeployedFile();
+    fs.tagWritesFail = true;
+    const journal = await newJournal();
+    const failing = { ...journal, remove: () => Promise.reject(new Error("held by a scanner")) };
+    expectStatus(await unlinkInHeldFolder(fs, failing), ApplyStatus.Unfinished);
+    fs.isHeld = false;
+    fs.tagWritesFail = false;
+
+    expectStatus(
+      await resumeApply({ ...optionsOn(fs, journal), folderTag: FIXTURE_FOLDER_TAG }),
+      ApplyStatus.Applied,
+    );
+
+    expect((await snapshot(fs))[inGame("SkyUI")]).toBeUndefined();
+  });
+
+  test("rolling back puts the tag back in a folder whose removal took only its tag", async () => {
+    const { tagPath, withDeployedFile } = heldTaggedFolder();
+    const fs = await withDeployedFile();
+    fs.tagWritesFail = true;
+    const journal = await newJournal();
+    const failing = { ...journal, remove: () => Promise.reject(new Error("held by a scanner")) };
+    expectStatus(await unlinkInHeldFolder(fs, failing), ApplyStatus.Unfinished);
+    fs.isHeld = false;
+    fs.tagWritesFail = false;
+
+    expectStatus(
+      await rollback({ ...optionsOn(fs, journal), folderTag: FIXTURE_FOLDER_TAG }),
+      ApplyStatus.RolledBack,
+    );
+
+    const after = await snapshot(fs);
+    expect(after[inGame("SkyUI/a.dll")]).toBe(after[inStaging("SkyUI/a.dll")]);
+    expect(after[tagPath]).toMatch(/^a folder Vortex made#/);
   });
 
   test.each([

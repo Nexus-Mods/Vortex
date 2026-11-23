@@ -40,6 +40,7 @@
     "kept": [],
     "disk": {
       "files": {
+        "/fixture-root/game/Data/SkyUI/__folder_managed_by_vortex": "a folder Vortex made",
         "/fixture-root/game/Data/SkyUI/config.txt": "SkyUI config",
         "/fixture-root/staging/SkyUI/SkyUI/config.txt": "SkyUI config",
         "/fixture-root/staging/SkyUIFile/SkyUI": "SkyUI file"

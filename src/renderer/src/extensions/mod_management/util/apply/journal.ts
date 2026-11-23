@@ -51,9 +51,15 @@ export interface Journal {
   undone: ReadonlySet<number>;
   /** the folders the run made, so a rollback can remove them */
   createdFolders: { index: number; path: string }[];
-  /** the LINKs that may have removed an empty folder at their destination, for a rollback to restore */
-  removedFolders: ReadonlySet<number>;
+  /** the folders the run may have removed, in the order it removed them, for a rollback to restore */
+  removedFolders: readonly RemovedFolder[];
 }
+
+/**
+ * A folder a run may have removed: an empty one at a LINK's destination, named by the LINK's
+ * entry, or one that held only its tag once the run's steps emptied it, named by its path.
+ */
+export type RemovedFolder = { index: number } | { path: string };
 
 export const JournalReadStatus = {
   None: "none",
@@ -74,7 +80,8 @@ export interface JournalWriter {
   /** `kept` when the entry set its file aside */
   markDone(index: number, kept?: boolean): Promise<void>;
   recordFolder(index: number, folderPath: string): Promise<void>;
-  recordRemovedFolder(index: number): Promise<void>;
+  /** called before the run removes the folder */
+  recordRemovedFolder(folder: RemovedFolder): Promise<void>;
   startRollback(): Promise<void>;
   markUndone(index: number): Promise<void>;
   close(): Promise<void>;
@@ -125,7 +132,12 @@ const progressSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal(LineType.Undone), index: positionSchema }),
   z.object({ type: z.literal(LineType.Folder), index: positionSchema, path: AbsolutePathSchema }),
-  z.object({ type: z.literal(LineType.RemovedFolder), index: positionSchema }),
+  // one of index and path, checked when read
+  z.object({
+    type: z.literal(LineType.RemovedFolder),
+    index: positionSchema.optional(),
+    path: AbsolutePathSchema.optional(),
+  }),
   z.object({ type: z.literal(LineType.Phase), phase: z.enum(JournalPhase) }),
 ]);
 
@@ -161,7 +173,7 @@ function parseJournal(text: string): Journal | undefined {
   const kept = new Set<number>();
   const undone = new Set<number>();
   const createdFolders: Journal["createdFolders"] = [];
-  const removedFolders = new Set<number>();
+  const removedFolders: RemovedFolder[] = [];
   for (const line of lines.slice(header.count)) {
     const progress = parseLine(progressSchema, line);
     if (progress === undefined) {
@@ -169,6 +181,17 @@ function parseJournal(text: string): Journal | undefined {
     }
     if (progress.type === LineType.Phase) {
       phase = progress.phase;
+      continue;
+    }
+    if (progress.type === LineType.RemovedFolder) {
+      const { index, path } = progress;
+      if (path !== undefined && index === undefined) {
+        removedFolders.push({ path });
+      } else if (index !== undefined && path === undefined && index < header.count) {
+        removedFolders.push({ index });
+      } else {
+        return undefined;
+      }
       continue;
     }
     if (progress.index >= header.count) {
@@ -183,10 +206,8 @@ function parseJournal(text: string): Journal | undefined {
       }
     } else if (progress.type === LineType.Undone) {
       undone.add(progress.index);
-    } else if (progress.type === LineType.Folder) {
-      createdFolders.push({ index: progress.index, path: progress.path });
     } else {
-      removedFolders.add(progress.index);
+      createdFolders.push({ index: progress.index, path: progress.path });
     }
   }
   return {
@@ -215,7 +236,7 @@ const writerFor = (storage: JournalStorage, runId: string): JournalWriter => {
     markDone: (index, kept) =>
       append(kept === true ? { type: LineType.Done, index, kept } : { type: LineType.Done, index }),
     recordFolder: (index, folderPath) => append({ type: LineType.Folder, index, path: folderPath }),
-    recordRemovedFolder: (index) => append({ type: LineType.RemovedFolder, index }),
+    recordRemovedFolder: (folder) => append({ type: LineType.RemovedFolder, ...folder }),
     startRollback: () => append({ type: LineType.Phase, phase: JournalPhase.RollingBack }),
     markUndone: (index) => append({ type: LineType.Undone, index }),
     close: () => storage.close(),

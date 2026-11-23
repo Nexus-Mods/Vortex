@@ -113,7 +113,7 @@ describe("readJournal", () => {
       kept: new Set(),
       undone: new Set(),
       createdFolders: [],
-      removedFolders: new Set(),
+      removedFolders: [],
     });
   });
 
@@ -123,10 +123,11 @@ describe("readJournal", () => {
     await writer.markDone(0);
     await writer.markChanging(1);
     await writer.recordFolder(1, "/fixture-root/game/sub");
-    await writer.recordRemovedFolder(1);
+    await writer.recordRemovedFolder({ index: 1 });
     await writer.markDone(1);
     await writer.markChanging(2);
     await writer.markDone(2, true);
+    await writer.recordRemovedFolder({ path: "/fixture-root/game/emptied" });
 
     expect(await foundJournal()).toMatchObject({
       phase: JournalPhase.Applying,
@@ -134,7 +135,7 @@ describe("readJournal", () => {
       done: new Set([0, 1, 2]),
       kept: new Set([2]),
       createdFolders: [{ index: 1, path: "/fixture-root/game/sub" }],
-      removedFolders: new Set([1]),
+      removedFolders: [{ index: 1 }, { path: "/fixture-root/game/emptied" }],
     });
     await writer.close();
   });

@@ -1,0 +1,33 @@
+{
+  "name": "tagged folders a removed file leaves holding only their tag are removed, deepest first",
+  "disk": {
+    "files": {
+      "/fixture-root/game/Data/SkyUI/__folder_managed_by_vortex": "a folder Vortex made",
+      "/fixture-root/game/Data/SkyUI/Interface/__folder_managed_by_vortex": "a folder Vortex made",
+      "/fixture-root/game/Data/SkyUI/Interface/skyui.swf": "SkyUI swf",
+      "/fixture-root/staging/SkyUI/Interface/skyui.swf": "SkyUI swf"
+    }
+  },
+  "staged": { "skyui-swf-hash": "/fixture-root/staging/SkyUI/Interface/skyui.swf" },
+  "operations": [
+    {
+      "kind": "UNLINK",
+      "reason": "AAx",
+      "file": {
+        "source": "NEXUS",
+        "nexusFileId": "7318624307802",
+        "fileHash": "skyui-swf-hash",
+        "hashType": "md5",
+        "destinationPath": "/fixture-root/game/Data/SkyUI/Interface/skyui.swf"
+      }
+    }
+  ],
+  "expected": {
+    "status": "applied",
+    "kept": [],
+    "disk": {
+      "files": { "/fixture-root/staging/SkyUI/Interface/skyui.swf": "SkyUI swf" },
+      "folders": ["/fixture-root/game/Data"]
+    }
+  }
+}
