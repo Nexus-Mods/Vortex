@@ -1,5 +1,6 @@
 import { describe, expect, vi } from "vitest";
 
+import { startActivity, stopActivity } from "../../actions/session";
 import { setCollectionSession } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
 import type { IGamebryoHarness } from "../../test-utils/harnessTypes";
@@ -10,12 +11,30 @@ function startWatcher(harness: IGamebryoHarness) {
   const onDidDeploy = vi.fn<(profileId: string) => Promise<void>>(() => Promise.resolve());
   const trigger = vi.fn<(check: string, delay: number) => void>();
   harness.api.events.on("trigger-test-run", trigger);
-  const watcher = startDeployWatcher(harness.api, onDidDeploy);
+  const onDeployAborted = vi.fn<() => void>();
+  const watcher = startDeployWatcher(harness.api, onDidDeploy, onDeployAborted);
 
   const didDeploy = (opts?: { isCollectionPostprocessCall?: boolean }): void => {
     harness.emit("did-deploy", "profile-1", {}, undefined, opts);
   };
-  return { harness, watcher, onDidDeploy, trigger, didDeploy };
+  // the deployment flow runs will-deploy inside the "deployment" mod activity
+  const willDeploy = (): void => {
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+    harness.emit("will-deploy");
+  };
+  const endDeployment = (): void => {
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+  };
+  return {
+    harness,
+    watcher,
+    onDidDeploy,
+    onDeployAborted,
+    trigger,
+    didDeploy,
+    willDeploy,
+    endDeployment,
+  };
 }
 
 describe("startDeployWatcher", () => {
@@ -93,5 +112,33 @@ describe("startDeployWatcher", () => {
     expect(watcher.isDeploying()).toBe(true);
     didDeploy();
     expect(watcher.isDeploying()).toBe(false);
+  });
+
+  test("stops reporting a deployment that ended without did-deploy, and asks for a rescan", ({
+    makeGamebryo,
+  }) => {
+    const { harness, watcher, onDeployAborted, trigger, willDeploy, endDeployment } =
+      startWatcher(makeGamebryo());
+
+    willDeploy();
+    harness.api.store.dispatch(setPluginOrder(["a.esp"], true));
+    // canceled or failed after will-deploy: the activity stops, did-deploy never comes
+    endDeployment();
+
+    expect(watcher.isDeploying()).toBe(false);
+    expect(onDeployAborted).toHaveBeenCalledTimes(1);
+    expect(trigger).toHaveBeenCalledWith("plugins-changed", 500);
+  });
+
+  test("leaves a deployment that reached did-deploy to the deploy handler", ({ makeGamebryo }) => {
+    const { onDidDeploy, onDeployAborted, didDeploy, willDeploy, endDeployment } =
+      startWatcher(makeGamebryo());
+
+    willDeploy();
+    didDeploy();
+    endDeployment();
+
+    expect(onDidDeploy).toHaveBeenCalledWith("profile-1");
+    expect(onDeployAborted).not.toHaveBeenCalled();
   });
 });
