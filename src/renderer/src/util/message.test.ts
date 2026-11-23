@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { calcDuration, prettifyNodeErrorMessage } from "./message";
+import { calcDuration, MAX_TOAST_MS, prettifyNodeErrorMessage, toastDuration } from "./message";
 
 describe("calcDuration", () => {
   it("gives a short message the 2s minimum", () => {
@@ -16,6 +16,17 @@ describe("calcDuration", () => {
   it("scales by 50ms a character in between", () => {
     expect(calcDuration(60)).toBe(3000);
     expect(calcDuration(100)).toBe(5000);
+  });
+});
+
+describe("toastDuration", () => {
+  it("follows calcDuration while it fits in a toast", () => {
+    expect(toastDuration(10)).toBe(calcDuration(10));
+    expect(toastDuration(60)).toBe(calcDuration(60));
+  });
+
+  it("caps a long message at the toast limit, so it stays a toast", () => {
+    expect(toastDuration(140)).toBe(MAX_TOAST_MS);
   });
 });
 

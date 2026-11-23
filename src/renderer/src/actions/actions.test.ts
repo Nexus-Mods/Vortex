@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { test } from "@/test-utils/harnessTest";
 import type { INotification } from "@/types/INotification";
@@ -37,6 +37,27 @@ describe("addNotification suppression", () => {
     );
 
     expect(harness.dispatched.map((action) => action.type)).toEqual(["ADD_NOTIFICATION"]);
+  });
+});
+
+describe("addNotification timing", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("stamps updatedTime to the millisecond, so a timed one gets its full displayMS", async ({
+    makeApi,
+  }) => {
+    const harness = makeApi();
+    const now = new Date("2026-11-23T12:00:00.950Z").getTime();
+    vi.useFakeTimers({ toFake: ["Date"], now });
+
+    await harness.api.store.dispatch(
+      actions.addNotification({ id: "__timed", type: "success", message: "sample" }),
+    );
+
+    const [added] = harness.dispatched;
+    expect((added.payload as INotification).updatedTime).toBe(now);
   });
 });
 

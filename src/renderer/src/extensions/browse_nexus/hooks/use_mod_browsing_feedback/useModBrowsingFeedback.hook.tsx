@@ -8,7 +8,7 @@ import {
   FeedbackModal,
   type FeedbackSentiment,
 } from "@/ui/components/feedback_modal/FeedbackModal";
-import { calcDuration } from "@/util/message";
+import { toastDuration } from "@/util/message";
 
 import { setHasGivenFeedback } from "../../actions/modBrowsing";
 import type { FeedbackSource, ISearchEventProps } from "../browse_mods_tracking/browseModsTracker";
@@ -62,7 +62,7 @@ export const useModBrowsingFeedback = (
         id: "browse-mods-feedback-sent",
         type: "success",
         message,
-        displayMS: calcDuration(message.length),
+        displayMS: toastDuration(message.length),
       });
     }
 

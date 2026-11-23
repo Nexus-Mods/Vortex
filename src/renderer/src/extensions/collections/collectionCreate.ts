@@ -73,9 +73,8 @@ export async function initFromProfile(api: IExtensionApi, profileId?: string) {
       id: "collection-created",
       title: updated ? "Collection updated" : "Collection created",
       message: name,
-      // It has an Edit action, so it always goes to notifications rather than a toast;
-      // a fixed 7s leaves time to click Edit, even for a short name.
-      displayMS: 7000,
+      // No displayMS: it has an Edit action, so it stays in notifications until the
+      // user clicks Edit or dismisses it, even if they were elsewhere during the upload.
       actions: [
         {
           title: "Edit",

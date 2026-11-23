@@ -46,8 +46,28 @@ export function calcDuration(messageLength: number) {
 }
 
 /**
- * show a notification that some operation succeeded. This message has a timer based on
- * the message length
+ * The longest `displayMS` that `api.sendNotification` still shows as a toast.
+ * Anything longer goes to the notification bell instead.
+ */
+export const MAX_TOAST_MS = 5000;
+
+/**
+ * `calcDuration`, capped so the message is always shown as a toast, however long
+ * its translation turns out to be.
+ */
+export function toastDuration(messageLength: number) {
+  return Math.min(calcDuration(messageLength), MAX_TOAST_MS);
+}
+
+/**
+ * How long `showSuccess` and `showInfo` keep a message. They only ever reach the
+ * notification bell, never a toast, so a short message still needs time to be noticed.
+ */
+const BELL_ONLY_MS = 7000;
+
+/**
+ * show a notification that some operation succeeded. It goes to the notification
+ * bell (never a toast) and is removed after 7 seconds
  *
  * @export
  * @template S
@@ -60,13 +80,12 @@ export function showSuccess<S>(
   message: string,
   id?: string,
 ) {
-  // show message for 2 to 7 seconds, depending on message length
   dispatch(
     addNotification({
       id,
       type: "success",
       message,
-      displayMS: calcDuration(message.length),
+      displayMS: BELL_ONLY_MS,
     }),
   );
 }
@@ -89,8 +108,8 @@ export function showActivity<S>(
 }
 
 /**
- * show an info notification. Please don't use this for important stuff as the message
- * has a timer based on message length
+ * show an info notification. It goes to the notification bell (never a toast) and is
+ * removed after 7 seconds, so please don't use this for important stuff
  *
  * @export
  * @template S
@@ -103,13 +122,12 @@ export function showInfo<S>(
   message: string,
   id?: string,
 ) {
-  // show message for 2 to 7 seconds, depending on message length
   dispatch(
     addNotification({
       id,
       type: "info",
       message,
-      displayMS: calcDuration(message.length),
+      displayMS: BELL_ONLY_MS,
     }),
   );
 }

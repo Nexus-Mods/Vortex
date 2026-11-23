@@ -109,11 +109,12 @@ import getVortexPath from "./util/getVortexPath";
 import type { i18n } from "./util/i18n";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
-import { showError } from "./util/message";
+import { MAX_TOAST_MS, showError } from "./util/message";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
 import { activeGameId } from "./util/selectors";
 import { getSafe } from "./util/storeHelper";
+import { toastMessage } from "./util/toast_message/toastMessage";
 import {
   filteredEnvironment,
   isFunction,
@@ -1046,10 +1047,7 @@ class ExtensionManager {
             id: noti.id,
             duration: noti.displayMS,
           };
-          const message =
-            noti.title !== undefined
-              ? `${noti.title}:\n${noti.message ?? ""}`
-              : (noti.message ?? "");
+          const message = toastMessage(noti, this.mApi.translate);
           if (message.length > 0) {
             toastFunc(message, toastOptions);
             return noti.id;
@@ -1684,7 +1682,7 @@ class ExtensionManager {
     const invalidToastTypes = ["activity", "warning"];
     if (
       notif.displayMS != null &&
-      notif.displayMS <= 5000 &&
+      notif.displayMS <= MAX_TOAST_MS &&
       notif.noToast !== true &&
       (notif.actions == null || notif.actions.length === 0) &&
       !invalidToastTypes.includes(notif.type)
