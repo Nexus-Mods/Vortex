@@ -175,8 +175,7 @@ describe("InstallDriver session lifecycle", () => {
     const marker = h.dispatched.find((action) => action.type === markerType);
     expect(marker).toBeDefined();
     expect(marker?.payload).toMatchObject({ profileId: profile.id, collectionId: "col-1" });
-    // oxlint-disable-next-line no-unsafe-optional-chaining -- marker is asserted defined above
-    expect(typeof (marker?.payload as { time: unknown }).time).toBe("number");
+    expect(typeof (marker?.payload as { time: unknown } | undefined)?.time).toBe("number");
   });
 
   test("refuses to start a second collection while one is still installing", async ({

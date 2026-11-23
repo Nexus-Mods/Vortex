@@ -120,7 +120,7 @@ const instructions = (props: IInstructionProps) => {
   const saveInstructions = React.useCallback(() => {
     onSetCollectionAttribute(["installInstructions"], input);
     setHasChanged(false);
-  }, [input]);
+  }, [onSetCollectionAttribute, input]);
 
   return (
     <FlexLayout

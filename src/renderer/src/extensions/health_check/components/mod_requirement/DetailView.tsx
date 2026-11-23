@@ -106,7 +106,7 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
     if (mod.requiredBy.modUrl) {
       window.api.shell.openUrl(mod.requiredBy.modUrl);
     }
-  }, [trackSuggestionSourceLinkClicked, mod.requiredBy.modId, mod.requiredBy.modUrl]);
+  }, [trackSuggestionSourceLinkClicked, mod.requiredBy.modUID, mod.requiredBy.modUrl]);
 
   const handleToggleHide = useCallback(() => {
     if (isHidden) {

@@ -67,16 +67,16 @@ export async function waitForNxmUrl(page: Page, timeoutMs: number): Promise<stri
       () => {
         const hooked = (globalThis as { __capturedNxm?: string }).__capturedNxm;
         if (typeof hooked === "string" && hooked.startsWith("nxm:")) return hooked;
-        // oxlint-disable-next-line typescript/no-explicit-any, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access
-        const m = (globalThis as any).document.documentElement.outerHTML.match(
-          /nxm:\/\/[^"'\s<>]+/i,
-        );
-        // oxlint-disable-next-line typescript/no-unsafe-return, typescript/no-unsafe-member-access
+        // e2e has no DOM lib; this callback runs in the page, where document exists.
+        const { document } = globalThis as unknown as {
+          document: { documentElement: { outerHTML: string } };
+        };
+        const m = document.documentElement.outerHTML.match(/nxm:\/\/[^"'\s<>]+/i);
         return m?.[0] ?? null;
       },
       { timeout: timeoutMs },
     );
-    return (await handle.jsonValue()) as string;
+    return await handle.jsonValue();
   } catch {
     return null;
   }

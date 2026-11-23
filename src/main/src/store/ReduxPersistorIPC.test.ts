@@ -1,5 +1,6 @@
 import type { DiffOperation } from "@vortex/shared/ipc";
 import type { IPersistor, PersistorKey } from "@vortex/shared/state";
+import type { Mock } from "vitest";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Stub terminate so a faulted processOperations doesn't try to show a dialog.
@@ -21,8 +22,8 @@ import type QueryInvalidator from "./QueryInvalidator";
 import ReduxPersistorIPC from "./ReduxPersistorIPC";
 
 type MockPersistor = IPersistor & {
-  bulkSetItem: ReturnType<typeof vi.fn>;
-  bulkRemoveItem: ReturnType<typeof vi.fn>;
+  bulkSetItem: Mock<NonNullable<IPersistor["bulkSetItem"]>>;
+  bulkRemoveItem: Mock<NonNullable<IPersistor["bulkRemoveItem"]>>;
   setItem: ReturnType<typeof vi.fn>;
   removeItem: ReturnType<typeof vi.fn>;
 };
@@ -100,10 +101,7 @@ describe("ReduxPersistorIPC: run grouping", () => {
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
     expect(persistor.bulkRemoveItem).not.toHaveBeenCalled();
 
-    const items = persistor.bulkSetItem.mock.calls[0]![0] as Array<{
-      key: PersistorKey;
-      value: string;
-    }>;
+    const items = persistor.bulkSetItem.mock.calls[0]![0];
     expect(items.map((i) => i.key)).toEqual([["a"], ["b"], ["c"]]);
   });
 
@@ -123,12 +121,10 @@ describe("ReduxPersistorIPC: run grouping", () => {
     // Record the dispatch order via a shared call log rather than reading
     // it back out of two separate mock-call lists.
     const callLog: Array<"set" | "remove"> = [];
-    // oxlint-disable-next-line typescript/no-misused-promises
     persistor.bulkSetItem.mockImplementation((): Promise<void> => {
       callLog.push("set");
       return Promise.resolve();
     });
-    // oxlint-disable-next-line typescript/no-misused-promises
     persistor.bulkRemoveItem.mockImplementation((): Promise<void> => {
       callLog.push("remove");
       return Promise.resolve();
@@ -162,7 +158,7 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
-    const items = persistor.bulkSetItem.mock.calls[0]![0] as Array<unknown>;
+    const items = persistor.bulkSetItem.mock.calls[0]![0];
     expect(items.length).toBe(256);
   });
 
@@ -175,8 +171,8 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
-    expect((persistor.bulkSetItem.mock.calls[0]![0] as Array<unknown>).length).toBe(256);
-    expect((persistor.bulkSetItem.mock.calls[1]![0] as Array<unknown>).length).toBe(1);
+    expect(persistor.bulkSetItem.mock.calls[0]![0].length).toBe(256);
+    expect(persistor.bulkSetItem.mock.calls[1]![0].length).toBe(1);
   });
 
   it("splits a 1002-op set run into 4 chunks (256+256+256+234)", async () => {
@@ -188,12 +184,12 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(4);
-    const sizes = persistor.bulkSetItem.mock.calls.map((c) => (c[0] as Array<unknown>).length);
+    const sizes = persistor.bulkSetItem.mock.calls.map((c) => c[0].length);
     expect(sizes).toEqual([256, 256, 256, 234]);
 
     // First key of each chunk advances by 256, last chunk has the tail.
     const firstKeys = persistor.bulkSetItem.mock.calls.map((c) => {
-      const items = c[0] as Array<{ key: PersistorKey }>;
+      const items = c[0];
       return items[0]!.key[0];
     });
     expect(firstKeys).toEqual(["k0", "k256", "k512", "k768"]);
@@ -208,7 +204,7 @@ describe("ReduxPersistorIPC: chunking at BULK_CHUNK_SIZE (256)", () => {
     await ipc.finalizeWrite();
 
     expect(persistor.bulkRemoveItem).toHaveBeenCalledTimes(2);
-    const sizes = persistor.bulkRemoveItem.mock.calls.map((c) => (c[0] as Array<unknown>).length);
+    const sizes = persistor.bulkRemoveItem.mock.calls.map((c) => c[0].length);
     expect(sizes).toEqual([256, 44]);
   });
 });
@@ -371,7 +367,6 @@ describe("ReduxPersistorIPC: atomicity under partial failure (force-close simula
     const blocker = new Promise<void>((resolve) => {
       release = resolve;
     });
-    // oxlint-disable-next-line typescript/no-misused-promises
     persistor.bulkSetItem.mockImplementationOnce(() => blocker);
 
     const { ipc } = await setupIPC(persistor);
@@ -384,24 +379,12 @@ describe("ReduxPersistorIPC: atomicity under partial failure (force-close simula
     await Promise.resolve();
     await Promise.resolve();
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(1);
-    expect(
-      (
-        persistor.bulkSetItem.mock.calls[0]![0] as Array<{
-          key: PersistorKey;
-        }>
-      )[0]!.key[0],
-    ).toBe("first");
+    expect(persistor.bulkSetItem.mock.calls[0]![0][0]!.key[0]).toBe("first");
 
     release();
     await ipc.finalizeWrite();
 
     expect(persistor.bulkSetItem).toHaveBeenCalledTimes(2);
-    expect(
-      (
-        persistor.bulkSetItem.mock.calls[1]![0] as Array<{
-          key: PersistorKey;
-        }>
-      )[0]!.key[0],
-    ).toBe("second");
+    expect(persistor.bulkSetItem.mock.calls[1]![0][0]!.key[0]).toBe("second");
   });
 });
