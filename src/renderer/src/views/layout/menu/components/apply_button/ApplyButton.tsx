@@ -14,7 +14,7 @@ interface IApplyButtonProps {
    * like an apply started without the user; `progress` is then the purge's.
    */
   isPurging?: boolean;
-  /** 0-100 while a deployment or purge runs; undefined when idle. */
+  /** 0-100 while a deployment or purge runs; undefined when idle, or a purge has no progress yet. */
   progress?: number;
   /** What the deploy is doing, e.g. the mod it's on, shown under the tooltip while applying. */
   step?: string;
@@ -72,7 +72,7 @@ export const ApplyButton = ({
   onClick,
 }: IApplyButtonProps) => {
   const { t } = useTranslation();
-  const isBusy = progress !== undefined;
+  const isBusy = isPurging || progress !== undefined;
   const isApplying = isBusy && !isPurging;
   const label = isPurging ? t("Updating files") : isApplying ? t("Applying") : t("Apply");
   const showStep = isApplying && !!step;
@@ -110,7 +110,7 @@ export const ApplyButton = ({
             aria-label={label}
             aria-valuemax={100}
             aria-valuemin={0}
-            aria-valuenow={progress}
+            aria-valuenow={progress ?? 0}
             className={joinClasses([
               "relative flex w-full cursor-progress items-center justify-center gap-x-2 overflow-hidden rounded-sm px-2",
               // Fixed ramp steps, as in the design, so the bar reads the same in either theme.
@@ -125,7 +125,7 @@ export const ApplyButton = ({
                 "absolute inset-y-0 left-0 transition-[width] duration-300 reduce-motion:duration-0",
                 isPurging ? "bg-neutral-300" : "bg-primary-moderate",
               ])}
-              style={{ width: `${progress}%` }}
+              style={{ width: `${progress ?? 0}%` }}
             />
 
             <span

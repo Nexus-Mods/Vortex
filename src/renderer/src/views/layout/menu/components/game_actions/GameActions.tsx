@@ -43,6 +43,9 @@ export const GameActions = () => {
   // With auto deploy on, changes deploy on their own, so Apply only shows its progress, or
   // after a purge, which auto deploy leaves alone. A running purge shows in Apply's place too.
   const showApply = isDeploying || isPurging || isPurged || (needToDeploy && !autoDeploy);
+  // A deploy queued behind a purge can start a moment before the purge has cleared, so the
+  // deploy wins when both are set.
+  const showPurge = isPurging && !isDeploying;
 
   if (gameId === undefined || selection.type !== "game") {
     return null;
@@ -98,9 +101,8 @@ export const GameActions = () => {
         {showApply && (
           <ApplyButton
             isCollapsed={menuIsCollapsed}
-            isPurging={isPurging}
-            // A purge and a deploy never run at once, so the bar only ever shows one of them.
-            progress={isPurging ? purgeProgress : deployProgress}
+            isPurging={showPurge}
+            progress={showPurge ? purgeProgress : deployProgress}
             step={deployStep}
             onClick={() => {
               trackApplyClicked();

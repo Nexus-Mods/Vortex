@@ -13,7 +13,7 @@ const context = vi.hoisted(() => ({
   deployProgress: 0,
   deployStep: undefined as string | undefined,
   isPurging: false,
-  purgeProgress: 0,
+  purgeProgress: 0 as number | undefined,
   deploy: vi.fn(),
   emit: vi.fn(),
   handlePlay: vi.fn(),
@@ -312,6 +312,33 @@ describe("GameActions", () => {
 
       fireEvent.click(bar);
       expect(context.deploy).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+
+    it("is a bar, not a button, before it reports any progress", async () => {
+      context.isPurging = true;
+      context.purgeProgress = undefined;
+
+      render(<GameActions />);
+
+      expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0");
+      fireEvent.click(screen.getByTestId("menu-apply"));
+      expect(context.deploy).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+
+    it("gives way to a deploy that starts before it has cleared", async () => {
+      context.isPurging = true;
+      context.purgeProgress = 90;
+      context.isDeploying = true;
+      context.deployProgress = 5;
+
+      render(<GameActions />);
+
+      const bar = screen.getByRole("progressbar", { name: "Applying" });
+      expect(bar).toHaveAttribute("aria-valuenow", "5");
 
       await settleTransitions();
     });

@@ -8,17 +8,9 @@ import { UserCanceled } from "@/util/CustomErrors";
 import onceCB from "@/util/onceCB";
 import * as selectors from "@/util/selectors";
 
-import { purged } from "../selectors";
+import { purged, purgeForGame } from "../selectors";
 import { getAllActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
-
-/** A purge is running, whether the user asked for it or Vortex started it. */
-const purgeRunning = (state: IState): boolean =>
-  (state.session.base.activity?.mods ?? []).includes("purging");
-
-/** How far along the running purge is, 0-100; undefined before it reports any progress. */
-const purgePercentDone = (state: IState): number | undefined =>
-  state.session.base.progress?.mods?.purging?.percent;
 
 /** Tells the user no deployment method is set, and offers to take them there. */
 export const useNoMethodWarning = () => {
@@ -75,7 +67,10 @@ export const useDeployMods = (): {
   deployProgress: number | undefined;
   /** What the deploy is doing, e.g. the mod it's on; undefined when idle. */
   deployStep: string | undefined;
-  /** A purge is running, whether the user asked for it or Vortex started it. */
+  /**
+   * The active game's mods are being purged, whether the user asked for it or Vortex started it.
+   * A purge of another game, e.g. the one being switched away from, doesn't count.
+   */
   isPurging: boolean;
   /** 0-100 while purging; undefined otherwise. */
   purgeProgress: number | undefined;
@@ -98,9 +93,9 @@ export const useDeployMods = (): {
     (state: IState) => state.session.base.progress?.mods?.deployment?.percent,
   );
   const step = useSelector((state: IState) => state.session.base.progress?.mods?.deployment?.text);
-  const isPurging = useSelector(purgeRunning);
-  const purgePercent = useSelector(purgePercentDone);
   const gameId = useSelector(selectors.activeGameId);
+  const purge = useSelector((state: IState) => purgeForGame(state, gameId));
+  const isPurging = purge !== undefined;
   const profileId = useSelector((state: IState) =>
     selectors.lastActiveProfileForGame(state, gameId),
   );
@@ -149,7 +144,7 @@ export const useDeployMods = (): {
     deployProgress: isDeploying ? (percent ?? 0) : undefined,
     deployStep: isDeploying ? step || undefined : undefined,
     isPurging,
-    purgeProgress: isPurging ? (purgePercent ?? 0) : undefined,
+    purgeProgress: purge?.percent,
     deploy: activator !== undefined ? deploy : noMethod,
   };
 };

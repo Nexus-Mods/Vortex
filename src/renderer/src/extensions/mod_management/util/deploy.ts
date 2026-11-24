@@ -1,12 +1,18 @@
 import {
   getErrorCode,
+  VortexGameId,
   VortexModStagingFolder,
   VortexProfileId,
   VortexStagingFolder,
 } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
-import { setProgress, startActivity, stopActivity } from "../../../actions/session";
+import {
+  clearPurgeProgress,
+  setPurgeProgress,
+  startActivity,
+  stopActivity,
+} from "../../../actions/session";
 import { log } from "../../../logging";
 import type {
   IDeployedFile,
@@ -254,8 +260,11 @@ async function purgeModsImpl(
     return;
   }
 
+  // Also names the purge's progress in the store, so two purges never share a bar.
   const notificationId: string = shortid();
-  // The modern layout's Apply button shows the progress, so only the legacy one gets the notification.
+  // The modern layout shows the progress on the Apply button, or in a notification of its own
+  // when the button isn't showing this game (see PurgeNotifications), so only the legacy layout
+  // notifies from here.
   const showNotification = !(state.settings.window?.useModernLayout ?? true);
 
   const onProgress = (progress: number, message: string) => {
@@ -268,8 +277,8 @@ async function purgeModsImpl(
         progress,
       });
     }
-    // Also in the store, so the menu's Apply button can show how far along it is.
-    api.store.dispatch(setProgress("mods", "purging", message, progress));
+    // Also in the store, for the game it's purging, so the menu's Apply button can show it.
+    api.store.dispatch(setPurgeProgress(notificationId, VortexGameId(gameId), message, progress));
   };
 
   onProgress(0, "Waiting for other operations to complete");
@@ -347,13 +356,20 @@ async function purgeModsImpl(
         }
         purgeCanceled = true;
       } finally {
-        onProgress(85, "Post purge events");
-        await activator.postPurge();
-        if (purgeSucceeded) {
-          if (!purgeCanceled) {
-            api.store.dispatch(setDeploymentPurged(gameId, true));
+        try {
+          onProgress(85, "Post purge events");
+          await activator.postPurge();
+          if (purgeSucceeded) {
+            if (!purgeCanceled) {
+              api.store.dispatch(setDeploymentPurged(gameId, true));
+            }
+            await api.emitAndAwait("did-purge", profile.id);
           }
-          await api.emitAndAwait("did-purge", profile.id);
+        } finally {
+          // Still inside the lock, so a deploy queued behind this purge never starts while the
+          // purge looks like it's running.
+          api.store.dispatch(stopActivity("mods", "purging"));
+          api.store.dispatch(clearPurgeProgress(notificationId));
         }
       }
     }, true);
@@ -361,8 +377,8 @@ async function purgeModsImpl(
     if (showNotification) {
       api.dismissNotification(notificationId);
     }
-    api.store.dispatch(stopActivity("mods", "purging"));
-    api.store.dispatch(setProgress("mods", "purging", undefined, 0));
+    // Also here, for a purge that never got the lock.
+    api.store.dispatch(clearPurgeProgress(notificationId));
   }
 }
 

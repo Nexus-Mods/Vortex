@@ -5,7 +5,7 @@ import { VortexModStagingFolder } from "@vortex/shared";
 import { createCachedSelector } from "re-reselect";
 import { createSelector } from "reselect";
 
-import type { IDiscoveryResult, IMod, IState } from "../../types/IState";
+import type { IDiscoveryResult, IMod, IPurgeProgress, IState } from "../../types/IState";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { getGame } from "../gamemode_management/util/getGame";
@@ -73,6 +73,16 @@ export const needToDeploy = createSelector(
 /** Whether the active game's mods were purged and haven't been deployed since. */
 export const purged = (state: IState): boolean =>
   state.persistent.deployment.purged?.[activeGameId(state)] === true;
+
+/** Purges under way, for any game, by purge id. */
+export const purgesRunning = (state: IState): { [purgeId: string]: IPurgeProgress } =>
+  state.session.base.purges ?? {};
+
+/** A purge of this game's mods, if one is running; the first one if there are several. */
+export const purgeForGame = (state: IState, gameId: VortexGameId): IPurgeProgress | undefined =>
+  gameId === undefined
+    ? undefined
+    : Object.values(purgesRunning(state)).find((purge) => purge.gameId === gameId);
 
 export const needToDeployForGame = createCachedSelector(
   allNeedToDeploy,
