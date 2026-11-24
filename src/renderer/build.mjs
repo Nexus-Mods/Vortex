@@ -79,15 +79,16 @@ const minify =
     : false;
 
 /**
- * @param {string} name the source file under src/ and the bundle name
- * @param {string} entry
+ * @param {string} name the bundle name
+ * @param {string} entry the entry file under src/
+ * @param {import("rolldown").Plugin[]} [plugins] extra plugins, e.g. for the dev loop
  */
-export function rendererConfig(name, entry) {
+export function rendererConfig(name, entry, plugins = []) {
   const config = createConfig(
     path.resolve(import.meta.dirname, "src", entry),
     path.join(mainOutputDirectory, `${name}.js`),
     "cjs",
-    [lazyExternals()],
+    [lazyExternals(), ...plugins],
   );
 
   const output = config.output;

@@ -2,8 +2,8 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import React from "react";
 // react-markdown is ESM-only from version 7, and the renderer compiles to CommonJS
 // (`module: node16` in tsconfig.json), which can't `import` an ES module. So it's loaded with
-// require() and typed from the ES module itself. webpack leaves node_modules external
-// (webpack.config.cjs), so this require() runs in Electron's Node at runtime, which can require()
+// require() and typed from the ES module itself. The bundler leaves node_modules external
+// (build.mjs), so this require() runs in Electron's Node at runtime, which can require()
 // an ES module as long as nothing it loads uses top-level await. Once the renderer compiles to ES
 // modules the require() can become a plain import.
 import type * as ReactMarkdownModule from "react-markdown" with { "resolution-mode": "import" };

@@ -56,7 +56,6 @@
     "@types/copyfiles": "catalog:",
     "@types/minimist": "catalog:",
     "@types/node": "catalog:",
-    "@types/webpack-node-externals": "catalog:",
     "@typescript-eslint/utils": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
@@ -67,7 +66,6 @@
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-better-tailwindcss": "catalog:",
     "eslint-plugin-perfectionist": "catalog:",
-    "fork-ts-checker-webpack-plugin": "catalog:",
     "glob": "catalog:",
     "globals": "catalog:",
     "husky": "catalog:",
@@ -82,19 +80,12 @@
     "rimraf": "catalog:",
     "rolldown": "catalog:",
     "sass": "catalog:",
-    "source-map-loader": "catalog:",
     "tailwindcss": "catalog:",
-    "terser-webpack-plugin": "catalog:",
-    "ts-loader": "catalog:",
-    "tsconfig-paths-webpack-plugin": "catalog:",
     "tsdown": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:",
-    "webpack": "catalog:",
-    "webpack-cli": "catalog:",
-    "webpack-node-externals": "catalog:"
+    "vitest": "catalog:"
   }
 }
