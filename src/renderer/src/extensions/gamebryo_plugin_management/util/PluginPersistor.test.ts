@@ -379,6 +379,91 @@ describe("PluginPersistor", () => {
 
         expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
       }, 15_000);
+
+      it("asks when a rewrite puts back the list the user replaced with Keep", async () => {
+        let choose: (choice: "keep" | "revert") => void = () => undefined;
+        const onExternalChange = vi.fn(
+          () => new Promise<"keep" | "revert">((resolve) => (choose = resolve)),
+        );
+        persistor.setExternalChangeCallback(onExternalChange);
+
+        // another tool activates Parked.esp and the user keeps it
+        await gameRewrite("plugins.txt", "*Parked.esp", "*Old.esp", "*Main.esp");
+        expect(onExternalChange).toHaveBeenCalledTimes(1);
+        choose("keep");
+        await vi.waitFor(() => expect(persistor.entry("parked.esp").enabled).toBe(true));
+
+        // before Vortex writes again, the list Vortex had written comes back
+        await gameRewrite("plugins.txt", "Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).toHaveBeenCalledTimes(2);
+      });
+
+      it("asks when a write of Vortex's lands after the user kept a foreign list", async () => {
+        let choose: (choice: "keep" | "revert") => void = () => undefined;
+        const onExternalChange = vi.fn(
+          () => new Promise<"keep" | "revert">((resolve) => (choose = resolve)),
+        );
+        persistor.setExternalChangeCallback(onExternalChange);
+        const internals = persistor as unknown as {
+          doSerialize: () => Promise<void>;
+          deserialize: () => Promise<void>;
+        };
+
+        // a write of Vortex's is under way, held at its first rename
+        let release: () => void = () => undefined;
+        const gate = new Promise<void>((resolve) => (release = resolve));
+        const diskFs = window.api.fs;
+        window.api = {
+          ...window.api,
+          fs: new Proxy(diskFs, {
+            get: (target, prop, receiver) => {
+              const value: unknown = Reflect.get(target, prop, receiver);
+              if (prop === "move" && typeof value === "function") {
+                return async (...args: unknown[]) => {
+                  await gate;
+                  return (value as (...a: unknown[]) => Promise<void>).apply(target, args);
+                };
+              }
+              return typeof value === "function" ? value.bind(target) : value;
+            },
+          }),
+        };
+        const writeFiles = vi.spyOn(
+          persistor as unknown as { writeFiles: (...args: unknown[]) => Promise<Date> },
+          "writeFiles",
+        );
+        try {
+          const write = internals.doSerialize();
+          await vi.waitFor(() => expect(writeFiles).toHaveBeenCalled());
+
+          // meanwhile another tool activates Parked.esp, and a refresh reads it
+          nodeFs.writeFileSync(
+            pluginsFile(),
+            [SKYRIM_HEADER, GAME_NOTE, "*Parked.esp", "*Old.esp", "*Main.esp", ""].join("\n"),
+            { encoding: "latin1" },
+          );
+          await internals.deserialize();
+          expect(onExternalChange).toHaveBeenCalledTimes(1);
+
+          // the user keeps the foreign list while Vortex's write is still held
+          choose("keep");
+          await vi.waitFor(() => expect(persistor.entry("parked.esp").enabled).toBe(true));
+
+          release();
+          await write;
+        } finally {
+          writeFiles.mockRestore();
+          window.api = { ...window.api, fs: diskFs };
+        }
+        // the older write landed over the kept file
+        expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(OURS);
+
+        // the game rewrites what is on disk, which is not what Vortex now holds
+        await gameRewrite("plugins.txt", "Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).toHaveBeenCalledTimes(2);
+      }, 15_000);
     });
 
     // with nothing known to compare against, an empty file cannot be judged unchanged

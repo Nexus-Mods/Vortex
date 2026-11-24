@@ -171,8 +171,10 @@ class PluginPersistor implements IPersistor {
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
   private mOnEmptyList: (() => void) | undefined;
-  // the entries of each plugin file as this persistor last wrote them
+  // the entries of each plugin file as this persistor last wrote them, or as it last took them in
   private mWritten: { loadorder: string[]; plugins: string[] } | undefined;
+  // how often the persistor has taken in the files, so a write can tell it was overtaken
+  private mAdoptions: number = 0;
   private mRecord: typeof recordErrorSpan;
 
   constructor(
@@ -565,6 +567,7 @@ class PluginPersistor implements IPersistor {
     // fixed now: the state may change while the write retries, and the failure check below must
     // judge what this write tried to put on disk
     const filtered = this.toPluginList(sorted);
+    const adoptions = this.mAdoptions;
 
     const pluginsFile = path.join(destPath, "plugins.txt");
     return this.writeFiles(destPath, sorted, filtered)
@@ -575,8 +578,10 @@ class PluginPersistor implements IPersistor {
       .catch((err: unknown) => {
         // a write that would have changed the files leaves them behind what Vortex holds, so the
         // next read must not pass for Vortex's own write and be passed over. A write that only
-        // restated the files (the game holding them while it starts) changes nothing.
+        // restated the files (the game holding them while it starts) changes nothing. Files
+        // taken in meanwhile may have been partly written over, so nothing is certain then.
         if (
+          adoptions !== this.mAdoptions ||
           !this.holdsOurLastWrite(filtered, true) ||
           (this.mPluginFormat === "original" && !this.holdsOurLastWrite(sorted, false))
         ) {
@@ -608,6 +613,7 @@ class PluginPersistor implements IPersistor {
    * time plugins.txt was written.
    */
   private async writeFiles(destPath: string, sorted: string[], filtered: string[]): Promise<Date> {
+    const adoptions = this.mAdoptions;
     const loadOrderFile = path.join(destPath, "loadorder.txt");
     const pluginsFile = path.join(destPath, "plugins.txt");
     // this mkdir should not be necessary
@@ -626,7 +632,10 @@ class PluginPersistor implements IPersistor {
         "latin1",
       ),
     );
-    this.mWritten = { loadorder: sorted, plugins: filtered };
+    // files taken in while this write was under way hold a newer state than the one it wrote, so
+    // what is now on disk matches neither, and the next read must be judged as foreign
+    this.mWritten =
+      adoptions === this.mAdoptions ? { loadorder: sorted, plugins: filtered } : undefined;
 
     if (this.mPluginFormat === "original" && this.mControlOrder()) {
       const offset = 946684800;
@@ -775,6 +784,8 @@ class PluginPersistor implements IPersistor {
     const pluginsFile = path.join(this.mPluginPath, "plugins.txt");
 
     const newPlugins: IPluginMap = {};
+    // the entries of loadorder.txt as read, in the original format
+    let loadOrderKeys: string[] | undefined;
 
     let phaseOne: Promise<Buffer>;
     // for games with the old format we use the loadorder.txt file as reference for the
@@ -790,6 +801,7 @@ class PluginPersistor implements IPersistor {
       });
       phaseOne = withFileRetry(() => readFile(loadOrderFile)).then((data: Buffer) => {
         const keys: string[] = this.filterFileData(data.toString("utf-8"), false, foreign);
+        loadOrderKeys = keys;
         offset = this.initFromKeyList(newPlugins, keys, false, offset);
         return withFileRetry(() => readFile(pluginsFile));
       });
@@ -837,6 +849,14 @@ class PluginPersistor implements IPersistor {
             return Promise.resolve();
           }
           this.adoptParsed(newPlugins);
+          // what Vortex now holds is what the files say, so a later read is judged against them
+          // rather than against a write Vortex made before. A write still in flight is older
+          // than this, and gives up its claim when it lands (see writeFiles).
+          this.mWritten = {
+            loadorder: loadOrderKeys ?? this.mWritten?.loadorder ?? [],
+            plugins: keys,
+          };
+          this.mAdoptions += 1;
           return Promise.resolve();
         });
       })
