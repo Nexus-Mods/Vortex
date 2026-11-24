@@ -17,7 +17,6 @@ vi.mock("node:fs/promises", () => {
 
 vi.mock("./uploadV3", () => ({
   pollUploadAvailable: vi.fn().mockResolvedValue(undefined),
-  uploadFile: vi.fn().mockResolvedValue(undefined),
   uploadS3Multipart: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -39,13 +38,13 @@ import type { IExtensionApi } from "../../../types/IExtensionContext";
 import { createVortexNexusV3Client } from "../nexusV3Client";
 import { isLoggedIn } from "../selectors";
 import { submitCollectionV3 } from "./submitCollectionV3";
-import { uploadFile, uploadS3Multipart } from "./uploadV3";
+import { uploadS3Multipart } from "./uploadV3";
 
 const mockCreateClient = vi.mocked(createVortexNexusV3Client);
 const mockStat = stat as unknown as ReturnType<typeof vi.fn>;
 
-const SMALL_FILE_SIZE = 1024; // < 100 MiB
-const LARGE_FILE_SIZE = 200 * 1024 * 1024; // > 100 MiB
+const SMALL_FILE_SIZE = 1024;
+const LARGE_FILE_SIZE = 200 * 1024 * 1024;
 
 function makeApi(): IExtensionApi {
   return {
@@ -66,7 +65,6 @@ function makeManifest(): ICollectionManifest {
 
 function makeMockClient(): Pick<
   NexusV3Client,
-  | "createUpload"
   | "createMultipartUpload"
   | "finaliseUpload"
   | "getUpload"
@@ -75,14 +73,8 @@ function makeMockClient(): Pick<
   | "editCollection"
 > {
   return {
-    createUpload: vi.fn<NexusV3Client["createUpload"]>().mockResolvedValue({
-      id: "upload-123",
-      presigned_url: "https://s3.example.com/upload",
-      user: { id: "1" },
-      state: "created",
-    }),
     createMultipartUpload: vi.fn<NexusV3Client["createMultipartUpload"]>().mockResolvedValue({
-      id: "upload-456",
+      id: "upload-123",
       part_size_bytes: 100 * 1024 * 1024,
       part_presigned_urls: ["https://s3.example.com/part1", "https://s3.example.com/part2"],
       complete_presigned_url: "https://s3.example.com/complete",
@@ -126,26 +118,16 @@ describe("submitCollectionV3", () => {
   });
 
   describe("upload path selection", () => {
-    it("uses single-part upload for small files", async () => {
-      mockStat.mockResolvedValue({ size: SMALL_FILE_SIZE });
+    it.each([
+      ["small", SMALL_FILE_SIZE],
+      ["large", LARGE_FILE_SIZE],
+    ])("uses multipart upload for %s files", async (name, size) => {
+      mockStat.mockResolvedValue({ size });
 
-      await submitCollectionV3(makeApi(), makeManifest(), "/tmp/small.zip", undefined);
+      await submitCollectionV3(makeApi(), makeManifest(), `/tmp/${name}.zip`, undefined);
 
-      expect(mockClient.createUpload).toHaveBeenCalledWith(SMALL_FILE_SIZE, "small.zip");
-      expect(vi.mocked(uploadFile)).toHaveBeenCalled();
-      expect(mockClient.createMultipartUpload).not.toHaveBeenCalled();
-      expect(vi.mocked(uploadS3Multipart)).not.toHaveBeenCalled();
-    });
-
-    it("uses multipart upload for large files", async () => {
-      mockStat.mockResolvedValue({ size: LARGE_FILE_SIZE });
-
-      await submitCollectionV3(makeApi(), makeManifest(), "/tmp/large.zip", undefined);
-
-      expect(mockClient.createMultipartUpload).toHaveBeenCalledWith(LARGE_FILE_SIZE, "large.zip");
+      expect(mockClient.createMultipartUpload).toHaveBeenCalledWith(size, `${name}.zip`);
       expect(vi.mocked(uploadS3Multipart)).toHaveBeenCalled();
-      expect(mockClient.createUpload).not.toHaveBeenCalled();
-      expect(vi.mocked(uploadFile)).not.toHaveBeenCalled();
     });
   });
 
@@ -156,23 +138,12 @@ describe("submitCollectionV3", () => {
     it("sends a content-disposition built from the filename it registered", async () => {
       await submitCollectionV3(makeApi(), makeManifest(), "/tmp/collection_1.7z", undefined);
 
-      const [, , , options] = vi.mocked(uploadFile).mock.calls[0]!;
+      const [, , , options] = vi.mocked(uploadS3Multipart).mock.calls[0]!;
       expect(options).toMatchObject({
         headers: {
           contentType: "application/octet-stream",
           contentDisposition: 'attachment; filename="collection_1.7z"',
         },
-      });
-    });
-
-    it("sends them on the multipart path too", async () => {
-      mockStat.mockResolvedValue({ size: LARGE_FILE_SIZE });
-
-      await submitCollectionV3(makeApi(), makeManifest(), "/tmp/collection_2.7z", undefined);
-
-      const [, , , options] = vi.mocked(uploadS3Multipart).mock.calls[0]!;
-      expect(options).toMatchObject({
-        headers: { contentDisposition: 'attachment; filename="collection_2.7z"' },
       });
     });
   });

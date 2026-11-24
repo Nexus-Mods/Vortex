@@ -1,16 +1,23 @@
 import * as bbcode from "bbcode-to-react";
 import type * as React from "react";
 
+import type { IExternalImagePlaceholderOptions } from "@/ui/components/prose/external_image_placeholder/ExternalImagePlaceholder";
+
 import BrTag from "./BrTag";
+import CompareTag from "./CompareTag";
+import EmbedLinkTag from "./EmbedLinkTag";
 import FontTag from "./FontTag";
 import HeadingTag from "./HeadingTag";
 import IdentityTag from "./IdentityTag";
+import LeftTag from "./LeftTag";
 import LineTag from "./LineTag";
 import LinkTag from "./LinkTag";
 import MoreTag from "./MoreTag";
-import OmittedTag from "./OmittedTag";
+import SafeImageTag from "./SafeImageTag";
 import SafeLinkTag from "./SafeLinkTag";
+import SAFE_SIMPLE_TAGS from "./SafeSimpleTag";
 import SafeSizeTag from "./SafeSizeTag";
+import SafeSpoilerTag from "./SafeSpoilerTag";
 import SafeStyleTag from "./SafeStyleTag";
 import SizeTag from "./SizeTag";
 import SpoilerTag from "./SpoilerTag";
@@ -32,34 +39,44 @@ export interface IBBCodeContext {
   callbacks?: { [name: string]: (...args: unknown[]) => void };
   /**
    * if enabled, [link] or [url] tags may link to local files, which then get opened
-   * with opn.
+   * through window.api.shell.
    * This should only be set for bbcode hard coded into Vortex, not bbcode taken from a
    * website or anything for security reasons
    */
   allowLocal?: boolean;
+  /** Whether what the bbcode's from, such as a mod, is adult content; blurs its images if set to. */
+  isFromAdultContent?: boolean;
+  /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
+  externalImagePlaceholders?: IExternalImagePlaceholderOptions;
 }
 
 const createFullParser = (safe: boolean) => {
   const parser = new bbcode.Parser();
+  // Read by tags that draw bbcode we don't write ourselves differently, such as `[more]`.
+  parser["renderer"].options.safe = safe;
 
   parser.registerTag("size", safe ? SafeSizeTag : SizeTag);
   parser.registerTag("br", BrTag);
   parser.registerTag("email", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("link", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("url", safe ? SafeLinkTag : LinkTag);
-  parser.registerTag("spoiler", SpoilerTag);
+  parser.registerTag("spoiler", safe ? SafeSpoilerTag : SpoilerTag);
   parser.registerTag("font", FontTag);
-  parser.registerTag("youtube", safe ? OmittedTag : YoutubeTag);
+  parser.registerTag("youtube", safe ? EmbedLinkTag : YoutubeTag);
   parser.registerTag("line", LineTag);
   parser.registerTag("heading", HeadingTag);
   parser.registerTag("svg", SvgTag);
   parser.registerTag("more", MoreTag);
   parser.registerTag("tooltip", TooltipTag);
   parser.registerTag("style", safe ? SafeStyleTag : StyleTag);
+  parser.registerTag("left", LeftTag);
 
   // The parser's own image tag loads whatever address it is given.
   if (safe) {
-    parser.registerTag("img", OmittedTag);
+    parser.registerTag("img", SafeImageTag);
+    parser.registerTag("compare", CompareTag);
+    ["video", "twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
+    Object.entries(SAFE_SIMPLE_TAGS).forEach(([name, tag]) => parser.registerTag(name, tag));
   }
 
   return parser;
@@ -67,8 +84,8 @@ const createFullParser = (safe: boolean) => {
 
 const fullParser = createFullParser(false);
 
-// For bbcode we don't write ourselves: no images or videos, and links only to places they are
-// allowed to go.
+// For bbcode we don't write ourselves: images only from Nexus Mods, embeds as links, and links only
+// to places they are allowed to go.
 const safeParser = createFullParser(true);
 
 const stripParser = new bbcode.Parser();
@@ -100,8 +117,21 @@ function transformSymbol(fullMatch, symbol: string): string {
   return convertDiv.innerText;
 }
 
+/** The site's legacy tags, as the tags the parser draws them with. */
+const LEGACY_TAGS: Array<[RegExp, string]> = [
+  [/\[ol\]/gi, "[list=1]"],
+  [/\[\/ol\]/gi, "[/list]"],
+  [/\[ul\]/gi, "[list]"],
+  [/\[\/ul\]/gi, "[/list]"],
+  [/\[aimg=([^\]]*)\]/gi, "[img align=$1]"],
+  [/\[\/aimg\]/gi, "[/img]"],
+];
+
 export function preProcess(input: string): string {
-  return input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol);
+  return LEGACY_TAGS.reduce(
+    (text, [legacy, tag]) => text.replace(legacy, tag),
+    input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol),
+  );
 }
 
 function render(parser: typeof fullParser, input: string, context?: unknown): React.ReactChild[] {
@@ -120,7 +150,7 @@ function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
   return render(fullParser, input, context);
 }
 
-/** As `renderBBCode`, for bbcode we don't write ourselves: no images or videos, and safe links. */
+/** As `renderBBCode`, for bbcode we don't write ourselves: Nexus images, embeds as links, safe links. */
 export function renderSafeBBCode(input: string, context?: unknown): React.ReactChild[] {
   return render(safeParser, input, context);
 }

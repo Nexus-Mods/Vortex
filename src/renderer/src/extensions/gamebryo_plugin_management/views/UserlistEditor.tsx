@@ -14,10 +14,10 @@ import type { IState } from "../../../types/IState";
 import { addRule, removeRule } from "../actions/userlist";
 import { closeDialog } from "../actions/userlistEdit";
 import type { ILOOTPlugin } from "../types/ILOOTList";
-import type { IPlugins } from "../types/IPlugins";
+import type { IPlugins, IRuleDialog, UserlistRuleType } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 
-type RuleType = "after" | "requires" | "incompatible";
+type RuleType = UserlistRuleType;
 
 interface ISelectOption {
   value: string;
@@ -68,12 +68,7 @@ class RuleEntry extends React.Component<IRuleEntryProps, {}> {
   };
 }
 
-export interface IDialog {
-  gameId: string;
-  pluginId: string;
-  reference: string;
-  type: RuleType;
-}
+type IDialog = IRuleDialog;
 
 interface IConnectedProps {
   dialog: IDialog;

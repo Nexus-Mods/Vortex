@@ -1,4 +1,5 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { supportTier } from "../../gamemode_management/tiered/supportTier";
 import { ModsDeployedEvent } from "./MixpanelEvents";
 import { numericNexusGameId } from "./numericGameId";
 
@@ -21,10 +22,12 @@ export interface ModsDeployedInfo {
 
 /** Emits mods_deployed for a successful deployment to the game directory. */
 export function emitModsDeployed(api: IExtensionApi, info: ModsDeployedInfo): void {
+  const numericId = numericNexusGameId(info.gameId);
   api.events.emit(
     "analytics-track-mixpanel-event",
     new ModsDeployedEvent({
-      game_id: numericNexusGameId(info.gameId),
+      game_id: numericId,
+      support_tier: numericId === null ? undefined : supportTier(api.getState(), numericId),
       deployment_method: info.deploymentMethod,
       file_count: info.fileCount,
       enabled_mod_count: info.enabledModCount,

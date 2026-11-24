@@ -8,6 +8,8 @@ import React, {
   type ReactNode,
 } from "react";
 
+import type { XOr } from "@/ui/utils/types";
+
 /**
  * Arguments for the register tab method
  */
@@ -23,6 +25,7 @@ type ITabType = "primary" | "secondary";
  * State for the TabContext
  */
 export interface ITabsState {
+  hasBorder: boolean;
   onKeyDown: (event: KeyboardEvent) => void;
   onTabClick: (tabName: string) => void;
   registerTab: (args: IRegisterTabArgs) => void;
@@ -34,13 +37,25 @@ export interface ITabsState {
 /**
  * Props for the TabProvider
  */
-export interface ITabProviderProps {
+export type ITabProviderProps = {
+  /** The tab bar and panels. */
   children?: ReactNode;
+  /** Called with a tab's name when it's selected. */
   onSetSelectedTab?: (tab: string) => void;
+  /** The name of the selected tab. */
   tab: string;
+  /** Prefixes the ids that tie each tab to its panel. */
   tabListId: string;
-  tabType?: ITabType;
-}
+} & XOr<
+  {
+    /** A rule under the tabs, where nothing around them divides them off. Primary tabs only. */
+    hasBorder?: boolean;
+  },
+  {
+    /** Secondary tabs; primary when left out. */
+    tabType: "secondary";
+  }
+>;
 
 /**
  * The React context for the TabProvider
@@ -52,10 +67,11 @@ export const TabContext = createContext<ITabsState | undefined>(undefined);
  */
 export const TabProvider = ({
   children,
+  hasBorder = false,
   onSetSelectedTab,
   tab,
   tabListId,
-  tabType = "primary",
+  tabType,
 }: ITabProviderProps) => {
   // Handles callback for tab select behaviour (e.g. scrolling)
   const setSelectedTab = (tabToSet: string) => {
@@ -137,12 +153,13 @@ export const TabProvider = ({
   return (
     <TabContext.Provider
       value={{
+        hasBorder,
         onKeyDown,
         onTabClick: setSelectedTab,
         registerTab,
         selectedTab,
         tabListId,
-        tabType,
+        tabType: tabType ?? "primary",
       }}
     >
       {children}

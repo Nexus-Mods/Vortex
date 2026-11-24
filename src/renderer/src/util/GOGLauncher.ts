@@ -19,6 +19,29 @@ const GOG_EXEC = "GalaxyClient.exe";
 
 const REG_GOG_GAMES = "SOFTWARE\\WOW6432Node\\GOG.com\\Games";
 
+export interface IGogEntry extends IGameStoreEntry {
+  /** The game a DLC belongs to; undefined for a game, or when the registry doesn't say. */
+  dependsOn?: string;
+}
+
+/** The product id of the game an entry is for: a DLC's entry names its game. */
+export function gogGameProductId(entry: IGameStoreEntry): string {
+  return "dependsOn" in entry && typeof entry.dependsOn === "string"
+    ? entry.dependsOn
+    : entry.appid;
+}
+
+/** Galaxy names the game on a DLC's key and leaves the value empty on a game's. */
+function dependsOnOf(hkey: Buffer, key: string): string | undefined {
+  try {
+    const value = winapi.RegGetValue(hkey, key, "dependsOn").value;
+    return typeof value === "string" && value !== "" ? value : undefined;
+  } catch {
+    // without the value, the entry's .info has to tell
+    return undefined;
+  }
+}
+
 /**
  * base class to interact with local GoG Galaxy client
  */
@@ -166,11 +189,12 @@ export class GoGLauncher implements IGameStore {
           const gameEntries: IGameStoreEntry[] = keys
             .map((key) => {
               try {
-                const gameEntry: IGameStoreEntry = {
+                const gameEntry: IGogEntry = {
                   appid: winapi.RegGetValue(hkey, key.key, "gameID").value as string,
                   gamePath: winapi.RegGetValue(hkey, key.key, "path").value as string,
                   name: winapi.RegGetValue(hkey, key.key, "startMenu").value as string,
                   gameStoreId: STORE_ID,
+                  dependsOn: dependsOnOf(hkey, key.key),
                 };
                 return gameEntry;
               } catch (err) {

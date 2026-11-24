@@ -6,7 +6,6 @@ import renderModName from "../../extensions/mod_management/util/modName";
 import type { IDialogResult } from "../../types/IDialog";
 import type { IExtensionApi } from "../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import { calcDuration } from "../../util/message";
 import * as selectors from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
@@ -74,7 +73,8 @@ export async function initFromProfile(api: IExtensionApi, profileId?: string) {
       id: "collection-created",
       title: updated ? "Collection updated" : "Collection created",
       message: name,
-      displayMS: calcDuration(name.length + 20),
+      // No displayMS: it has an Edit action, so it stays in notifications until the
+      // user clicks Edit or dismisses it, even if they were elsewhere during the upload.
       actions: [
         {
           title: "Edit",

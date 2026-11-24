@@ -18,6 +18,16 @@ function clone<T>(input: T): T {
  *
  * @public
  * @deprecated Use optional chaining (`?.`) and nullish coalescing (`??`) instead.
+ *
+ * @example
+ * ```ts
+ * // before
+ * getSafe(state, ["mods", modId, "attributes"], {});
+ * // after
+ * state.mods?.[modId]?.attributes ?? {};
+ * ```
+ * Use `??`, not `||`: getSafe returns the fallback only for `null` and `undefined`,
+ * so a stored `0`, `""` or `false` comes back as is.
  */
 export function getSafe<T>(state: any, path: Array<string | number | undefined>, fallback: T): T {
   if (!path || path.length === 0) {
@@ -88,6 +98,33 @@ export function mutateSafe<T>(state: T, path: Array<string | number>, value: any
  *
  * @public
  * @deprecated Use spread syntax with computed property names and nested spreads for immutable updates.
+ *
+ * @example
+ * ```ts
+ * // before
+ * setSafe(state, ["mods", modId, "state"], "installed");
+ * // after
+ * ({
+ *   ...state,
+ *   mods: {
+ *     ...state.mods,
+ *     [modId]: { ...state.mods?.[modId], state: "installed" },
+ *   },
+ * });
+ * ```
+ * setSafe creates any missing intermediate object, so read each level with `?.` and
+ * spread it: `{ ...undefined }` is `{}`.
+ *
+ * setSafe copies a level that is already an array with `slice()`, so it stays an array.
+ * A spread would turn it into an object with index keys; replace the element instead:
+ * ```ts
+ * // before
+ * setSafe(state, ["order", index], modId);
+ * // after
+ * ({ ...state, order: state.order.with(index, modId) });
+ * ```
+ * A level that doesn't exist yet is always created as `{}`, even when the next segment
+ * is a number.
  */
 export function setSafe<T extends object>(state: T, path: Array<string | number>, value: any): T {
   if (path.length === 0) {
@@ -115,6 +152,21 @@ export function setSafe<T extends object>(state: T, path: Array<string | number>
  *
  * @public
  * @deprecated Use computed property spread with optional chaining guard (e.g. `state.a?.b ? { ...state, a: { ...state.a, b: val } } : state`).
+ *
+ * @example
+ * ```ts
+ * // before
+ * setOrNop(state, ["mods", modId, "state"], "installed");
+ * // after
+ * const mod = state.mods?.[modId];
+ * mod === undefined
+ *   ? state
+ *   : { ...state, mods: { ...state.mods, [modId]: { ...mod, state: "installed" } } };
+ * ```
+ * Every segment but the last must already exist; if one is missing, setOrNop returns the
+ * same `state` reference, so the replacement must return `state` too, not a copy. The last
+ * key is added if it is missing. Check with `=== undefined`, not truthiness: an existing
+ * `0`, `""` or `false` counts as present.
  */
 export function setOrNop<T>(state: T, path: string[], value: any): T {
   const firstElement: string = path[0];
@@ -140,6 +192,20 @@ export function setOrNop<T>(state: T, path: string[], value: any): T {
  *
  * @public
  * @deprecated Use `Object.hasOwn()` guard with spread, or `Object.assign()`.
+ *
+ * @example
+ * ```ts
+ * // before
+ * changeOrNop(state, ["mods", modId, "state"], "installed");
+ * // after
+ * const mod = state.mods?.[modId];
+ * mod === undefined || !Object.hasOwn(mod, "state")
+ *   ? state
+ *   : { ...state, mods: { ...state.mods, [modId]: { ...mod, state: "installed" } } };
+ * ```
+ * Unlike setOrNop, the last key must exist too. If anything on the path is missing,
+ * changeOrNop returns the same `state` reference. Use `Object.hasOwn` for the last key:
+ * a key that is present but `undefined` still counts, and changeOrNop overwrites it.
  */
 export function changeOrNop<T>(state: T, path: Array<string | number>, value: any): T {
   const firstElement: string | number = path[0];
@@ -166,6 +232,29 @@ export function changeOrNop<T>(state: T, path: Array<string | number>, value: an
  *
  * @public
  * @deprecated Use destructuring rest (`{ [key]: _, ...rest }`) for objects, `Array.filter()` or `Array.toSpliced()` for arrays.
+ *
+ * @example
+ * ```ts
+ * // before
+ * deleteOrNop(state, ["mods", modId, "attributes"]);
+ * // after
+ * const mod = state.mods?.[modId];
+ * if (mod === undefined || !Object.hasOwn(mod, "attributes")) {
+ *   return state;
+ * }
+ * const { attributes: _, ...rest } = mod;
+ * return { ...state, mods: { ...state.mods, [modId]: rest } };
+ * ```
+ * If any key on the path is missing, deleteOrNop returns the same `state` reference.
+ *
+ * When the last level is an array, the last segment is an index and deleteOrNop splices
+ * it out. Destructuring an array gives an object, so use `toSpliced` instead:
+ * ```ts
+ * // before
+ * deleteOrNop(state, ["order", index]);
+ * // after
+ * ({ ...state, order: state.order.toSpliced(index, 1) });
+ * ```
  */
 export function deleteOrNop<T>(state: T, path: Array<string | number>): T {
   const firstElement = path[0];
@@ -224,6 +313,24 @@ export function setDefaultArray<T>(state: T, path: Array<string | number>, fallb
  *
  * @public
  * @deprecated Use array spread (`[...arr, value]`) or `Array.toSpliced()`.
+ *
+ * @example
+ * ```ts
+ * // before
+ * pushSafe(state, ["mods", modId, "rules"], rule);
+ * // after
+ * const mod = state.mods?.[modId];
+ * ({
+ *   ...state,
+ *   mods: {
+ *     ...state.mods,
+ *     [modId]: { ...mod, rules: [...(mod?.rules ?? []), rule] },
+ *   },
+ * });
+ * ```
+ * Like setSafe, pushSafe creates missing intermediate objects and the array itself. It
+ * also replaces a value that isn't an array with `[rule]`, where `?? []` would spread it
+ * or throw; that only matters if the state can hold the wrong type.
  */
 export function pushSafe<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
@@ -239,6 +346,21 @@ export function pushSafe<T>(state: T, path: Array<string | number>, value: any):
  *
  * @public
  * @deprecated Use `arr.includes(value) ? state : [...arr, value]`.
+ *
+ * @example
+ * ```ts
+ * // before
+ * addUniqueSafe(state, ["mods", modId, "rules"], rule);
+ * // after
+ * const mod = state.mods?.[modId];
+ * const rules = mod?.rules ?? [];
+ * rules.includes(rule)
+ *   ? state
+ *   : { ...state, mods: { ...state.mods, [modId]: { ...mod, rules: [...rules, rule] } } };
+ * ```
+ * When the value is already there, addUniqueSafe returns the same `state` reference.
+ * Values are compared with `===`, so two equal objects are still different values.
+ * Missing levels are created as in pushSafe.
  */
 export function addUniqueSafe<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
@@ -255,6 +377,25 @@ export function addUniqueSafe<T>(state: T, path: Array<string | number>, value: 
  *
  * @public
  * @deprecated Use `arr.filter(v => v !== value)` or `arr.toSpliced(arr.indexOf(value), 1)`.
+ *
+ * @example
+ * ```ts
+ * // before
+ * removeValue(state, ["mods", modId, "rules"], rule);
+ * // after
+ * const mod = state.mods?.[modId];
+ * const rules = mod?.rules ?? [];
+ * const index = rules.indexOf(rule);
+ * index === -1
+ *   ? state
+ *   : {
+ *       ...state,
+ *       mods: { ...state.mods, [modId]: { ...mod, rules: rules.toSpliced(index, 1) } },
+ *     };
+ * ```
+ * removeValue removes only the first match, and returns the same `state` reference when
+ * there is none. `filter` removes every match and always returns a new array, so use it
+ * only when the array can't hold duplicates and you check for a match first.
  */
 export function removeValue<T>(state: T, path: Array<string | number>, value: any): T {
   const copy = setDefaultArray(state, path, Array<unknown>());
@@ -290,6 +431,26 @@ export function removeValueIf<T extends object>(
  *
  * @public
  * @deprecated Use spread syntax (`{ ...obj, ...values }`).
+ *
+ * @example
+ * ```ts
+ * // before
+ * merge(state, ["mods", modId, "attributes"], attributes);
+ * // after
+ * ({
+ *   ...state,
+ *   mods: {
+ *     ...state.mods,
+ *     [modId]: {
+ *       ...state.mods?.[modId],
+ *       attributes: { ...state.mods?.[modId]?.attributes, ...attributes },
+ *     },
+ *   },
+ * });
+ * ```
+ * The merge is shallow: only the target object's own keys are combined. Missing levels
+ * are created as in setSafe. With an empty path, `merge(state, [], values)` is
+ * `{ ...state, ...values }`.
  */
 export function merge<T extends object>(state: T, path: Array<string | number>, value: any): T {
   const newVal = { ...getSafe(state, path, {}), ...value };

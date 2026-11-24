@@ -1,4 +1,4 @@
-import type { VortexModStagingFolder } from "@vortex/shared";
+import type { VortexModId, VortexModStagingFolder } from "@vortex/shared";
 
 import safeCreateAction from "../../../actions/safeCreateAction";
 import { UserCanceled } from "../../../util/CustomErrors";
@@ -51,7 +51,10 @@ export const addDeploymentFailures = safeCreateAction(
  * stores info about files that were changed outside the control of Vortex. The user
  * will be asked how to deal with them
  */
-export const setExternalChanges = safeCreateAction("SET_EXTERNAL_CHANGES", (entries) => entries);
+export const setExternalChanges = safeCreateAction(
+  "SET_EXTERNAL_CHANGES",
+  (entries: IFileEntry[]) => entries,
+);
 
 /** source limits the action to that mod's files */
 export const setExternalChangeAction = safeCreateAction(
@@ -96,4 +99,10 @@ export function confirmExternalChanges(changes: IFileEntry[], canceled: boolean)
 export const focusModsTableGroup = safeCreateAction(
   "FOCUS_MODS_TABLE_GROUP",
   (groupId: string | undefined) => groupId,
+);
+
+/** Asks the new Mods table to scroll to a mod and select it, by id; undefined once it has. */
+export const focusModsTableMod = safeCreateAction(
+  "FOCUS_MODS_TABLE_MOD",
+  (modId: VortexModId | undefined) => modId,
 );

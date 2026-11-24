@@ -44,9 +44,8 @@ describe("onRefreshUserInfo", () => {
     const harness = makeApi();
     read.mockClear();
     harness.setState((draft) => {
-      // IState types account as {} because the nexus slice is contributed by this extension;
-      // dropping the whole account is what a logged-out session looks like to isLoggedIn
-      draft.confidential.account = {};
+      // without the nexus account slice, isLoggedIn sees a logged-out session
+      delete draft.confidential.account.nexus;
     });
 
     await expect(onRefreshUserInfo({} as never, harness.api)()).resolves.toBeUndefined();

@@ -14,12 +14,14 @@ Project and coding documentation. To set up and build Vortex, start with
 
 - [DEBUGGING-GUIDE.md](DEBUGGING-GUIDE.md) - VS Code debugging, log files, DevTools, Redux DevTools, performance
 - [error-reporting/](error-reporting/README.md) - How errors are captured, filtered, fingerprinted and exported
+- [investigation/state-store-key-order-corruption.md](investigation/state-store-key-order-corruption.md) - Mod and download records vanishing because of out-of-order leveldb keys (LAZ-978)
 
 ## Writing code
 
 - [frontend.md](frontend.md) - Renderer conventions: React, types, props, styling, icons, accessibility
 - [state.md](state.md) - Renderer Redux state: the hives, writing and registering a reducer, verifiers, the deprecated `storeHelper` helpers
-- [testing.md](testing.md) - Running tests, component-test selectors, mocking `vortex-api` in extension tests
+- [typescript.md](typescript.md) - TS 7 as the default compiler, the pnpmfile hook that gives library users TS 6, and editor setup
+- [testing.md](testing.md) - Running tests, component-test selectors, keeping React `act()` warnings out, mocking `vortex-api` in extension tests
 - [design-system/page-migration.md](design-system/page-migration.md) - Converting a legacy `MainPage` to the new `Page` layout
 - [I18N_MIGRATION_GUIDE.md](I18N_MIGRATION_GUIDE.md) - Namespaces, key format, using `t` correctly
 - [I18N_STATUS.md](I18N_STATUS.md) - Migration progress by namespace
@@ -30,6 +32,7 @@ Project and coding documentation. To set up and build Vortex, start with
 - [mod-management/collections.md](mod-management/collections.md) - Collections and phased installation; phase invariants
 - [mod-management/EXTERNAL-CHANGES.md](mod-management/EXTERNAL-CHANGES.md) - The External Changes dialog: change types, actions, auto-resolution
 - [analytics.md](analytics.md) - Mixpanel super properties, ID-to-name lookup tables, and how to add tracking to an extension
+- [game-folder-check.md](game-folder-check.md) - How Vortex measures whether a Steam game folder was dirty when the game was managed, and what it sends
 - [updater.md](updater.md) - How updates are detected, downloaded and applied; install types, the state machine, channels and the analytics funnel
 - [updater-testing.md](updater-testing.md) - Exercising the update cycle offline with the mock feed
 - [updater-rehearsal.md](updater-rehearsal.md) - Signed end-to-end rehearsal against a real GitHub repo

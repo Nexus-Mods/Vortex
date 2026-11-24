@@ -15,7 +15,6 @@ import * as tooltip from "../../../controls/TooltipControls";
 import type { IState } from "../../../types/IState";
 import getVortexPath from "../../../util/getVortexPath";
 import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
 import { truthy } from "../../../util/util";
 import { clearOAuthCredentials, setUserAPIKey } from "../actions/account";
 import { setUserInfo } from "../actions/persistent";
@@ -151,7 +150,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
       this.setDialogVisible(true);
       this.launchNexusOauth();
     } else {
-      opn(`${NEXUS_BASE_URL}/users/${userInfo.userId}`).catch((err) => undefined);
+      window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${userInfo.userId}`);
     }
   };
 

@@ -6,6 +6,7 @@ import { startActivity, stopActivity } from "../../actions/session";
 import { flushAsync, settle } from "../../test-utils/async";
 import { makeProfile } from "../../test-utils/builders";
 import { test } from "../../test-utils/gamebryoTest";
+import type { IExtensionApi } from "../../types/IExtensionContext";
 import { setPluginEnabled, setPluginOrder } from "./actions/loadOrder";
 import { setAutoSortEnabled } from "./actions/settings";
 import LootInterface from "./autosort";
@@ -284,5 +285,47 @@ describe("LootInterface autosort-plugins", () => {
     expect(await first).toBeNull();
     expect(await second).toBeNull();
     expect(harness.loot.sortPlugins).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("LootInterface did-sort-plugins", () => {
+  const recordSortSignals = (api: IExtensionApi) => {
+    const signals: unknown[][] = [];
+    api.events.on("did-sort-plugins", (...args: unknown[]) => signals.push(args));
+    return signals;
+  };
+
+  test("signals a finished sort with its game, profile and outcome", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    const signals = recordSortSignals(harness.api);
+
+    await harness.sort(true);
+
+    await vi.waitFor(() => expect(signals).toEqual([["skyrimse", harness.profileId, "sorted"]]));
+  });
+
+  test("signals a sort the auto-sort setting skipped", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    harness.api.store.dispatch(setAutoSortEnabled(false));
+    const signals = recordSortSignals(harness.api);
+
+    await harness.sort(false);
+
+    await vi.waitFor(() => expect(signals).toEqual([["skyrimse", harness.profileId, "skipped"]]));
+  });
+
+  test("signals a sort deferred behind a deployment only once it runs", async ({ makeLoot }) => {
+    const harness = await makeLoot(LootInterface);
+    await harness.seedPlugins(["A.esp"]);
+    const signals = recordSortSignals(harness.api);
+    harness.api.store.dispatch(startActivity("mods", "deployment"));
+
+    await harness.sort(false);
+    await flushAsync();
+    expect(signals).toEqual([]);
+
+    harness.api.store.dispatch(stopActivity("mods", "deployment"));
+    await vi.waitFor(() => expect(signals).toEqual([["skyrimse", harness.profileId, "sorted"]]));
   });
 });

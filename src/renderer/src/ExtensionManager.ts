@@ -41,7 +41,11 @@ import { suppressNotification } from "./actions/notificationSettings";
 import { setExtensionLoadFailures } from "./actions/session";
 import { setOptionalExtensions } from "./extensions/extension_manager/actions";
 import { parseExtensionInfo } from "./extensions/extension_manager/extensionInfo";
-import { extensionStateFromScan, findInstalled } from "./extensions/extension_manager/queries";
+import {
+  extensionStateFromScan,
+  findInstalled,
+  isSupersededBundledExtension,
+} from "./extensions/extension_manager/queries";
 import _sessionReducer from "./extensions/extension_manager/reducers";
 import type { IModReference, IModRepoId } from "./extensions/mod_management/types/IMod";
 import { IPCDownloadAdapter } from "./IPCDownloadAdapter";
@@ -100,16 +104,19 @@ import {
 } from "./util/CustomErrors";
 import { runElevated } from "./util/elevated";
 import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
+import { fillPlaceholders } from "./util/fill_placeholders/fillPlaceholders";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import type { i18n } from "./util/i18n";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
-import { showError } from "./util/message";
+import { MAX_TOAST_MS, showError } from "./util/message";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
+import { savePathFromDialogResult } from "./util/savePathFromDialogResult";
 import { activeGameId } from "./util/selectors";
 import { getSafe } from "./util/storeHelper";
+import { toastMessage } from "./util/toast_message/toastMessage";
 import {
   filteredEnvironment,
   isFunction,
@@ -789,7 +796,10 @@ class ExtensionManager {
       events: this.mEventEmitter,
       translate: (input, options?) => {
         if (this.mTranslator == null) {
-          return Array.isArray(input) ? input[0].toString() : input.toString();
+          // i18n hasn't loaded yet (e.g. a notification sent during startup). Show the
+          // English text, but still fill in its placeholders.
+          const text = Array.isArray(input) ? input[0].toString() : input.toString();
+          return fillPlaceholders(text, options?.replace);
         }
         if (options == null) {
           options = {};
@@ -1037,15 +1047,15 @@ class ExtensionManager {
       }
       if (this.canBeToast(noti)) {
         try {
-          const toastFunc = noti.type === "error" ? toast.error : toast.success;
+          // Only an error or a success gets the red or green style and icon; anything
+          // else (info, global) gets a neutral toast so it doesn't read as a success.
+          const toastFunc =
+            noti.type === "error" ? toast.error : noti.type === "success" ? toast.success : toast;
           const toastOptions: ToastOptions = {
             id: noti.id,
             duration: noti.displayMS,
           };
-          const message =
-            noti.title !== undefined
-              ? `${noti.title}:\n${noti.message ?? ""}`
-              : (noti.message ?? "");
+          const message = toastMessage(noti, this.mApi.translate);
           if (message.length > 0) {
             toastFunc(message, toastOptions);
             return noti.id;
@@ -1680,7 +1690,7 @@ class ExtensionManager {
     const invalidToastTypes = ["activity", "warning"];
     if (
       notif.displayMS != null &&
-      notif.displayMS <= 5000 &&
+      notif.displayMS <= MAX_TOAST_MS &&
       notif.noToast !== true &&
       (notif.actions == null || notif.actions.length === 0) &&
       !invalidToastTypes.includes(notif.type)
@@ -1946,9 +1956,7 @@ class ExtensionManager {
     //if (options === true) {
     //fullOptions.properties.push('showOverwriteConfirmation');
     //}
-    return PromiseBB.resolve(showSaveDialog(fullOptions)).then((result) =>
-      result.filePath !== undefined ? result.filePath : undefined,
-    );
+    return PromiseBB.resolve(showSaveDialog(fullOptions)).then(savePathFromDialogResult);
   }
 
   private selectExecutable(options: IOpenOptions) {
@@ -2530,7 +2538,7 @@ class ExtensionManager {
                   log("error", "Invalid spawn parameters", {
                     runExe,
                     args,
-                    options: JSON.stringify(options),
+                    options: _.omit(options, ["env"]),
                   });
                 }
 
@@ -2906,6 +2914,7 @@ class ExtensionManager {
     extension: { path: string; bundled: boolean },
     loadedExtensions: Set<string>,
     alreadyLoaded: IRegisteredExtension[],
+    coreExtensionNames: ReadonlySet<string> = new Set(),
   ): IRegisteredExtension[] {
     if (!fs.existsSync(extension.path)) {
       log("info", "failed to load dynamic extensions, path doesn't exist", extension.path);
@@ -2930,6 +2939,13 @@ class ExtensionManager {
         // native-addon errors.
         if (/\.installing$/i.test(name) || /\.bak-/i.test(name)) {
           log("debug", "skipping transient extension directory", { name });
+          return false;
+        }
+        // An update can leave behind the folder of a bundled extension that has since moved
+        // into core. Loaded next to core, it would run a second copy of the same reducers and
+        // persistors against the same state and files.
+        if (extension.bundled && isSupersededBundledExtension(name, coreExtensionNames)) {
+          log("warn", "skipping leftover bundled extension that is now part of core", { name });
           return false;
         }
         return true;
@@ -3076,6 +3092,7 @@ class ExtensionManager {
       settings_application: () => require("./extensions/settings_application/index.ts"),
       settings_interface: () => require("./extensions/settings_interface/index.ts"),
       settings_metaserver: () => require("./extensions/settings_metaserver/index.ts"),
+      vortex_benchmarks: () => require("./extensions/vortex_benchmarks/index.ts"),
       starter_dashlet: () => require("./extensions/starter_dashlet/index.ts"),
       sticky_mods: () => require("./extensions/sticky_mods/index.ts"),
       support_bundle: () => require("./extensions/support_bundle/index.ts"),
@@ -3114,6 +3131,7 @@ class ExtensionManager {
       { path: getVortexPath("bundledPlugins"), bundled: true },
       loadedExtensions,
       dynamicallyLoaded,
+      new Set(Object.keys(staticExtensions)),
     );
 
     // forgetExtension reaches the store but not disk; main drains its persist

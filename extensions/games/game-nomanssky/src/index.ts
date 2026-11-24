@@ -1,10 +1,10 @@
 /* eslint-disable */
 import path from "path";
 
-import { actions, fs, log, types, util } from "@nexusmods/vortex-api";
+import { actions, fs, log, types, util, VortexGameId } from "@nexusmods/vortex-api";
 import semver from "semver";
 
-const GAME_ID = "nomanssky";
+const GAME_ID = VortexGameId("nomanssky");
 const STEAMAPP_ID = "275850";
 const XBOX_ID = "HelloGames.NoMansSky";
 const MODTYPE_DEPRECATED_PAK = "nomanssky-deprecated-pak";

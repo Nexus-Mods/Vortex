@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import * as _ from "lodash";
 import * as React from "react";
 import { Panel } from "react-bootstrap";
@@ -65,7 +66,7 @@ interface IConnectedProps {
 }
 
 interface IActionProps {
-  onSetLoadOrderRendererOptions: (gameId: string, options: IItemRendererOptions) => void;
+  onSetLoadOrderRendererOptions: (gameId: VortexGameId, options: IItemRendererOptions) => void;
   onSetDeploymentNecessary: (gameId: string, necessary: boolean) => void;
   onSetOrder: (profileId: string, loadOrder: ILoadOrder) => void;
 }
@@ -347,7 +348,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
     }
 
     const useDefault = (gameEntry: IGameLoadOrderEntry) => {
-      onSetLoadOrderRendererOptions(profile.gameId, {
+      onSetLoadOrderRendererOptions(VortexGameId(profile.gameId), {
         displayCheckboxes: gameEntry?.displayCheckboxes === false ? false : true,
         listViewType: !!itemRendererOptions?.listViewType
           ? itemRendererOptions.listViewType
@@ -457,7 +458,7 @@ class LoadOrderPage extends ComponentEx<IProps, IComponentState> {
       listViewType: itemRendererOptions.listViewType === "full" ? "compact" : "full",
     };
 
-    onSetLoadOrderRendererOptions(profile.gameId, newOpts);
+    onSetLoadOrderRendererOptions(VortexGameId(profile.gameId), newOpts);
   };
 
   private onRefreshList = () => {

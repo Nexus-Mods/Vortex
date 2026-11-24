@@ -1,10 +1,11 @@
-import { GameDomain, type VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, type VortexGameId } from "@vortex/shared";
 
 import { nexusGames, numericGameIdToDomainName } from "@/extensions/nexus_integration/util";
 import type { ITierZeroGame } from "@/types/IState";
 import type { IState } from "@/types/IState";
 
 import { catalogExtensionGameIds } from "../../selectors";
+import { tierZeroGameId } from "../../tiered/tierZeroGameId";
 import { isTierZeroCandidate } from "./listableDetectedIds";
 
 /**
@@ -21,7 +22,7 @@ export function tierZeroEntry(state: IState, gameId: VortexGameId): ITierZeroGam
 
   for (const detected of state.session.gameMode?.detectedGames ?? []) {
     const domain = numericGameIdToDomainName(detected.gameId);
-    if (domain === undefined || domain.toLowerCase() !== gameId.toLowerCase()) {
+    if (domain === undefined || tierZeroGameId(detected.gameId) !== gameId) {
       continue;
     }
     if (!isTierZeroCandidate(detected, catalogExtensionGameIds(state))) {
@@ -31,8 +32,8 @@ export function tierZeroEntry(state: IState, gameId: VortexGameId): ITierZeroGam
     const nexusGame = nexusGames().find((game) => game.id === detected.gameId);
     return {
       gameId: detected.gameId,
-      domain: GameDomain(domain.toLowerCase()),
-      name: nexusGame?.name ?? gameId,
+      domain: NexusGameDomain(domain.toLowerCase()),
+      name: nexusGame?.name ?? domain,
       storeIDs: detected.storeIDs,
     };
   }

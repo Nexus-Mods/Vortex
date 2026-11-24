@@ -55,6 +55,9 @@ function makeGetRelPath(api: types.IExtensionApi, game: types.IGame) {
     }
   };
 
+  // games without an explicit mergeMods (e.g. tier 0 games) merge, same as in deployment
+  const gameMergeMods = game.mergeMods ?? true;
+
   const state: types.IState = api.getState();
   const discovery = state.settings.gameMode.discovered[game.id];
 
@@ -63,12 +66,12 @@ function makeGetRelPath(api: types.IExtensionApi, game: types.IGame) {
     modPaths,
   ).reduce((prev, modTypeId) => {
     if (modTypeId === "") {
-      prev[modTypeId] = makeResolver(modPaths[modTypeId], game.mergeMods);
+      prev[modTypeId] = makeResolver(modPaths[modTypeId], gameMergeMods);
     } else {
       const modType = util.getModType(modTypeId);
       prev[modTypeId] = makeResolver(
         modPaths[modTypeId],
-        modType?.options?.mergeMods ?? game.mergeMods,
+        modType?.options?.mergeMods ?? gameMergeMods,
       );
     }
     return prev;
@@ -84,7 +87,7 @@ function makeGetRelPath(api: types.IExtensionApi, game: types.IGame) {
       }
       modTypeResolver[mod.type] = makeResolver(
         modType.getPath(game),
-        modType?.options?.mergeMods ?? game.mergeMods,
+        modType?.options?.mergeMods ?? gameMergeMods,
       );
     }
 

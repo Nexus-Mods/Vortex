@@ -13,7 +13,6 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
 import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
-import opn from "@/util/opn";
 import { Campaign, Content, Section, nexusModsURL } from "@/util/util";
 
 /** Where the premium banner is shown. */
@@ -63,13 +62,13 @@ export const PremiumBanner = ({
                   trackPremiumBannerClicked({ ...identity, placement, total_issues: totalIssues });
                   setSentToPremiumPage(true);
 
-                  opn(
+                  window.api.shell.openUrl(
                     nexusModsURL(PREMIUM_PATH, {
                       section: Section.Users,
                       campaign: Campaign.BuyPremium,
                       content: Content.HealthCheckAd,
                     }),
-                  ).catch(() => undefined);
+                  );
                 }}
               />
             ),

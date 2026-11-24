@@ -79,12 +79,21 @@
         color: var(--color-danger-strong);
     }
 
+    /* Drawn over the control's right edge, bottom right in a text area, so it never takes a row
+       of its own; the control keeps room for it, so the text doesn't run underneath. */
     .nxm-field-character-count {
-        flex-shrink: 0;
-        font-size: var(--text-body-md);
-        line-height: var(--text-body-md--line-height);
-        letter-spacing: var(--text-body-md--letter-spacing);
-        color: var(--color-neutral-moderate);
+        position: absolute;
+        right: calc(var(--spacing) * 3);
+        pointer-events: none;
+        font-variant-numeric: tabular-nums;
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+        color: var(--color-neutral-subdued);
+
+        &.nxm-field-character-count-hidden {
+            visibility: hidden;
+        }
 
         &.nxm-field-character-count-warning {
             color: var(--color-warning-strong);

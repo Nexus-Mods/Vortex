@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 
+import { openFilePage as openNexusFilePage } from "@/extensions/health_check/utils/fileRequirements/fileRequirementActions";
 import { onDownloadRequirement } from "@/extensions/health_check/utils/modRequirements/onDownloadRequirement";
 import { shouldShowPremiumAd } from "@/extensions/nexus_integration/selectors";
+import { withVortexSource } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import { makeModAndFileUIDs } from "@/extensions/nexus_integration/util/UIDs";
 import type { IExtensionApi } from "@/types/IExtensionContext";
-import opn from "@/util/opn";
 
 import { setFeedbackGiven } from "../actions/persistent";
 import { feedbackGivenMap } from "../selectors";
@@ -38,12 +40,27 @@ export function useModRequirementActions(
 
   const openModPage = useCallback(() => {
     if (mod.modUrl) {
-      opn(mod.modUrl).catch(() => undefined);
+      window.api.shell.openUrl(withVortexSource({ url: mod.modUrl, feature: "health_check" }));
     }
   }, [mod.modUrl]);
 
+  // The upgrade prompt's free option: straight to the file's page, where free users pick
+  // the slow or fast download. Falls back to the mod page when there's no single file.
+  const openFilePage = useCallback(() => {
+    if (mod.mainFile) {
+      const { modUID, fileUID } = makeModAndFileUIDs(
+        mod.gameId,
+        String(mod.modId),
+        String(mod.mainFile.fileId),
+      );
+      openNexusFilePage(api, { modUID, fileUID });
+    } else {
+      openModPage();
+    }
+  }, [api, mod.gameId, mod.modId, mod.mainFile, openModPage]);
+
   // 1-click install is a Premium feature; free users get the upgrade prompt
-  // (which routes them to the mod page) instead of an in-app download.
+  // (which routes them to the file page) instead of an in-app download.
   // onDownloadRequirement reports its own failures and never rejects, so the
   // fire-and-forget call sites have nothing to catch; a failed install leaves the
   // detail page open rather than navigating away from the issue.
@@ -69,6 +86,7 @@ export function useModRequirementActions(
     showPremiumModal,
     setShowPremiumModal,
     openModPage,
+    openFilePage,
     installInApp,
     markFeedback,
   };

@@ -5,6 +5,7 @@
  * Serves:
  *   GET /repos/Nexus-Mods/<repo>/releases            release listing (fixture)
  *   GET /Nexus-Mods/<repo>/releases/download/<tag>/latest.yml
+ *   GET /Nexus-Mods/<repo>/releases/download/<tag>/latest-linux.yml   (the same manifest, for Linux dev)
  *   GET /Nexus-Mods/<repo>/releases/download/<tag>/<installer>.exe
  *
  * latest.yml and a dummy installer are generated per release tag with a
@@ -210,8 +211,10 @@ const server = createServer((req, res) => {
       res.end("no blockmap");
       return;
     }
-    if (asset === "latest.yml") {
-      console.log(`${label} -> 200 (generated latest.yml for ${tag})`);
+    // electron-updater asks for latest-linux.yml on Linux. Only latest.yml is published for real,
+    // so this is a convenience for running from source on Linux, not a supported updater platform.
+    if (asset === "latest.yml" || asset === "latest-linux.yml") {
+      console.log(`${label} -> 200 (generated ${asset} for ${tag})`);
       res.writeHead(200, { "content-type": "text/yaml" });
       res.end(latestYmlForTag(tag));
       return;

@@ -14,37 +14,48 @@ import type {
 } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
+import { NexusGameDomain, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as fuzz from "fuzzball";
 import type { TFunction } from "i18next";
-import * as React from "react";
+import React, {
+  type FunctionComponent,
+  type MouseEvent,
+  type PropsWithChildren,
+  useContext,
+} from "react";
 import { Button } from "react-bootstrap";
 import type { Action } from "redux";
 import {} from "uuid";
 
-import { setDownloadModInfo, setForcedLogout, setModAttribute } from "../../actions";
-import type { IDialogResult } from "../../actions/notifications";
-import { showDialog } from "../../actions/notifications";
-import FlexLayout from "../../controls/FlexLayout";
-import Image from "../../controls/Image";
-import LazyComponent from "../../controls/LazyComponent";
-import { log } from "../../logging";
-import type { IComponentContext } from "../../types/IComponentContext";
-import type { IExtensionApi, IExtensionContext } from "../../types/IExtensionContext";
-import type { IModLookupResult } from "../../types/IModLookupResult";
-import type { IState } from "../../types/IState";
-import { Pictogram } from "../../ui/components/pictogram/Pictogram";
-import { getApplication } from "../../util/application";
-import { ProcessCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import getVortexPath from "../../util/getVortexPath";
-import type { LogLevel } from "../../util/log";
-import { showError } from "../../util/message";
-import opn from "../../util/opn";
-import { activeGameId, downloadPathForGame, gameById } from "../../util/selectors";
-import { currentGame, getSafe } from "../../util/storeHelper";
+import { setDownloadModInfo, setForcedLogout, setModAttribute } from "@/actions";
+import type { IDialogResult } from "@/actions/notifications";
+import { showDialog } from "@/actions/notifications";
+import FlexLayout from "@/controls/FlexLayout";
+import Image from "@/controls/Image";
+import LazyComponent from "@/controls/LazyComponent";
+import type { ICategoryDictionary } from "@/extensions/category_management/types/ICategoryDictionary";
+import type { IDownload } from "@/extensions/download_management/types/IDownload";
+import { SITE_ID } from "@/extensions/gamemode_management/constants";
+import type { IGameStored } from "@/extensions/gamemode_management/types/IGameStored";
+import { getGame } from "@/extensions/gamemode_management/util/getGame";
+import type { IMod, IModRepoId } from "@/extensions/mod_management/types/IMod";
+import { isDownloadIdValid, isIdValid } from "@/extensions/mod_management/util/modUpdateState";
+import { log } from "@/logging";
+import type { IComponentContext } from "@/types/IComponentContext";
+import type { IExtensionApi, IExtensionContext } from "@/types/IExtensionContext";
+import type { IModLookupResult } from "@/types/IModLookupResult";
+import type { IState } from "@/types/IState";
+import { Pictogram } from "@/ui/components/pictogram/Pictogram";
+import { getApplication } from "@/util/application";
+import { ProcessCanceled } from "@/util/CustomErrors";
+import Debouncer from "@/util/Debouncer";
+import * as fs from "@/util/fs";
+import getVortexPath from "@/util/getVortexPath";
+import type { LogLevel } from "@/util/log";
+import { showError } from "@/util/message";
+import { activeGameId, downloadPathForGame, gameById } from "@/util/selectors";
+import { currentGame, getSafe } from "@/util/storeHelper";
 import {
   batchDispatch,
   decodeHTML,
@@ -53,15 +64,9 @@ import {
   truthy,
   Content,
   Campaign,
-} from "../../util/util";
-import { MainContext } from "../../views/MainWindow";
-import type { ICategoryDictionary } from "../category_management/types/ICategoryDictionary";
-import type { IDownload } from "../download_management/types/IDownload";
-import { SITE_ID } from "../gamemode_management/constants";
-import type { IGameStored } from "../gamemode_management/types/IGameStored";
-import { getGame } from "../gamemode_management/util/getGame";
-import type { IMod, IModRepoId } from "../mod_management/types/IMod";
-import { isDownloadIdValid, isIdValid } from "../mod_management/util/modUpdateState";
+} from "@/util/util";
+import { MainContext } from "@/views/MainWindow";
+
 import { setNewestVersion } from "./actions/persistent";
 import { setAssociatedWithNXMURLs } from "./actions/settings";
 import {
@@ -111,6 +116,7 @@ import { checkModVersion } from "./util/checkModsVersion";
 import { nexusGameId } from "./util/convertGameId";
 import { fillNexusIdByMD5, guessFromFileName, queryResetSource } from "./util/guessModID";
 import { isStoragePathName } from "./util/healStoragePathNames";
+import { nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
 import retrieveCategoryList from "./util/retrieveCategories";
 import Tracking from "./util/tracking";
 import { makeFileUID } from "./util/UIDs";
@@ -345,7 +351,7 @@ const requestLog = {
     } else {
       return (...args) => {
         const prom = obj[prop](...args);
-        if (prom.then !== undefined) {
+        if (prom?.then !== undefined) {
           const stack = getCaller();
           let caller = stack[1].getFunctionName();
           if (caller === null) {
@@ -499,7 +505,7 @@ function retrieveCategories(api: IExtensionApi, isUpdate: boolean) {
 
 function openNexusPage(state: IState, gameIds: string[]) {
   const game = gameById(state, gameIds[0]);
-  opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch((err) => undefined);
+  window.api.shell.openUrl(`${NEXUS_BASE_URL}/${nexusGameId(game)}`);
 }
 
 function remapCategory(state: IState, category: number, fromGame: string, toGame: string) {
@@ -696,6 +702,7 @@ function processAttributes(state: IState, input: any, quick: boolean): PromiseBB
       pictureUrl: nexusModInfo?.picture_url ?? nexusCollectionInfo?.collection?.tileImage?.url,
       description: nexusModInfo?.description ?? nexusCollectionInfo?.collection?.description,
       shortDescription: nexusModInfo?.summary ?? nexusCollectionInfo?.collection?.summary,
+      adultContent: nexusModInfo?.contains_adult_content ?? nexusCollectionInfo?.adultContent,
       fileType: nexusFileInfo?.category_name,
       isPrimary: nexusFileInfo?.is_primary,
       modName,
@@ -817,7 +824,7 @@ function makeRepositoryLookup(api: IExtensionApi, nexusConn: NexusT) {
             author: modFileInfo.mod.author,
             category: modFileInfo.mod.modCategory.id.toString().split(",")[0],
             description: modFileInfo.description,
-            homepage: `${NEXUS_BASE_URL}/${repoInfo.gameId}/mods/${modId}`,
+            homepage: nexusModPageUrl(NexusGameDomain(modFileInfo.game.domainName), modId),
           },
         },
       };
@@ -939,6 +946,7 @@ function extendAPI(api: IExtensionApi, nexus: NexusT): INexusAPIExtension {
     nexusRequestOwnIssues: eh.onRequestOwnIssues(nexus),
     nexusRetrieveCategoryList: (isUpdate: boolean) => retrieveCategories(api, isUpdate),
     nexusGetModFiles: eh.onGetModFiles(api, nexus),
+    nexusFetchModFiles: eh.onFetchModFiles(nexus),
     nexusDownloadUpdate: eh.onDownloadUpdate(api, nexus),
     nexusModFileContents: eh.onModFileContents(api, nexus),
     nexusGetModInfo: eh.onGetModInfo(api, nexus),
@@ -1172,9 +1180,9 @@ function once(api: IExtensionApi, callbacks: Array<(nexus: NexusT) => void>) {
   callbacks.forEach((cb) => cb(nexus));
 }
 
-function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChildren<any>> {
+function toolbarBanner(t: TFunction): FunctionComponent<PropsWithChildren<any>> {
   return () => {
-    const context = React.useContext<IComponentContext>(MainContext);
+    const context = useContext<IComponentContext>(MainContext);
     const trackAndGoToPremium = (e) => {
       context.api.events.emit("analytics-track-click-event", "Go Premium", "Header");
       goBuyPremium(e);
@@ -1218,15 +1226,15 @@ function toolbarBanner(t: TFunction): React.FunctionComponent<React.PropsWithChi
   };
 }
 
-function goBuyPremium(evt: React.MouseEvent<any>) {
+function goBuyPremium(evt: MouseEvent<any>) {
   const content = evt.currentTarget.getAttribute("data-campaign");
-  opn(
+  window.api.shell.openUrl(
     nexusModsURL(PREMIUM_PATH, {
       section: Section.Users,
       campaign: Campaign.BuyPremium,
       content: content,
     }),
-  ).catch((err) => undefined);
+  );
 }
 
 function idValid(
@@ -1347,7 +1355,7 @@ function init(context: IExtensionContext): boolean {
           return;
         }
 
-        opn(mod.attributes.url).catch((err) => null);
+        window.api.shell.openUrl(mod.attributes.url);
       }
     },
     (ids) => {
@@ -1573,7 +1581,7 @@ function init(context: IExtensionContext): boolean {
     "Nexus Mods",
     () => {
       currentGame(context.api.store).then((game) => {
-        opn(`${NEXUS_BASE_URL}/${nexusGameId(game)}`).catch((err) => undefined);
+        window.api.shell.openUrl(`${NEXUS_BASE_URL}/${nexusGameId(game)}`);
       });
     },
     {
@@ -1635,7 +1643,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "nexus",
     {},
-    context.api.translate("Open Nexus Page"),
+    "Open Nexus Page",
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
   );
 
@@ -1644,7 +1652,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "nexus",
     {},
-    context.api.translate("Open Nexus Page"),
+    "Open Nexus Page",
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
   );
 
@@ -1653,7 +1661,7 @@ function init(context: IExtensionContext): boolean {
     120,
     "nexus",
     {},
-    context.api.translate("Open Nexus Page"),
+    "Open Nexus Page",
     (games: string[]) => openNexusPage(context.api.store.getState(), games),
     (games: string[]) => gameById(context.api.getState(), games[0]) !== undefined,
   );

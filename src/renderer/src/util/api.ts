@@ -129,10 +129,10 @@ import github from "./github";
 import type { TFunction } from "./i18n";
 import { getCurrentLanguage } from "./i18n";
 import lazyRequire from "./lazyRequire";
-import { epicGamesLauncherShim as epicGamesLauncher, steamShim as steam } from "./legacyGameStores";
 import local from "./local";
 import makeReactive from "./makeReactive";
 import onceCB from "./onceCB";
+// eslint-disable-next-line no-restricted-imports -- util.opn stays exported to extensions until its deprecation window ends
 import opn from "./opn";
 import relativeTime, { userFriendlyTime } from "./relativeTime";
 import StarterInfo from "./StarterInfo";
@@ -146,7 +146,6 @@ import getTextModManagement from "../extensions/mod_management/texts";
 import getTextProfileManagement from "../extensions/profile_management/texts";
 import deepMerge from "./deepMerge";
 import { runElevated } from "./elevated";
-import { runThreaded } from "./thread";
 import {
   batchDispatch,
   bytesToString,
@@ -173,6 +172,8 @@ import {
 import { Campaign, Section, Content, Overlayable } from "./util";
 import walk from "./walk";
 
+export { actionsToPartialReducerSpec, actionsToReducerSpec, setField } from "../reducers/builder";
+export type { ActionsToReducerMapping } from "../reducers/builder";
 export { request, rawRequest, upload, jsonRequest } from "./network";
 export type { IRequestOptions, Method } from "./network";
 export {
@@ -218,7 +219,6 @@ export {
   deepMerge,
   delay,
   deriveModInstallName as deriveInstallName,
-  epicGamesLauncher,
   // extend is renderer-only, available via renderer/controls/ComponentEx
   extractExeIcon,
   fileMD5,
@@ -287,7 +287,6 @@ export {
   ruleInstallSpec,
   rulePhase,
   runElevated,
-  runThreaded,
   sanitizeCSSId,
   sanitizeFilename,
   Section,
@@ -297,7 +296,6 @@ export {
   SevenZip,
   sortMods,
   StarterInfo,
-  steam,
   terminate,
   testModReference,
   testRefByIdentifiers,

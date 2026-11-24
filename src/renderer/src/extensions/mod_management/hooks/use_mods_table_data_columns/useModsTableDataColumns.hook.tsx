@@ -10,9 +10,9 @@ import { activeGameId } from "@/util/selectors";
 import { bytesToString } from "@/util/util";
 
 import { getModType } from "../../../gamemode_management/util/modTypeExtensions";
+import { ValueText } from "../../components/value_text/ValueText";
 import type { IMod } from "../../types/IMod";
-import modName from "../../util/modName";
-import type { IModRow } from "../../util/mods_table_views/modsTableViews";
+import { displayName, type IModRow } from "../../util/mods_table_views/modsTableViews";
 import { getModSources } from "../../util/modSource";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
 
@@ -27,12 +27,16 @@ const categoryId = (category: string | number | undefined) =>
 const timeOf = (value: string | number | Date | undefined) =>
   value === undefined ? undefined : new Date(value).getTime() || undefined;
 
-/** A toggleable column showing a line of text, sorted, grouped and searched by it. */
+/**
+ * A toggleable column showing a line of text, sorted, grouped and searched by it; `noValue`
+ * names the group of rows with none.
+ */
 const textColumn = (
   id: string,
   header: string,
   width: TableColumnWidth,
   text: (row: IModRow) => string,
+  noValue: string,
 ): IModsTableColumn => ({
   id,
   header,
@@ -40,19 +44,20 @@ const textColumn = (
   isToggleable: true,
   sort: (a, b) => text(a).localeCompare(text(b)),
   groupBy: text,
+  noValueLabel: noValue,
   searchText: text,
-  cell: (row) => <span className="truncate">{text(row)}</span>,
+  cell: (row) => <ValueText>{text(row)}</ValueText>,
 });
 
 /**
  * The toggleable columns that show a value of the mod's. Ids and positions are the legacy
- * table's, whose column choices and order these share. The comments mark the columns
- * still to come, each needing more than a value: they're ported one at a time.
+ * table's, whose column choices and order these share. The columns other extensions register
+ * come through useRegisteredModsColumns, which leaves out those with an id taken here.
  */
 export const useModsTableDataColumns = (memberships: {
   [modId: string]: IMod[];
 }): IModsTableColumn[] => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const downloads = useSelector(downloadFiles);
   const categories = useSelector(gameCategories);
 
@@ -78,7 +83,7 @@ export const useModsTableDataColumns = (memberships: {
         isToggleable: true,
         sort: (a, b) => (time(a) ?? 0) - (time(b) ?? 0),
         searchText: text,
-        cell: (row) => <span className="truncate">{text(row)}</span>,
+        cell: (row) => <ValueText>{text(row)}</ValueText>,
       };
     };
 
@@ -91,31 +96,38 @@ export const useModsTableDataColumns = (memberships: {
       mod.state === "installed" ? mod.attributes?.modSize : downloads[mod.archiveId]?.size;
     const sizeText = (row: IModRow) => {
       const bytes = size(row);
-      return bytes === undefined ? t("Unknown") : bytesToString(bytes);
+      return bytes === undefined ? t("modsTable::values::unknown") : bytesToString(bytes);
     };
     const sizeColumn: IModsTableColumn = {
       id: "modSize",
-      header: t("Mod size"),
+      header: t("modsTable::columns::modSize"),
       width: "100px",
       isToggleable: true,
       sort: (a, b) => (size(a) ?? -1) - (size(b) ?? -1),
       searchText: sizeText,
-      cell: (row) => <span className="truncate">{sizeText(row)}</span>,
+      cell: (row) => <ValueText>{sizeText(row)}</ValueText>,
     };
 
     return [
       // Version (`version`, 40): its update and changelog buttons, and the other versions
       // of the mod, which the legacy table groups under it.
       {
-        ...textColumn("author", t("Author"), "160px", ({ mod }) => mod.attributes?.author ?? ""),
+        ...textColumn(
+          "author",
+          t("modsTable::columns::author"),
+          "160px",
+          ({ mod }) => mod.attributes?.author ?? "",
+          t("modsTable::groups::noAuthor"),
+        ),
         position: 50,
       },
       {
         ...textColumn(
           "archiveName",
-          t("Archive name"),
+          t("modsTable::columns::archiveName"),
           "200px",
           ({ mod }) => downloads[mod.archiveId]?.localPath ?? "",
+          t("modsTable::groups::noArchiveName"),
         ),
         position: 60,
       },
@@ -125,70 +137,68 @@ export const useModsTableDataColumns = (memberships: {
       },
       // The other extensions' columns have no position, so they take 100 and come in the
       // order the extensions load, after ModList's own.
-      textColumn("category", t("Category"), "160px", ({ mod }) => {
-        const id = categoryId(mod.attributes?.category);
-        return (id !== undefined ? categories?.[id]?.name : undefined) ?? "";
-      }),
+      textColumn(
+        "category",
+        t("modsTable::columns::category"),
+        "160px",
+        ({ mod }) => {
+          const id = categoryId(mod.attributes?.category);
+          return (id !== undefined ? categories?.[id]?.name : undefined) ?? "";
+        },
+        t("modsTable::groups::noCategory"),
+      ),
       textColumn(
         "modType",
-        t("Mod type"),
+        t("modsTable::columns::modType"),
         "120px",
         ({ mod }) => getModType(mod.type)?.options.name || mod.type,
+        t("modsTable::groups::noModType"),
       ),
       textColumn(
         "modSource",
-        t("Source"),
+        t("modsTable::columns::source"),
         "120px",
         ({ mod }) =>
           getModSources().find((source) => source.id === mod.attributes?.source)?.name ?? "",
+        t("modsTable::groups::noSource"),
       ),
-      // Endorsed (`endorsed`, nexus_integration): the endorse button, which needs the
-      // user's Nexus account and the mod's collection.
-      // Tracking (`tracked`, nexus_integration): the mods a user tracks are fetched from
-      // Nexus and kept outside the store.
       {
-        ...textColumn("collection", t("Collection"), "180px", ({ mod }) =>
-          (memberships[mod.id] ?? [])
-            .map((collection) => modName(collection))
-            .sort((a, b) => a.localeCompare(b))
-            .join(", "),
+        ...textColumn(
+          "collection",
+          t("modsTable::columns::collection"),
+          "180px",
+          ({ mod }) =>
+            (memberships[mod.id] ?? [])
+              .map((collection) => displayName(collection))
+              .sort((a, b) => a.localeCompare(b))
+              .join(", "),
+          t("modsTable::groups::noCollection"),
         ),
       },
-      // Content (`content`, mod-content): icons for what a mod holds, scanned from its
-      // staging folder when first shown.
-      // Deploy order (`loadOrder`, mod-dependency-manager): computed from the dependency
-      // sort, outside the store.
-      // Dependencies (`dependencies`, mod-dependency-manager): its icon is dragged between
-      // rows to make rules, and needs the extension's dependency state.
-      // Highlight (`modHighlight`, mod-highlight): the colour and icon picker, and notes.
-      // Game-specific, each needing per-game `condition` support first:
-      // Compatibility (`sdv-compatibility`, game-stardewvalley): Stardew Valley only.
-      // Game(s) (`gameType`, game-masterchiefcollection): Halo: MCC only.
-      // Extender Error (`script-extender-error-check`): script-extender games, not toggleable.
       {
         ...timeColumn(
           "installTime",
-          t("Installation time"),
+          t("modsTable::columns::installTime"),
           ({ mod }) => timeOf(mod.attributes?.installTime),
-          t("Not installed"),
+          t("modsTable::values::notInstalled"),
         ),
         position: 110,
       },
       {
         ...timeColumn(
           "enabledTime",
-          t("Enabled time"),
+          t("modsTable::columns::enabledTime"),
           ({ mod }) => timeOf(mod.enabledTime),
-          t("Never"),
+          t("modsTable::values::never"),
         ),
         position: 120,
       },
       {
         ...timeColumn(
           "downloadTime",
-          t("Downloaded time"),
+          t("modsTable::columns::downloadTime"),
           ({ mod }) => timeOf(downloads[mod.archiveId]?.fileTime),
-          t("Unknown"),
+          t("modsTable::values::unknown"),
         ),
         position: 130,
       },

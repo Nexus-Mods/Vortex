@@ -3,7 +3,6 @@ import * as url from "url";
 import { Tag } from "bbcode-to-react";
 import * as React from "react";
 
-import opn from "../../util/opn";
 import { ErrorContext } from "../ErrorBoundary";
 
 class LinkTag extends Tag {
@@ -99,7 +98,7 @@ class LinkTag extends Tag {
         throw new Error(`invalid callback url "${uri}"`, { cause: err });
       }
     } else if (protocols.includes(parsed.protocol)) {
-      opn(uri).catch((err) => undefined);
+      window.api.shell.openUrl(uri);
     }
   };
 }

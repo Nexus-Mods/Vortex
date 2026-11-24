@@ -1,6 +1,6 @@
 import React, { forwardRef, useState } from "react";
 
-import { CharacterCount } from "@/ui/components/form/field/CharacterCount";
+import { CharacterCount, characterCountStyle } from "@/ui/components/form/field/CharacterCount";
 import { Description } from "@/ui/components/form/field/Description";
 import { ErrorMessage } from "@/ui/components/form/field/ErrorMessage";
 import { Field } from "@/ui/components/form/field/Field";
@@ -18,6 +18,8 @@ export type ITextFieldProps = Omit<IInputProps, "id" | "invalid"> & {
   errorMessage?: string;
   /** Keeps the error off screen, for layouts with no room for it; screen readers still get it. */
   hideErrors?: boolean;
+  /** Keeps `maxLength` from showing a character count, for an input that just stops at it. */
+  hideCharacterCount?: boolean;
   /** Help text under the input, one line per hint. */
   hints?: string | string[];
   /** Shows "(Required)" on the label. Defaults to `required`. */
@@ -28,7 +30,7 @@ export type ITextFieldProps = Omit<IInputProps, "id" | "invalid"> & {
   leftIcon?: IIconProp;
 };
 
-/** A text input with its label, hints, error and, given `maxLength`, a character count. */
+/** A text input with its label, hints, error and, given `maxLength`, a character count unless hidden. */
 export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
   (
     {
@@ -36,6 +38,7 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
       disabled,
       errorMessage,
       fieldClassName,
+      hideCharacterCount = false,
       hideErrors = false,
       hideLabel = false,
       hints = [],
@@ -55,6 +58,7 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
     // A controlled value can change without a keystroke, so count it rather than the typing.
     const length = value !== undefined ? String(value).length : typedLength;
     const showError = !!errorMessage && !hideErrors;
+    const countedLength = hideCharacterCount ? undefined : maxLength;
 
     return (
       <Field className={fieldClassName} disabled={disabled}>
@@ -65,7 +69,7 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
           {label}
         </Label>
 
-        <div className="nxm-field-control">
+        <div className="nxm-field-control" style={characterCountStyle(countedLength)}>
           <IconSlot className="nxm-input-icon" icon={leftIcon} size="sm" />
 
           <Input
@@ -81,13 +85,17 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
               onChange?.(event);
             }}
           />
+
+          {countedLength !== undefined && (
+            <CharacterCount length={length} maxLength={countedLength} />
+          )}
         </div>
 
         {!!errorMessage && hideErrors && (
           <ErrorMessage className="sr-only">{errorMessage}</ErrorMessage>
         )}
 
-        {(showError || !!hintList.length || maxLength !== undefined) && (
+        {(showError || !!hintList.length) && (
           <div className="nxm-field-footer">
             <div className="nxm-field-messages">
               {showError && <ErrorMessage>{errorMessage}</ErrorMessage>}
@@ -96,8 +104,6 @@ export const TextField = forwardRef<HTMLInputElement, ITextFieldProps>(
                 <Description key={`${index}-${hint}`}>{hint}</Description>
               ))}
             </div>
-
-            {maxLength !== undefined && <CharacterCount length={length} maxLength={maxLength} />}
           </div>
         )}
       </Field>

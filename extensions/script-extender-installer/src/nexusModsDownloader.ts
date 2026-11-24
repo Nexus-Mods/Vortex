@@ -211,4 +211,5 @@ async function startDownload(
     allowAutoDeploy: false,
     installed: true,
   });
+  return modId;
 }

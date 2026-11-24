@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { unknownToError, type VortexModId } from "@vortex/shared";
 import { CycleError } from "@vortex/shared/errors";
 import { alg, Graph } from "graphlib";
 import * as _ from "lodash";
@@ -7,8 +8,10 @@ import type { ILookupResult, IRule } from "modmeta-db";
 
 import { log } from "../../../logging";
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { ProcessCanceled } from "../../../util/CustomErrors";
 import { getSafe } from "../../../util/storeHelper";
 import { downloadPathForGame } from "../../download_management/selectors";
+import type { IProfile, IProfileMod } from "../../profile_management/types/IProfile";
 import { setModAttribute } from "../actions/mods";
 import type { IMod } from "../types/IMod";
 import { findModByRef } from "./findModByRef";
@@ -122,6 +125,31 @@ function sortMods(gameId: string, mods: IMod[], api: IExtensionApi): Promise<IMo
   sortModsCache = { id: { gameId, mods }, sorted };
 
   return sorted;
+}
+
+export function doSortMods(
+  api: IExtensionApi,
+  profile: IProfile,
+  mods: { [modId: string]: IMod },
+  includeModId?: VortexModId,
+) {
+  // sort (all) mods based on their dependencies so the right files get activated
+  const modState: { [id: string]: IProfileMod } = profile !== undefined ? profile.modState : {};
+  const unsorted = Object.keys(mods)
+    .map((key: string) => mods[key])
+    .filter(
+      (mod: IMod) => mod.id === includeModId || getSafe(modState, [mod.id, "enabled"], false),
+    );
+
+  return sortMods(profile.gameId, unsorted, api).catch((unknownErr) => {
+    const err = unknownToError(unknownErr);
+    if (unknownErr instanceof CycleError) {
+      throw new ProcessCanceled(
+        "Deployment is not possible when you have cyclical mod rules. " + err.message,
+      );
+    }
+    throw unknownErr;
+  });
 }
 
 export default sortMods;

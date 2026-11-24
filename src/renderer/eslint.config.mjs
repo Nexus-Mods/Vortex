@@ -89,6 +89,29 @@ export default defineConfig([
                 "Electron's clipboard module is unavailable in the renderer. Use window.api.clipboard instead.",
             },
           ],
+          patterns: [
+            {
+              group: ["**/util/opn", "./opn"],
+              message:
+                "util/opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead.",
+            },
+          ],
+        },
+      ],
+      // A no-restricted-imports importNames rule would also reject `import * as util from "util/api"`.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "ImportDeclaration[source.value=/(^|\\/)util\\/api$|^\\.\\/api$/] > ImportSpecifier[imported.name='opn']",
+          message:
+            "opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead.",
+        },
+        {
+          selector:
+            "ImportDeclaration[importKind!='type'][source.value='react-markdown'], ImportExpression[source.value='react-markdown'], CallExpression[callee.name='require'][arguments.0.value='react-markdown']",
+          message:
+            "Render markdown with Markdown (ui/components/prose/markdown). Older call sites styled by their own SCSS use ReactMarkdown from util/react_markdown, which keeps links safe.",
         },
       ],
       "vortex/no-restricted-imports-warnings": [

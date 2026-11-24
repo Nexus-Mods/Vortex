@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { IModWithState } from "../../types/IModProps";
 import type { IModGroup, IModRow } from "../../util/mods_table_views/modsTableViews";
 import type { IModsTableColumn } from "../use_mods_table_columns/useModsTableColumns.hook";
-import { useModsTableSearch } from "./useModsTableSearch.hook";
+import { type ISearchTextChanges, useModsTableSearch } from "./useModsTableSearch.hook";
 
 // --- Helpers ---
 
@@ -33,10 +33,12 @@ const render = ({
   groups,
   visibleColumns = [NAME],
   selected = new Set<string>(),
+  textChanges,
 }: {
   groups?: IModGroup[];
   visibleColumns?: IModsTableColumn[];
   selected?: ReadonlySet<string>;
+  textChanges?: ISearchTextChanges;
 } = {}) => {
   const setSelected = vi.fn();
   const onSearchStarted = vi.fn();
@@ -48,12 +50,33 @@ const render = ({
       selected,
       setSelected,
       onSearchStarted,
+      textChanges,
     }),
   );
   return { ...hook, setSelected, onSearchStarted };
 };
 
 const ids = (rows: IModRow[]) => rows.map(({ mod }) => mod.id);
+
+/** A column whose text changes apart from its row, and what tells the search it did. */
+const changingColumn = (initial: string) => {
+  let text = initial;
+  let revision = 0;
+  const listeners = new Set<() => void>();
+  const subscribe = vi.fn((listener: () => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  });
+  return {
+    column: { ...NAME, id: "content", header: "Content", searchText: () => text },
+    textChanges: { subscribe, revision: () => revision },
+    change: (next: string) => {
+      text = next;
+      revision += 1;
+      listeners.forEach((listener) => listener());
+    },
+  };
+};
 
 // --- Tests ---
 
@@ -114,5 +137,26 @@ describe("useModsTableSearch", () => {
     act(() => result.current.changeSearch(""));
 
     expect(setSelected).not.toHaveBeenCalled();
+  });
+
+  // As an extension's value can change, or be ready, with no change to the rows.
+  it("searches again when the columns' texts change", () => {
+    const { column, textChanges, change } = changingColumn("");
+    const { result } = render({ visibleColumns: [column], textChanges });
+    act(() => result.current.changeSearch("plugin"));
+    expect(result.current.shownRows).toEqual([]);
+
+    act(() => change("Plugin"));
+
+    expect(ids(result.current.shownRows)).toEqual(["a", "b"]);
+  });
+
+  it("listens for the texts changing only while searching", () => {
+    const { column, textChanges } = changingColumn("");
+    const { result } = render({ visibleColumns: [column], textChanges });
+    expect(textChanges.subscribe).not.toHaveBeenCalled();
+
+    act(() => result.current.changeSearch("plugin"));
+    expect(textChanges.subscribe).toHaveBeenCalledTimes(1);
   });
 });

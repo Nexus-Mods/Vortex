@@ -25,36 +25,41 @@ import type {
 } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
 import { NexusError, TimeoutError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault, parseError, unknownToError } from "@vortex/shared";
+import {
+  NexusGameDomain,
+  getErrorMessageOrDefault,
+  parseError,
+  unknownToError,
+} from "@vortex/shared";
 import { AlreadyDownloaded } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import * as semver from "semver";
 
-import { setDownloadModInfo } from "../../actions";
-import { log } from "../../logging";
-import type { IExtensionApi, StateChangeCallback } from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
-import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import { calcDuration, showError } from "../../util/message";
-import opn from "../../util/opn";
+import { setDownloadModInfo } from "@/actions";
+import { resolveCategoryName } from "@/extensions/category_management";
+import { SITE_ID } from "@/extensions/gamemode_management/constants";
+import type { IGameStoredExt } from "@/extensions/gamemode_management/types/IGameStored";
+import { setUpdatingMods } from "@/extensions/mod_management/actions/session";
+import type { IModListItem } from "@/extensions/news_dashlet/types";
+import { log } from "@/logging";
+import type { IExtensionApi, StateChangeCallback } from "@/types/IExtensionContext";
+import type { IDownload, IMod, IModTable, IState } from "@/types/IState";
+import { DataInvalid, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
+import Debouncer from "@/util/Debouncer";
+import * as fs from "@/util/fs";
+import { showError } from "@/util/message";
 import {
   activeGameId,
   currentGame,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
-import { resolveCategoryName } from "../category_management";
-import { SITE_ID } from "../gamemode_management/constants";
-import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
-import { setUpdatingMods } from "../mod_management/actions/session";
-import type { IModListItem } from "../news_dashlet/types";
+} from "@/util/selectors";
+import { getSafe } from "@/util/storeHelper";
+import { batchDispatch, truthy } from "@/util/util";
+
 import { setUserInfo } from "./actions/persistent";
-import { NEXUS_BASE_URL, NEXUS_GAMES_URL } from "./constants";
+import { NEXUS_GAMES_URL } from "./constants";
 import { ensureFreshMembership, refreshMembership } from "./membership";
 import { nxmModUrl } from "./NXMUrl";
 import { isRateLimited, notifyRateLimited } from "./rateLimit";
@@ -83,6 +88,7 @@ import {
   getModRequirementsInfo,
   MY_COLLECTIONS_SEARCH_QUERY,
 } from "./util/graphQueries";
+import { nexusFilePageUrl, nexusModPageUrl } from "./util/nexus_urls/nexusUrls";
 import submitFeedback from "./util/submitFeedback";
 import type { SubmitCollectionOptions } from "./util_v3/submitCollectionV3";
 import { submitCollectionV3 } from "./util_v3/submitCollectionV3";
@@ -305,7 +311,7 @@ export function onOpenCollectionPage(api: IExtensionApi) {
     if (revisionNumber !== undefined) {
       segments.push("revisions", revisionNumber.toString());
     }
-    opn(segments.join("/")).catch(() => undefined);
+    window.api.shell.openUrl(segments.join("/"));
   };
 }
 
@@ -315,9 +321,7 @@ export function onOpenModPage(api: IExtensionApi) {
       return;
     }
     const game = gameById(api.store.getState(), gameId);
-    opn([NEXUS_BASE_URL, nexusGameId(game) || gameId, "mods", modId].join("/")).catch(
-      (err) => undefined,
-    );
+    window.api.shell.openUrl(nexusModPageUrl(nexusGameId(game, gameId), modId));
   };
 }
 
@@ -534,9 +538,7 @@ export function onModUpdate(api: IExtensionApi, nexus: Nexus) {
         api.showErrorNotification("Invalid URL", url, { allowReport: false });
       })
       .catch(ProcessCanceled, () => {
-        const url = [NEXUS_BASE_URL, nexusGameId(game, gameId), "mods", modId].join("/");
-        const params = `?tab=files&file_id=${fileId}&nmm=1`;
-        return opn(url + params).catch(() => undefined);
+        window.api.shell.openUrl(nexusFilePageUrl(nexusGameId(game, gameId), modId, fileId));
       })
       .catch((err) => {
         api.showErrorNotification("Failed to start download", err);
@@ -789,7 +791,8 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       type: "error",
       title: "Timeout",
       message,
-      displayMS: calcDuration(message.length),
+      // No displayMS: an error goes to the notification bell and stays there until
+      // dismissed. A short one would be shown as a toast and gone in a few seconds.
     });
   } else if (err["code"] === "NOT_FOUND") {
     api.showErrorNotification("Collection not found, it might have been removed.", err, {
@@ -857,6 +860,13 @@ export function onGetModFiles(
         }),
       );
   };
+}
+
+/** Like `onGetModFiles`, but rejects when the files can't be fetched. */
+export function onFetchModFiles(
+  nexus: Nexus,
+): (domain: NexusGameDomain, modId: number) => Promise<IFileInfo[]> {
+  return async (domain, modId) => (await nexus.getModFiles(modId, domain)).files;
 }
 
 export function onModFileContents(
@@ -1223,7 +1233,7 @@ function extractLatestModInfo(state: IState, gameId: string, input: IModInfo): I
     category: resolveCategoryName(input.category_id.toString(), state),
     summary: input.summary,
     imageUrl: input.picture_url,
-    link: `${NEXUS_BASE_URL}/${input.domain_name}/mods/${input.mod_id}`,
+    link: nexusModPageUrl(NexusGameDomain(input.domain_name), input.mod_id),
     extra: [
       { id: "endorsements", value: input.endorsement_count },
       { id: "downloads", value: input.mod_downloads },
@@ -1279,6 +1289,7 @@ export function onGetTrendingMods(api: IExtensionApi, nexus: Nexus) {
 
 export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   return (oldValue: string, newValue: string) => {
+    nexus.clearPreferencesCache();
     api.store.dispatch(setUserInfo(undefined));
     if (newValue !== undefined) {
       updateKey(api, nexus, newValue);
@@ -1286,7 +1297,9 @@ export function onAPIKeyChanged(api: IExtensionApi, nexus: Nexus): StateChangeCa
   };
 }
 
-// fired when state variable changes 'confidential.account.nexus.OAuthCredentials'
+// fired when state variable changes 'confidential.account.nexus.OAuthCredentials'. A session ending
+// or starting drops nexus-api's cached preferences, which it keeps for the life of the client
+// whoever's they are, so the next account's are read afresh.
 export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChangeCallback {
   // Despite the historical ITokenReply annotation, the value stored in
   // state (and written by onJWTTokenRefresh / setOAuthCredentials) is the
@@ -1295,7 +1308,8 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
     log("info", "onOAuthTokenChanged event handler.");
 
     if (newValue === undefined) {
-      // logout: credentials cleared
+      // logout: credentials cleared, however the session ended
+      nexus.clearPreferencesCache();
       api.store.dispatch(setUserInfo(undefined));
       return;
     }
@@ -1306,6 +1320,7 @@ export function onOAuthTokenChanged(api: IExtensionApi, nexus: Nexus): StateChan
     }
 
     // fresh login: undefined -> defined
+    nexus.clearPreferencesCache();
     api.store.dispatch(setUserInfo(undefined));
     updateToken(api, nexus, newValue);
   };

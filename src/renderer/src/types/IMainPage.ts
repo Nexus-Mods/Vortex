@@ -40,4 +40,6 @@ export interface IMainPage {
   namespace?: string;
   onReset?: () => void;
   menuBadge?: React.ComponentType<React.PropsWithChildren<unknown>>;
+  /** While the page is open, its pane turns translucent; see `IMainPageOptions.isTranslucent`. */
+  isTranslucent?: boolean;
 }

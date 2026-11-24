@@ -49,8 +49,19 @@ export async function makeDeployedGame(
     opts.extraReducers,
   );
 
-  const saveManifest = (files: IDeployedFile[], methodId: string) =>
-    saveActivation(harness.gameId, "", INSTANCE_ID, harness.dataPath, stagingPath, files, methodId);
+  const saveManifest = async (files: IDeployedFile[], methodId: string) => {
+    // a deployment writes its manifest into the folder it deployed to
+    await mkdir(harness.dataPath, { recursive: true });
+    await saveActivation(
+      harness.gameId,
+      "",
+      INSTANCE_ID,
+      harness.dataPath,
+      stagingPath,
+      files,
+      methodId,
+    );
+  };
 
   return {
     ...harness,

@@ -2,25 +2,98 @@
     scrollbar-width: none;
 }
 
-/* Legacy browsers with `::-webkit-scrollbar-*` support */
+@utility pr-scrollbar {
+    padding-right: var(--scrollbar-size);
+}
+
+/* Fades a scroll area's content out at its bottom edge, leaving its scrollbar whole: the fade
+   is one mask layer, and a solid one keeps the scrollbar's strip on the right. 1.5rem deep
+   unless `scroll-fade-<n>` gives a spacing step. */
+@utility scroll-fade {
+    mask-image:
+        linear-gradient(
+            to bottom,
+            transparent,
+            #000 var(--scroll-fade-top, 0px),
+            #000 calc(100% - var(--scroll-fade-size, calc(var(--spacing) * 6))),
+            transparent
+        ),
+        linear-gradient(#000, #000);
+    mask-size:
+        calc(100% - var(--scrollbar-size)) 100%,
+        var(--scrollbar-size) 100%;
+    mask-position: left, right;
+    mask-repeat: no-repeat;
+}
+
+/* With `scroll-fade`, fades the top edge too, for once the area has scrolled away from it. */
+@utility scroll-fade-top {
+    --scroll-fade-top: var(--scroll-fade-size, calc(var(--spacing) * 6));
+}
+
+/* With `scroll-fade`, how deep its fades are, as a spacing step. */
+@utility scroll-fade-* {
+    --scroll-fade-size: --spacing(--value(integer));
+}
+
+/* Shortens its scrollbar, and those of the scroll areas inside it, at both ends, by a spacing
+   step: to stop them where an inset divider beside them stops, or short of rounded corners
+   that would clip them. */
+@utility scrollbar-inset-* {
+    &::-webkit-scrollbar-track,
+    & ::-webkit-scrollbar-track {
+        margin-block: --spacing(--value(integer));
+    }
+}
+
+/* Legacy browsers with `::-webkit-scrollbar-*` support. Written flat rather than nested under
+   `.modern-layout`: Chromium parses a nested scrollbar selector but doesn't match its `:hover`,
+   so the legacy global thumb's grey showed under the pointer. */
 @supports selector(::-webkit-scrollbar) {
-    .modern-layout {
-        & ::-webkit-scrollbar {
-            width: calc(var(--spacing) * 2);
-            height: calc(var(--spacing) * 2);
-        }
+    .modern-layout ::-webkit-scrollbar {
+        width: var(--scrollbar-size);
+        height: var(--scrollbar-size);
+    }
 
-        & ::-webkit-scrollbar-thumb {
-            border-radius: calc(infinity * 1px);
-            background-color: var(--color-surface-high);
+    /* The thumb takes its colour from its area's `--scrollbar-thumb`, which fades: see below.
+       Its `:hover` says so too, or the legacy global `::-webkit-scrollbar-thumb:hover` grey
+       wins under the pointer. */
+    .modern-layout ::-webkit-scrollbar-thumb,
+    .modern-layout ::-webkit-scrollbar-thumb:hover {
+        border-radius: calc(infinity * 1px);
+        background-color: var(--scrollbar-thumb);
+    }
 
-            &:hover {
-                background-color: var(--color-zinc-500);
-            }
-        }
+    .modern-layout ::-webkit-scrollbar-track {
+        background-color: transparent;
+    }
+}
 
-        & ::-webkit-scrollbar-track {
-            background-color: transparent;
-        }
+/* A scroll area's thumb colour, registered so it can be transitioned: Chromium won't transition
+   a scrollbar part itself, but repaints the thumb as this animates on its area. */
+@property --scrollbar-thumb {
+    syntax: "<color>";
+    inherits: true;
+    initial-value: transparent;
+}
+
+/* Every area sets its own, so a nested one never inherits its parent's lit thumb: hidden at rest,
+   shown while it scrolls (`watchScrollActivity` marks it), and lighter while the pointer is over
+   its scrollbar or holds it, since Chromium neither keeps `:active` on the thumb through a drag
+   nor gives it `:hover` back until the pointer moves. In the base layer, at no specificity, so an
+   element's own `transition` wins over this one; such an element lists the property itself. */
+@layer base {
+    :where(.modern-layout *) {
+        --scrollbar-thumb: transparent;
+        transition: --scrollbar-thumb var(--default-transition-duration)
+            var(--default-transition-timing-function);
+    }
+
+    :where(.modern-layout [data-scrolling]) {
+        --scrollbar-thumb: var(--color-surface-translucent-low);
+    }
+
+    :where(.modern-layout [data-scrollbar-hover]) {
+        --scrollbar-thumb: var(--color-surface-translucent-high);
     }
 }

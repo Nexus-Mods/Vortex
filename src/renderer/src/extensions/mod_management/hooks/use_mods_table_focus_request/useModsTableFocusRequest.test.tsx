@@ -1,40 +1,66 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
+import { VortexModId } from "@vortex/shared";
 import React, { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { describe, expect, it, vi } from "vitest";
 
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
-import type { IModGroup } from "../../util/mods_table_views/modsTableViews";
+import type { IModGroup, IModRow } from "../../util/mods_table_views/modsTableViews";
 import { useModsTableFocusRequest } from "./useModsTableFocusRequest.hook";
 
 // --- Helpers ---
 
 const group = (id: string) => ({ id }) as IModGroup;
 
+const row = (id: string) => ({ mod: { id } }) as IModRow;
+
 const render = ({
   focusedGroupId,
+  focusedModId,
   groups,
+  rows = [],
   search = "",
+  hidden = [],
 }: {
   focusedGroupId?: string;
+  focusedModId?: string;
   groups: IModGroup[] | undefined;
+  rows?: IModRow[];
   search?: string;
+  hidden?: string[];
 }) => {
-  const store = makeModsTableStore({ focusedGroupId });
+  const store = makeModsTableStore({
+    focusedGroupId,
+    focusedModId: focusedModId === undefined ? undefined : VortexModId(focusedModId),
+  });
   const setSearch = vi.fn();
+  const clearFilters = vi.fn();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  const hook = renderHook(() => useModsTableFocusRequest({ groups, search, setSearch }), {
-    wrapper,
-  });
+  const hook = renderHook(
+    () =>
+      useModsTableFocusRequest({
+        groups,
+        rows,
+        search,
+        setSearch,
+        isFilteredOut: (modId) => hidden.includes(modId),
+        clearFilters,
+      }),
+    {
+      wrapper,
+    },
+  );
 
   return {
     ...hook,
     store,
     setSearch,
+    clearFilters,
     requested: () => store.getState().session.mods.focusedGroupId,
+    requestedMod: () => store.getState().session.mods.focusedModId,
   };
 };
 
@@ -50,7 +76,7 @@ describe("useModsTableFocusRequest", () => {
   it("drops the request once the group has been shown", () => {
     const { result, requested } = render({ focusedGroupId: "a", groups: [group("a")] });
 
-    result.current.onGroupFocused();
+    act(() => result.current.onGroupFocused());
 
     expect(requested()).toBeUndefined();
   });
@@ -84,5 +110,64 @@ describe("useModsTableFocusRequest", () => {
     const { requested } = render({ focusedGroupId: "a", groups: [group("a")] });
 
     expect(requested()).toBe("a");
+  });
+
+  describe("for a mod", () => {
+    it("returns the mod asked for, and drops it once shown", () => {
+      const { result, requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+      });
+
+      expect(result.current.focusModId).toBe("skyui");
+
+      act(() => result.current.onModFocused());
+
+      expect(requestedMod()).toBeUndefined();
+    });
+
+    it("clears a search once for a new request", () => {
+      const { setSearch } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+        search: "skse",
+      });
+
+      expect(setSearch).toHaveBeenCalledWith("");
+    });
+
+    it("clears the filters for a mod they hide, keeping the request", () => {
+      const { clearFilters, requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+        hidden: ["skyui"],
+      });
+
+      expect(clearFilters).toHaveBeenCalledOnce();
+      expect(requestedMod()).toBe("skyui");
+    });
+
+    it("leaves the filters for a mod they show", () => {
+      const { clearFilters } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skyui")],
+      });
+
+      expect(clearFilters).not.toHaveBeenCalled();
+    });
+
+    it("drops a request for a mod the table doesn't have", () => {
+      const { requestedMod } = render({
+        focusedModId: "skyui",
+        groups: undefined,
+        rows: [row("skse")],
+      });
+
+      expect(requestedMod()).toBeUndefined();
+    });
   });
 });

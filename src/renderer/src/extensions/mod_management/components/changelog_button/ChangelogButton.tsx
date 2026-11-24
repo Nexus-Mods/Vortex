@@ -14,7 +14,7 @@ interface IChangelogButtonProps {
 
 /** A Version cell's button that opens a changelog in a popover, which scrolls past its height. */
 export const ChangelogButton = ({ children }: IChangelogButtonProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
 
   return (
     <Popover>
@@ -24,7 +24,8 @@ export const ChangelogButton = ({ children }: IChangelogButtonProps) => {
             appearance="moderate"
             as={PopoverButton}
             brand="info"
-            label={t("View changelog")}
+            data-testid="changelog-button"
+            label={t("modsTable::changelog::view")}
             leftIcon="description"
             size="sm"
             tooltipDisabled={open}
@@ -34,11 +35,11 @@ export const ChangelogButton = ({ children }: IChangelogButtonProps) => {
           <PopoverPanel className="flex w-96 flex-col gap-y-2 overflow-y-auto p-4 [--anchor-max-height:calc(var(--spacing)*96)]">
             <div>
               <Typography as="div" className="font-semibold" typographyType="body-sm">
-                {t("Changelog")}
+                {t("modsTable::changelog::title")}
               </Typography>
 
               <Typography appearance="subdued" as="div" typographyType="body-sm">
-                {t("Newest Version")}
+                {t("modsTable::changelog::newestVersion")}
               </Typography>
             </div>
 

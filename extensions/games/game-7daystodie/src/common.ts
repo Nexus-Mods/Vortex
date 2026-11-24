@@ -1,9 +1,9 @@
 import path from "path";
 
-import { util } from "@nexusmods/vortex-api";
+import { util, VortexGameId } from "@nexusmods/vortex-api";
 
 export const MOD_INFO = "modinfo.xml";
-export const GAME_ID = "7daystodie";
+export const GAME_ID = VortexGameId("7daystodie");
 export const LO_FILE_NAME = "loadOrder.json";
 export const I18N_NAMESPACE = `game-${GAME_ID}`;
 export const INVALID_LO_MOD_TYPES = ["collection", "7dtd-root-mod"];

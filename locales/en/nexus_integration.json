@@ -1,3 +1,13 @@
 {
-  "_comment": "Nexus Mods integration strings - to be populated during migration"
+  "_comment": "Nexus Mods integration strings - to be populated during migration",
+  "premium_upsell": {
+    "benefits_title": "With Premium you get:",
+    "benefits": {
+      "downloads": "1-click in app downloads and mod updates",
+      "collections": "1-click collection installs",
+      "speed": "Uncapped download speeds",
+      "ad_free": "Ad-free for life, even if you cancel later"
+    },
+    "unlock": "Unlock 1-click installs"
+  }
 }

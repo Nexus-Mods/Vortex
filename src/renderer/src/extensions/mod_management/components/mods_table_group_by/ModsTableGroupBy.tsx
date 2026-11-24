@@ -28,16 +28,16 @@ export const ModsTableGroupBy = ({
   onChange,
   disabled,
 }: IModsTableGroupByProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
 
   return (
     <PopoverPanelGroup>
-      <PopoverPanelGroupItem passive label={t("Group by")}>
+      <PopoverPanelGroupItem passive label={t("modsTable::displayOptions::groupBy")}>
         <Picker<ModsTableGrouping>
           button={{ size: "sm" }}
           disabled={disabled}
           options={[
-            { label: t("None"), value: "none" },
+            { label: t("modsTable::displayOptions::noGrouping"), value: "none" },
             ...columns.map(({ id, header }) => ({ label: header, value: id })),
           ]}
           value={grouping}

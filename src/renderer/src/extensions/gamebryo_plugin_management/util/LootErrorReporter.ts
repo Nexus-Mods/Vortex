@@ -72,6 +72,8 @@ function spanFacts(err: VortexError): ISpanFacts | undefined {
       };
     case "loot:api-misuse":
       return { cause: err.data.detail.slice(0, MAX_CAUSE_LENGTH), attributes: {} };
+    case "loot:library-failed":
+      return { cause: err.data.reason.slice(0, MAX_CAUSE_LENGTH), attributes: {} };
     case "loot:failed":
       // the kind names no call, so its message is what keeps distinct causes apart
       return { cause: err.message.slice(0, MAX_CAUSE_LENGTH), attributes: {} };

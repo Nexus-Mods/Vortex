@@ -1,5 +1,7 @@
 import { URL } from "url";
 
+import type { IDownloadSource } from "@nexusmods/nexus-api";
+
 import { DataInvalid } from "../../util/CustomErrors";
 import type { IDownload } from "../download_management/types/IDownload";
 import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
@@ -29,6 +31,7 @@ class NXMUrl {
   private mExpires: number;
   private mUserId: number;
   private mView: boolean;
+  private mSource: IDownloadSource | undefined;
   private mExtraParams: { [key: string]: string } = {};
   private mPremium: boolean;
 
@@ -88,6 +91,12 @@ class NXMUrl {
     const view = parsed.searchParams.get("view") ?? "0";
     this.mView =
       view !== undefined ? view.toLowerCase() === "true" || parseInt(view, 10) > 0 : undefined;
+    const placement = parsed.searchParams.get("placement") || undefined;
+    const position = parseInt(parsed.searchParams.get("position") ?? "", 10);
+    this.mSource =
+      placement === undefined && isNaN(position)
+        ? undefined
+        : { placement, position: isNaN(position) ? undefined : position };
 
     for (const entry of parsed.searchParams.entries()) {
       this.mExtraParams[entry[0]] = entry[1];
@@ -194,6 +203,13 @@ class NXMUrl {
 
   public get view(): boolean {
     return this.mView;
+  }
+
+  /**
+   * where on the site the download started, when the link carries it
+   */
+  public get source(): IDownloadSource | undefined {
+    return this.mSource;
   }
 
   public getParam(key: string): string {

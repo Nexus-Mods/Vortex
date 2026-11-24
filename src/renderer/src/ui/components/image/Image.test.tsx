@@ -35,6 +35,16 @@ describe("Image", () => {
       renderComponent({ children: <span data-testid="badge" /> });
       expect(screen.getByTestId("badge")).toBeInTheDocument();
     });
+
+    it("frames the picture, unless it's told not to style it", () => {
+      const { rerender } = renderComponent();
+      expect(document.querySelector(".nxm-image-frame")).toBeInTheDocument();
+      expect(getContainer()).toHaveClass("nxm-image-styled");
+
+      rerender(<Image alt="A mod" isStyled={false} src="mod.png" />);
+      expect(document.querySelector(".nxm-image-frame")).toBeNull();
+      expect(getContainer()).not.toHaveClass("nxm-image-styled");
+    });
   });
 
   describe("loading", () => {
@@ -67,6 +77,12 @@ describe("Image", () => {
 
     it("waits for nothing when there is no src", () => {
       renderComponent({ src: undefined });
+      expect(getSpinner()).not.toBeInTheDocument();
+    });
+
+    it("takes a null src, as an API sends for a picture it hasn't got, as none", () => {
+      renderComponent({ src: null });
+      expect(getImg()).not.toHaveAttribute("src");
       expect(getSpinner()).not.toBeInTheDocument();
     });
 

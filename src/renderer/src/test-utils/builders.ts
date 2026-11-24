@@ -25,7 +25,13 @@ import * as path from "path";
 
 import type { IFileInfo, IPreference, IUserInfo } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
-import { VortexProfileId } from "@vortex/shared";
+import type { components as V3Components } from "@vortex/nexus-api-v3";
+import {
+  VortexGameId,
+  type VortexModId,
+  VortexModStagingFolder,
+  VortexProfileId,
+} from "@vortex/shared";
 import type { WireDownloadCheckpoint, WireResolvedResource } from "@vortex/shared/ipc";
 import type { Api, DownloaderApi } from "@vortex/shared/preload";
 import type { LootAsync, PluginInterface, PluginMetadata, Vertex } from "loot";
@@ -62,6 +68,7 @@ import type {
 } from "../extensions/gamebryo_plugin_management/types/IPlugins";
 import type PluginPersistor from "../extensions/gamebryo_plugin_management/util/PluginPersistor";
 import toPluginId from "../extensions/gamebryo_plugin_management/util/toPluginId";
+import type { IGameStub } from "../extensions/gamemode_management/GameModeManager";
 import type { IDiscoveryResult } from "../extensions/gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../extensions/gamemode_management/types/IGameStored";
 import { getGame } from "../extensions/gamemode_management/util/getGame";
@@ -69,6 +76,7 @@ import {
   getModTypeExtensions,
   registerModType,
 } from "../extensions/gamemode_management/util/modTypeExtensions";
+import type { InstallRecord } from "../extensions/gamemode_management/util/store_install/storeInstall";
 import type { IExtensionContextEx } from "../extensions/hardlink_activator";
 import type { HealthCheckRegistry } from "../extensions/health_check/core/HealthCheckRegistry";
 import type {
@@ -102,12 +110,14 @@ import {
   registerDeploymentMethod,
 } from "../extensions/mod_management/util/deploymentMethods";
 import type { InstallPhaseTracker } from "../extensions/mod_management/util/InstallPhaseTracker";
+import type { IGeneratedFile } from "../extensions/mod_management/util/lockfileContributions";
 import type { IModLookupInfo } from "../extensions/mod_management/util/testModReference";
 import { accountReducer as nexusAccountReducer } from "../extensions/nexus_integration/reducers/account";
 import { persistentReducer as nexusPersistentReducer } from "../extensions/nexus_integration/reducers/persistent";
 import { sessionReducer as nexusSessionReducer } from "../extensions/nexus_integration/reducers/session";
 import type { IValidateKeyDataV2 } from "../extensions/nexus_integration/types/IValidateKeyData";
 import { MEMBERSHIP_ROLE, transformUserInfoFromApi } from "../extensions/nexus_integration/util";
+import type { ArchiveManifestFile } from "../extensions/nexus_integration/util_v3/archiveManifests";
 import { setNextProfile } from "../extensions/profile_management/actions/settings";
 import { settingsReducer as profileSettingsReducer } from "../extensions/profile_management/reducers/settings";
 import type { IProfile, IProfileMod } from "../extensions/profile_management/types/IProfile";
@@ -124,6 +134,7 @@ import type {
 } from "../types/collections/ICollectionInstallSession";
 import type { IAvailableExtension, IExtensionReducer } from "../types/extensions";
 import type { DialogActions, DialogType, IDialogContent, IDialogResult } from "../types/IDialog";
+import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type {
   IExtensionApi,
   IExtensionContext,
@@ -224,6 +235,68 @@ export function makeMod(overrides: Partial<IMod> = {}): IMod {
     attributes: {},
     ...overrides,
   };
+}
+
+/** Skyrim SE's Steam install as the store scan reads it. */
+export function makeSteamInstallRecord(overrides: Partial<InstallRecord> = {}): InstallRecord {
+  return {
+    storeId: "steam",
+    install: {
+      app_id: 489830,
+      build_id: 15218373,
+      branch: null,
+      language: "english",
+      mounted_language: "english",
+      state_flags: 4,
+      target_build_id: 15218373,
+      depots: [{ depot_id: 489833, manifest_id: "1914580699073641964", dlc_app_id: null }],
+      shared_depots: [],
+    },
+    failureReason: null,
+    ...overrides,
+  };
+}
+
+/** A file version as the v3 mod-file-versions batch endpoint returns it. */
+export function makeModFileVersionDetail(
+  overrides: Partial<V3Components["schemas"]["ModFileVersionDetail"]> = {},
+): V3Components["schemas"]["ModFileVersionDetail"] {
+  return {
+    id: "7318624307791",
+    mod_id: "7318624284988",
+    mod_file_id: "4212580",
+    name: "SkyUI_5_2_SE",
+    version: "5.2SE",
+    position: "1.0",
+    manifest_url: "https://mod-file-manifests.test/10/91/b1/skyui",
+    ...overrides,
+  };
+}
+
+/** A file entry of a Nexus archive's manifest. */
+export function makeArchiveManifestFile(
+  overrides: Partial<ArchiveManifestFile> = {},
+): ArchiveManifestFile {
+  return {
+    file_path: "SkyUI_SE.esp",
+    file_size: 2388,
+    file_hashes: { MD5: "b65a92135fb46c4bf17b8faa2f80089c" },
+    ...overrides,
+  };
+}
+
+/** A plugins.txt as a lockfile contribution declares it. */
+export function makeDeclaredFile(overrides: Partial<IGeneratedFile> = {}): IGeneratedFile {
+  return {
+    destinationPath: "/fixture-root/appdata/Skyrim Special Edition/plugins.txt",
+    content: Buffer.from("# Automatically generated by Vortex\r\n*SkyUI_SE.esp\r\n", "latin1"),
+    ...overrides,
+  };
+}
+
+/** A mod staged in the folder Vortex names after its id. */
+export function makeStagedMod(modId: VortexModId, overrides: Partial<IMod> = {}): IMod {
+  return makeMod({ id: modId, installationPath: VortexModStagingFolder(modId), ...overrides });
 }
 
 /** A file change as a deployment method's externalChanges reports it. */
@@ -460,6 +533,7 @@ export function makeFakeLoot(overrides: Partial<IFakeLoot> = {}): IFakeLoot {
     sortPlugins: vi.fn<LootAsync["sortPlugins"]>((pluginNames) =>
       Promise.resolve([...pluginNames]),
     ),
+    strayConnections: 0,
     ...overrides,
   };
 }
@@ -635,6 +709,34 @@ export function makeGameStored(overrides: Partial<IGameStored> = {}): IGameStore
     requiredFiles: [],
     executable: "SkyrimSE.exe",
     details: { nexusPageId: "skyrimspecialedition" },
+    ...overrides,
+  };
+}
+
+// A game extension as GameModeManager and the getGame() registry hold it.
+export function makeGame(overrides: Partial<IGame> = {}): IGame {
+  const id = overrides.id ?? VortexGameId("skyrimse");
+  return {
+    id,
+    name: id,
+    requiredFiles: [],
+    queryModPath: () => "mods",
+    executable: () => `${id}.exe`,
+    supportedTools: [],
+    ...overrides,
+  };
+}
+
+// A tool as discovery reports it and settings.gameMode.discovered stores it.
+export function makeDiscoveredTool(overrides: Partial<IDiscoveredTool> = {}): IDiscoveredTool {
+  return {
+    id: "toolId1",
+    name: "Tool",
+    executable: () => "tool.exe",
+    requiredFiles: [],
+    path: "",
+    hidden: false,
+    custom: false,
     ...overrides,
   };
 }
@@ -884,7 +986,10 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   // a structurally-partial IState holding only the slices the driver reads; the single cast
   // mirrors test-utils/sessionStore.asIState (a full IState is impractical to construct)
   return {
+    // storing a game reads the installed extensions, and gameData the Tier 0 games
+    app: { extensions: {} },
     persistent: {
+      gameMode: { tier0: {} },
       mods: slices.mods,
       downloads: { files: slices.downloads },
       profiles: slices.profiles,
@@ -917,6 +1022,18 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
   } as unknown as IState;
 }
 
+// the process-`local` game registry getGame() and isGameRegistered() read
+const harnessGameRegistry = () =>
+  local<{
+    gameModeManager: unknown;
+    extensionGames: IGame[];
+    extensionStubs: IGameStub[];
+  }>("gamemode-management", {
+    gameModeManager: undefined,
+    extensionGames: [],
+    extensionStubs: [],
+  });
+
 /**
  * Register a fake game in the process-`local` registries getGame() reads, so the driver's
  * startImpl can resolve the installed game version (a global singleton, not redux, and not
@@ -925,28 +1042,29 @@ function makeDriverState(overrides: Partial<IDriverHarnessState> = {}): IState {
  */
 const harnessGames = new Set<string>();
 
-export function registerHarnessGame(gameId: string): void {
+export function registerHarnessGame(gameId: string, opts: { stub?: boolean } = {}): void {
+  const gameReg = harnessGameRegistry();
+  // a stub is only the extension Vortex offers to download, so discovery never records it
+  if (opts.stub === true) {
+    if (!gameReg.extensionStubs.some((stub) => stub.game.id === gameId)) {
+      gameReg.extensionStubs.push({
+        game: makeGame({ id: VortexGameId(gameId) }),
+        ext: { name: `Game: ${gameId}`, modId: 1 },
+      });
+    }
+    return;
+  }
   harnessGames.add(gameId);
-  const gameReg = local<{
-    gameModeManager: unknown;
-    extensionGames: IGame[];
-    extensionStubs: unknown[];
-  }>("gamemode-management", {
-    gameModeManager: undefined,
-    extensionGames: [],
-    extensionStubs: [],
-  });
   if (!gameReg.extensionGames.some((game) => game.id === gameId)) {
-    gameReg.extensionGames.push({
-      id: gameId,
-      name: gameId,
-      queryModPath: () => "mods",
-      // resolveGameVersion validates the game (executable) and tries
-      // game.getGameVersion first; provide both so tests don't fall through to
-      // exe-version probing of a nonexistent binary
-      executable: () => `${gameId}.exe`,
-      getGameVersion: () => Promise.resolve("1.0.0"),
-    } as unknown as IGame);
+    gameReg.extensionGames.push(
+      makeGame({
+        id: VortexGameId(gameId),
+        // resolveGameVersion validates the game (executable) and tries game.getGameVersion
+        // first; answer it so tests don't fall through to exe-version probing of a nonexistent
+        // binary
+        getGameVersion: () => Promise.resolve("1.0.0"),
+      }),
+    );
   }
 }
 
@@ -956,16 +1074,9 @@ export function registerHarnessGame(gameId: string): void {
  * would persist and could mask a different test's expectation. Call from afterEach.
  */
 export function resetHarnessRegistries(): void {
-  const gameReg = local<{
-    gameModeManager: unknown;
-    extensionGames: IGame[];
-    extensionStubs: unknown[];
-  }>("gamemode-management", {
-    gameModeManager: undefined,
-    extensionGames: [],
-    extensionStubs: [],
-  });
+  const gameReg = harnessGameRegistry();
   gameReg.extensionGames.length = 0;
+  gameReg.extensionStubs.length = 0;
 }
 
 /**
@@ -1037,7 +1148,7 @@ export function makeApiHarness(
     initialState.settings.gameMode.discovered[gameId] ??= {
       path: `C:/games/${gameId}`,
       name: gameId,
-    } as IDiscoveryResult;
+    };
   }
 
   const dispatched: ITrackedAction[] = [];
@@ -1153,7 +1264,16 @@ export function makeApiHarness(
       },
     },
     emitAndAwait: () => Promise.resolve([]),
+    // no meta server rules; sorting uses the mods' own
+    lookupModMeta: () => Promise.resolve([]),
   } as unknown as IExtensionApi;
+
+  const setState = (mutate: (draft: IState) => void) => {
+    // copy-on-write
+    const draft = structuredClone(store.getState());
+    mutate(draft);
+    store.dispatch({ type: REPLACE_TYPE, payload: draft });
+  };
 
   return {
     api,
@@ -1166,14 +1286,29 @@ export function makeApiHarness(
       await Promise.all(listeners.map((listener) => listener(...args)));
     },
     getState: () => store.getState(),
-    setState: (mutate: (draft: IState) => void) => {
-      // copy-on-write
-      const draft = structuredClone(store.getState());
-      mutate(draft);
-      store.dispatch({ type: REPLACE_TYPE, payload: draft });
-    },
+    setState,
     setNextDialog: (result: IDialogResult) => {
       nextDialog = result;
+    },
+    openModalDialog: (id: string = "harness-dialog") => {
+      setState((draft) => {
+        draft.session.notifications = {
+          notifications: [],
+          global_notifications: [],
+          ...draft.session.notifications,
+          dialogs: [
+            ...(draft.session.notifications?.dialogs ?? []),
+            { id, type: "question", title: "", content: {}, defaultAction: "", actions: [] },
+          ],
+        };
+      });
+    },
+    setFomodDialog: (activeInstanceId: string | null) => {
+      setState((draft) => {
+        Object.assign(draft.session, {
+          fomod: { installer: { dialog: { activeInstanceId, instances: {} } } },
+        });
+      });
     },
     dialogCalls,
     errorNotifications,
@@ -1208,7 +1343,7 @@ export function makeGameHarness(
   const profileId = opts.profileId ?? "profile-1";
   const stagingPath = opts.installPath?.[gameId] ?? harnessStagingPath(gameId);
   const gamePath = opts.gamePath;
-  registerHarnessGame(gameId);
+  registerHarnessGame(gameId, { stub: opts.stub });
   const base = makeApiHarness(
     {
       profiles: { [profileId]: makeProfile({ id: profileId, gameId }) },
@@ -1243,7 +1378,7 @@ export async function makeProfileSwitchHarness(
   opts: IProfileSwitchOpts,
 ): Promise<IProfileSwitchHarness> {
   const gameIds = [...new Set(opts.profiles.map((profile) => profile.gameId))];
-  gameIds.forEach(registerHarnessGame);
+  gameIds.forEach((gameId) => registerHarnessGame(gameId));
 
   const gameRoot = await mkdtemp(path.join(os.tmpdir(), "vortex-profile-switch-"));
   const gameSettingsPath = (gameId: string) => path.join(gameRoot, gameId, "settings.ini");

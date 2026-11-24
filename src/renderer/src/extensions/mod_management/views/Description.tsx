@@ -3,7 +3,9 @@ import memoizeOne from "memoize-one";
 import * as React from "react";
 import { Overlay, Popover } from "react-bootstrap";
 
-import bbcode from "../../../controls/bbcode";
+import { renderSafeBBCode } from "@/controls/bbcode";
+import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
+
 import Icon from "../../../controls/Icon";
 import { truthy } from "../../../util/util";
 
@@ -14,6 +16,10 @@ interface IBaseProps {
   modId: string;
   source: string;
   installed: boolean;
+  /** The mod's page on Nexus Mods, which images from elsewhere point to; without one, they're left out. */
+  websiteUrl?: string;
+  /** Whether the mod is adult content; blurs its images if the user's set to. */
+  isFromAdultContent?: boolean;
   startEditDescription: (modId: string) => void;
 }
 
@@ -29,9 +35,25 @@ function nop() {
 
 class Description extends React.Component<IProps, IComponentState> {
   private mRef: Element;
-  private mLongBB: React.ReactChild[];
 
-  private shortBB = memoizeOne((short: string) => bbcode(short));
+  // Inline in the toggle link, so without the prose wrapper, and without placeholders for images
+  // from elsewhere: a placeholder's buttons can't sit in a link, and would toggle the popover. The
+  // long description, a click away, has them.
+  private shortBB = memoizeOne((short: string, isFromAdultContent?: boolean) =>
+    renderSafeBBCode(short, { isFromAdultContent }),
+  );
+
+  // Parsed only when one of these changes, not on every render of the row, such as on a download's
+  // progress.
+  private longBB = memoizeOne((long: string, websiteUrl?: string, isFromAdultContent?: boolean) => (
+    <BBCode
+      bbcode={long}
+      className="mb-2"
+      externalImagePlaceholders={websiteUrl !== undefined ? { websiteUrl } : undefined}
+      isFromAdultContent={isFromAdultContent}
+      size="sm"
+    />
+  ));
 
   constructor(props: IProps) {
     super(props);
@@ -42,11 +64,11 @@ class Description extends React.Component<IProps, IComponentState> {
   }
 
   public render(): JSX.Element {
-    const { t, installed, short, source } = this.props;
+    const { t, installed, isFromAdultContent, long, short, source, websiteUrl } = this.props;
 
     const popover = (
       <Popover id="popover-mod-description">
-        <div>{this.mLongBB}</div>
+        {this.longBB(long || `<${t("No description")}>`, websiteUrl, isFromAdultContent)}
         {truthy(source) ? (
           <a
             onClick={nop}
@@ -85,8 +107,8 @@ class Description extends React.Component<IProps, IComponentState> {
         >
           {popover}
         </Overlay>
-        <a ref={this.setRef} onClick={this.toggle}>
-          {!short ? t("Description") : this.shortBB(short)}
+        <a data-testid="mod-description-toggle" ref={this.setRef} onClick={this.toggle}>
+          {!short ? t("Description") : this.shortBB(short, isFromAdultContent)}
         </a>
       </div>
     );
@@ -107,10 +129,6 @@ class Description extends React.Component<IProps, IComponentState> {
   };
 
   private toggle = () => {
-    const { t } = this.props;
-    if (!this.state.open) {
-      this.mLongBB = bbcode(this.props.long || `<${t("No description")}>`);
-    }
     this.setState({ open: !this.state.open });
   };
 }

@@ -1,7 +1,16 @@
-import React, { type ReactNode, useCallback, useMemo, useState } from "react";
+import React, {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
+import ErrorBoundary from "@/controls/ErrorBoundary";
 import type { ITableRowAction } from "@/controls/Table";
 import type { IState } from "@/types/IState";
 import { useDisplayOptionsAction } from "@/ui/components/display_options/useDisplayOptionsAction.hook";
@@ -11,14 +20,18 @@ import { Switch } from "@/ui/components/form/switch/Switch";
 import { Image } from "@/ui/components/image/Image";
 import { NoResults } from "@/ui/components/no_results/NoResults";
 import { Table } from "@/ui/components/table/Table";
-import type { ITableSort } from "@/ui/components/table/Table.types";
 import { TableSelectionBar } from "@/ui/components/table/table_selection_bar/TableSelectionBar";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
+import type { IToolbarAnalytics } from "@/ui/components/toolbar/Toolbar.context";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
+import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarMenu } from "@/ui/components/toolbar/ToolbarMenu";
 import { useToolbarAnalytics } from "@/ui/components/toolbar/useToolbarAnalytics.hook";
+import { LegacyTitleTooltips } from "@/ui/components/tooltip/legacy_title_tooltips/LegacyTitleTooltips";
 import { Typography } from "@/ui/components/typography/Typography";
+import { joinClasses } from "@/ui/utils/joinClasses";
 
+import { setModsTablePropertiesOpen } from "../../actions/settings";
 import { useCollectionGroupActions } from "../../hooks/use_collection_group_actions/useCollectionGroupActions.hook";
 import { useGroupEnabled } from "../../hooks/use_group_enabled/useGroupEnabled.hook";
 import { useInstallMods } from "../../hooks/use_install_mods/useInstallMods.hook";
@@ -32,6 +45,7 @@ import { useModsEnabled } from "../../hooks/use_mods_enabled/useModsEnabled.hook
 import {
   MODS_TABLE_TOOLBARS,
   modsTableGroupToolbar,
+  type PropertiesOpenedVia,
   useModsTableAnalytics,
 } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import {
@@ -44,9 +58,15 @@ import {
   useCollectionMemberships,
   useModsTableGroups,
 } from "../../hooks/use_mods_table_groups/useModsTableGroups.hook";
+import { useModsTableNameFilter } from "../../hooks/use_mods_table_name_filter/useModsTableNameFilter.hook";
 import { useModsTableSearch } from "../../hooks/use_mods_table_search/useModsTableSearch.hook";
 import { useModsTableView } from "../../hooks/use_mods_table_view/useModsTableView.hook";
+import {
+  RegisteredModsInputsProvider,
+  useRegisteredModsColumns,
+} from "../../hooks/use_registered_mods_columns/useRegisteredModsColumns.hook";
 import type { IModWithState } from "../../types/IModProps";
+import { filterModsByStatus } from "../../util/mods_table_filters/modsTableFilters";
 import {
   allModRows,
   type IModGroup,
@@ -56,8 +76,15 @@ import { CollectionHoverCard } from "../collection_hover_card/CollectionHoverCar
 import { CollectionRevision } from "../collection_revision/CollectionRevision";
 import { DisableSharedModsModal } from "../disable_shared_mods_modal/DisableSharedModsModal";
 import { ModHoverCard } from "../mod_hover_card/ModHoverCard";
+import { ModPropertiesPanel } from "../mod_properties_panel/ModPropertiesPanel";
 import { actionsWidth, ModRowActions, PINNED_ACTION_WIDTH } from "../mod_row_actions/ModRowActions";
-import { ModVersion, modVersionGroup, modVersionText } from "../mod_version/ModVersion";
+import {
+  MOD_VERSION_GROUPS,
+  ModVersion,
+  modVersionGroup,
+  modVersionGroupName,
+  modVersionText,
+} from "../mod_version/ModVersion";
 import { ModsTableColumnToggles } from "../mods_table_column_toggles/ModsTableColumnToggles";
 import { ModsTableGroupBy } from "../mods_table_group_by/ModsTableGroupBy";
 import { ModsTableToolbar } from "../mods_table_toolbar/ModsTableToolbar";
@@ -79,18 +106,75 @@ interface IModsTableSwitchProps {
   onRemoveVersion?: (alternativeId: string) => void;
 }
 
-const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
-
 const betaTable = (state: IState) => state.settings.mods?.betaTable === true;
+
+const propertiesOpen = (state: IState) => state.settings.mods?.propertiesOpen === true;
+
+/** The Properties panel's width, its rule down its left included; the toolbar reaches over it. */
+const PROPERTIES_WIDTH = "26.5rem" as const;
+
+/**
+ * A menu's actions with Properties after its "open" section's, where it reads as one more thing
+ * to open; at the end if there's none.
+ */
+const withProperties = (actions: IToolbarAction[], properties: IToolbarAction) => {
+  const lastOpen = actions.findLastIndex(({ section }) => section === "open");
+  const at = lastOpen === -1 ? actions.length : lastOpen + 1;
+  return [...actions.slice(0, at), properties, ...actions.slice(at)];
+};
+
+/**
+ * The mods, kept as the same array while each is the same object as before, so what's drawn for
+ * them, such as an extension's field in the panel, isn't drawn again when another mod changes.
+ */
+const useStableMods = (mods: IModWithState[]) => {
+  const previous = useRef(mods);
+  const kept = previous.current;
+  const same = kept.length === mods.length && kept.every((mod, index) => mod === mods[index]);
+  if (!same) {
+    previous.current = mods;
+  }
+  return previous.current;
+};
+
+/** The groups the Status column puts rows in, in order; ids, not names. */
+const STATUS_GROUPS = [
+  "never-installed",
+  "uninstalled",
+  "installing",
+  "enabled",
+  "disabled",
+] as const;
+
+type StatusGroup = (typeof STATUS_GROUPS)[number];
+
+/** Each group's name, by its key; one per group, so a group added without one won't build. */
+const STATUS_GROUP_NAMES: Record<StatusGroup, string> = {
+  "never-installed": "modsTable::groups::neverInstalled",
+  uninstalled: "modsTable::groups::uninstalled",
+  installing: "modsTable::groups::installing",
+  enabled: "modsTable::groups::enabled",
+  disabled: "modsTable::groups::disabled",
+};
+
+const isStatusGroup = (value: string): value is StatusGroup =>
+  (STATUS_GROUPS as readonly string[]).includes(value);
 
 const NO_ROW_ACTIONS: ITableRowAction[] = [];
 const NO_ALTERNATIVES: { [modId: string]: IModWithState[] } = {};
+const NO_MODS: { [id: string]: IModWithState } = {};
 const nop = () => undefined;
 
 /**
  * The Mods page's table: the classic one, or the new one while the user has the beta view on.
  *
- * The new table is asked to show a group; see useModsTableFocusRequest.
+ * The new table is asked to show a group or a mod; see useModsTableFocusRequest. A selected mod
+ * the filters hide is deselected while rendering, however it comes to be hidden, so nothing acts on
+ * a mod out of sight. With no rows to show, it says the search found nothing only when the filters
+ * left some for it, and otherwise that nothing matches the filters.
+ *
+ * The Properties panel is the new table's aside, pinned over its right edge; the columns scroll
+ * sideways clear of it when both don't fit. One title tooltip serves extension controls in both.
  */
 export const ModsTableSwitch = ({
   mods,
@@ -101,25 +185,20 @@ export const ModsTableSwitch = ({
   onSelectVersion = nop,
   onRemoveVersion,
 }: IModsTableSwitchProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const newTable = useSelector(betaTable);
+  const showProperties = useSelector(propertiesOpen);
+  // Whether the panel's content is drawn: while it's open, and as it slides shut.
+  const [panelMounted, setPanelMounted] = useState(showProperties);
+  useEffect(() => {
+    if (showProperties) {
+      setPanelMounted(true);
+    }
+  }, [showProperties]);
+  const dispatch = useDispatch();
 
-  const {
-    views,
-    view,
-    grouping,
-    groupingLocked,
-    isColumnShown,
-    canReset,
-    select: selectView,
-    setGrouping,
-    setColumnVisible,
-    reset: resetView,
-    addView,
-    renameView,
-    removeView,
-  } = useModsTableView(mods);
-  const rows = useMemo(() => allModRows(mods), [mods]);
+  // The legacy table builds its own rows and groups, so build none for it.
+  const tableMods = newTable ? mods : NO_MODS;
   const memberships = useCollectionMemberships(mods);
   const { changing, setEnabled, isEnabled } = useModsEnabled(onSetModsEnabled);
 
@@ -140,7 +219,6 @@ export const ModsTableSwitch = ({
   const analytics = useModsTableAnalytics();
   const rowTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.row);
   const selectionTracking = useToolbarAnalytics(MODS_TABLE_TOOLBARS.selection);
-  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
 
   const collectionActions = useCollectionGroupActions(actionsFor);
 
@@ -151,17 +229,68 @@ export const ModsTableSwitch = ({
     [mods, selected],
   );
   const selectionActions = useModSelectionActions(rowActions, selectedIds);
+
+  // Where the table's header row starts, under its toolbar: the panel starts level with it.
+  const [headerOffset, setHeaderOffset] = useState(0);
+
+  const selectedMods = useStableMods(
+    useMemo(() => selectedIds.map((id) => mods[id]), [mods, selectedIds]),
+  );
+  const setPropertiesOpen = useCallback(
+    (open: boolean) => dispatch(setModsTablePropertiesOpen(open)),
+    [dispatch],
+  );
+  // Every way of opening the panel counts as one event, sent only when it wasn't open already.
+  const openProperties = useCallback(
+    (via: PropertiesOpenedVia) => {
+      if (!showProperties) {
+        analytics.onPropertiesOpened(via);
+      }
+      setPropertiesOpen(true);
+    },
+    [analytics, setPropertiesOpen, showProperties],
+  );
+  const toggleProperties = useCallback(
+    () => (showProperties ? setPropertiesOpen(false) : openProperties("toolbar")),
+    [openProperties, setPropertiesOpen, showProperties],
+  );
+  // In the "open" section, as one more way to look at what's selected; not pinnable, as it's no
+  // row action, so it has no id to pin it by. Without an id the menu doesn't count it, so it's
+  // counted with the panel's other opens instead.
+  const propertiesActionFor = useCallback(
+    (via: PropertiesOpenedVia): IToolbarAction => ({
+      label: t("modsTable::properties::open"),
+      icon: { name: "dock_to_left", filled: false },
+      section: "open",
+      onClick: () => openProperties(via),
+    }),
+    [openProperties, t],
+  );
+  const rowPropertiesAction = useMemo(() => propertiesActionFor("row_menu"), [propertiesActionFor]);
+  const selectionPropertiesAction = useMemo(
+    () => propertiesActionFor("selection_menu"),
+    [propertiesActionFor],
+  );
   const selectedEnabled = selectedIds.filter((id) => isEnabled(mods[id])).length;
 
   // A row's actions are for its own mod, which would read as for every selected one.
   const multiSelected = selectedIds.length > 1;
   const shownPins = multiSelected ? 0 : pinnedCount;
 
+  // Apart from the columns, which a toggle rebuilds, as only the language changes these.
+  const groupNames = useMemo(
+    () => ({
+      status: (value: string) => (isStatusGroup(value) ? t(STATUS_GROUP_NAMES[value]) : value),
+      version: (value: string) => modVersionGroupName(value, t),
+    }),
+    [t],
+  );
+
   const columns = useMemo<IModsTableColumn[]>(
     () => [
       {
         id: "name",
-        header: t("Name"),
+        header: t("modsTable::columns::name"),
         sort: (a, b) => a.name.localeCompare(b.name),
         searchText: ({ name }) => name,
         cell: ({ mod, name }) => (
@@ -196,34 +325,30 @@ export const ModsTableSwitch = ({
       },
       {
         id: "status",
-        header: t("Actions"),
-        groupLabel: t("Status"),
+        header: t("modsTable::columns::actions"),
+        groupLabel: t("modsTable::columns::status"),
         width: actionsWidth(0),
+        resizable: false,
         revealWidth: shownPins ? `${PINNED_ACTION_WIDTH * shownPins}px` : undefined,
         sticky: "end",
         groupBy: ({ mod }) => {
           if (mod.state === "downloaded") {
-            return mod.attributes?.wasInstalled ? t("Uninstalled") : t("Never installed");
+            return mod.attributes?.wasInstalled ? "uninstalled" : "never-installed";
           }
           if (mod.state === "installing") {
-            return t("Installing");
+            return "installing";
           }
-          return isEnabled(mod) ? t("Enabled") : t("Disabled");
+          return isEnabled(mod) ? "enabled" : "disabled";
         },
-        groupOrder: [
-          t("Never installed"),
-          t("Uninstalled"),
-          t("Installing"),
-          t("Enabled"),
-          t("Disabled"),
-        ],
+        groupOrder: STATUS_GROUPS,
+        groupValueLabel: groupNames.status,
         cell: ({ mod, name }) => (
           <ModRowActions
             actions={actionsFor(mod.id)}
             enabled={isEnabled(mod)}
-            installLabel={t("Install {{name}}", { name })}
+            installLabel={t("modsTable::rowActions::installMod", { name })}
             isLoading={changing.has(mod.id)}
-            label={t("{{name}} enabled", { name })}
+            label={t("modsTable::rowActions::enabled", { name })}
             modId={mod.id}
             modState={mod.state}
             switchOnly={multiSelected}
@@ -234,7 +359,8 @@ export const ModsTableSwitch = ({
         ),
         /**
          * Part on while only some of its mods are, as after keeping the shared ones; right-aligned
-         * before the "…" the table puts at the cell's end, so it lines up with its rows' switches.
+         * before the "…" the table puts at the cell's end, so it lines up with its rows'
+         * switches.
          */
         groupCell: (group) => {
           const enabled = group.rows.filter(({ mod }) => isEnabled(mod)).length;
@@ -242,7 +368,7 @@ export const ModsTableSwitch = ({
           return (
             <div className="flex min-w-0 flex-1 items-center justify-end">
               <Switch
-                aria-label={t("{{name}} enabled", { name: group.label })}
+                aria-label={t("modsTable::rowActions::enabled", { name: group.label })}
                 checked={group.rows.length > 0 && enabled === group.rows.length}
                 indeterminate={enabled > 0 && enabled < group.rows.length}
                 isLoading={group.rows.some(({ mod }) => changing.has(mod.id))}
@@ -255,13 +381,14 @@ export const ModsTableSwitch = ({
       // The legacy table's, sharing its choice to show it and its place.
       {
         id: "version",
-        header: t("Version"),
+        header: t("modsTable::columns::version"),
         width: "160px",
         isToggleable: true,
         position: 40,
         searchText: ({ mod }) => modVersionText(mod, alternatives[mod.id], t),
-        groupBy: ({ mod }) => modVersionGroup(mod, t),
-        groupOrder: [t("Update available"), t("Up-to-date")],
+        groupBy: ({ mod }) => modVersionGroup(mod),
+        groupOrder: MOD_VERSION_GROUPS,
+        groupValueLabel: groupNames.version,
         cell: ({ mod }) => (
           <ModVersion
             alternatives={alternatives[mod.id]}
@@ -281,6 +408,7 @@ export const ModsTableSwitch = ({
       alternatives,
       changing,
       dataColumns,
+      groupNames,
       install,
       isEnabled,
       multiSelected,
@@ -293,9 +421,77 @@ export const ModsTableSwitch = ({
     ],
   );
 
-  const { visibleColumns, toggles, groupable } = useModsTableColumns(columns, isColumnShown);
+  // By the ids alone, as the columns change with the mods, so the registered ones needn't.
+  const ownIdList = columns.map(({ id }) => id).join("\n");
+  const ownIds = useMemo(() => new Set(ownIdList.split("\n")), [ownIdList]);
+  const registered = useRegisteredModsColumns(ownIds, tableMods, newTable);
+  const registeredDetails = useMemo(
+    () => ({
+      attributes: registered.details,
+      detailsOnly: registered.detailsOnly,
+      values: registered.textChanges,
+    }),
+    [registered.details, registered.detailsOnly, registered.textChanges],
+  );
+  const allColumns = useMemo(
+    () => [...columns, ...registered.columns],
+    [columns, registered.columns],
+  );
+  const columnIds = useMemo(
+    () => new Set([...ownIds, ...registered.columns.map(({ id }) => id)]),
+    [ownIds, registered.columns],
+  );
 
-  const groups = useModsTableGroups(mods, grouping, groupable, memberships, t);
+  const {
+    views,
+    view,
+    grouping,
+    groupingLocked,
+    isColumnShown,
+    columnWidths,
+    sort,
+    filters,
+    changedFilters,
+    isEdited,
+    canReset,
+    select: selectView,
+    setGrouping,
+    setSort,
+    setFilters,
+    resetFilters,
+    suspendFilters,
+    setColumnVisible,
+    setColumnWidths,
+    reset: resetView,
+    addView,
+    renameView,
+    removeView,
+  } = useModsTableView({
+    mods,
+    defaultShown: registered.defaultShown,
+    columnIds,
+  });
+
+  const groupTracking = useToolbarAnalytics(modsTableGroupToolbar(grouping));
+
+  const { visibleColumns, toggles, groupable } = useModsTableColumns(allColumns, isColumnShown);
+
+  const filteredMods = useMemo(
+    () => filterModsByStatus(tableMods, filters.status, isEnabled),
+    [filters.status, isEnabled, tableMods],
+  );
+  const allRows = useMemo(() => allModRows(tableMods), [tableMods]);
+  const isFiltering = filters.status.length > 0;
+  const rows = useMemo(
+    () => (isFiltering ? allModRows(filteredMods) : allRows),
+    [allRows, filteredMods, isFiltering],
+  );
+
+  if ([...selected].some((id) => !!tableMods[id] && !filteredMods[id])) {
+    setSelected(new Set([...selected].filter((id) => !tableMods[id] || !!filteredMods[id])));
+  }
+
+  const groups = useModsTableGroups(filteredMods, grouping, groupable, memberships, t);
 
   const { search, setSearch, changeSearch, isSearching, shownRows, shownGroups } =
     useModsTableSearch({
@@ -305,12 +501,21 @@ export const ModsTableSwitch = ({
       selected,
       setSelected,
       onSearchStarted: analytics.onSearchStarted,
+      textChanges: registered.textChanges,
     });
 
-  const { focusGroupId, onGroupFocused } = useModsTableFocusRequest({ groups, search, setSearch });
+  const { focusGroupId, onGroupFocused, focusModId, onModFocused } = useModsTableFocusRequest({
+    groups,
+    rows: allRows,
+    search,
+    setSearch,
+    isFilteredOut: useCallback((modId: string) => !filteredMods[modId], [filteredMods]),
+    clearFilters: suspendFilters,
+  });
+  useModsTableNameFilter(setSearch, newTable);
 
   const displayOptions = useDisplayOptionsAction({
-    label: t("View options"),
+    label: t("modsTable::toolbar::viewOptions"),
     canReset,
     children: (
       <>
@@ -324,7 +529,7 @@ export const ModsTableSwitch = ({
         <ModsTableColumnToggles toggles={toggles} onToggle={setColumnVisible} />
       </>
     ),
-    onReset: resetView,
+    onReset: () => resetView("panel"),
   });
 
   if (!newTable) {
@@ -343,7 +548,7 @@ export const ModsTableSwitch = ({
           actions={selectionActions}
           beforeOverflow={
             <Switch
-              aria-label={t("Selected mods enabled")}
+              aria-label={t("modsTable::selection::enabled")}
               checked={selectedEnabled === selectedIds.length}
               indeterminate={selectedEnabled > 0 && selectedEnabled < selectedIds.length}
               isLoading={selectedIds.some((id) => changing.has(id))}
@@ -355,52 +560,81 @@ export const ModsTableSwitch = ({
     </TableSelectionBar>
   );
 
+  /** What shows in place of rows: why the filters or the search left none, or nothing. */
+  const emptyState = () => {
+    if (isSearching && rows.length > 0) {
+      return <NoResults icon="search" title={t("modsTable::noResults")} />;
+    }
+
+    if (isFiltering) {
+      return <NoResults icon="filter_list" title={t("modsTable::filters::noResults")} />;
+    }
+
+    return isSearching && <NoResults icon="search" title={t("modsTable::noResults")} />;
+  };
+
   const tableProps = {
     focusGroupId,
     onGroupFocused,
-    className: "mb-2 flex-1",
+    focusRowId: focusModId,
+    onRowFocused: onModFocused,
+    className: "min-w-0 flex-1 [--nxm-table-end-padding:--spacing(2)]",
     toolbar: (
       <ModsTableToolbar
+        changedFilters={changedFilters}
         displayOptions={displayOptions}
+        filters={filters}
+        isEdited={isEdited}
         search={search}
         selectedView={view.id}
         views={views}
         onAddView={addView}
+        onFiltersChange={setFilters}
         onRemoveView={removeView}
         onRenameView={renameView}
+        onResetFilters={resetFilters}
+        propertiesOpen={showProperties}
         onSearchChange={changeSearch}
         onSelectView={selectView}
+        onToggleProperties={toggleProperties}
       />
     ),
     columns: visibleColumns,
+    columnWidths,
+    onColumnWidthsChange: setColumnWidths,
     getRowId: ({ mod }: IModRow) => mod.id,
-    label: t("Mods"),
+    getRowClassName: (row: IModRow) => registered.rowClassName(row, isColumnShown),
+    label: t("modsTable::label"),
     selectable: true,
     getRowLabel: ({ name }: IModRow) => name,
     selectedIds: selected,
     onSelectedIdsChange: setSelected,
+    // The table selects the row alone first, so the panel shows just it.
+    onRowDoubleClick: () => openProperties("double_click"),
+    onHeaderOffsetChange: setHeaderOffset,
+    asideWidth: showProperties ? PROPERTIES_WIDTH : undefined,
     rowMenu: ({ mod, name }: IModRow, close: () => void) =>
       multiSelected ? (
         <>
           <DropdownBlock>
             <Typography appearance="subdued" typographyType="body-sm">
-              {t("{{count}} items selected", { count: selectedIds.length })}
+              {t("modsTable::selection::count", { count: selectedIds.length })}
             </Typography>
           </DropdownBlock>
 
           <DropdownDivider />
 
           <ToolbarMenu
-            actions={selectionActions}
-            label={t("Selected mods actions")}
+            actions={withProperties(selectionActions, selectionPropertiesAction)}
+            label={t("modsTable::selection::actions")}
             tracking={selectionTracking}
             onSelect={close}
           />
         </>
       ) : (
         <ToolbarMenu
-          actions={actionsFor(mod.id)}
-          label={t("{{name}} actions", { name })}
+          actions={withProperties(actionsFor(mod.id), rowPropertiesAction)}
+          label={t("modsTable::rowActions::menu", { name })}
           pinningId={MOD_ROW_PINNING_ID}
           pinTarget="row"
           tracking={rowTracking}
@@ -415,9 +649,10 @@ export const ModsTableSwitch = ({
     },
     groupTracking,
     onMenuOpen: analytics.onMenuOpen,
-    defaultSort: BY_NAME,
+    sort,
+    onSortChange: setSort,
     footer,
-    empty: isSearching && <NoResults icon="search" title={t("No mods match your search")} />,
+    empty: emptyState(),
   };
 
   // A table takes rows or groups, never both; typed, so neither gains the other as undefined.
@@ -427,7 +662,57 @@ export const ModsTableSwitch = ({
 
   return (
     <>
-      <Table {...tableProps} {...data} />
+      <div
+        className="flex flex-1 items-stretch"
+        style={
+          {
+            "--properties-top": `${headerOffset}px`,
+            "--properties-width": PROPERTIES_WIDTH,
+          } as CSSProperties
+        }
+      >
+        <RegisteredModsInputsProvider value={registered.inputs}>
+          <LegacyTitleTooltips>
+            <Table
+              {...tableProps}
+              {...data}
+              aside={
+                <div
+                  className={joinClasses([
+                    "absolute top-(--properties-top) right-0 h-[calc(100cqb-var(--properties-top))]",
+                    "pointer-events-auto overflow-x-clip bg-surface-low transition-[width]",
+                    "before:absolute before:inset-y-0 before:left-0 before:w-px",
+                    "before:bg-[linear-gradient(to_bottom,transparent,var(--color-stroke-weak)_3rem)]",
+                    showProperties ? "w-(--properties-width)" : "w-0",
+                  ])}
+                  data-testid="mod-properties-slot"
+                  onTransitionEnd={(event) => {
+                    if (event.target === event.currentTarget && !showProperties) {
+                      setPanelMounted(false);
+                    }
+                  }}
+                >
+                  {(showProperties || panelMounted) && (
+                    <ErrorBoundary
+                      className="w-(--properties-width)"
+                      resetKey={selectedIds.join("\n")}
+                      visible
+                      onHide={() => setPropertiesOpen(false)}
+                    >
+                      <ModPropertiesPanel
+                        className="max-h-[calc(100%-0.5rem)] w-(--properties-width)"
+                        memberships={memberships}
+                        mods={selectedMods}
+                        registered={registeredDetails}
+                      />
+                    </ErrorBoundary>
+                  )}
+                </div>
+              }
+            />
+          </LegacyTitleTooltips>
+        </RegisteredModsInputsProvider>
+      </div>
 
       <DisableSharedModsModal
         collections={pendingDisable?.shared.collections ?? []}

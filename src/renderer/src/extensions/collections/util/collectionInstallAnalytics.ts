@@ -1,4 +1,5 @@
 import type { IExtensionApi } from "../../../types/IExtensionContext";
+import { downloadNexusIds } from "../../analytics/mixpanel/download_nexus_ids/downloadNexusIds";
 import { classifyErrorCode } from "../../analytics/mixpanel/error-code";
 import type {
   CollectionInstallOutcomeProps,
@@ -13,7 +14,6 @@ import {
   CollectionsInstallationStartedEvent,
 } from "../../analytics/mixpanel/MixpanelEvents";
 import { setModAttribute } from "../../mod_management/actions/mods";
-import { nexusIdsFromDownloadId } from "../../nexus_integration/selectors";
 
 /**
  * Terminal outcome of a collection install. "paused" is resumable rather than a
@@ -77,6 +77,15 @@ function readMarkers(api: IExtensionApi, ref: CollectionInstallRef): InstallMark
     pauseCount: num(PAUSE_COUNT_ATTR) ?? 0,
     resumeCount: num(RESUME_COUNT_ATTR) ?? 0,
   };
+}
+
+/**
+ * Whether a start() now continues an install that was started but never finished (paused,
+ * interrupted, quit mid-install) rather than beginning a fresh one. Read it before
+ * emitCollectionInstallStartOrResume, which anchors the marker on a genuine first start.
+ */
+export function isCollectionInstallResume(api: IExtensionApi, ref: CollectionInstallRef): boolean {
+  return readMarkers(api, ref).installStartedAt !== undefined;
 }
 
 function setMarker(
@@ -144,7 +153,7 @@ function buildOutcomeProps(
   if (session == null || ref.archiveId == null) {
     return undefined;
   }
-  const nexusIds = nexusIdsFromDownloadId(state, ref.archiveId);
+  const nexusIds = downloadNexusIds(state, ref.archiveId);
   if (nexusIds?.collectionId == null) {
     return undefined;
   }

@@ -1,0 +1,77 @@
+import React from "react";
+import { useTranslation } from "react-i18next";
+
+import { FilterMenu } from "@/ui/components/filters/filter_menu/FilterMenu";
+
+import { MOD_FILTERS } from "../../../util/mod_filters/modFilterList";
+import type { IModFilters } from "../../../util/mod_views/modViews";
+import { ModFilterMenu } from "./ModFilterMenu";
+
+interface IModFiltersProps {
+  /** Which mods the open view shows. */
+  filters: IModFilters;
+  /** Which of them differ from the view's own, which the resets put back. */
+  changedFilters: Array<keyof IModFilters>;
+  /** Whether the user's content preferences show adult content. */
+  canSeeAdult: boolean;
+  /** Whether the user is logged in. */
+  isLoggedIn: boolean;
+  /** Changes some of them. */
+  onChange: (change: Partial<IModFilters>) => void;
+  /** Puts one back as the view has it. */
+  onResetFilter: (key: keyof IModFilters) => void;
+  /** Puts them all back as the view has them. */
+  onReset: () => void;
+  /** Dismisses the filters once one's been picked. */
+  onSelect: () => void;
+}
+
+/**
+ * The filter button's menu for Browse's mods: a row for each filter, opening its submenu; a note
+ * that more are coming; and, while any differs from the view's own, a reset that puts them back.
+ */
+export const ModFilters = ({
+  filters,
+  changedFilters,
+  canSeeAdult,
+  isLoggedIn,
+  onChange,
+  onResetFilter,
+  onReset,
+  onSelect,
+}: IModFiltersProps) => {
+  const { t } = useTranslation();
+  const changedCount = changedFilters.length;
+
+  return (
+    <FilterMenu
+      comingSoon={t("More filters coming soon...")}
+      items={MOD_FILTERS.map((filter) => ({
+        label: filter.label(t),
+        icon: filter.icon,
+        panel: ({ close, dismiss }) => (
+          <ModFilterMenu
+            canSeeAdult={canSeeAdult}
+            filter={filter}
+            filters={filters}
+            isLoggedIn={isLoggedIn}
+            onChange={onChange}
+            onClose={close}
+            onReset={
+              changedFilters.includes(filter.key) ? () => onResetFilter(filter.key) : undefined
+            }
+            onSelect={dismiss}
+          />
+        ),
+      }))}
+      label={t("Filters")}
+      resetLabel={
+        changedCount === 1
+          ? t("Reset 1 filter to default")
+          : t("Reset {{count}} filters to default", { count: changedCount })
+      }
+      onReset={changedCount ? onReset : undefined}
+      onSelect={onSelect}
+    />
+  );
+};

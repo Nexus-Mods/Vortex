@@ -84,6 +84,64 @@ const ButtonIcon = ({ icon, isLoading = false }: { icon?: IIconProp; isLoading?:
   return null;
 };
 
+interface IButtonClassesOptions {
+  /** Its brand and appearance, as `Button` takes them. */
+  colour: IButtonColour;
+  /** Its height, as `Button` takes it. */
+  size: "sm" | "md";
+  /** Whether it's off, which dims it. */
+  isDisabled: boolean;
+  /** Whether it has only an icon, which makes it square. */
+  isIconOnly: boolean;
+  /** Whether it keeps its hover look while what it opens is open. */
+  hasExpandedStyle?: boolean;
+  /** Further classes for it. */
+  className?: string;
+}
+
+/** The classes that draw a button, for anything that draws one as `Button` does. */
+export const getButtonClasses = ({
+  colour: { appearance = "strong", brand = "primary" },
+  size,
+  isDisabled,
+  isIconOnly,
+  hasExpandedStyle = true,
+  className,
+}: IButtonClassesOptions) =>
+  joinClasses(["nxm-button", `nxm-button-${brand}`, `nxm-button-${appearance}`, className], {
+    "nxm-button-disabled": isDisabled,
+    "nxm-button-icon-only": isIconOnly,
+    "nxm-button-no-expanded-style": !hasExpandedStyle,
+    "nxm-button-sm": size === "sm",
+  });
+
+interface IButtonContentProps {
+  /** The icon before its label. */
+  leftIcon?: IIconProp;
+  /** The icon after its label. */
+  rightIcon?: IIconProp;
+  /** Its label. */
+  children?: string;
+  /** Shows a spinner in place of its left icon. */
+  isLoading?: boolean;
+}
+
+/** A button's icons and label, as `Button` draws them. */
+export const ButtonContent = ({
+  leftIcon,
+  rightIcon,
+  children,
+  isLoading,
+}: IButtonContentProps) => (
+  <>
+    <ButtonIcon icon={leftIcon} isLoading={isLoading} />
+
+    {!!children && <span>{children}</span>}
+
+    <ButtonIcon icon={rightIcon} />
+  </>
+);
+
 export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
   (
     {
@@ -108,25 +166,19 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
   ) => {
     const inactive = !!disabled || isLoading;
 
-    const classes = joinClasses(
-      ["nxm-button", `nxm-button-${brand}`, `nxm-button-${appearance}`, className],
-      {
-        "nxm-button-disabled": inactive || !!ariaDisabled,
-        "nxm-button-icon-only": !customContent && !children,
-        "nxm-button-no-expanded-style": !hasExpandedStyle,
-        // `md` is the base class, so only `sm` modifies it.
-        "nxm-button-sm": size === "sm",
-      },
-    );
+    const classes = getButtonClasses({
+      colour: { appearance, brand } as IButtonColour,
+      size,
+      isDisabled: inactive || !!ariaDisabled,
+      isIconOnly: !customContent && !children,
+      hasExpandedStyle,
+      className,
+    });
 
     const content = customContent ?? (
-      <>
-        <ButtonIcon icon={leftIcon} isLoading={isLoading} />
-
-        {!!children && <span>{children}</span>}
-
-        <ButtonIcon icon={rightIcon} />
-      </>
+      <ButtonContent isLoading={isLoading} leftIcon={leftIcon} rightIcon={rightIcon}>
+        {children}
+      </ButtonContent>
     );
 
     if (nested) {
@@ -134,13 +186,13 @@ export const Button = forwardRef<HTMLButtonElement, IButtonProps>(
 
       return (
         <span
-          {...(spanProps as HTMLAttributes<HTMLSpanElement>)}
+          {...spanProps}
           aria-disabled={inactive || ariaDisabled || undefined}
           className={classes}
-          ref={ref as Ref<HTMLSpanElement>}
+          ref={ref}
           role="button"
           tabIndex={inactive ? -1 : (tabIndex ?? 0)}
-          onClick={inactive ? undefined : (onClick as HTMLAttributes<HTMLSpanElement>["onClick"])}
+          onClick={inactive ? undefined : onClick}
           // Pressed by the keys a button is, unless whatever handed it a key handler, such as a
           // Headless UI trigger, has already acted on the key.
           onKeyDown={(event: KeyboardEvent<HTMLSpanElement>) => {

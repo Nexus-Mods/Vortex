@@ -1,9 +1,9 @@
+import { QualifiedPath } from "@nexusmods/paths";
 import { assert, describe, expect, it } from "vitest";
 
 import type { StatusTime } from "./filesystem";
 import type { DirNode, FileNode, Node, SymlinkNode } from "./in-memory-store";
 import { InMemoryStore } from "./in-memory-store";
-import { QualifiedPath } from "./paths";
 
 const DEFAULT_INSTANT = Temporal.Instant.from("2020-01-01T00:00:00Z");
 

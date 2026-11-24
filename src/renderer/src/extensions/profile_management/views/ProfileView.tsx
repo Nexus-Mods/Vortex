@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { VortexGameId } from "@vortex/shared";
 import { shell } from "electron";
 import update from "immutability-helper";
 import * as React from "react";
@@ -19,7 +20,7 @@ import { getSafe } from "../../../util/storeHelper";
 import MainPage from "../../../views/MainPage";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
 import type { IGameStored } from "../../gamemode_management/types/IGameStored";
-import { getGame } from "../../gamemode_management/util/getGame";
+import { isGameRegistered } from "../../gamemode_management/util/getGame";
 import { setFeature, setProfile } from "../actions/profiles";
 import { setNextProfile } from "../actions/settings";
 import type { IProfile } from "../types/IProfile";
@@ -175,7 +176,7 @@ class ProfileView extends ComponentEx<IProps, IViewState> {
 
     const discovered = discoveredGames[profiles[profileId].gameId];
     const available = discovered !== undefined && discovered.path !== undefined;
-    const gameAvailable = getGame(profiles[profileId].gameId)?.name !== undefined;
+    const gameAvailable = isGameRegistered(VortexGameId(profiles[profileId].gameId));
     if (profileId === this.state.edit) {
       return null;
     }

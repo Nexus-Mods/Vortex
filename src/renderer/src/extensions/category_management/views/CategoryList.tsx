@@ -3,6 +3,7 @@ import * as React from "react";
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { Icon } from "@/ui/components/icon/Icon";
 import { Listing } from "@/ui/components/listing/Listing";
+import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 
@@ -11,6 +12,29 @@ import { CategoryAddParent } from "./CategoryAddParent";
 import CustomCategoryFetchError from "./CategoryListFetchError";
 import CategoryListItem, { CategoryListSkeletonTile } from "./CategoryListItem";
 import CustomNoCategoryResults from "./CategoryListNoResults";
+
+interface IListStatusOptions {
+  /** Whether the categories are being fetched from Nexus Mods. */
+  isFetching: boolean;
+  /** Whether the last fetch failed. */
+  isFetchError: boolean;
+  /** How many categories there are to show. */
+  count: number;
+}
+
+/** Loading while it fetches; failed only with no categories to show, as those stay on screen. */
+const listStatus = ({ isFetching, isFetchError, count }: IListStatusOptions): ListingStatus => {
+  if (isFetching) {
+    return "loading";
+  }
+
+  if (isFetchError && !count) {
+    return "failed";
+  }
+
+  return "done";
+};
+
 /**
  * displays the list of categories related for the current game.
  *
@@ -37,6 +61,8 @@ export default function CategoryList() {
     clearFetchError,
     onRenameCategory,
   } = useCategoryTree();
+
+  const categoryCount = filteredTreeData?.length ?? 0;
 
   const fetch = () => {
     if (isFetching) return;
@@ -91,11 +117,14 @@ export default function CategoryList() {
               t={t}
             />
           }
-          entityCount={filteredTreeData?.length ?? 0}
-          isError={isFetchError}
-          isLoading={isFetching}
+          entityCount={categoryCount}
           skeletonCount={10}
           SkeletonTile={CategoryListSkeletonTile}
+          status={listStatus({
+            isFetching,
+            isFetchError,
+            count: categoryCount,
+          })}
         >
           {filteredTreeData?.map((c) => (
             <CategoryListItem

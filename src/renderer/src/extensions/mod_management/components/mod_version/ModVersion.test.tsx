@@ -57,16 +57,17 @@ describe("ModVersion", () => {
       <ModVersion alternatives={[current, mod("b", "1.1.14")]} mod={current} onSelect={onSelect} />,
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "1.1.15 (My multiplayer profile)" }));
+    const picker = screen.getByTestId("mod-version-picker");
+    expect(picker).toHaveTextContent("1.1.15 (My multiplayer profile)");
+
+    await userEvent.click(picker);
     const options = screen.getAllByRole("menuitemradio");
-    expect(options.map((option) => option.textContent)).toEqual([
-      "1.1.15 (My multiplayer profile)",
-      "1.1.14 (default)",
-    ]);
+    expect(options[0]).toHaveTextContent("1.1.15 (My multiplayer profile)");
+    expect(options[1]).toHaveTextContent(/^1\.1\.14 \(/);
     // The one in use checked.
     expect(options.map((option) => option.getAttribute("aria-checked"))).toEqual(["true", "false"]);
 
-    await userEvent.click(screen.getByRole("menuitemradio", { name: "1.1.14 (default)" }));
+    await userEvent.click(options[1]);
     expect(onSelect).toHaveBeenCalledWith("a", "b");
   });
 
@@ -86,20 +87,21 @@ describe("ModVersion", () => {
       return { onSelect, onRemove };
     };
 
-    const openPicker = () => userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+    const openPicker = () => userEvent.click(screen.getByTestId("mod-version-picker"));
 
-    const removeIn = (name: string) =>
+    // Each row's only button is its remove control.
+    const removeIn = (version: string) =>
       within(
         screen.getByRole("menuitemradio", {
-          name: (accessibleName) => accessibleName.startsWith(name),
+          name: (accessibleName) => accessibleName.startsWith(`${version} `),
         }),
-      ).getByRole("button", { name: "Remove version" });
+      ).getByRole("button");
 
     it("removes one from its row's button, without switching to it, and closes", async () => {
       const { onSelect, onRemove } = renderRemovable();
 
       await openPicker();
-      await userEvent.click(removeIn("1.0 (default)"));
+      await userEvent.click(removeIn("1.0"));
 
       expect(onRemove).toHaveBeenCalledWith("b");
       expect(onSelect).not.toHaveBeenCalled();
@@ -110,7 +112,7 @@ describe("ModVersion", () => {
       const { onRemove } = renderRemovable();
 
       await openPicker();
-      await userEvent.click(removeIn("2.0 (default)"));
+      await userEvent.click(removeIn("2.0"));
 
       expect(onRemove).toHaveBeenCalledWith("a");
     });
@@ -132,14 +134,18 @@ describe("ModVersion", () => {
 
       await openPicker();
 
-      expect(screen.queryByRole("button", { name: "Remove version" })).toBeNull();
+      for (const option of screen.getAllByRole("menuitemradio")) {
+        expect(within(option).queryByRole("button")).toBeNull();
+      }
     });
   });
 
   it("calls a variant with an empty name the default", () => {
     const current = mod("a", "1.28.4", "");
 
-    expect(modVersionText(current, [current, mod("b", "1.28.3")], t)).toBe("1.28.4 (default)");
+    expect(modVersionText(current, [current, mod("b", "1.28.3")], t)).toBe(
+      "1.28.4 (modsTable::version::defaultVariant)",
+    );
   });
 
   it("is searched by what it shows", () => {
@@ -155,19 +161,19 @@ describe("modVersionGroup", () => {
     ({ id: "a", attributes: { source: "nexus", version, newestVersion } }) as unknown as IMod;
 
   it("groups a mod with no newer version as up to date, as the classic table did", () => {
-    expect(modVersionGroup(withNewest("1.0.0"), t)).toBe("Up-to-date");
-    expect(modVersionGroup(withNewest("1.0.0", "1.0.0"), t)).toBe("Up-to-date");
+    expect(modVersionGroup(withNewest("1.0.0"))).toBe("up-to-date");
+    expect(modVersionGroup(withNewest("1.0.0", "1.0.0"))).toBe("up-to-date");
   });
 
   it("groups a mod with a newer version as having an update", () => {
-    expect(modVersionGroup(withNewest("1.0.0", "1.1.0"), t)).toBe("Update available");
+    expect(modVersionGroup(withNewest("1.0.0", "1.1.0"))).toBe("update-available");
   });
 
   it("groups a collection by its revisions, as its cell offers the update", () => {
     const revisions = (version: string, newestVersion: string) =>
       ({ id: "c", type: "collection", attributes: { version, newestVersion } }) as unknown as IMod;
 
-    expect(modVersionGroup(revisions("10", "11"), t)).toBe("Update available");
-    expect(modVersionGroup(revisions("11", "10"), t)).toBe("Up-to-date");
+    expect(modVersionGroup(revisions("10", "11"))).toBe("update-available");
+    expect(modVersionGroup(revisions("11", "10"))).toBe("up-to-date");
   });
 });

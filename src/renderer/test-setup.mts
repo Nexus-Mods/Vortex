@@ -11,23 +11,163 @@ install();
 
 import "@testing-library/jest-dom/vitest";
 import type { VortexPaths } from "@vortex/shared/ipc";
-import { beforeAll, vi } from "vitest";
+import type * as ReactDOMModule from "react-dom";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 import { ApplicationData } from "./src/applicationData.js";
+
+// These React warnings fail the test they're logged in, wherever they come from; "React warnings"
+// in docs/testing.md says how to fix each. `logged` is part of the message React logs, and
+// `failure` says what went wrong given the components React named. console.error is assigned
+// rather than spied on so vi.restoreAllMocks() leaves it be, and the check runs after
+// testing-library's cleanup (vitest.config.mts runs hooks last-registered first), so a warning
+// logged while a test is torn down still counts.
+const failingWarnings: { logged: string; failure: (components: string) => string }[] = [
+  {
+    logged: "not wrapped in act",
+    failure: (components) => `React updated ${components} outside act()`,
+  },
+  {
+    // React logs one message for function components and another for memo components
+    logged: "Support for defaultProps will be removed from",
+    failure: (components) => `${components} set defaultProps on a function or memo component`,
+  },
+];
+let componentsByWarning = new Map<(typeof failingWarnings)[number], Set<string>>();
+const originalConsoleError = console.error;
+console.error = (...args: unknown[]) => {
+  const message = args[0];
+  const warning =
+    typeof message === "string"
+      ? failingWarnings.find(({ logged }) => message.includes(logged))
+      : undefined;
+  if (warning !== undefined) {
+    const components = componentsByWarning.get(warning) ?? new Set<string>();
+    // React passes the component's name after the message
+    components.add(typeof args[1] === "string" ? args[1] : "a component");
+    componentsByWarning.set(warning, components);
+  }
+  originalConsoleError.apply(console, args);
+};
+
+// A call to findDOMNode from our own code fails the test it ran in; React 19 removes it, and
+// "React warnings" in docs/testing.md says what to use instead. React's own warning can't drive
+// this: it's logged once per test file, and react-bootstrap 0.33 and react-overlays still call
+// findDOMNode themselves, so theirs would hide ours. vi.mock only reaches the modules vitest
+// transforms, our source, and not the copy of react-dom those libraries require() for themselves.
+// The callers named in `allowedFindDOMNodeCallers` are let through.
+const { allowedFindDOMNodeCallers, findDOMNodeCallers } = vi.hoisted(() => ({
+  /**
+   * Functions that call findDOMNode on purpose until React 19, for extension components that
+   * don't pass a ref on. Each is named for that, so a new call elsewhere still fails.
+   */
+  allowedFindDOMNodeCallers: ["findDOMNodeUntilReact19"],
+  findDOMNodeCallers: new Set<string>(),
+}));
+vi.mock("react-dom", async (importOriginal) => {
+  const original = await importOriginal<typeof ReactDOMModule>();
+  const findDOMNode: typeof original.findDOMNode = (instance) => {
+    // the frame below this one is whoever called findDOMNode
+    const caller = new Error().stack?.split("\n")[2]?.trim().replace(/^at /, "");
+    if (!allowedFindDOMNodeCallers.some((allowed) => caller?.startsWith(`${allowed} `))) {
+      findDOMNodeCallers.add(caller ?? "unknown code");
+    }
+    return original.findDOMNode(instance);
+  };
+  return { ...original, findDOMNode, default: { ...original, findDOMNode } };
+});
+
+// React warnings about our own code fail the test they're logged in, as the checks above do;
+// "React warnings" in docs/testing.md says how to fix each. A warning is ours when the first
+// component in React's stack that has a file isn't in node_modules: react-bootstrap 0.33 logs
+// the same warnings about its own components, and those go when it does.
+// `about`, when set, is the first value React fills into the message.
+const ourWarnings: { logged: string; about?: string; failure: string }[] = [
+  { logged: "uses the legacy contextTypes API", failure: "reads legacy context" },
+  { logged: "uses the legacy childContextTypes API", failure: "provides legacy context" },
+  {
+    logged: "declares both contextTypes and contextType",
+    failure: "declares both contextType and legacy contextTypes",
+  },
+  { logged: "Failed %s type", about: "context", failure: "fails a context type check" },
+  {
+    logged: "Failed %s type",
+    about: "child context",
+    failure: "fails a child context type check",
+  },
+  { logged: "validateDOMNesting", failure: "nests elements HTML doesn't allow" },
+  {
+    logged: "Function components cannot be given refs",
+    failure: "gives a ref to a function component",
+  },
+];
+// Legacy context on purpose: ComponentExProvider hands MainContext on to extensions that still
+// read legacy context, LegacyContextExtension is the tests' stand-in for one of those, and
+// FormFeedback reads react-bootstrap's FormGroup, which only has legacy context.
+const legacyContextOnPurpose = ["ComponentExProvider", "LegacyContextExtension", "FormFeedback"];
+const ourWarningsLogged = new Set<string>();
+const consoleErrorBeforeOurWarnings = console.error;
+console.error = (...args: unknown[]) => {
+  const message = args[0];
+  const warning =
+    typeof message === "string"
+      ? ourWarnings.find(
+          ({ logged, about }) =>
+            message.includes(logged) && (about === undefined || args[1] === about),
+        )
+      : undefined;
+  if (warning !== undefined && !legacyContextOnPurpose.includes(String(args[1]))) {
+    // React passes the component stack last
+    const stack = [...args]
+      .reverse()
+      .find((arg) => typeof arg === "string" && arg.includes(" at "));
+    const frame = /\bat (\S+) \(([^)]+)\)/.exec(String(stack ?? ""));
+    if (frame === null || !/[\\/]node_modules[\\/]/.test(frame[2])) {
+      ourWarningsLogged.add(`${frame?.[1] ?? "a component"} ${warning.failure}`);
+    }
+  }
+  consoleErrorBeforeOurWarnings.apply(console, args);
+};
+
+/**
+ * Fails the test for every check above at once. Vitest skips the after-hooks left to run once
+ * one throws, so with a hook each, a test failing one check would leave the others' findings
+ * to be blamed on the next test.
+ */
+const failOnReactWarnings = () => {
+  const problems = [...componentsByWarning].map(([warning, components]) =>
+    warning.failure([...components].join(", ")),
+  );
+  if (findDOMNodeCallers.size > 0) {
+    problems.push(`findDOMNode was called from ${[...findDOMNodeCallers].join(", ")}`);
+  }
+  problems.push(...ourWarningsLogged);
+  componentsByWarning = new Map();
+  findDOMNodeCallers.clear();
+  ourWarningsLogged.clear();
+  if (problems.length > 0) {
+    throw new Error(`${problems.join("; ")}; see "React warnings" in docs/testing.md`);
+  }
+};
+afterEach(failOnReactWarnings);
+afterAll(failOnReactWarnings);
 
 // No test initialises i18next, so react-i18next warns once per file and falls back to
 // returning the key. The source strings in this repo are the keys, so that fallback is
 // already what the assertions read — this just makes it the stated behaviour instead of a
 // side effect, and drops the warning. A test that needs real translations mocks over this.
+const { t, i18n } = vi.hoisted(() => ({
+  t: (key: string) => key,
+  i18n: { language: "en" },
+}));
+
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   // react-i18next hands back an array that also carries the same values as properties, so
   // both `const { t } = useTranslation()` and `const [t] = useTranslation()` work. The repo
-  // uses both, so the stub keeps that shape.
-  useTranslation: () => {
-    const t = (key: string) => key;
-    return Object.assign([t, undefined, true], { t, i18n: undefined, ready: true });
-  },
+  // uses both, so the stub keeps that shape. The same `t` and `i18n` each time, as the app's
+  // are until the language changes, so a memo keyed on them holds across renders.
+  useTranslation: () => Object.assign([t, undefined, true], { t, i18n, ready: true }),
 }));
 
 // Every path keyed off a single absolute test root so getVortexPath-backed selectors

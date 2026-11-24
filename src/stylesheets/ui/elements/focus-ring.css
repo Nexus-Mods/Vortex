@@ -1,0 +1,17 @@
+/* The keyboard focus ring buttons and links draw, for anything else that takes focus. */
+@utility focus-ring {
+    &:focus-visible {
+        outline: calc(var(--spacing) * 0.5) solid var(--color-focus-subdued);
+        outline-offset: calc(var(--spacing) * 0.5);
+    }
+}
+
+/* The same ring drawn inside, for a panel whose edges would cut it off: on the panel, or on it
+   while its scroll area, a child of its own, has focus, so the ring stays put as that scrolls. */
+@utility focus-ring-inset {
+    &:focus-visible,
+    &:has(> :focus-visible) {
+        outline: calc(var(--spacing) * 0.5) solid var(--color-focus-subdued);
+        outline-offset: calc(var(--spacing) * -0.5);
+    }
+}

@@ -1,9 +1,7 @@
 import React from "react";
-import { useSelector } from "react-redux";
-
-import { userInfo as selectUserInfo } from "@/extensions/nexus_integration/selectors";
 
 import { Image, type IImageProps } from "./Image";
+import { useIsAdultBlurred } from "./useIsAdultBlurred.hook";
 
 export interface IAdultAwareImageProps extends IImageProps {
   /**
@@ -12,6 +10,11 @@ export interface IAdultAwareImageProps extends IImageProps {
    * a blur decision.
    */
   isAdult: boolean;
+  /**
+   * The same picture blurred by the server, shown in its place when it's to be blurred, so the
+   * unblurred one is never fetched and isn't blurred twice. Without one, `src` is blurred here.
+   */
+  blurredSrc?: string | null;
 }
 
 /**
@@ -21,11 +24,19 @@ export interface IAdultAwareImageProps extends IImageProps {
  * is blurred by default, so adult content is never shown to a user who has not
  * opted into seeing it.
  *
- * The base `Image` primitive stays presentational; this wrapper owns the
- * adult-content policy so it lives in exactly one place.
+ * The base `Image` primitive stays presentational; the policy itself is
+ * `useIsAdultBlurred`, so anything drawing Nexus imagery another way follows it too.
+ *
+ * Where the API sends a version it blurred itself, as v3 does, `blurredSrc` is shown instead,
+ * filling the frame as a blurred picture does; where it doesn't, as the older APIs and the images
+ * in descriptions don't, `src` is blurred here.
  */
-export const AdultAwareImage = ({ isAdult, ...props }: IAdultAwareImageProps) => {
-  const blurAdultContent = useSelector(selectUserInfo)?.adultBlurImages ?? true;
+export const AdultAwareImage = ({ isAdult, blurredSrc, ...props }: IAdultAwareImageProps) => {
+  const isBlurred = useIsAdultBlurred(isAdult);
 
-  return <Image {...props} isBlurred={isAdult && blurAdultContent} />;
+  if (isBlurred && blurredSrc) {
+    return <Image {...props} fit="cover" src={blurredSrc} />;
+  }
+
+  return <Image {...props} isBlurred={isBlurred} />;
 };

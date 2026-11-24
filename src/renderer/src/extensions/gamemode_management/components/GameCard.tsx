@@ -1,8 +1,10 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useMainContext } from "@/contexts";
+import { numericNexusGameId } from "@/extensions/analytics/mixpanel/numericGameId";
+import type { IAvailableExtension } from "@/types/extensions";
 import type { IState } from "@/types/IState";
 import type { IButtonBrand } from "@/ui/components/button/Button";
 import { Button } from "@/ui/components/button/Button";
@@ -15,6 +17,11 @@ import { Tiers } from "../tiered/types";
 import type { GameSource } from "../types/GameSource";
 import type { IGameStored } from "../types/IGameStored";
 import { gameArtURL } from "../util/gameArtURL";
+import {
+  createGamesPageTracker,
+  PRIMARY_ACTION_BY_SECTION,
+  type TileActionPlacement,
+} from "../util/games_page_tracker/gamesPageTracker";
 import { GameDetailsModal } from "./GameDetailsModal";
 import { useSupportTier } from "./TierZeroIndicator";
 
@@ -30,7 +37,8 @@ export interface IGameCardProps {
    * finds the game and names the store itself.
    */
   detectedStore?: string;
-  game: IGameStored;
+  /** A tile for a game nothing is registered for carries the catalog's extension for it */
+  game: IGameStored & { extension?: IAvailableExtension };
   section: IGameSection;
   onRefreshGameInfo?: (gameId: string) => PromiseLike<void>;
 }
@@ -54,20 +62,42 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   const source: GameSource | undefined =
     section === "detected" ? "detected_list" : section === "supported" ? "all_games" : undefined;
 
-  // Registered actions still know games as managed or unmanaged, the older split of this.
-  const { menu, primary } = useGameCardActions(
-    game.id,
-    section === "added" ? "managed" : "unmanaged",
-    showDetails,
-    source,
-  );
-  const name = game.name.replace(/\t/g, " ");
   const discoveredStore = useSelector(
     (state: IState) => state.settings.gameMode.discovered[game.id]?.store,
   );
   // Discovery's store is the copy Vortex will manage, so it wins. A game whose extension
   // isn't installed hasn't been through discovery, which leaves the detected store.
   const store = discoveredStore ?? detectedStore;
+
+  const tracker = useMemo(() => createGamesPageTracker(api), [api]);
+  const reportAction = useCallback(
+    (placement: TileActionPlacement, action: string) =>
+      tracker.trackTileAction({
+        section,
+        layout: "grid",
+        placement,
+        action,
+        game_id: numericNexusGameId(game.id),
+        game_store: store ?? null,
+      }),
+    [game.id, section, store, tracker],
+  );
+  const reportMenuAction = useCallback(
+    (action: string) => reportAction("menu", action),
+    [reportAction],
+  );
+
+  // Registered actions still know games as managed or unmanaged, the older split of this.
+  const { menu, primary } = useGameCardActions(
+    game.id,
+    section === "added" ? "managed" : "unmanaged",
+    showDetails,
+    source,
+    reportMenuAction,
+    store,
+    game.extension,
+  );
+  const name = game.name.replace(/\t/g, " ");
 
   const actions: Record<
     IGameSection,
@@ -83,7 +113,13 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
   // Activate is conditioned away for the game already in play, so its tile opens the
   // game's mods rather than leading with nothing.
   const openMods = useCallback(() => api.events.emit("show-main-page", "Mods"), [api]);
-  const onPrimary = isActive ? openMods : primary?.onClick;
+  const runPrimary = isActive ? openMods : primary?.onClick;
+  const onPrimary =
+    runPrimary &&
+    (() => {
+      reportAction("primary", isActive ? "open_mods" : PRIMARY_ACTION_BY_SECTION[section]);
+      runPrimary();
+    });
 
   return (
     <>

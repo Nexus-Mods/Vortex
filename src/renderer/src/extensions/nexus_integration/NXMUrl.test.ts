@@ -43,6 +43,23 @@ describe("NXMUrl", () => {
       expect(url.userId).toBeUndefined();
     });
 
+    it("parses where on the site the download started", () => {
+      const url = new NXMUrl(
+        "nxm://Fallout4/mods/1/files/2?key=abc&expires=1700000000&user_id=42&placement=trending_elevated&position=3",
+      );
+      expect(url.source).toEqual({ placement: "trending_elevated", position: 3 });
+    });
+
+    it("drops a position that isn't a number", () => {
+      const url = new NXMUrl("nxm://Fallout4/mods/1/files/2?placement=mods_lower&position=abc");
+      expect(url.source).toStrictEqual({ placement: "mods_lower", position: undefined });
+    });
+
+    it("leaves the source undefined on a link without one", () => {
+      const url = new NXMUrl("nxm://Fallout4/mods/1/files/2?key=abc&expires=1700000000&user_id=42");
+      expect(url.source).toBeUndefined();
+    });
+
     it("reads the view flag in either of its spellings", () => {
       expect(new NXMUrl("nxm://Fallout4/mods/1/files/2?view=true").view).toBe(true);
       expect(new NXMUrl("nxm://Fallout4/mods/1/files/2?view=1").view).toBe(true);

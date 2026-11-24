@@ -1,6 +1,74 @@
 @theme {
     --animate-deferred-fade-in: deferred-fade-in var(--default-transition-duration) linear 250ms
         both;
+    /* Slower than a transition, so a fade reads as one; reduced motion turns it off (motion.css). */
+    --animate-fade-in: fade-in 300ms ease-out both;
+    /* Endorsing a mod: the thumb squashes and pops, and a ring and sparks burst out as it does. */
+    --animate-endorse-pop: endorse-pop calc(var(--default-transition-duration) * 4) ease-in-out both;
+    --animate-endorse-ring: endorse-ring calc(var(--default-transition-duration) * 3) ease-out 120ms
+        both;
+    --animate-endorse-spark: endorse-spark calc(var(--default-transition-duration) * 3) ease-out
+        120ms both;
+
+    @keyframes endorse-pop {
+        0%,
+        100% {
+            transform: scale(1) rotate(0);
+        }
+
+        20% {
+            transform: scale(0.75);
+        }
+
+        50% {
+            transform: scale(1.35) rotate(-15deg);
+        }
+
+        70% {
+            transform: scale(0.95) rotate(5deg);
+        }
+
+        85% {
+            transform: scale(1.05) rotate(-2deg);
+        }
+    }
+
+    @keyframes endorse-ring {
+        from {
+            opacity: 1;
+            transform: scale(0.4);
+        }
+
+        to {
+            opacity: 0;
+            transform: scale(1.75);
+        }
+    }
+
+    /* Out from the middle along the spark's own `rotate`, growing, then shrinking away. */
+    @keyframes endorse-spark {
+        from {
+            transform: translateY(0) scale(0);
+        }
+
+        40% {
+            transform: translateY(-0.75rem) scale(1);
+        }
+
+        to {
+            transform: translateY(-1.125rem) scale(0);
+        }
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
 
     @keyframes deferred-fade-in {
         from {

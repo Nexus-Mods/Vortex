@@ -136,6 +136,12 @@ Only **public** Nexus identifiers pass from the mod-install span
 (`mod.numericModId`, `mod.fileId`); the internal `mod.modId` (derived from the
 local archive name) is dropped.
 
+From a native crash dump, only the crash site passes: the faulting module's name,
+version, offset and symbol-server id. The stack scan (`crash.native.stack`,
+`crash.native.stackModules`) is dropped. It names up to 32 modules, and those can
+be third-party DLLs injected into Vortex (antivirus, overlays, game hooks), which
+says what else is installed on the machine. The stack is sent with consent only.
+
 The allow-list was cross-checked against ~2 months of collected traces
 (ClickStack `vortex.otel_traces`): every attribute key the app actually emits is
 either allowed (e.g. `error.isCommunityExtension`, `componentStack`) or

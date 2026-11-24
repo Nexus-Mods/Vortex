@@ -1,5 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { GameUid, NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -164,6 +164,8 @@ export interface IExtensionState {
   modId?: number;
   /** Nexus Mods file ID for this specific version of the extension. */
   fileId?: number;
+  /** The Nexus Mods game the extension is for, as the extension catalog names it. Game extensions only. */
+  nexus?: { gameId: NexusGameId; gameDomain: NexusGameDomain };
   /** Nexus Mods endorsed status of the extension mod page. */
   endorsed: EndorsedStatus;
   /** Set when the user declined linking this unlinked extension to its Nexus Mods page. */
@@ -209,6 +211,11 @@ export interface IToolbarStates {
   [toolbarId: string]: IToolbarState;
 }
 
+/** Where the user left each resizable split, keyed by split id: the first pane's share, 0 to 1. */
+export interface ISplitStates {
+  [splitId: string]: number;
+}
+
 export interface IStateDownloads {
   speed: number;
   speedHistory: number[];
@@ -230,6 +237,7 @@ export interface ISettingsInterface {
   hideTopLevelCategory: boolean;
   relativeTimes: boolean;
   alwaysCompactHeaders: boolean;
+  showGameArt: boolean;
   reduceMotion?: boolean;
   dashboardLayout: string[];
   foregroundDL: boolean;
@@ -239,8 +247,12 @@ export interface ISettingsInterface {
     addToolsToTitleBar: boolean;
     order?: { [gameId: string]: string[] };
     pinned?: { [gameId: string]: { [toolId: string]: boolean } };
+    // keyed by game id, then tool id: whether the tool's executable was found
+    valid?: Record<VortexGameId, { [toolId: string]: boolean }>;
   };
   primaryTool?: { [gameId: string]: string };
+  /** The last page open on Home and in each game. The spine reopens it, also after a restart. */
+  lastPages?: { home?: string; games?: Record<VortexGameId, string> };
 }
 
 export interface ISettingsAutomation {
@@ -264,6 +276,8 @@ export interface ISettingsGameMode {
   sortManaged: string;
   sortUnmanaged: string;
   sortDetected: string;
+  /** Show the experimental-support dialog before managing a Tier 0 game. Treated as on unless false. */
+  confirmTierZero?: boolean;
 }
 
 export interface ISettingsDownloads {
@@ -337,6 +351,7 @@ export interface ISettings {
   notifications: ISettingsNotification;
   tables: ITableStates;
   toolbars: IToolbarStates;
+  splits: ISplitStates;
   update: ISettingsUpdate;
   workarounds: ISettingsWorkarounds;
 }
@@ -364,15 +379,35 @@ export interface IGameInfoEntry {
 
 export interface ITierZeroGame {
   /** numeric Nexus Mods game id (e.g. 1303) */
-  gameId: GameId;
+  gameId: NexusGameId;
   /** the nexus domain the game is managed under; the synthesized game's id */
-  domain: GameDomain;
+  domain: NexusGameDomain;
   name: string;
   storeIDs: {
     steam: string[];
     gog: string[];
     epic: string[];
   };
+  manualInstallerPreferences?: IManualInstallerPreferences;
+}
+
+/** the user's Manual Installer preferences for one game */
+export interface IManualInstallerPreferences {
+  /** folder, relative to the game root, mods are installed to by default */
+  defaultFolder?: string;
+  /** skip the destination dialog when a default folder is set */
+  dontAskAgain?: boolean;
+}
+
+/**
+ * One retirement the catalogue made: `retired` was merged into `current`. Entries are only ever
+ * appended, a wrong mapping is fixed by appending a correction.
+ */
+export interface IGameUidRetirement {
+  retired: GameUid;
+  current: GameUid;
+  /** when Vortex learned of the retirement, ms since epoch */
+  recordedAt: number;
 }
 
 export interface IStateGameMode {
@@ -382,9 +417,15 @@ export interface IStateGameMode {
     };
   };
 
+  /**
+   * Every uid retirement Vortex has learned of, oldest first. Append-only: stored uids are never
+   * rewritten, `currentGameUid` resolves them through this list.
+   */
+  gameUidHistory: IGameUidRetirement[];
+
   /** games managed without a game extension, keyed by numeric nexus game id
    * (immutable across domain renames; the entry also carries the domain) */
-  tier0: Record<GameId, ITierZeroGame>;
+  tier0: Record<NexusGameId, ITierZeroGame>;
 }
 
 export interface IBrowserState {
@@ -428,13 +469,29 @@ export interface IOverlaysState {
  * @export
  * @interface IState
  */
+/**
+ * confidential.account: per-service credentials. Each service's extension declares its own
+ * entry by augmenting this interface.
+ */
+// oxlint-disable-next-line typescript/no-empty-object-type -- filled in by augmentation
+export interface IConfidentialAccount {}
+
+/**
+ * A cached revision. The cache holds what the API returned for the query that fetched it, so
+ * any field may be missing, and the rating may lack `positive`.
+ */
+export type ICachedRevisionInfo = Partial<Omit<IRevision, "collection" | "rating">> & {
+  collection?: Partial<ICollection>;
+  rating?: Partial<IRevision["rating"]>;
+};
+
 // persistent state owned by the collections extension: the cached collection and
 // revision info fetched from the API
 export interface ICollectionsPersistentState {
-  // keyed by collection id
-  collections: Record<string, { timestamp: number; info: ICollection }>;
+  // keyed by collection id; the cache holds what the API returned, so any field may be missing
+  collections: Record<string, { timestamp: number; info: Partial<ICollection> }>;
   // keyed by revision id
-  revisions: Record<string, { timestamp: number; info: IRevision }>;
+  revisions: Record<string, { timestamp: number; info: ICachedRevisionInfo }>;
   // keyed by revision id; queued success votes awaiting submission
   pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
 }
@@ -473,7 +530,7 @@ export interface IState {
   app: IApp;
   user: IUser;
   confidential: {
-    account: {};
+    account: IConfidentialAccount;
   };
   session: ISessionState;
   settings: ISettings;

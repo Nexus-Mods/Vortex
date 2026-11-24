@@ -1,8 +1,7 @@
 /**
  * Defines Redux reducer state and handlers for Stardew Valley settings.
  */
-import type { types } from "@nexusmods/vortex-api";
-import { util } from "@nexusmods/vortex-api";
+import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "./actions";
 
@@ -12,21 +11,24 @@ export interface IStateSDV {
   mergeConfigs?: { [profileId: string]: boolean };
 }
 
-const sdvReducers: types.IReducerSpec<IStateSDV> = {
-  reducers: {
-    [actions.setRecommendations as any]: (state, payload) => {
-      return util.setSafe(state, ["useRecommendations"], payload);
-    },
-    [actions.setMergeConfigs as any]: (state, payload) => {
-      const { profileId, enabled } = payload;
-      return util.setSafe(state, ["mergeConfigs", profileId], enabled);
-    },
-  },
-  defaults: {
-    useRecommendations: false,
-  },
-};
+declare module "@nexusmods/vortex-api" {
+  namespace types {
+    interface ISettings {
+      SDV: IStateSDV;
+    }
+  }
+}
 
-// Needed because the API expects the generic IReducerSpec
+const sdvReducers: types.IReducerSpec<IStateSDV> = util.actionsToReducerSpec<
+  IStateSDV,
+  typeof actions
+>({ useRecommendations: false }, actions, {
+  setRecommendations: (state, payload) => util.setSafe(state, ["useRecommendations"], payload),
+  setMergeConfigs: (state, payload) => {
+    const { profileId, enabled } = payload;
+    return util.setSafe(state, ["mergeConfigs", profileId], enabled);
+  },
+});
+
 /** Reducer spec mounted as `settings.SDV` by the extension bootstrap. */
-export default sdvReducers as unknown as types.IReducerSpec;
+export default sdvReducers;

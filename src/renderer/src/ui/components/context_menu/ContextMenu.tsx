@@ -12,6 +12,8 @@ import {
 } from "@floating-ui/react";
 import React, { type MouseEvent, type ReactNode, useLayoutEffect, useRef } from "react";
 
+import { joinClasses } from "@/ui/utils/joinClasses";
+
 /** Portalled where the tooltips are, so nothing clips it. */
 const OVERLAY_HOST_ID = "overlays";
 /** Gap kept between the menu and the window edges. */
@@ -45,6 +47,8 @@ export const contextMenuPosition = (event: MouseEvent<Element>): IContextMenuPos
 };
 
 interface IContextMenuProps {
+  /** Classes for its panel, such as to raise it above a modal it's opened from. */
+  className?: string;
   /** Where it's open; unset, it's closed. */
   position: IContextMenuPosition | undefined;
   /** Closes it, on Escape, a press outside it, a scroll, or a row chosen. */
@@ -64,7 +68,7 @@ interface IContextMenuProps {
  * its rows opened isn't outside it. A right-click in it opens no other. Controlled: the caller
  * keeps where it's open, from `contextMenuPosition`, and clears it on `onClose`.
  */
-export const ContextMenu = ({ position, onClose, children }: IContextMenuProps) => {
+export const ContextMenu = ({ className, position, onClose, children }: IContextMenuProps) => {
   const open = position !== undefined;
 
   const { context, floatingStyles, refs } = useFloating({
@@ -132,7 +136,7 @@ export const ContextMenu = ({ position, onClose, children }: IContextMenuProps) 
     <FloatingPortal id={OVERLAY_HOST_ID}>
       <FloatingFocusManager context={context} initialFocus={-1} returnFocus={false}>
         <div
-          className="nxm-popover-panel nxm-popover-panel-dropdown"
+          className={joinClasses(["nxm-popover-panel nxm-popover-panel-dropdown", className])}
           ref={refs.setFloating}
           style={floatingStyles}
           {...getFloatingProps({ onContextMenu: (event) => event.preventDefault() })}

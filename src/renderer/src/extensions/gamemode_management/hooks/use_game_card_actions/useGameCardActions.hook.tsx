@@ -1,17 +1,23 @@
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { registerAction } from "@/controls/ActionControl";
 import { useExtensionObjects } from "@/ExtensionProvider";
+import type { IAvailableExtension } from "@/types/extensions";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IState } from "@/types/IState";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import type { IMenuAction } from "@/ui/components/popover/popover_menu/PopoverMenu.types";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
-import { setGameAddOrigin } from "../../actions/session";
+import {
+  clearGameAddStore,
+  setGameAddExtension,
+  setGameAddOrigin,
+  setGameAddStore,
+} from "../../actions/session";
 import { setGameHidden } from "../../actions/settings";
 import type { GameSource } from "../../types/GameSource";
 
@@ -34,6 +40,11 @@ const OPEN_ICON = "open-ext";
 
 interface IPositionedAction {
   position: number;
+  /**
+   * What the row is called in analytics: the registered title, untranslated, or the
+   * tile's own name for the rows it builds.
+   */
+  analyticsKey: string;
   /** The registered icon name, which is what decides whether a row folds. */
   icon?: string;
   action: IMenuAction;
@@ -81,6 +92,7 @@ const useRegisteredActions = (group: string, gameId: string): IPositionedAction[
 
     prev.push({
       position: definition.position ?? MENU_POSITION,
+      analyticsKey: definition.title,
       icon: definition.icon,
       action: {
         // Registrations are inconsistent about translating their own title, and a
@@ -105,12 +117,17 @@ const useRegisteredActions = (group: string, gameId: string): IPositionedAction[
  * still reaches the tile. Hide and Game details are the tile's own, the first because
  * it was only ever registered as a classic toolbar component and the second because
  * the details are a dialog now rather than a popover of their own.
+ *
+ * `onMenuAction` hears which menu row ran, by its analytics key, before the row runs.
  */
 export const useGameCardActions = (
   gameId: string,
   type: string,
   onShowDetails: () => void,
   source?: GameSource,
+  onMenuAction?: (action: string) => void,
+  store?: string,
+  extension?: IAvailableExtension,
 ): IGameCardActions => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -126,6 +143,7 @@ export const useGameCardActions = (
 
     const hide: IPositionedAction = {
       position: MENU_POSITION,
+      analyticsKey: hidden ? "show" : "hide",
       action: {
         label: hidden ? t("Show") : t("Hide"),
         icon: getIcon(hidden ? "show" : "hide"),
@@ -135,11 +153,28 @@ export const useGameCardActions = (
 
     const details: IPositionedAction = {
       position: DETAILS_POSITION,
+      analyticsKey: "game_details",
       action: {
         label: t("Game details"),
         icon: getIcon("game"),
         onClick: onShowDetails,
       },
+    };
+
+    // A row that opens a panel has no click of its own; the rows inside it report.
+    const withReporting = (entry: IPositionedAction): IMenuAction => {
+      const { onClick, panel, ...row } = entry.action;
+      if (onClick === undefined || panel !== undefined || onMenuAction === undefined) {
+        return entry.action;
+      }
+
+      return {
+        ...row,
+        onClick: () => {
+          onMenuAction(entry.analyticsKey);
+          onClick();
+        },
+      };
     };
 
     const rest = leads ? sorted.slice(1) : sorted;
@@ -153,13 +188,14 @@ export const useGameCardActions = (
         ? [
             {
               position: opens[0].position,
+              analyticsKey: "open",
               action: {
                 label: openLabel,
                 icon: getIcon(OPEN_ICON),
                 panelRole: "menu",
                 panel: ({ dismiss }) => (
                   <PopoverMenu
-                    actions={[opens.map((entry) => entry.action)]}
+                    actions={[opens.map(withReporting)]}
                     label={openLabel}
                     onSelect={dismiss}
                   />
@@ -171,7 +207,7 @@ export const useGameCardActions = (
 
     const menu = [hide, details, ...open, ...rest.filter((entry) => entry.icon !== OPEN_ICON)]
       .sort(byPosition)
-      .map((entry) => entry.action);
+      .map(withReporting);
 
     return {
       menu: [menu],
@@ -184,7 +220,16 @@ export const useGameCardActions = (
           ? {
               label: sorted[0].action.label,
               onClick: () => {
+                // Every click starts a new pick, so an earlier tile's store or extension isn't
+                // used for this one
+                dispatch(clearGameAddStore());
                 dispatch(setGameAddOrigin(gameId, source));
+                dispatch(setGameAddExtension(extension ?? null));
+                // A tile of the detected list names the store the user is picking; the
+                // add manages that store's install, so discovery mustn't choose another.
+                if (source === "detected_list" && store !== undefined) {
+                  dispatch(setGameAddStore(VortexGameId(gameId), store));
+                }
                 sorted[0].action.onClick?.();
               },
             }
@@ -192,5 +237,16 @@ export const useGameCardActions = (
             ? { label: sorted[0].action.label, onClick: () => sorted[0].action.onClick?.() }
             : undefined,
     };
-  }, [dispatch, gameId, hidden, onShowDetails, registered, source, t]);
+  }, [
+    dispatch,
+    extension,
+    gameId,
+    hidden,
+    onMenuAction,
+    onShowDetails,
+    registered,
+    source,
+    store,
+    t,
+  ]);
 };

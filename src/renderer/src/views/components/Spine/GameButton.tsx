@@ -67,10 +67,12 @@ export const GameButton: FC<React.PropsWithChildren<GameButtonProps>> = ({
     <Tooltip content={title} placement="right">
       <button
         aria-label={title}
-        className={joinClasses("group relative size-12 shrink-0 overflow-hidden rounded-lg", {
-          "outline-2 outline-offset-2 outline-neutral-strong focus-visible:outline-info-subdued":
-            isActive,
-        })}
+        className={joinClasses(
+          "group focus-ring relative size-12 shrink-0 overflow-hidden rounded-lg",
+          {
+            "outline-2 outline-offset-2 outline-neutral-strong": isActive,
+          },
+        )}
         {...props}
       >
         {exhausted ? (

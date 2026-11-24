@@ -22,7 +22,7 @@ const COLLECTION_MOD_ACTIONS = [
  */
 export const useCollectionGroupActions = (actionsFor: (modId: string) => IToolbarAction[]) => {
   const { api } = useMainContext();
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
 
   return useCallback(
     (collection: IMod): IToolbarAction[] => {
@@ -37,7 +37,7 @@ export const useCollectionGroupActions = (actionsFor: (modId: string) => IToolba
       return [
         {
           id: "view-collection",
-          label: t("View collection"),
+          label: t("modsTable::collectionGroup::view"),
           icon: { path: nxmCollectionOutline },
           section: "view",
           onClick: () => api.events.emit("view-collection", collection.id),
@@ -45,7 +45,7 @@ export const useCollectionGroupActions = (actionsFor: (modId: string) => IToolba
         ...fromMod,
         {
           id: "remove-collection",
-          label: t("Remove"),
+          label: t("modsTable::collectionGroup::remove"),
           icon: "delete",
           section: "remove",
           onClick: () => api.events.emit("remove-collection", collection.id),

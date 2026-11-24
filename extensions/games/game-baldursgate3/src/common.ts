@@ -1,5 +1,7 @@
 import path from "path";
 
+import { VortexGameId } from "@nexusmods/vortex-api";
+
 export const DEFAULT_MOD_SETTINGS_V8 = `<?xml version="1.0" encoding="UTF-8"?>
 <save>
     <version major="4" minor="8" revision="0" build="10"/>
@@ -70,7 +72,7 @@ export const DEFAULT_MOD_SETTINGS_V6 = `<?xml version="1.0" encoding="UTF-8" sta
     </node>
   </region>
 </save>`;
-export const GAME_ID = "baldursgate3";
+export const GAME_ID = VortexGameId("baldursgate3");
 export const DEBUG = false;
 export const LSLIB_URL = "https://github.com/Norbyte/lslib";
 export const LO_FILE_NAME = "loadOrder.json";

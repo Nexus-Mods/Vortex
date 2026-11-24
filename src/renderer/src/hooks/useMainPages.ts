@@ -32,6 +32,7 @@ const registerMainPage = (
     badge: options.badge,
     activity: options.activity,
     menuBadge: options.menuBadge,
+    isTranslucent: options.isTranslucent,
     priority: options.priority !== undefined ? options.priority : 100,
     onReset: options.onReset,
     namespace: extInfo.namespace,

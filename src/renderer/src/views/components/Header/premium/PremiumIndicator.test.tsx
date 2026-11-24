@@ -2,12 +2,12 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import type * as ReactReduxTypes from "react-redux";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { dispatch, emit, opn } = vi.hoisted(() => ({
+const { dispatch, emit, openUrl } = vi.hoisted(() => ({
   dispatch: vi.fn(),
   emit: vi.fn(),
-  opn: vi.fn(() => Promise.resolve()),
+  openUrl: vi.fn(),
 }));
 
 vi.mock("@/ExtensionProvider", () => ({
@@ -15,8 +15,6 @@ vi.mock("@/ExtensionProvider", () => ({
     getApi: () => ({ events: { emit }, showErrorNotification: vi.fn() }),
   }),
 }));
-
-vi.mock("../../../../util/opn", () => ({ default: opn }));
 
 /** Flipped per test, then read by the real selectors through the mocked hook. */
 const store = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
@@ -46,7 +44,12 @@ describe("PremiumIndicator", () => {
   beforeEach(() => {
     dispatch.mockClear();
     emit.mockClear();
-    opn.mockClear();
+    openUrl.mockClear();
+    vi.stubGlobal("api", { ...window.api, shell: { openUrl } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   // Signed out there is nothing to say about the user's plan, so the slot carries
@@ -93,6 +96,15 @@ describe("PremiumIndicator", () => {
 
       expect(screen.getByRole("button", { name: "Go premium" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Log in" })).not.toBeInTheDocument();
+    });
+
+    it("opens the premium page, tagged as the header ad", async () => {
+      store.state = signedIn({ isPremium: false, isSupporter: false });
+      render(<PremiumIndicator />);
+      await userEvent.click(screen.getByRole("button", { name: "Go premium" }));
+
+      expect(openUrl).toHaveBeenCalledWith(expect.stringContaining("/account/billing/premium"));
+      expect(openUrl).toHaveBeenCalledWith(expect.stringContaining("utm_content=header_ad"));
     });
 
     it("stays quiet for a supporter", () => {

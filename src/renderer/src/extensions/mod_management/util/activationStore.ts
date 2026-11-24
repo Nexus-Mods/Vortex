@@ -419,6 +419,35 @@ export function withActivationLock(func: () => PromiseLike<any>, tryOnly: boolea
   return activationQueue(func, tryOnly);
 }
 
+/** What a mod type's manifest says this instance deployed, or why it can't be used. */
+export type OwnManifest =
+  | { readonly kind: "read"; readonly manifest: IDeploymentManifest }
+  | { readonly kind: "missing" }
+  | { readonly kind: "damaged" }
+  | { readonly kind: "other-instance" };
+
+/** Reads a mod type's manifest without asking the user anything or restoring a backup. */
+export async function readOwnManifest(
+  api: IExtensionApi,
+  modType: string,
+  deployPath: string,
+  stagingPath: string,
+): Promise<OwnManifest> {
+  const { manifestPath } = manifestPaths(deployPath, stagingPath, modType);
+  let manifest: IDeploymentManifest | undefined;
+  try {
+    manifest = readManifest(await readFile(manifestPath, "utf8"));
+  } catch (err) {
+    return getErrorCode(err) === "ENOENT" ? { kind: "missing" } : { kind: "damaged" };
+  }
+  if (manifest === undefined) {
+    return { kind: "missing" };
+  }
+  return manifest.instance === api.getState().app.instanceId
+    ? { kind: "read", manifest }
+    : { kind: "other-instance" };
+}
+
 /** The files a mod type's manifest lists; none if another instance wrote it. */
 export async function ownDeployedFiles(
   api: IExtensionApi,
@@ -426,16 +455,9 @@ export async function ownDeployedFiles(
   deployPath: string,
   stagingPath: string,
 ): Promise<IDeployedFile[]> {
-  const { instanceId } = api.getState().app;
   // a damaged manifest lists nothing, so the purge still runs
-  let manifest: IDeploymentManifest | undefined;
-  try {
-    const { manifestPath } = manifestPaths(deployPath, stagingPath, modType);
-    manifest = readManifest(await readFile(manifestPath, "utf8"));
-  } catch {
-    manifest = undefined;
-  }
-  return manifest?.instance === instanceId ? manifest.files : [];
+  const read = await readOwnManifest(api, modType, deployPath, stagingPath);
+  return read.kind === "read" ? read.manifest.files : [];
 }
 
 /**

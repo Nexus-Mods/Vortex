@@ -22,10 +22,13 @@
 import { describe, it, expect, vi } from "vitest";
 
 import { makeRule } from "../../../test-utils/builders";
+import type { IModLookupData } from "../../../types/IModLookupResult";
 import type { IMod, IModAttributes, IModReference, IModRule } from "../types/IMod";
 import { coerceToSemver } from "./coerceToSemver";
 import { isFuzzyVersion } from "./isFuzzyVersion";
 import {
+  completeModRef,
+  lookupToModRef,
   testModReference,
   sanitizeExpression,
   modMatchesInstallSpec,
@@ -1177,5 +1180,86 @@ describe("multiple reference tags", () => {
       version: "1.2.0",
     });
     expect(testModReference(mod, { tag: "mine", fileMD5: "abc123", versionMatch: "*" })).toBe(true);
+  });
+});
+
+describe("lookupToModRef", () => {
+  const lookup = (overrides: Partial<IModLookupData> = {}): IModLookupData => ({
+    fileName: "mod-518-1-0.zip",
+    fileSizeBytes: 100,
+    gameId: "skyrimse",
+    fileVersion: "1.0",
+    sourceURI: "https://example.com/mod.zip",
+    source: "nexus",
+    ...overrides,
+  });
+
+  it("takes the ids from the lookup details", () => {
+    const ref = lookupToModRef(
+      lookup({ details: { modId: "518", fileId: "138454" } }),
+      "abc123",
+      "skyrimse",
+    );
+    expect(ref).toEqual({
+      repo: { repository: "nexus", modId: "518", fileId: "138454" },
+      fileMD5: "abc123",
+      gameId: "skyrimse",
+      logicalFileName: "mod-518-1-0.zip",
+    });
+  });
+
+  it("falls back to the ids in an nxm source uri", () => {
+    const ref = lookupToModRef(
+      lookup({ sourceURI: "nxm://skyrimspecialedition/mods/518/files/138454" }),
+      "abc123",
+      "skyrimse",
+    );
+    expect(ref.repo).toEqual({ repository: "nexus", modId: "518", fileId: "138454" });
+  });
+
+  it("prefers the logical file name over the file name", () => {
+    const ref = lookupToModRef(lookup({ logicalFileName: "Some Mod" }), "abc123", "skyrimse");
+    expect(ref.logicalFileName).toBe("Some Mod");
+  });
+
+  it("has no ids when the source uri isn't an nxm link", () => {
+    const ref = lookupToModRef(lookup(), "abc123", "skyrimse");
+    expect(ref.repo).toEqual({ repository: "nexus", modId: undefined, fileId: undefined });
+  });
+
+  it("has no repository without a source", () => {
+    const ref = lookupToModRef(lookup({ source: undefined }), "abc123", "skyrimse");
+    expect(ref.repo).toBeUndefined();
+  });
+});
+
+describe("completeModRef", () => {
+  const found: IModReference = {
+    repo: { repository: "nexus", modId: "518", fileId: "138454" },
+    fileMD5: "abc123",
+    gameId: "skyrimse",
+    logicalFileName: "Some Mod",
+  };
+
+  it("uses what was found when there is no reference", () => {
+    expect(completeModRef(undefined, found)).toBe(found);
+  });
+
+  it("fills in the repository and hash a download reference lacks", () => {
+    const existing: IModReference = { archiveId: "dl1", repo: undefined, fileMD5: undefined };
+    expect(completeModRef(existing, found)).toEqual({
+      archiveId: "dl1",
+      repo: found.repo,
+      fileMD5: "abc123",
+    });
+  });
+
+  it("never overwrites what the reference already identifies", () => {
+    const existing: IModReference = {
+      tag: "collection-rule",
+      repo: { repository: "nexus", modId: "1", fileId: "2" },
+      fileMD5: "def456",
+    };
+    expect(completeModRef(existing, found)).toEqual(existing);
   });
 });

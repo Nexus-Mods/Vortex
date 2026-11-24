@@ -1,7 +1,7 @@
 /* eslint-disable */
 import path from "path";
 
-import { util } from "@nexusmods/vortex-api";
+import { util, VortexGameId } from "@nexusmods/vortex-api";
 
 import { IHaloGame } from "./types";
 
@@ -14,7 +14,7 @@ export const HALO1_MAPS_RELPATH = path.join("halo1", "maps");
 
 export const MS_APPID = "Microsoft.Chelan";
 export const STEAM_ID = "976730";
-export const GAME_ID = "halothemasterchiefcollection";
+export const GAME_ID = VortexGameId("halothemasterchiefcollection");
 
 export const MOD_CONFIG_FILE = "modpack_config.cfg";
 export const MOD_CONFIG_DEST_ELEMENT = "$MCC_home\\";

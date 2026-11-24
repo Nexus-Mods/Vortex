@@ -59,9 +59,9 @@ const submenuAction = (rows: IMenuAction[][], onDismissSpy?: () => void): IMenuA
 
 const helpRows: IMenuAction[][] = [[plainAction("Help centre"), plainAction("About")]];
 
-/** The symbol the pin's icon is currently drawing. */
-const pinSymbol = (name: string) =>
-  screen.getByRole("button", { name }).querySelector("[data-symbol]")?.getAttribute("data-symbol");
+/** The pin's icon, as the toggle with this name draws it. */
+const pinIcon = (name: string) =>
+  screen.getByRole("button", { name }).querySelector("[data-symbol]");
 
 /** Whether the row draws a chevron, the symbol pointing at the surface it opens. */
 const hasChevron = (row: HTMLElement) =>
@@ -92,6 +92,17 @@ describe("PopoverMenu", () => {
 
       const item = screen.getByRole("menuitem", { name: "Open on Nexus Mods" });
       expect(item.querySelector(".nxm-dropdown-item-icon [data-testid='logo']")).not.toBeNull();
+    });
+
+    it("marks an action's icon with a pip when asked, as for a filter that's on", async () => {
+      await openMenu([[{ ...plainAction("Dates"), hasPip: true }, plainAction("Plain")]]);
+
+      expect(
+        screen.getByRole("menuitem", { name: "Dates" }).querySelector(".nxm-icon-pip"),
+      ).not.toBeNull();
+      expect(
+        screen.getByRole("menuitem", { name: "Plain" }).querySelector(".nxm-icon-pip"),
+      ).toBeNull();
     });
 
     it("separates groups with a rule", async () => {
@@ -330,9 +341,8 @@ describe("PopoverMenu", () => {
       expect(screen.getByRole("menuitem", { name: "Refresh" })).toHaveFocus();
     });
 
-    // The icon is an offer, not a report: it shows what the click does, matching the
-    // label beside it, rather than the state the row is already in.
-    it("offers a pin on a row that is not pinned", async () => {
+    // Filled while the action is pinned; outlined and struck through while it isn't.
+    it("draws an outlined, struck-through pin on a row that is not pinned", async () => {
       await openMenu([
         [
           {
@@ -342,10 +352,11 @@ describe("PopoverMenu", () => {
         ],
       ]);
 
-      expect(pinSymbol("Pin Refresh")).toBe("keep");
+      expect(pinIcon("Pin Refresh")).toHaveAttribute("data-symbol", "keep_off");
+      expect(pinIcon("Pin Refresh")).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
     });
 
-    it("offers to unpin a row that is pinned", async () => {
+    it("draws a filled pin on a row that is pinned", async () => {
       await openMenu([
         [
           {
@@ -355,7 +366,8 @@ describe("PopoverMenu", () => {
         ],
       ]);
 
-      expect(pinSymbol("Unpin Refresh")).toBe("keep_off");
+      expect(pinIcon("Unpin Refresh")).toHaveAttribute("data-symbol", "keep");
+      expect(pinIcon("Unpin Refresh")).toHaveStyle({ fontVariationSettings: '"FILL" 1' });
     });
   });
 
@@ -391,6 +403,32 @@ describe("PopoverMenu", () => {
       const [first, second] = screen.getAllByRole("menuitemradio");
       expect(first.querySelector(".nxm-dropdown-item-check-hidden")).toBeInTheDocument();
       expect(second.querySelector(".nxm-dropdown-item-check-hidden")).toBeNull();
+    });
+  });
+
+  describe("checkbox rows", () => {
+    const checkboxes = (onClick = vi.fn()): IMenuAction[][] => [
+      [
+        { label: "Enabled", selected: true, onClick },
+        { label: "Disabled", selected: false, onClick },
+      ],
+    ];
+
+    it("makes a row with selected a checkbox, ticked as it says", async () => {
+      await openMenu(checkboxes());
+
+      const rows = screen.getAllByRole("menuitemcheckbox");
+      expect(rows.map((row) => row.getAttribute("aria-checked"))).toEqual(["true", "false"]);
+    });
+
+    it("runs a checkbox row without dismissing the menu", async () => {
+      const onClick = vi.fn();
+      await openMenu(checkboxes(onClick));
+
+      await userEvent.click(screen.getAllByRole("menuitemcheckbox")[1]);
+
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(screen.getByRole("menu")).toBeInTheDocument();
     });
   });
 

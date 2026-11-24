@@ -10,7 +10,7 @@ vi.mock("../../nexus_integration/util/convertGameId", () => ({
     game.details?.nexusPageId ?? game.id,
 }));
 
-import { GameId } from "@vortex/shared";
+import { NexusGameId } from "@vortex/shared";
 
 import type { IState } from "@/types/IState";
 
@@ -20,7 +20,7 @@ import { Tiers } from "./types";
 
 const detected = (gameId: number, withExtension: boolean): IDetectedGame => ({
   gameUid: `uid-${gameId}`,
-  gameId: GameId(gameId),
+  gameId: NexusGameId(gameId),
   storeIDs: { steam: [], gog: [], epic: [] },
   extension: withExtension
     ? ({ name: "ext", modId: 1, fileId: 1 } as IDetectedGame["extension"])
@@ -49,7 +49,7 @@ const state = (options: {
 
 describe("supportTier", () => {
   it("is Tier 0 for a game managed without an extension", () => {
-    expect(supportTier(state({ tier0: [4242] }), GameId(4242))).toBe(Tiers.tier0);
+    expect(supportTier(state({ tier0: [4242] }), NexusGameId(4242))).toBe(Tiers.tier0);
   });
 
   it("is Tier 0 for an extension-less detected game, whatever the catalog claims", () => {
@@ -58,7 +58,7 @@ describe("supportTier", () => {
     expect(
       supportTier(
         state({ detected: [detected(4242, false)], catalog: [{ gameId: 4242 }] }),
-        GameId(4242),
+        NexusGameId(4242),
       ),
     ).toBe(Tiers.tier0);
   });
@@ -71,22 +71,24 @@ describe("supportTier", () => {
           known: [{ id: "skyrimse", details: { nexusPageId: "skyrimspecialedition" } }],
           detected: [detected(1704, false)],
         }),
-        GameId(1704),
+        NexusGameId(1704),
       ),
     ).toBe(Tiers.tier2);
   });
 
   it("is Tier 2 for a game the endpoint returned an extension for", () => {
-    expect(supportTier(state({ detected: [detected(4242, true)] }), GameId(4242))).toBe(
+    expect(supportTier(state({ detected: [detected(4242, true)] }), NexusGameId(4242))).toBe(
       Tiers.tier2,
     );
   });
 
   it("is Tier 2 for a game only the catalog knows", () => {
-    expect(supportTier(state({ catalog: [{ gameId: 4242 }] }), GameId(4242))).toBe(Tiers.tier2);
+    expect(supportTier(state({ catalog: [{ gameId: 4242 }] }), NexusGameId(4242))).toBe(
+      Tiers.tier2,
+    );
   });
 
-  it("is undefined for a game nothing supports", () => {
-    expect(supportTier(state({}), GameId(4242))).toBeUndefined();
+  it("is Tier 0 for a game nothing supports", () => {
+    expect(supportTier(state({}), NexusGameId(4242))).toBe(Tiers.tier0);
   });
 });

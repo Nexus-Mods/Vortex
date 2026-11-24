@@ -10,6 +10,7 @@ import {
   setDialogVisible,
   setExtensionEnabled,
   setExtensionModId,
+  setExtensionNexusGame,
 } from "../../actions";
 import { isExtSame } from "../../ExtensionManager";
 import type { IAvailableExtension, IExtensionDownloadInfo } from "../../types/extensions";
@@ -36,6 +37,7 @@ import {
   findInstalled,
   findInstalledDependency,
   findLinkCandidates,
+  findNexusBackfill,
   findUpdatableExtensions,
   getMissingOptionalExtensions,
 } from "./queries";
@@ -64,6 +66,18 @@ const localState: ILocalState = makeReactive({
   reloadNecessary: false,
   preselectModId: undefined,
 });
+
+/** Store the Nexus Mods game the catalog names for each installed extension. */
+function backfillNexusGames(api: IExtensionApi): void {
+  const state = api.getState();
+
+  for (const { key, nexus } of findNexusBackfill(
+    state.app.extensions ?? {},
+    state.session.extensions.available,
+  )) {
+    api.store.dispatch(setExtensionNexusGame(key, nexus));
+  }
+}
 
 async function checkForUpdates(api: IExtensionApi): Promise<void> {
   const state = api.getState();
@@ -128,6 +142,8 @@ async function offerNexusLinks(api: IExtensionApi): Promise<void> {
         : declineExtensionNexusLink(key),
     );
   }
+  // the accepted ones now name their mod, so the catalog can name their game
+  backfillNexusGames(api);
 
   await updateExtensions(api, accepted);
 }
@@ -188,6 +204,7 @@ async function updateAvailableExtensions(
     const extensions = await fetchAvailableExtensions(api, force);
     api.store.dispatch(setExtensionsUpdate(Date.now()));
     api.store.dispatch(setAvailableExtensions(extensions));
+    backfillNexusGames(api);
     await checkForUpdates(api);
     // not awaited: extension installs wait for this fetch, not for the user's answer
     offerNexusLinks(api).catch((err) =>

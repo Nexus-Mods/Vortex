@@ -60,10 +60,12 @@ export const TextFieldDemo = () => (
     </Section>
 
     <Section
-      description="Given maxLength. Turns to warning with a quarter left, and danger with a tenth."
+      description="Given maxLength. Hidden until half are left, then turns to warning with a quarter left, and danger with a tenth."
       title="Character count"
     >
       <TextField label="Plenty left" maxLength={20} placeholder="Type up to 20 characters" />
+
+      <TextField defaultValue="1234567890" label="Half left" maxLength={20} />
 
       <TextField defaultValue="1234567890123456" label="Warning" maxLength={20} />
 

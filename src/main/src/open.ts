@@ -13,6 +13,21 @@ export function openUrl(url: URL): void {
 }
 
 /**
+ * Opens `raw` if it parses as a URL, and logs and drops it otherwise. The
+ * renderer can send free text, such as a mod's Source Website, and an
+ * unparseable URL thrown from an IPC listener would terminate Vortex.
+ */
+export function openUrlString(raw: string): void {
+  const url = URL.parse(raw);
+  if (url === null) {
+    log("warn", "not opening an invalid URL", { url: raw });
+    return;
+  }
+
+  openUrl(url);
+}
+
+/**
  * Opens the file or folder using the default application for the file extension.
  *
  * Routes through a `file://` URL and `shell.openExternal` rather than
@@ -20,8 +35,16 @@ export function openUrl(url: URL): void {
  * directory, but under Wine `shell.openPath` triggers a Win32 `ShellExecute`
  * "open" verb that Wine has no folder handler for, whereas `file://` URLs
  * are routed by Wine to winebrowser → the host's xdg-open.
+ *
+ * Logs and drops an empty or missing path: an empty one would resolve to the
+ * working directory, and a missing one would throw from the IPC listener.
  */
 export function openFile(filePath: string): void {
+  if (typeof filePath !== "string" || filePath.length === 0) {
+    log("warn", "not opening an invalid path", { filePath });
+    return;
+  }
+
   const resolvedPath = path.isAbsolute(filePath) ? filePath : path.resolve(filePath);
 
   shell.openExternal(pathToFileURL(resolvedPath).toString()).catch((err: unknown) => {

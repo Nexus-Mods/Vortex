@@ -1,6 +1,6 @@
 import path from "path";
 
-import { log, util } from "@nexusmods/vortex-api";
+import { log, util, VortexGameId } from "@nexusmods/vortex-api";
 import type { types } from "@nexusmods/vortex-api";
 
 import {
@@ -41,7 +41,7 @@ const TOOLS: types.ITool[] = [
 
 class DarkSouls2 implements types.IGame {
   public context: types.IExtensionContext;
-  public id: string;
+  public id: VortexGameId;
   public name: string;
   public mergeMods: boolean;
   public logo: string;

@@ -1,7 +1,7 @@
 import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexusmods/nexus-api";
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { type NexusGameDomain, getErrorMessageOrDefault } from "@vortex/shared";
 import { parseError } from "@vortex/shared";
 import type { Action } from "redux";
 
@@ -18,12 +18,14 @@ import {
   UserCanceled,
 } from "../../util/CustomErrors";
 import { createKeyedCache } from "../../util/keyedCache";
-import opn from "../../util/opn";
 import { batchDispatch } from "../../util/util";
+import {
+  SOURCE_PARAM,
+  websiteDownloadSource,
+} from "../analytics/mixpanel/download_source/downloadSource";
 import type { IResolvedURL } from "../download_management/types/ProtocolHandlers";
 import { SITE_ID } from "../gamemode_management/constants";
 import { addFreeUserDLItem, removeFreeUserDLItem } from "./actions/session";
-import { NEXUS_BASE_URL } from "./constants";
 import { refreshMembership, scheduleMembershipRefresh } from "./membership";
 import NXMUrl from "./NXMUrl";
 import { isRateLimited, notifyRateLimited } from "./rateLimit";
@@ -31,6 +33,7 @@ import { isPremium, userInfo } from "./selectors";
 import { bringToFront, ensureLoggedIn, getInfoGraphQL, oauthCallback, startDownload } from "./util";
 import { findLatestUpdate } from "./util/checkModsVersion";
 import { nxmPageId } from "./util/convertGameId";
+import { nexusFilePageUrl } from "./util/nexus_urls/nexusUrls";
 
 const DL_QUERY: IRevisionQuery = {
   id: true,
@@ -47,6 +50,8 @@ const DOWNLOAD_URL_CACHE_DURATION = 5 * 60 * 1000;
 interface IQueuedDownload {
   input: string;
   url: NXMUrl;
+  /** The domain the url's game resolved to, which its link id need not be. */
+  pageId: NexusGameDomain;
   resolve: (res: IResolvedURL) => void;
   reject: (err: Error) => void;
   /** The file's update chain, used to describe what a skip is skipping. */
@@ -163,7 +168,7 @@ export class NxmProtocol {
         return await this.#apiDownload(input, url, pageId);
       } catch (err) {
         if (await this.#confirmMembershipEnded(url, err)) {
-          return this.#websiteDownload(input, url);
+          return this.#websiteDownload(input, url, pageId);
         }
         throw err;
       }
@@ -173,7 +178,7 @@ export class NxmProtocol {
       return this.#apiDownload(input, url, pageId);
     }
 
-    return this.#websiteDownload(input, url);
+    return this.#websiteDownload(input, url, pageId);
   };
 
   /**
@@ -259,13 +264,11 @@ export class NxmProtocol {
       if (queued === undefined) {
         return;
       }
-      const { url } = queued;
+      const { url, pageId } = queued;
 
       queued.awaitingLink = true;
 
-      opn(
-        `${NEXUS_BASE_URL}/${url.gameId}/mods/${url.modId}?tab=files&file_id=${url.fileId}&nmm=1`,
-      ).catch(() => null);
+      window.api.shell.openUrl(nexusFilePageUrl(pageId, url.modId, url.fileId));
     },
 
     onSkip: (inputUrl: string) => {
@@ -392,12 +395,13 @@ export class NxmProtocol {
    * Park the download until the user brings back an authorised link from the website (or cancels
    * or skips it). FreeUserDLDialog renders off the redux queue this dispatches into.
    */
-  #websiteDownload(input: string, url: NXMUrl): Promise<IResolvedURL> {
+  #websiteDownload(input: string, url: NXMUrl, pageId: NexusGameDomain): Promise<IResolvedURL> {
     // a promise settles once and #dequeue tolerates a repeat, so cancelling after a skip is safe
     return new Promise<IResolvedURL>((resolve, reject) => {
       this.#freeQueue.push({
         input,
         url,
+        pageId,
         resolve: (res) => {
           this.#dequeue(input);
           resolve(res);
@@ -406,7 +410,7 @@ export class NxmProtocol {
           this.#dequeue(input);
           reject(err);
         },
-        queryRelevantUpdates: () => this.#relevantUpdates(url),
+        queryRelevantUpdates: () => this.#relevantUpdates(url, pageId),
         awaitingLink: false,
       });
       this.#api.store.dispatch(addFreeUserDLItem(input));
@@ -418,8 +422,8 @@ export class NxmProtocol {
    * dependency may reference an older or newer file than the one being skipped and the nxm url
    * alone can't tell us which.
    */
-  async #relevantUpdates(url: NXMUrl): Promise<IFileUpdate[]> {
-    const files = await this.#nexus.getModFiles(url.modId, url.gameId);
+  async #relevantUpdates(url: NXMUrl, pageId: NexusGameDomain): Promise<IFileUpdate[]> {
+    const files = await this.#nexus.getModFiles(url.modId, pageId);
 
     const previous = new Map<number, IFileUpdate>(); // new_file_id -> update
     files.file_updates.forEach((update) => previous.set(update.new_file_id, update));
@@ -476,9 +480,14 @@ export class NxmProtocol {
         ? `mod_${url.modId}_${url.fileId}_${pageId}`
         : `collection_${url.collectionSlug}_${revisionNumber ?? "latest"}`;
 
+    // Per link, not per file, so it's kept out of the cache.
+    const downloadSource = websiteDownloadSource(url.getParam(SOURCE_PARAM));
+    const withSource = (meta: IResolvedURL["meta"]): IResolvedURL["meta"] =>
+      downloadSource ? { ...meta, downloadSource } : meta;
+
     const cached = this.#urlCache.get(cacheKey);
     if (cached !== undefined) {
-      return { urls: cached.urls, updatedUrl: input, meta: cached.meta };
+      return { urls: cached.urls, updatedUrl: input, meta: withSource(cached.meta) };
     }
 
     let found: IFoundDownload;
@@ -498,12 +507,19 @@ export class NxmProtocol {
     };
 
     this.#urlCache.set(cacheKey, { urls: resolved.urls, meta: resolved.meta });
-    return resolved;
+    return { ...resolved, meta: withSource(resolved.meta) };
   }
 
   async #modDownload(url: NXMUrl, pageId: string): Promise<IFoundDownload> {
     return {
-      urls: await this.#nexus.getDownloadURLs(url.modId, url.fileId, url.key, url.expires, pageId),
+      urls: await this.#nexus.getDownloadURLs(
+        url.modId,
+        url.fileId,
+        url.key,
+        url.expires,
+        pageId,
+        url.source,
+      ),
       ids: { modId: url.modId, fileId: url.fileId },
     };
   }

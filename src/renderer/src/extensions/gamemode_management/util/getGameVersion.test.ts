@@ -32,18 +32,18 @@ describe("game version sources", () => {
     const game = makeGame(() => Promise.resolve("1.6.1170"));
 
     await expect(readGameVersions(game, discovery)).resolves.toEqual({
-      exe: "1.6.1170.0",
+      exe: { version: "1.6.1170.0" },
       extension: "1.6.1170",
     });
     // the merged resolver still prefers the extension
     await expect(resolveGameVersion(game, discovery)).resolves.toBe("1.6.1170");
   });
 
-  it("reports a missing or failing source as null", async () => {
+  it("reports why a source has no version", async () => {
     vi.mocked(stat).mockRejectedValue(new Error("ENOENT"));
 
     await expect(readGameVersions(makeGame(), discovery)).resolves.toEqual({
-      exe: null,
+      exe: { failure: "exe-not-found" },
       extension: null,
     });
     await expect(
@@ -51,9 +51,20 @@ describe("game version sources", () => {
         makeGame(() => Promise.reject(new Error("broken"))),
         discovery,
       ),
-    ).resolves.toEqual({ exe: null, extension: null });
+    ).resolves.toEqual({ exe: { failure: "exe-not-found" }, extension: null });
     // the merged resolver keeps its 0.0.0 fallback
     await expect(resolveGameVersion(makeGame(), discovery)).resolves.toBe("0.0.0");
+  });
+
+  it("tells an exe it can't parse from a missing one", async () => {
+    vi.mocked(exeVersion).mockImplementation(() => {
+      throw new RangeError("out of bounds");
+    });
+
+    await expect(readGameVersions(makeGame(), discovery)).resolves.toEqual({
+      exe: { failure: "exe-unreadable" },
+      extension: null,
+    });
   });
 
   it("rejects undiscovered games", async () => {

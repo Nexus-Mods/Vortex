@@ -51,7 +51,6 @@ import { getVolumePath } from "../../../util/getVolumePath";
 import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { showError } from "../../../util/message";
-import opn from "../../../util/opn";
 import * as selectors from "../../../util/selectors";
 import { getSafe } from "../../../util/storeHelper";
 import { cleanFailedTransfer, testPathTransfer, transferPath } from "../../../util/transferPath";
@@ -1025,7 +1024,7 @@ class Settings extends ComponentEx<IProps, IComponentState> {
         </FlexLayout>
 
         <HelpBlock>
-          <a data-url={pathPreview} onClick={this.openUrl}>
+          <a data-path={pathPreview} onClick={this.openPath}>
             {pathPreview}
           </a>
         </HelpBlock>
@@ -1084,9 +1083,11 @@ class Settings extends ComponentEx<IProps, IComponentState> {
     this.nextState.installPath = value;
   };
 
-  private openUrl = (evt) => {
-    const url = evt.currentTarget.getAttribute("data-url");
-    opn(url).catch(() => undefined);
+  private openPath = (evt: React.MouseEvent<HTMLAnchorElement>) => {
+    const target = evt.currentTarget.getAttribute("data-path");
+    if (target) {
+      window.api.shell.openFile(target);
+    }
   };
 
   private browsePath = () => {

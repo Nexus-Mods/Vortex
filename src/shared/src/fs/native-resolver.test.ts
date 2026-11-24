@@ -1,8 +1,8 @@
+import { QualifiedPath } from "@nexusmods/paths";
 import { describe, expect, it } from "vitest";
 
 import { NativePathResolver } from "./native-resolver";
 import { PathResolverError } from "./paths";
-import { QualifiedPath } from "./paths";
 
 describe("NativePathResolver", () => {
   const resolver = new NativePathResolver();

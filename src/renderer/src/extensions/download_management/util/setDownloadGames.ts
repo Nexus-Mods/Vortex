@@ -5,7 +5,10 @@
 // state gets updated.
 //
 
+import { stat } from "node:fs/promises";
 import path from "path";
+
+import { getErrorCode } from "@vortex/shared";
 
 import type { IExtensionApi } from "../../../types/IExtensionContext";
 import type { IState } from "../../../types/IState";
@@ -108,10 +111,10 @@ async function moveDownload(
   }
   await fs.ensureDirWritableAsync(newPath);
   try {
-    const oStat = await fs
-      .statAsync(oldPath)
-      .catch((err) => (err.code === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err)));
-    const nStat = await fs.statAsync(newPath);
+    const oStat = await stat(oldPath, { bigint: true }).catch((err) =>
+      getErrorCode(err) === "ENOENT" ? Promise.resolve(undefined) : Promise.reject(err),
+    );
+    const nStat = await stat(newPath, { bigint: true });
     if (!!oStat && oStat.ino === nStat.ino) {
       const err = new ProcessCanceled("source same as destination");
       err["oldPath"] = oldPath;

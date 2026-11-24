@@ -1,8 +1,10 @@
-import { GameDomain, GameId, VortexGameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import { describe, it, expect, vi } from "vitest";
 
 import type { IGame } from "@/types/IGame";
+import type { IExtensionState } from "@/types/IState";
 
+import { makeExtensionState } from "../../test-utils/builders";
 import { setKnownGames } from "./actions/session";
 import { GameModeManager } from "./GameModeManager";
 import { makeTierZeroGame } from "./tiered/tierZero";
@@ -13,7 +15,7 @@ vi.mock("../../util/getVortexPath", () => ({ default: vi.fn(() => "/tmp") }));
 
 function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
   return {
-    id,
+    id: VortexGameId(id),
     name: `Game ${id}`,
     queryModPath: () => ".",
     executable: () => "game.exe",
@@ -24,17 +26,32 @@ function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
 
 function makeTierZeroEntry(domain: string) {
   return {
-    gameId: GameId(1234),
-    domain: GameDomain(domain),
+    gameId: NexusGameId(1234),
+    domain: NexusGameDomain(domain),
     name: "Some Game",
     storeIDs: { steam: [], gog: [], epic: [] },
   };
 }
 
-function makeManager(extensionGames: IGame[]): { manager: GameModeManager; dispatched: any[] } {
+function makeManager(
+  extensionGames: IGame[],
+  extensions: Record<string, IExtensionState> = {},
+): {
+  manager: GameModeManager;
+  dispatched: any[];
+} {
   const dispatched: any[] = [];
+  // the parts of the state that storing a game reads
+  const state = {
+    app: { extensions },
+    persistent: { gameMode: { tier0: {} } },
+    session: { gameMode: { known: [] } },
+  };
   const manager = new GameModeManager({} as any, extensionGames, [], () => undefined);
-  manager.attachToStore({ dispatch: (action: any) => dispatched.push(action) } as any);
+  manager.attachToStore({
+    dispatch: (action: any) => dispatched.push(action),
+    getState: () => state,
+  } as any);
   return { manager, dispatched };
 }
 
@@ -42,6 +59,62 @@ function dispatchedKnownGames(dispatched: any[]): IGameStored[] {
   const actions = dispatched.filter((action) => action.type === setKnownGames.getType());
   return actions[actions.length - 1]?.payload ?? [];
 }
+
+describe("GameModeManager stored games' Nexus Mods game", () => {
+  // dummy Nexus Mods games
+  const numericA = NexusGameId(1);
+  const domainA = NexusGameDomain("domain-a");
+
+  const extensionPath = "/extensions/game-a";
+
+  it("takes the game the catalog named for the game's installed extension", () => {
+    const extension = makeExtensionState({
+      path: extensionPath,
+      nexus: { gameId: numericA, gameDomain: domainA },
+    });
+    const { dispatched } = makeManager([makeKnownGame("game-a", { extensionPath })], {
+      "ext-a": extension,
+    });
+
+    expect(dispatchedKnownGames(dispatched)[0].nexus).toEqual({
+      gameId: numericA,
+      gameDomain: domainA,
+    });
+  });
+
+  it("prefers the catalog's game over the domain the game declares", () => {
+    const extension = makeExtensionState({
+      path: extensionPath,
+      nexus: { gameId: numericA, gameDomain: domainA },
+    });
+    const game = makeKnownGame("game-a", {
+      extensionPath,
+      details: { nexusPageId: "declared-domain" },
+    });
+    const { dispatched } = makeManager([game], { "ext-a": extension });
+
+    expect(dispatchedKnownGames(dispatched)[0].nexus).toEqual({
+      gameId: numericA,
+      gameDomain: domainA,
+    });
+  });
+
+  it("takes the game an extension is given after the games were stored, once stored again", () => {
+    const extension = makeExtensionState({ path: extensionPath });
+    const { manager, dispatched } = makeManager([makeKnownGame("game-a", { extensionPath })], {
+      "ext-a": extension,
+    });
+    expect(dispatchedKnownGames(dispatched)[0].nexus).toBeUndefined();
+
+    extension.nexus = { gameId: numericA, gameDomain: domainA };
+    manager.dispatchKnownGames();
+
+    expect(dispatchedKnownGames(dispatched)[0].nexus).toEqual({
+      gameId: numericA,
+      gameDomain: domainA,
+    });
+  });
+});
 
 describe("GameModeManager addGames", () => {
   it("makes the game visible in the registry and the manager snapshot", () => {
@@ -62,7 +135,7 @@ describe("GameModeManager addGames", () => {
     manager.addGames([game]);
 
     const known = dispatchedKnownGames(dispatched);
-    expect(known.map((iter) => iter.id)).toEqual(["existing", "somegame"]);
+    expect(known.map((iter) => iter.id)).toEqual(["existing", "tier-0-1234"]);
     // the synthesized game passes the validity shape check despite the
     // empty placeholder executable
     expect(known[1].executable).toBe("");

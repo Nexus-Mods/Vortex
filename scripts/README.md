@@ -45,6 +45,12 @@ Scripts wired into `package.json` can also be called with `pnpm run <name>`.
   imports to their runtime paths. Extension build configs import this module;
   do not run it directly.
 
+- `build-hdiffpatch-wasm.mjs` -- rebuilds the committed
+  `src/main/src/bsdiff/hdiffpatch/hdiffz.wasm` (HDiffPatch's hdiffz, used for
+  collection binary patches) and its licence files. Downloads wasi-sdk and the
+  sources pinned in the script into the OS temp folder. Run it by hand after
+  changing a pinned version: `node scripts/build-hdiffpatch-wasm.mjs`.
+
 - `create-env-file.mjs` -- writes `.local.env` with `NX_PARALLEL` set to the
   number of CPU cores. Runs automatically on `pnpm install`.
 

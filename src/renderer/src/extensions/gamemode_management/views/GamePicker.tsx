@@ -1,5 +1,5 @@
 import type { IGameListEntry } from "@nexusmods/nexus-api";
-import { GameDomain } from "@vortex/shared";
+import { NexusGameDomain } from "@vortex/shared";
 import { ratio } from "fuzzball";
 import memoizeOne from "memoize-one";
 import React, { type ComponentClass, useMemo, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { useFlag } from "@/contexts/FlagsContext";
 import type { IAvailableExtension } from "@/types/extensions";
 import type { IExtensionState } from "@/types/IState";
 import type { IState } from "@/types/IState";
+import { Search } from "@/ui/components/search/Search";
 import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
@@ -20,13 +21,12 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { connect, translate } from "../../../controls/ComponentEx";
 import { activeGameId } from "../../../util/selectors";
-import { nexusGameId } from "../../nexus_integration/util/convertGameId";
+import { convertGameIdReverse, nexusGameId } from "../../nexus_integration/util/convertGameId";
 import type { IProfile } from "../../profile_management/types/IProfile";
 import { setShowHiddenGames } from "../actions/session";
 import { setPickerLayout, setSortManaged, setSortUnmanaged } from "../actions/settings";
 import { AddedGames } from "../components/added_games/AddedGames";
 import { DetectedGames } from "../components/detected_games/DetectedGames";
-import { Search } from "../components/search/Search";
 import { Section } from "../components/section/Section";
 import { SupportedGames } from "../components/supported_games/SupportedGames";
 import {
@@ -39,8 +39,18 @@ import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
 import { detectedInternalId } from "../util/detected_games/detectedInternalId";
 import { detectedStore } from "../util/detected_games/detectedStore";
-import { isListableDetectedGame } from "../util/detected_games/listableDetectedIds";
+import {
+  isListableDetectedGame,
+  tierZeroCandidateId,
+} from "../util/detected_games/listableDetectedIds";
 import { locallyDetectedGames } from "../util/detected_games/locallyDetectedGames";
+import { byRecentlyUsed } from "../util/recentlyUsed";
+
+/**
+ * A tile on the page. One for a game nothing is registered for carries the extension the
+ * catalog has for it, to offer for download.
+ */
+type GameTile = IGameStored & { extension?: IAvailableExtension };
 
 const gameFromDiscovery = (id: string, discovered: IDiscoveryResult): IGameStored => ({
   id,
@@ -173,16 +183,6 @@ const GamePicker = ({
   const applyGameFilter = (game: IGameStored): boolean =>
     !currentFilterValue || game.name?.toLowerCase().includes(currentFilterValue.toLowerCase());
 
-  const lastUsed = (game: IGameStored): number =>
-    Math.max(
-      ...Object.values(profiles)
-        .filter((prof) => prof.gameId === game.id)
-        .map((prof) => prof.lastActivated),
-    );
-
-  const byRecentlyUsed = (lhs: IGameStored, rhs: IGameStored): number =>
-    lastUsed(rhs) - lastUsed(lhs);
-
   const lookupName = (input: string): string => {
     if (nameLookupRef.current[input] === undefined) {
       const exactMatch = nexusGames.find((i) => i.name === input);
@@ -217,7 +217,7 @@ const GamePicker = ({
 
   const sortBy = (sortMode: string) =>
     ({
-      recentlyused: byRecentlyUsed,
+      recentlyused: byRecentlyUsed(profiles),
       recent: byRecent,
       popular: byPopular,
     })[sortMode] ?? byGameName;
@@ -255,7 +255,7 @@ const GamePicker = ({
   );
 
   const managedGameList: IGameStored[] = [];
-  const supportedGameList: IGameStored[] = [];
+  const supportedGameList: GameTile[] = [];
 
   displayedGames.forEach((game: IGameStored) => {
     if (discoveredGames[game.id]?.path !== undefined) {
@@ -278,6 +278,7 @@ const GamePicker = ({
         requiredFiles: [],
         executable: undefined,
         contributed: isContributed(ext.author) ? ext.author : undefined,
+        extension: ext,
       }))
       .filter((ext) => showHidden || !(discoveredGames[ext.id]?.hidden ?? false)),
   );
@@ -304,19 +305,19 @@ const GamePicker = ({
   const favouriteGameIds: string[] = [];
   const detectedStores: Record<string, string> = {};
   const listedIds = new Set<string>();
-  const detectedGameList: IGameStored[] = detectedGames
-    .map<IGameStored | undefined>((game) => {
+  const detectedGameList: GameTile[] = detectedGames
+    .map<GameTile | undefined>((game) => {
       const nexusGame = nexusGameByNexusIdMap.get(game.gameId);
       if (nexusGame === undefined) {
         return undefined;
       }
       // profiles and actions know games by their internal id, which is usually the
       // nexus domain but not always, and is the installed one where games share a domain
-      const internalId = detectedInternalId(
-        knownGames,
-        discoveredGames,
-        GameDomain(nexusGame.domain_name),
-      );
+      const domain = NexusGameDomain(nexusGame.domain_name);
+      const internalId =
+        detectedInternalId(knownGames, discoveredGames, domain) ??
+        tierZeroCandidateId(game, detectedListOptions) ??
+        convertGameIdReverse(knownGames, domain);
       if (profileGames.has(internalId)) {
         return undefined;
       }
@@ -349,9 +350,11 @@ const GamePicker = ({
         imageURL: game.imageUrl,
         requiredFiles: [],
         executable: undefined,
+        // nothing registers the game: the response's extension is what Manage offers
+        extension: knownGames.some((known) => known.id === internalId) ? undefined : game.extension,
       };
     })
-    .filter((game): game is IGameStored => game !== undefined);
+    .filter((game): game is GameTile => game !== undefined);
 
   // Discovery adds the games the response can't name: ones on stores it doesn't cover
   // (Xbox, EA, Ubisoft), ones Nexus Mods doesn't list, such as an extension still in

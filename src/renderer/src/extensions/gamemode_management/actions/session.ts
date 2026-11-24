@@ -1,4 +1,7 @@
+import type { VortexGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
+
+import type { IAvailableExtension } from "@/types/extensions";
 
 import type { GameSource } from "../types/GameSource";
 import type { DetectedGamesStatus, IDetectedGame } from "../types/IDetectedGame";
@@ -10,13 +13,6 @@ const identity = <T>(input: T): T => input;
  * sets the list of known/supported games
  */
 export const setKnownGames = createAction("SET_KNOWN_GAMES", identity<IGameStored[]>);
-
-export const clearGameDisabled = createAction("CLEAR_GAME_DISABLED");
-
-export const setGameDisabled = createAction(
-  "SET_GAME_DISABLED",
-  (gameId: string, disabledBy: string) => ({ gameId, disabledBy }),
-);
 
 export const setShowHiddenGames = createAction("SET_SHOW_HIDDEN_GAMES", identity<boolean>);
 
@@ -51,3 +47,24 @@ export const setGameAddOrigin = createAction(
   "SET_GAME_ADD_ORIGIN",
   (gameId: string, source: GameSource) => ({ gameId, source }),
 );
+
+/**
+ * records the store the user picked a game from, by clicking the tile that named it, so
+ * the add manages that store's install rather than whichever one discovery ranks first
+ */
+export const setGameAddStore = createAction(
+  "SET_GAME_ADD_STORE",
+  (gameId: VortexGameId, store: string) => ({ gameId, store }),
+);
+
+/**
+ * records the extension of the tile the user is adding a game from, `null` for a tile with
+ * none, so the add can offer to download it instead of finding it again
+ */
+export const setGameAddExtension = createAction(
+  "SET_GAME_ADD_EXTENSION",
+  (extension: IAvailableExtension | null) => ({ extension }),
+);
+
+/** forgets the store and extension picked for an add, once the add has finished or failed */
+export const clearGameAddStore = createAction("CLEAR_GAME_ADD_STORE");

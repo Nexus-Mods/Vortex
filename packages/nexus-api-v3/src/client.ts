@@ -23,6 +23,13 @@ export interface NexusV3ClientOptions {
   signal?: AbortSignal;
 }
 
+/** One event of a telemetry batch: the client's id for it, when it happened, and the event. */
+export interface ITelemetryEventEntry {
+  id: string;
+  date: Temporal.Instant;
+  event: TelemetryEvent;
+}
+
 export type NexusV3Client = ReturnType<typeof createNexusV3Client>;
 
 /** User-Agent plus bearer-else-apikey auth, shared by the public and internal clients. */
@@ -58,22 +65,9 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
     ...client,
 
     /**
-     * Creates a single-part upload session. The returned `presigned_url` is
-     * signed over headers it does not report — see `uploadHeadersFor` for the
-     * values the subsequent PUT has to carry.
-     */
-    async createUpload(sizeBytes: number, filename: string) {
-      const { data, error, response } = await client.POST("/uploads", {
-        body: { size_bytes: sizeBytes, filename },
-      });
-      if (error) throw toV3Error(error, response);
-      return data.data;
-    },
-
-    /**
      * Creates a multipart upload session, following the Amazon S3 multipart
-     * specification. Its presigned URLs carry the same unreported signed
-     * headers as `createUpload` — see `uploadHeadersFor`.
+     * specification. Its presigned URLs are signed over headers they do not
+     * report — see `uploadHeadersFor` for the values each PUT has to carry.
      */
     async createMultipartUpload(sizeBytes: number, filename: string) {
       const { data, error, response } = await client.POST("/uploads/multipart", {
@@ -229,6 +223,66 @@ export function createNexusV3Client(options: NexusV3ClientOptions) {
       if (error) throw toV3Error(error, response);
       return Array.from(data.data.mods);
     },
+
+    /** Fetch one mod's details, its description and tags among them, by its composite mod UID. */
+    async getModById(id: string): Promise<components["schemas"]["Mod"]> {
+      const { data, error, response } = await client.GET("/mods/{id}", {
+        params: { path: { id } },
+      });
+      if (error) throw toV3Error(error, response);
+      return {
+        ...data.data,
+        tags: Array.from(data.data.tags),
+        gallery_images: Array.from(data.data.gallery_images),
+      };
+    },
+
+    /**
+     * Issue signed download links for a mod file version, best CDN location first, and record
+     * the download, so it's only for a download the user asked for. Premium users need no `key`
+     * and `expires`; anyone else needs the pair the website generates. Links expire in hours.
+     */
+    async getModFileVersionDownloadLink(
+      gameDomain: string,
+      fileVersionId: string,
+      download: {
+        key?: string;
+        expires?: number;
+        collectionId?: number;
+        applicationName?: string;
+      } = {},
+    ) {
+      const { data, error, response } = await client.GET(
+        "/games/{game_domain}/mod-file-versions/{game_scoped_id}/download-link",
+        {
+          params: {
+            path: { game_domain: gameDomain, game_scoped_id: fileVersionId },
+            query: {
+              key: download.key,
+              expires: download.expires,
+              collection_id: download.collectionId,
+            },
+            header: { "Application-Name": download.applicationName },
+          },
+        },
+      );
+      if (error) throw toV3Error(error, response);
+      return data.data;
+    },
+
+    /**
+     * Search published mods, sorted, filtered and a page at a time, by number or by cursor.
+     * Every field of the search is optional; the API defaults to endorsements, by cursor, 20 a
+     * page. `meta` pages the same way as the request.
+     */
+    async searchMods(search: components["schemas"]["ModsSearchRequest"]): Promise<{
+      mods: components["schemas"]["ModSummary"][];
+      meta: components["schemas"]["ModsSearchPaginationMeta"];
+    }> {
+      const { data, error, response } = await client.POST("/mods/search", { body: search });
+      if (error) throw toV3Error(error, response);
+      return { mods: Array.from(data.data.mods), meta: data.meta };
+    },
   };
 }
 
@@ -256,6 +310,29 @@ export function createNexusV3InternalClient(
     client.use(mw);
   }
 
+  const sendTelemetryEvents = async (events: readonly ITelemetryEventEntry[]) => {
+    const { data, error, response } = await client.POST("/telemetry/events", {
+      body: {
+        client: {
+          name: options.clientName,
+          version: options.clientVersion,
+          instance_id: options.instanceId,
+        },
+
+        events: events.map(({ id, date, event }) => ({
+          id: id,
+          occurred_at: date.toString(),
+          version: event.version,
+          type: event.type,
+          payload: event.payload,
+        })),
+      },
+    });
+
+    if (error) throw toV3Error(error, response);
+    return data.data;
+  };
+
   return {
     ...client,
 
@@ -268,29 +345,16 @@ export function createNexusV3InternalClient(
       return data.data;
     },
 
-    async telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
-      const { data, error, response } = await client.POST("/telemetry/events", {
-        body: {
-          client: {
-            name: options.clientName,
-            version: options.clientVersion,
-            instance_id: options.instanceId,
-          },
+    telemetryEvent(id: string, date: Temporal.Instant, event: TelemetryEvent) {
+      return sendTelemetryEvents([{ id, date, event }]);
+    },
 
-          events: [
-            {
-              id: id,
-              occurred_at: date.toString(),
-              version: event.version,
-              type: event.type,
-              payload: event.payload,
-            },
-          ],
-        },
-      });
-
-      if (error) throw toV3Error(error, response);
-      return data.data;
+    /**
+     * Submits several events in one request. The API accepts or rejects each event on its own,
+     * so check `rejected` in the ack.
+     */
+    telemetryEvents(events: readonly ITelemetryEventEntry[]) {
+      return sendTelemetryEvents(events);
     },
   };
 }

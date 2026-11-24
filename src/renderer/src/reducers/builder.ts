@@ -1,6 +1,14 @@
 import type { ComplexActionCreator } from "redux-act";
 
-import type { IReducerSpec, IStateVerifier } from "@/types/IExtensionContext";
+import type { IExtensionReducer } from "@/types/extensions";
+import type {
+  IExtensionContext,
+  IPartialReducerSpec,
+  IReducerSpec,
+  IStateVerifier,
+  ReducerSpecFor,
+  StatePath,
+} from "@/types/IExtensionContext";
 
 export type ActionsToReducerMapping<TActions, TState> = {
   [K in keyof TActions]: TActions[K] extends ComplexActionCreator<infer TPayload>
@@ -12,16 +20,10 @@ export type StateToVerifiers<TState> = {
   [K in keyof TState]: IStateVerifier;
 };
 
-/**
- * Builds IReducerSpec from known actions.
- * @public
- */
-export function actionsToReducerSpec<TState, TActions>(
-  defaultState: TState,
+function mappingToReducers<TState, TActions>(
   actions: TActions,
   mapping: ActionsToReducerMapping<TActions, TState>,
-  verifiers?: Partial<StateToVerifiers<TState>>,
-): IReducerSpec<TState> {
+): Record<string, (state: TState, payload: unknown) => TState> {
   const reducers: Record<string, (state: TState, payload: unknown) => TState> = {};
 
   Object.entries<(state: TState, payload: unknown) => TState>(mapping).map((entry) => {
@@ -33,9 +35,73 @@ export function actionsToReducerSpec<TState, TActions>(
     reducers[action.getType()] = reducer;
   });
 
+  return reducers;
+}
+
+/**
+ * Sets one field of a slice, keeping the same state when the field already holds that value, as
+ * immutability-helper's `$set` did, so an unchanged value causes no re-render or persist write.
+ */
+export function setField<TState extends object, K extends keyof TState>(
+  state: TState,
+  key: K,
+  value: TState[K],
+): TState {
+  return key in state && state[key] === value ? state : { ...state, [key]: value };
+}
+
+/**
+ * Builds IReducerSpec from known actions.
+ * @public
+ */
+export function actionsToReducerSpec<TState, TActions>(
+  defaultState: TState,
+  actions: TActions,
+  mapping: ActionsToReducerMapping<TActions, TState>,
+  verifiers?: Partial<StateToVerifiers<TState>>,
+): IReducerSpec<TState> {
   return {
     defaults: defaultState,
-    reducers: reducers,
+    reducers: mappingToReducers(actions, mapping),
     verifiers,
+  };
+}
+
+/**
+ * Builds an IPartialReducerSpec from known actions, for a reducer that shares its slice with
+ * others registered at the same path: it supplies defaults only for the fields it owns.
+ * @public
+ */
+export function actionsToPartialReducerSpec<TState, TActions>(
+  defaultState: Partial<TState>,
+  actions: TActions,
+  mapping: ActionsToReducerMapping<TActions, TState>,
+  verifiers?: Partial<StateToVerifiers<TState>>,
+): IPartialReducerSpec<TState> {
+  return {
+    partial: true,
+    defaults: defaultState,
+    reducers: mappingToReducers(actions, mapping),
+    verifiers,
+  };
+}
+
+/** A reducer bound to its state path, which registers itself without losing its type. */
+export interface IReducerBinding extends IExtensionReducer {
+  register(context: Pick<IExtensionContext, "registerReducer">): void;
+}
+
+/**
+ * Binds a reducer to its state path, checking at the call that the spec matches the slice there,
+ * for an extension that keeps its reducers in a list (e.g. one a test harness also binds).
+ */
+export function reducerBinding<const P extends StatePath>(
+  path: P,
+  reducer: ReducerSpecFor<P>,
+): IReducerBinding {
+  return {
+    path: [...path],
+    reducer: reducer as IReducerSpec,
+    register: (context) => context.registerReducer(path, reducer),
   };
 }

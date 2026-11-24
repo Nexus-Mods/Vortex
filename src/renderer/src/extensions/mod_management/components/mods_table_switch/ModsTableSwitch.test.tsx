@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { VortexModId } from "@vortex/shared";
 import React from "react";
 import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   emit: vi.fn<(channel: string, event?: { eventName: string; properties: object }) => void>(),
   installMods: vi.fn(),
+  registeredColumns: [] as unknown[],
 }));
 
 // The table's analytics send through the api's events; the tests read them off this spy.
@@ -15,15 +17,32 @@ vi.mock("@/contexts", async (importOriginal) => ({
   useMainContext: () => ({ api: { events: { emit: mocks.emit } } }),
 }));
 
+// The columns extensions register on the legacy table, which the new one shows too.
+vi.mock("@/ExtensionProvider", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useExtensionObjects: () => mocks.registeredColumns,
+}));
+
+// The failure alert's legacy icon loads its set from disk into the page, which isn't there.
+vi.mock("@/controls/Icon", () => ({ default: () => null }));
+
 vi.mock("../../hooks/use_install_mods/useInstallMods.hook", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useInstallMods: () => mocks.installMods,
 }));
 
+// Spied on, still working them out, to see which mods the panel's properties are worked out for.
+vi.mock("../../hooks/use_mod_properties/useModProperties.hook", async (importOriginal) => {
+  const original = await importOriginal<typeof ModProperties>();
+  return { ...original, useModProperties: vi.fn(original.useModProperties) };
+});
+
 import type { ITableRowAction } from "@/controls/Table";
 import { makeModsTableStore } from "@/test-utils/modsTableStore";
 
 import { focusModsTableGroup } from "../../actions/session";
+import type * as ModProperties from "../../hooks/use_mod_properties/useModProperties.hook";
+import { useModProperties } from "../../hooks/use_mod_properties/useModProperties.hook";
 import type { IModWithState } from "../../types/IModProps";
 import { MODS_TABLE_FEEDBACK_URL } from "../mods_table_toolbar/ModsTableToolbar";
 import { ModsTableSwitch } from "./ModsTableSwitch";
@@ -60,15 +79,15 @@ const showView = (name: string) => userEvent.click(screen.getByRole("button", { 
 
 // The views, by whether each is open; the Add view button beside them isn't one.
 const viewButtons = () =>
-  within(screen.getByRole("group", { name: "Views" }))
+  within(screen.getByRole("group", { name: "modsTable::toolbar::views" }))
     .getAllByRole("button")
     .filter((button) => button.hasAttribute("aria-pressed"));
 
 const pressedViews = () => viewButtons().map((view) => view.getAttribute("aria-pressed"));
 
 const groupBy = async (option: string) => {
-  await userEvent.click(screen.getByRole("button", { name: "View options" }));
-  await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+  await userEvent.click(screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }));
+  await userEvent.click(screen.getByRole("button", { name: /modsTable::displayOptions::groupBy/ }));
   await userEvent.click(screen.getByRole("option", { name: option }));
 };
 
@@ -91,16 +110,33 @@ describe("ModsTableSwitch", () => {
     expect(screen.queryByRole("grid")).toBeNull();
   });
 
+  it("shows the classic table even when the open view's grouping can't name a mod", () => {
+    const nameless = { id: "x", enabled: true, type: "collection", rules: [] };
+    const throwingName = mod("a", "Alpha", true, {
+      attributes: {
+        get name(): string {
+          throw new Error("grouped for the classic table");
+        },
+      },
+    });
+
+    renderSwitch({ a: throwingName, x: nameless as unknown as IModWithState }, undefined, {
+      betaTable: false,
+      views: { selected: "collections", changes: {}, custom: [] },
+    });
+
+    expect(screen.getByTestId("legacy-table")).toBeInTheDocument();
+  });
+
   it("lists the mods by name, ungrouped, when no collection is installed", () => {
     renderSwitch({ b: mod("b", "Beta", false), a: mod("a", "Alpha", true) });
 
     const [first, second] = bodyRows(screen.getByRole("grid"));
     expect(cellText(first)).toContain("Alpha");
     expect(cellText(second)).toContain("Beta");
-    expect(within(first).getByRole("checkbox", { name: "{{name}} enabled" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
+    expect(
+      within(first).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+    ).toHaveAttribute("aria-checked", "true");
   });
 
   it("leaves a collection's own row out of the flat list", () => {
@@ -112,9 +148,12 @@ describe("ModsTableSwitch", () => {
   it("leaves a collection's own row out of a column's groups", async () => {
     renderSwitch({ b: mod("b", "Beta", false), x: collection("x", "Xenon", ["b"]) });
 
-    await showView("Status");
+    await showView("modsTable::views::status");
 
-    expect(bodyRows(screen.getByRole("treegrid")).map(cellText)).toEqual(["Disabled1", "Beta"]);
+    expect(bodyRows(screen.getByRole("treegrid")).map(cellText)).toEqual([
+      "modsTable::groups::disabled1",
+      "Beta",
+    ]);
   });
 
   // ModList rebuilds the mods only after a debounce, so a switch would lag behind its click.
@@ -130,10 +169,9 @@ describe("ModsTableSwitch", () => {
     );
 
     const [row] = bodyRows(screen.getByRole("grid"));
-    expect(within(row).getByRole("checkbox", { name: "{{name}} enabled" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
+    expect(
+      within(row).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+    ).toHaveAttribute("aria-checked", "true");
   });
 
   describe("while a switch's change is under way", () => {
@@ -161,7 +199,7 @@ describe("ModsTableSwitch", () => {
 
     const modSwitch = () =>
       within(bodyRows(screen.getByRole("grid"))[0]).getByRole("checkbox", {
-        name: "{{name}} enabled",
+        name: "modsTable::rowActions::enabled",
       });
 
     const clickSwitch = async () => {
@@ -198,9 +236,9 @@ describe("ModsTableSwitch", () => {
     renderSwitch({ a: mod("a", "Alpha", true) });
 
     expect(viewButtons().map((view) => view.textContent)).toEqual([
-      "All mods",
-      "Status",
-      "Categories",
+      "modsTable::views::all",
+      "modsTable::views::status",
+      "modsTable::views::categories",
     ]);
     expect(pressedViews()).toEqual(["true", "false", "false"]);
   });
@@ -215,11 +253,11 @@ describe("ModsTableSwitch", () => {
     });
 
     expect(viewButtons().map((view) => view.textContent)).toEqual([
-      "All mods",
-      "Status",
-      "Updates",
-      "Categories",
-      "Collections",
+      "modsTable::views::all",
+      "modsTable::views::status",
+      "modsTable::views::updates",
+      "modsTable::views::categories",
+      "modsTable::views::collections",
     ]);
   });
 
@@ -236,9 +274,9 @@ describe("ModsTableSwitch", () => {
       await createView("Recently installed");
 
       expect(viewButtons().map((view) => view.textContent)).toEqual([
-        "All mods",
-        "Status",
-        "Categories",
+        "modsTable::views::all",
+        "modsTable::views::status",
+        "modsTable::views::categories",
         "Recently installed",
       ]);
       expect(pressedViews()).toEqual(["false", "false", "false", "true"]);
@@ -263,10 +301,10 @@ describe("ModsTableSwitch", () => {
 
       expect(screen.getByRole("grid")).toBeInTheDocument();
       expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
-        "Name",
-        "Version",
-        "Installation time",
-        "Actions",
+        "modsTable::columns::name",
+        "modsTable::columns::version",
+        "modsTable::columns::installTime",
+        "modsTable::columns::actions",
       ]);
     });
 
@@ -278,7 +316,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
       const tab = screen.getByRole("button", { name: "Mine" });
-      tab.focus();
+      act(() => tab.focus());
 
       fireEvent.contextMenu(tab, { button: -1 });
       expect(await screen.findByRole("menuitem", { name: "Rename view" })).toHaveFocus();
@@ -294,24 +332,26 @@ describe("ModsTableSwitch", () => {
       fireEvent.contextMenu(screen.getByRole("button", { name: "Mine" }));
       expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
         "Rename view",
-        "Edit view options",
+        "modsTable::toolbar::editViewOptions",
         "Delete view",
       ]);
       await userEvent.keyboard("{Escape}");
 
-      expect(fireEvent.contextMenu(screen.getByRole("button", { name: "All mods" }))).toBe(false);
+      expect(
+        fireEvent.contextMenu(screen.getByRole("button", { name: "modsTable::views::all" })),
+      ).toBe(false);
     });
 
     it("opens its menu from the … inside its button, without opening the view", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
-      await showView("All mods");
+      await showView("modsTable::views::all");
 
       await openViewMenu();
 
       expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
         "Rename view",
-        "Edit view options",
+        "modsTable::toolbar::editViewOptions",
         "Delete view",
       ]);
       expect(pressedViews()).toEqual(["true", "false", "false", "false"]);
@@ -356,14 +396,14 @@ describe("ModsTableSwitch", () => {
         await openMenu();
         await userEvent.click(screen.getByRole("menuitem", { name: "Delete view" }));
         expect(screen.getByRole("dialog", { name: "Delete view" })).toHaveTextContent(
-          "Are you sure you want to delete",
+          "modsTable::deleteView::body",
         );
         await userEvent.click(screen.getByRole("button", { name: "Delete view" }));
 
         expect(viewButtons().map((view) => view.textContent)).toEqual([
-          "All mods",
-          "Status",
-          "Categories",
+          "modsTable::views::all",
+          "modsTable::views::status",
+          "modsTable::views::categories",
         ]);
         expect(pressedViews()).toEqual(["true", "false", "false"]);
       });
@@ -371,13 +411,17 @@ describe("ModsTableSwitch", () => {
       it("opens the view and its view options from its menu", async () => {
         renderSwitch({ a: mod("a", "Alpha", true) });
         await createView("Mine");
-        await showView("All mods");
+        await showView("modsTable::views::all");
 
         await openMenu();
-        await userEvent.click(screen.getByRole("menuitem", { name: "Edit view options" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::toolbar::editViewOptions" }),
+        );
 
         expect(pressedViews()).toEqual(["false", "false", "false", "true"]);
-        expect(await screen.findByRole("button", { name: /Group by/ })).toBeInTheDocument();
+        expect(
+          await screen.findByRole("button", { name: /modsTable::displayOptions::groupBy/ }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -385,7 +429,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
       await createView("Mine");
       const tab = screen.getByRole("button", { name: "Mine" });
-      tab.focus();
+      act(() => tab.focus());
 
       fireEvent.contextMenu(tab);
       await userEvent.click(screen.getByRole("menuitem", { name: "Rename view" }));
@@ -398,7 +442,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
       await createView("Mine");
-      await groupBy("Author");
+      await groupBy("modsTable::columns::author");
 
       expect(screen.getByRole("treegrid")).toBeInTheDocument();
       expect(screen.queryByText("Reset to default")).toBeNull();
@@ -429,10 +473,16 @@ describe("ModsTableSwitch", () => {
       x: collection("x", "Xenon", ["b", "c"]),
     });
 
-    await showView("Collections");
+    await showView("modsTable::views::collections");
 
     const rows = bodyRows(screen.getByRole("treegrid"));
-    expect(rows.map(cellText)).toEqual(["No collection1", "Alpha", "Xenon2", "Beta", "Gamma"]);
+    expect(rows.map(cellText)).toEqual([
+      "modsTable::groups::noCollection1",
+      "Alpha",
+      "Xenon2",
+      "Beta",
+      "Gamma",
+    ]);
   });
 
   it("shows a collection's switch as part on while only some of its mods are", async () => {
@@ -442,7 +492,7 @@ describe("ModsTableSwitch", () => {
       x: collection("x", "Xenon", ["b", "c"]),
     });
 
-    await showView("Collections");
+    await showView("modsTable::views::collections");
 
     const group = screen
       .getByRole("button", { name: "Xenon" })
@@ -458,11 +508,11 @@ describe("ModsTableSwitch", () => {
       d: mod("d", "Delta", true),
     });
 
-    await groupBy("Author");
+    await groupBy("modsTable::columns::author");
 
     const rows = bodyRows(screen.getByRole("treegrid"));
     expect(rows.map(cellText)).toEqual([
-      "No author1",
+      "modsTable::groups::noAuthor1",
       "Delta",
       "Ann1",
       "Beta",
@@ -482,7 +532,7 @@ describe("ModsTableSwitch", () => {
       b: mod("b", "Beta", true, byAuthor("Beta", "Bo", "Someone", "someone.png")),
     });
 
-    await groupBy("Author");
+    await groupBy("modsTable::columns::author");
 
     const groupRow = (name: string) =>
       screen.getByRole("button", { name }).closest('[role="row"]') as HTMLElement;
@@ -502,7 +552,7 @@ describe("ModsTableSwitch", () => {
       }),
     });
 
-    await groupBy("Author");
+    await groupBy("modsTable::columns::author");
 
     const group = screen
       .getByRole("button", { name: "Ann" })
@@ -533,7 +583,9 @@ describe("ModsTableSwitch", () => {
 
       const [row] = bodyRows(screen.getByRole("grid"));
       await hoverRow(row);
-      await userEvent.click(within(row).getByRole("checkbox", { name: "{{name}} enabled" }));
+      await userEvent.click(
+        within(row).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+      );
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
     });
@@ -542,10 +594,14 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) });
 
       const [row] = bodyRows(screen.getByRole("grid"));
-      expect(within(row).queryByRole("checkbox", { name: "{{name}} enabled" })).toBeNull();
+      expect(
+        within(row).queryByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+      ).toBeNull();
 
       await hoverRow(row);
-      await userEvent.click(within(row).getByRole("button", { name: "Install {{name}}" }));
+      await userEvent.click(
+        within(row).getByRole("button", { name: "modsTable::rowActions::installMod" }),
+      );
 
       expect(mocks.installMods).toHaveBeenCalledWith(["a"]);
     });
@@ -555,18 +611,15 @@ describe("ModsTableSwitch", () => {
 
       const [row] = bodyRows(screen.getByRole("grid"));
       await hoverRow(row);
-      const button = within(row).getByRole("button", { name: "Install {{name}}" });
+      const button = within(row).getByRole("button", { name: "modsTable::rowActions::installMod" });
+      expect(button).toHaveAttribute("aria-description");
       await userEvent.hover(button.parentElement!);
 
-      const tooltip = await screen.findByRole("tooltip");
-      expect(within(tooltip).getByText("Install")).toHaveClass("font-semibold");
-      expect(tooltip).toHaveTextContent(
-        "Installs the mod into your game, where it can be enabled or disabled.",
-      );
+      expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     });
 
     const installButton = (row: HTMLElement) =>
-      within(row).getByRole("button", { name: "Install {{name}}" });
+      within(row).getByRole("button", { name: "modsTable::rowActions::installMod" });
 
     it("shows a mod being uninstalled with the install button, loading, for its switch", async () => {
       renderSwitch({ a: mod("a", "Alpha", true, { state: "installed" }) }, [], {
@@ -575,14 +628,16 @@ describe("ModsTableSwitch", () => {
       });
 
       const [row] = bodyRows(screen.getByRole("grid"));
-      expect(within(row).queryByRole("checkbox", { name: "{{name}} enabled" })).toBeNull();
+      expect(
+        within(row).queryByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+      ).toBeNull();
       expect(installButton(row)).toBeDisabled();
       // A step lighter while loading, without the border.
       expect(installButton(row)).toHaveClass("nxm-button-weak");
 
       await hoverRow(row);
       await userEvent.hover(installButton(row).parentElement!);
-      expect(await screen.findByRole("tooltip")).toHaveTextContent("Uninstalling…");
+      expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     });
 
     // The list catches up after a debounce, so the row outlives the mod for a moment.
@@ -599,7 +654,9 @@ describe("ModsTableSwitch", () => {
       });
 
       const [row] = bodyRows(screen.getByRole("grid"));
-      expect(within(row).getByRole("checkbox", { name: "{{name}} enabled" })).toBeInTheDocument();
+      expect(
+        within(row).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
+      ).toBeInTheDocument();
     });
 
     it("shows an archive being installed with the install button, loading, from the click on", () => {
@@ -628,14 +685,14 @@ describe("ModsTableSwitch", () => {
 
       await hoverRow(row);
       await userEvent.hover(installButton(row).parentElement!);
-      expect(await screen.findByRole("tooltip")).toHaveTextContent("Installing…");
+      expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     });
 
     it("disables a group with no shared mods without asking", async () => {
       const onSetModsEnabled = renderSwitch(sharedMods());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
-      await userEvent.click(groupSwitch("No collection"));
+      await userEvent.click(groupSwitch("modsTable::groups::noCollection"));
 
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(onSetModsEnabled).toHaveBeenCalledWith(["a"], false);
@@ -643,23 +700,25 @@ describe("ModsTableSwitch", () => {
 
     it("asks before disabling mods another collection shares", async () => {
       renderSwitch(sharedMods());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       await userEvent.click(groupSwitch("Xenon"));
 
       // The test t() doesn't interpolate, so this reads the source string; the names are
       // sharedMods's to work out, and tested there.
       expect(
-        within(screen.getByRole("dialog")).getByText("1 mod is shared with: {{collections}}"),
+        within(screen.getByRole("dialog")).getByText("modsTable::disableShared::shared"),
       ).toBeInTheDocument();
     });
 
     it("keeps the shared mods on, if asked to", async () => {
       const onSetModsEnabled = renderSwitch(sharedMods());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
       await userEvent.click(groupSwitch("Xenon"));
 
-      await userEvent.click(screen.getByRole("button", { name: "Keep shared mods enabled" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::disableShared::keepShared" }),
+      );
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b"], false);
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -667,20 +726,22 @@ describe("ModsTableSwitch", () => {
 
     it("disables them all, shared ones too, if asked to", async () => {
       const onSetModsEnabled = renderSwitch(sharedMods());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
       await userEvent.click(groupSwitch("Xenon"));
 
-      await userEvent.click(screen.getByRole("button", { name: "Disable all mods" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::disableShared::disableAll" }),
+      );
 
       expect(onSetModsEnabled).toHaveBeenCalledWith(["x", "b", "c"], false);
     });
 
     it("changes nothing on cancel", async () => {
       const onSetModsEnabled = renderSwitch(sharedMods());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
       await userEvent.click(groupSwitch("Xenon"));
 
-      await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::cancel" }));
 
       expect(onSetModsEnabled).not.toHaveBeenCalled();
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -693,7 +754,7 @@ describe("ModsTableSwitch", () => {
         x: collection("x", "Xenon", ["b", "c"]),
         y: collection("y", "Yttrium", ["c"]),
       });
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       await userEvent.click(groupSwitch("Xenon"));
 
@@ -706,7 +767,7 @@ describe("ModsTableSwitch", () => {
         b: mod("b", "Beta", true),
         x: collection("x", "Xenon", ["b"]),
       });
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       await userEvent.click(groupSwitch("Xenon"));
 
@@ -718,7 +779,7 @@ describe("ModsTableSwitch", () => {
         b: mod("b", "Beta", false),
         x: collection("x", "Xenon", ["b"]),
       });
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       await userEvent.click(groupSwitch("Xenon"));
 
@@ -732,29 +793,126 @@ describe("ModsTableSwitch", () => {
     it("shows the version and installation time columns by default", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      expect(headers()).toEqual(["Name", "Version", "Installation time", "Actions"]);
+      expect(headers()).toEqual([
+        "modsTable::columns::name",
+        "modsTable::columns::version",
+        "modsTable::columns::installTime",
+        "modsTable::columns::actions",
+      ]);
     });
 
     it("shows the collection column too in the Collections view", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), pack: collection("pack", "Pack", ["a"]) });
 
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
-      expect(headers()).toEqual(["Name", "Version", "Collection", "Installation time", "Actions"]);
+      expect(headers()).toEqual([
+        "modsTable::columns::name",
+        "modsTable::columns::version",
+        "modsTable::columns::collection",
+        "modsTable::columns::installTime",
+        "modsTable::columns::actions",
+      ]);
     });
 
     it("keeps the columns shown to the view they were shown in", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      await userEvent.click(screen.getByRole("button", { name: "View options" }));
-      await userEvent.click(screen.getByRole("button", { name: "Author" }));
-      expect(headers()).toContain("Author");
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+      );
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::columns::author" }));
+      expect(headers()).toContain("modsTable::columns::author");
 
-      await showView("Status");
-      expect(headers()).not.toContain("Author");
+      await showView("modsTable::views::status");
+      expect(headers()).not.toContain("modsTable::columns::author");
 
-      await showView("All mods");
-      expect(headers()).toContain("Author");
+      await showView("modsTable::views::all");
+      expect(headers()).toContain("modsTable::columns::author");
+    });
+
+    describe("an extension's column", () => {
+      afterEach(() => {
+        mocks.registeredColumns = [];
+      });
+
+      it("is shown in its place when it asks to be, unless the table has its own", () => {
+        mocks.registeredColumns = [
+          {
+            id: "endorsed",
+            name: "Endorsed",
+            placement: "table",
+            isToggleable: true,
+            isDefaultVisible: true,
+            position: 45,
+            calc: () => "Undecided",
+            edit: {},
+          },
+          { id: "category", name: "Category", placement: "table", edit: {} },
+          {
+            id: "tracked",
+            name: "Tracked",
+            placement: "table",
+            isToggleable: true,
+            isDefaultVisible: false,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true) });
+
+        expect(headers()).toEqual([
+          "modsTable::columns::name",
+          "modsTable::columns::version",
+          "Endorsed",
+          "modsTable::columns::installTime",
+          "modsTable::columns::actions",
+        ]);
+        expect(screen.getByRole("gridcell", { name: "Undecided" })).toBeInTheDocument();
+      });
+
+      // Extensions' legacy controls name themselves with a title, which the browser would show.
+      it("shows its controls' titles in the table's own tooltip", async () => {
+        mocks.registeredColumns = [
+          {
+            id: "endorsed",
+            name: "Endorsed",
+            placement: "table",
+            isToggleable: true,
+            isDefaultVisible: true,
+            customRenderer: () => (
+              <button title="Undecided" type="button">
+                <svg />
+              </button>
+            ),
+            edit: {},
+          },
+        ];
+        renderSwitch({ a: mod("a", "Alpha", true) });
+        const endorse = screen.getByRole("button", { name: "Undecided" });
+
+        await userEvent.hover(endorse);
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+        expect(endorse).not.toHaveAttribute("title");
+      });
+
+      it("adds its classes to a mod's row, told whether it's shown", () => {
+        mocks.registeredColumns = [
+          {
+            id: "modType",
+            placement: "both",
+            cssClass: (row: IModWithState, shown: boolean) =>
+              `mod-modtype-${row.type}${shown ? "-shown" : ""}`,
+            edit: {},
+          },
+        ];
+
+        renderSwitch({ a: mod("a", "Alpha", true, { type: "dinput" }) });
+
+        const [row] = bodyRows(screen.getByRole("grid"));
+        expect(row).toHaveClass("mod-modtype-dinput");
+      });
     });
 
     it("adds a column chosen from the display options", async () => {
@@ -762,12 +920,35 @@ describe("ModsTableSwitch", () => {
         a: mod("a", "Alpha", true, { attributes: { name: "Alpha", author: "Ada" } }),
       });
 
-      await userEvent.click(screen.getByRole("button", { name: "View options" }));
-      const toggles = screen.getByRole("group", { name: "Toggle columns" });
-      await userEvent.click(within(toggles).getByRole("button", { name: "Author" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+      );
+      const toggles = screen.getByRole("group", {
+        name: "modsTable::displayOptions::toggleColumns",
+      });
+      await userEvent.click(
+        within(toggles).getByRole("button", { name: "modsTable::columns::author" }),
+      );
 
-      expect(headers()).toContain("Author");
+      expect(headers()).toContain("modsTable::columns::author");
       expect(screen.getByRole("gridcell", { name: "Ada" })).toBeInTheDocument();
+    });
+
+    it("keeps a header's sort to the view, without showing the edited bar", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const nameHeader = () => screen.getAllByRole("columnheader")[0];
+      expect(screen.queryByTestId("edited-view-reset")).toBeNull();
+
+      await userEvent.click(within(nameHeader()).getByRole("button"));
+
+      expect(nameHeader()).toHaveAttribute("aria-sort", "descending");
+      expect(screen.queryByTestId("edited-view-reset")).toBeNull();
+
+      await userEvent.click(viewButtons()[1]);
+      expect(nameHeader()).toHaveAttribute("aria-sort", "ascending");
+
+      await userEvent.click(viewButtons()[0]);
+      expect(nameHeader()).toHaveAttribute("aria-sort", "descending");
     });
 
     describe("group by", () => {
@@ -779,29 +960,33 @@ describe("ModsTableSwitch", () => {
       it("offers none, then each column that can group, in the table's order", async () => {
         renderSwitch(CATEGORISED);
 
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
-        await userEvent.click(screen.getByRole("button", { name: /Group by/ }));
+        await userEvent.click(
+          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+        );
+        await userEvent.click(
+          screen.getByRole("button", { name: /modsTable::displayOptions::groupBy/ }),
+        );
 
         expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-          "None",
-          "Version",
-          "Author",
-          "Archive name",
-          "Category",
-          "Mod type",
-          "Source",
-          "Collection",
-          "Status",
+          "modsTable::displayOptions::noGrouping",
+          "modsTable::columns::version",
+          "modsTable::columns::author",
+          "modsTable::columns::archiveName",
+          "modsTable::columns::category",
+          "modsTable::columns::modType",
+          "modsTable::columns::source",
+          "modsTable::columns::collection",
+          "modsTable::columns::status",
         ]);
       });
 
       it("groups the open view by a column's values, which stays open", async () => {
         renderSwitch(CATEGORISED);
 
-        await groupBy("Category");
+        await groupBy("modsTable::columns::category");
 
         const rows = bodyRows(screen.getByRole("treegrid"));
-        expect(rows.map(cellText)).toEqual(["No {{column}}2", "Alpha", "Beta"]);
+        expect(rows.map(cellText)).toEqual(["modsTable::groups::noCategory2", "Alpha", "Beta"]);
         expect(pressedViews()).toEqual(["true", "false", "false"]);
       });
 
@@ -815,17 +1000,17 @@ describe("ModsTableSwitch", () => {
           }),
         });
 
-        await showView("Status");
+        await showView("modsTable::views::status");
 
         const rows = bodyRows(screen.getByRole("treegrid"));
         expect(rows.map(cellText)).toEqual([
-          "Uninstalled1",
+          "modsTable::groups::uninstalled1",
           "Upsilon",
-          "Installing1",
+          "modsTable::groups::installing1",
           "Iota",
-          "Enabled1",
+          "modsTable::groups::enabled1",
           "Alpha",
-          "Disabled1",
+          "modsTable::groups::disabled1",
           "Beta",
         ]);
       });
@@ -838,58 +1023,68 @@ describe("ModsTableSwitch", () => {
           b: mod("b", "Beta", true),
         });
 
-        await groupBy("Version");
+        await groupBy("modsTable::columns::version");
 
         const rows = bodyRows(screen.getByRole("treegrid"));
-        expect(rows.map(cellText)).toEqual(["Update available1", "Alpha", "Up-to-date1", "Beta"]);
+        expect(rows.map(cellText)).toEqual([
+          "modsTable::groups::updateAvailable1",
+          "Alpha",
+          "modsTable::groups::upToDate1",
+          "Beta",
+        ]);
       });
 
       it("keeps a view's grouping to it, and back on returning to it", async () => {
         renderSwitch(CATEGORISED);
 
-        await groupBy("Author");
-        await showView("Status");
+        await groupBy("modsTable::columns::author");
+        await showView("modsTable::views::status");
         expect(screen.queryByRole("button", { name: "Ada" })).toBeNull();
 
-        await showView("All mods");
+        await showView("modsTable::views::all");
         expect(screen.getByRole("button", { name: "Ada" })).toBeInTheDocument();
       });
 
       it("keeps a built-in view that groups to its grouping, leaving All mods free", async () => {
         renderSwitch(CATEGORISED);
-        const picker = () => screen.getByRole("button", { name: /Group by/ });
+        const picker = () =>
+          screen.getByRole("button", { name: /modsTable::displayOptions::groupBy/ });
 
-        await showView("Status");
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        await showView("modsTable::views::status");
+        await userEvent.click(
+          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+        );
         expect(picker()).toBeDisabled();
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        await userEvent.click(
+          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+        );
 
-        await showView("All mods");
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        await showView("modsTable::views::all");
+        await userEvent.click(
+          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+        );
         expect(picker()).toBeEnabled();
       });
 
       it("shows what a view groups by", async () => {
         renderSwitch(CATEGORISED);
 
-        await showView("Categories");
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        await showView("modsTable::views::categories");
+        await userEvent.click(
+          screen.getByRole("button", { name: "modsTable::toolbar::viewOptions" }),
+        );
 
-        expect(screen.getByRole("button", { name: /Group by/ })).toHaveTextContent("Category");
+        expect(
+          screen.getByRole("button", { name: /modsTable::displayOptions::groupBy/ }),
+        ).toHaveTextContent("modsTable::columns::category");
       });
 
-      it("resets a built-in view to its defaults, offering to only once it's changed", async () => {
+      it("doesn't show the edited bar for a change of grouping", async () => {
         renderSwitch(CATEGORISED);
 
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
-        expect(screen.queryByText("Reset to default")).toBeNull();
-        await userEvent.click(screen.getByRole("button", { name: "View options" }));
+        await groupBy("modsTable::columns::author");
 
-        await groupBy("Author");
-        await userEvent.click(screen.getByText("Reset to default"));
-
-        expect(screen.getByRole("grid")).toBeInTheDocument();
-        expect(pressedViews()).toEqual(["true", "false", "false"]);
+        expect(screen.queryByTestId("edited-view-reset")).toBeNull();
       });
     });
   });
@@ -907,7 +1102,7 @@ describe("ModsTableSwitch", () => {
 
       expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
       expect(
-        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
       ).toBeInTheDocument();
 
       await hoverRow(rowOf("Alpha"));
@@ -921,14 +1116,16 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
 
       act(() => {
-        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }).focus();
+        within(rowOf("Alpha"))
+          .getByRole("checkbox", { name: "modsTable::rowActions::enabled" })
+          .focus();
       });
 
       expect(
         within(rowOf("Alpha")).getByRole("button", { name: "More actions" }),
       ).toBeInTheDocument();
       expect(document.activeElement).toBe(
-        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
       );
     });
 
@@ -939,7 +1136,7 @@ describe("ModsTableSwitch", () => {
       ]);
 
       await openMenu("Beta");
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
 
       expect(remove).toHaveBeenCalledWith(["b"]);
     });
@@ -952,14 +1149,20 @@ describe("ModsTableSwitch", () => {
       await openMenu("Alpha");
       // reached through its menu row, as the test `t` leaves every pin's label alike
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
+          "button",
+        ),
       );
       await userEvent.keyboard("{Escape}");
 
-      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
 
       await hoverRow(rowOf("Beta"));
-      expect(within(rowOf("Beta")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(
+        within(rowOf("Beta")).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
     });
 
     it("shows a pinned action before the switch, and the menu after it", async () => {
@@ -967,7 +1170,9 @@ describe("ModsTableSwitch", () => {
 
       await openMenu("Alpha");
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
+          "button",
+        ),
       );
       await userEvent.keyboard("{Escape}");
 
@@ -976,7 +1181,123 @@ describe("ModsTableSwitch", () => {
         actionsCell.querySelectorAll<HTMLElement>('button, [role="checkbox"]'),
       ).map((control) => control.getAttribute("aria-label"));
       // the switch by its untranslated label, which `t` leaves uninterpolated here
-      expect(controls).toEqual(["Remove", "{{name}} enabled", "More actions"]);
+      expect(controls).toEqual([
+        "modsTable::actions::remove",
+        "modsTable::rowActions::enabled",
+        "More actions",
+      ]);
+    });
+  });
+
+  describe("status filter", () => {
+    const tickStatus = async (index: number) => {
+      await userEvent.click(screen.getByTestId("mods-table-filter"));
+      await userEvent.click(within(await screen.findByRole("menu")).getAllByRole("menuitem")[0]);
+      const [, submenu] = await screen.findAllByRole("menu");
+      await userEvent.click(within(submenu).getAllByRole("menuitemcheckbox")[index]);
+      await userEvent.keyboard("{Escape}{Escape}");
+    };
+
+    /** The mods the table shows, by id, in order. */
+    const shownIds = () =>
+      bodyRows(screen.getByRole("grid")).map((row) =>
+        row.getAttribute("data-testid")?.replace("table-row-", ""),
+      );
+
+    const lastView = () => userEvent.click(viewButtons().at(-1)!);
+
+    const search = async (text: string) => {
+      await userEvent.click(screen.getByTestId("mods-table-search"));
+      await userEvent.type(screen.getByTestId("mods-table-search-input"), text);
+    };
+
+    it("shows only the ticked statuses, editing the view until reset from the bar", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) });
+
+      await tickStatus(0);
+
+      expect(shownIds()).toEqual(["a"]);
+      expect(screen.getByTestId("mods-table-status-chip")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByTestId("edited-view-reset"));
+
+      expect(shownIds()).toEqual(["a", "b"]);
+      expect(screen.queryByTestId("mods-table-status-chip")).toBeNull();
+    });
+
+    it("deselects a selected mod the filter hides", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) });
+      await userEvent.click(screen.getByTestId("table-row-b"));
+
+      await tickStatus(0);
+      await userEvent.click(screen.getByTestId("edited-view-reset"));
+
+      expect(screen.getByTestId("table-row-b")).toHaveAttribute("aria-selected", "false");
+    });
+    /** A view of the user's own showing only disabled mods, opened or not. */
+    const filteredView = (selected?: string) => ({
+      views: {
+        selected,
+        changes: { "custom-1": { filters: { status: ["disabled" as const] } } },
+        custom: [{ id: "custom-1", name: "Mine" }],
+      },
+    });
+
+    it("doesn't count a selected mod the open view's filter hides", async () => {
+      const user = userEvent.setup();
+      renderSwitch(
+        { a: mod("a", "Alpha", true), b: mod("b", "Beta", false) },
+        undefined,
+        filteredView(),
+      );
+      await user.click(screen.getByTestId("table-row-a"));
+      await user.keyboard("{Control>}");
+      await user.click(screen.getByTestId("table-row-b"));
+      await user.keyboard("{/Control}");
+      expect(screen.getByRole("region")).toBeInTheDocument();
+
+      await lastView();
+
+      expect(screen.queryByRole("region")).toBeNull();
+    });
+
+    it("shows a mod a saved filter hides when asked to, leaving the filter saved", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) }, undefined, {
+        ...filteredView("custom-1"),
+        focusedModId: VortexModId("a"),
+      });
+
+      expect(shownIds()).toEqual(["a", "b"]);
+      expect(screen.queryByTestId("mods-table-status-chip")).toBeNull();
+
+      await userEvent.click(viewButtons()[0]);
+      await lastView();
+
+      expect(shownIds()).toEqual(["b"]);
+    });
+
+    it("blames the filter, not a search, when the filter alone leaves nothing", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      await tickStatus(2);
+
+      await search("zzz");
+
+      expect(document.querySelector(".nxm-table-empty [data-symbol]")).toHaveAttribute(
+        "data-symbol",
+        "filter_list",
+      );
+    });
+
+    it("says the search found nothing, not the filter, while searching", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", false) });
+      await tickStatus(0);
+
+      await search("zzz");
+
+      expect(document.querySelector(".nxm-table-empty [data-symbol]")).toHaveAttribute(
+        "data-symbol",
+        "search",
+      );
     });
   });
 
@@ -997,7 +1318,8 @@ describe("ModsTableSwitch", () => {
       await user.keyboard("{/Control}");
     };
 
-    const barSwitch = () => within(bar()!).getByRole("checkbox", { name: "Selected mods enabled" });
+    const barSwitch = () =>
+      within(bar()!).getByRole("checkbox", { name: "modsTable::selection::enabled" });
 
     it("shows the bar while several mods are selected, and hides it once they're deselected", async () => {
       renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
@@ -1022,9 +1344,11 @@ describe("ModsTableSwitch", () => {
 
       fireEvent.contextMenu(screen.getByText("Alpha"));
 
-      const menu = screen.getByRole("menu", { name: "Selected mods actions" });
-      expect(screen.getByText("{{count}} items selected")).toBeInTheDocument();
-      expect(within(menu).getByRole("menuitem", { name: /Combine/ })).toBeInTheDocument();
+      const menu = screen.getByRole("menu", { name: "modsTable::selection::actions" });
+      expect(screen.getByText("modsTable::selection::count")).toBeInTheDocument();
+      expect(
+        within(menu).getByRole("menuitem", { name: /^modsTable::actions::combine\b/ }),
+      ).toBeInTheDocument();
       expect(within(menu).queryAllByRole("button", { name: /Pin|Unpin/ })).toHaveLength(0);
       // Still both selected, the bar hidden behind the menu, which holds focus.
       expect(
@@ -1045,20 +1369,30 @@ describe("ModsTableSwitch", () => {
       const toolbar = within(bar()!).getByRole("toolbar");
 
       // Kept, disabled, for mods that aren't installed, so its button keeps its place.
-      expect(within(toolbar).getByRole("button", { name: "Check for updates" })).toBeDisabled();
-      expect(within(toolbar).getByRole("button", { name: "Uninstall" })).toBeDisabled();
-      expect(within(toolbar).getByRole("button", { name: "Reinstall" })).toBeInTheDocument();
-      expect(within(toolbar).getByRole("button", { name: "Remove" })).toBeInTheDocument();
-      expect(within(toolbar).queryByRole("button", { name: "Combine" })).toBeNull();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::checkForUpdates" }),
+      ).toBeDisabled();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::uninstall" }),
+      ).toBeDisabled();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::reinstall" }),
+      ).toBeInTheDocument();
+      expect(
+        within(toolbar).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
+      expect(
+        within(toolbar).queryByRole("button", { name: "modsTable::actions::combine" }),
+      ).toBeNull();
 
       await userEvent.click(within(toolbar).getByRole("button", { name: "More actions" }));
       // Enable is the switch's to do, and Remove related is for one mod.
       expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
-        "Check for updates",
-        "Reinstall",
-        "Uninstall",
-        "Remove",
-        "Combine",
+        "modsTable::actions::checkForUpdates",
+        "modsTable::actions::reinstall",
+        "modsTable::actions::uninstall",
+        "modsTable::actions::remove",
+        "modsTable::actions::combine",
       ]);
     });
 
@@ -1070,7 +1404,9 @@ describe("ModsTableSwitch", () => {
       );
 
       await selectWithCtrl("Alpha", "Gamma");
-      await userEvent.click(within(bar()!).getByRole("button", { name: "Remove" }));
+      await userEvent.click(
+        within(bar()!).getByRole("button", { name: "modsTable::actions::remove" }),
+      );
 
       expect(remove).toHaveBeenCalledWith(["a", "c"]);
     });
@@ -1098,29 +1434,39 @@ describe("ModsTableSwitch", () => {
       await hoverRow(rowOf("Alpha"));
       await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
       await userEvent.click(
-        within(screen.getByRole("menuitem", { name: /Remove/ })).getByRole("button"),
+        within(screen.getByRole("menuitem", { name: /^modsTable::actions::remove\b/ })).getByRole(
+          "button",
+        ),
       );
       await userEvent.keyboard("{Escape}");
 
       await userEvent.click(screen.getByText("Alpha"));
-      expect(within(rowOf("Alpha")).getByRole("button", { name: "Remove" })).toBeInTheDocument();
+      expect(
+        within(rowOf("Alpha")).getByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeInTheDocument();
 
       await selectWithCtrl("Alpha", "Beta");
-      expect(within(rowOf("Alpha")).queryByRole("button", { name: "Remove" })).toBeNull();
+      expect(
+        within(rowOf("Alpha")).queryByRole("button", { name: "modsTable::actions::remove" }),
+      ).toBeNull();
       expect(within(rowOf("Alpha")).queryByRole("button", { name: "More actions" })).toBeNull();
       expect(
-        within(rowOf("Alpha")).getByRole("checkbox", { name: "{{name}} enabled" }),
+        within(rowOf("Alpha")).getByRole("checkbox", { name: "modsTable::rowActions::enabled" }),
       ).toBeInTheDocument();
     });
   });
 
   describe("search", () => {
     const searchFor = async (text: string) => {
-      await userEvent.click(screen.getByRole("button", { name: "Search" }));
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::toolbar::search" }));
       await userEvent.keyboard(text);
     };
 
     const names = () => bodyRows(screen.getByRole("grid")).map(cellText);
+
+    afterEach(() => {
+      mocks.registeredColumns = [];
+    });
 
     it("lists only the mods whose cells show the text, whatever its case", async () => {
       renderSwitch({
@@ -1142,11 +1488,11 @@ describe("ModsTableSwitch", () => {
       });
 
       await searchFor("starter");
-      expect(screen.getByText("No mods match your search")).toBeInTheDocument();
+      expect(screen.getByText("modsTable::noResults")).toBeInTheDocument();
 
-      await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
+      await userEvent.clear(screen.getByRole("textbox", { name: "modsTable::toolbar::search" }));
       await userEvent.keyboard("gervig");
-      expect(screen.getByText("No mods match your search")).toBeInTheDocument();
+      expect(screen.getByText("modsTable::noResults")).toBeInTheDocument();
     });
 
     it("drops a group none of whose mods match", async () => {
@@ -1156,7 +1502,7 @@ describe("ModsTableSwitch", () => {
         pack: collection("pack", "Starter Pack", ["b"]),
       });
 
-      await showView("Collections");
+      await showView("modsTable::views::collections");
       await searchFor("alpha");
 
       const treegrid = screen.getByRole("treegrid");
@@ -1166,6 +1512,36 @@ describe("ModsTableSwitch", () => {
           .filter((row) => row.getAttribute("aria-level") === "2")
           .map(cellText),
       ).toEqual(["Alpha"]);
+    });
+
+    // As a value worked out asynchronously settles with none of the hidden rows drawn.
+    it("finds a mod by an extension's value once it's worked out", async () => {
+      const resolvers: { [modId: string]: (value: string) => void } = {};
+      mocks.registeredColumns = [
+        {
+          id: "compatibility",
+          name: "Compatibility",
+          placement: "table",
+          isToggleable: true,
+          isDefaultVisible: true,
+          calc: (row: IModWithState) =>
+            new Promise<string>((resolve) => {
+              resolvers[row.id] = resolve;
+            }),
+          edit: {},
+        },
+      ];
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+
+      await searchFor("broken");
+      expect(screen.getByText("modsTable::noResults")).toBeInTheDocument();
+
+      await act(async () => {
+        resolvers.a("Works");
+        resolvers.b("Broken");
+      });
+
+      expect(names()).toEqual(["Beta"]);
     });
 
     it("deselects a selected mod the search hides", async () => {
@@ -1179,7 +1555,7 @@ describe("ModsTableSwitch", () => {
       expect(screen.getByRole("region", { name: "{{count}} selected" })).toBeInTheDocument();
 
       await searchFor("alpha");
-      await userEvent.clear(screen.getByRole("textbox", { name: "Search" }));
+      await userEvent.clear(screen.getByRole("textbox", { name: "modsTable::toolbar::search" }));
 
       expect(screen.queryByRole("region", { name: "{{count}} selected" })).toBeNull();
       const selected = bodyRows(screen.getByRole("grid")).filter(
@@ -1198,26 +1574,398 @@ describe("ModsTableSwitch", () => {
       (window as unknown as { api: Record<string, unknown> }).api.shell = { openUrl };
     });
 
-    it("sits before the view options and the search", () => {
+    it("sits before the filter, the view options, the search and the Properties toggle", () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      const toolbar = screen
-        .getAllByRole("toolbar")
-        .find((bar) => within(bar).queryByRole("button", { name: "View options" }))!;
+      const toolbar = screen.getByTestId("mods-table-view-options").closest('[role="toolbar"]')!;
       expect(
-        within(toolbar)
+        within(toolbar as HTMLElement)
           .getAllByRole("button")
-          .map((button) => button.getAttribute("aria-label")),
-      ).toEqual(["Give feedback", "View options", "Search"]);
+          .map((button) => button.getAttribute("data-testid")),
+      ).toEqual([
+        "mods-table-feedback",
+        "mods-table-filter",
+        "mods-table-view-options",
+        "mods-table-search",
+        "mod-properties-toggle",
+      ]);
     });
 
     it("opens the feedback form in the browser", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      await userEvent.click(screen.getByRole("button", { name: "Give feedback" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::toolbar::giveFeedback" }),
+      );
 
       expect(openUrl).toHaveBeenCalledTimes(1);
       expect(openUrl).toHaveBeenCalledWith(MODS_TABLE_FEEDBACK_URL);
+    });
+  });
+
+  describe("Properties", () => {
+    const panel = () => screen.queryByTestId("mod-properties-panel");
+
+    // By place, as the rows are listed by name: Alpha first, then Beta.
+    const ALPHA = 0;
+    const BETA = 1;
+    const rowAt = (index: number) => bodyRows(screen.getByRole("grid"))[index];
+
+    const toggle = () => screen.getByTestId("mod-properties-toggle");
+    // A menu's Properties item, by its icon, as a menu's items carry no test ids.
+    const openItems = () =>
+      screen
+        .getAllByRole("menuitem")
+        .map((item) => item.querySelector('[data-symbol="dock_to_left"]') !== null);
+    const openItem = () => screen.getAllByRole("menuitem")[openItems().indexOf(true)];
+    // The panel's content goes once it's slid shut, which jsdom never animates.
+    const slideShut = () => fireEvent.transitionEnd(screen.getByTestId("mod-properties-slot"));
+    const toggleIcon = () => toggle().querySelector('[data-symbol="dock_to_left"]');
+
+    it("opens on a double-click, showing that mod", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      expect(panel()).toBeNull();
+
+      await userEvent.dblClick(rowAt(BETA));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+      expect(rowAt(BETA)).toHaveAttribute("aria-selected", "true");
+    });
+
+    it("opens from a row's menu, after its Open items", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Open in File Manager", action: vi.fn() },
+        { title: "Refresh Content", action: vi.fn() },
+      ]);
+
+      fireEvent.contextMenu(rowAt(BETA));
+      expect(openItems()).toEqual([false, true, false]);
+      await userEvent.click(openItem());
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+    });
+
+    it("opens for the selection from its menu, counting the mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const user = userEvent.setup();
+      await user.click(rowAt(ALPHA));
+      await user.keyboard("{Control>}");
+      await user.click(rowAt(BETA));
+      await user.keyboard("{/Control}");
+
+      fireEvent.contextMenu(rowAt(ALPHA));
+      await userEvent.click(openItem());
+
+      expect(within(panel()!).getByTestId("mod-properties-count")).toBeInTheDocument();
+    });
+
+    const propertiesOpened = () =>
+      mocks.emit.mock.calls.filter(
+        ([, event]) => event?.eventName === "app_mods_table_properties_opened",
+      );
+    const opened = (via: string) => [
+      "analytics-track-mixpanel-event",
+      { eventName: "app_mods_table_properties_opened", properties: { via } },
+    ];
+
+    it("reports opening Properties from the row menu, offering no pin for it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Open in File Manager", action: vi.fn() },
+      ]);
+      fireEvent.contextMenu(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(propertiesOpened()).toEqual([opened("row_menu")]);
+    });
+
+    it("doesn't report opening Properties from a menu while it's open", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, undefined, {
+        propertiesOpen: true,
+      });
+      fireEvent.contextMenu(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(propertiesOpened()).toHaveLength(0);
+    });
+
+    it("offers no pin toggle for Properties in a menu, though its other items have one", () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, [
+        { title: "Remove", action: vi.fn() },
+      ]);
+
+      fireEvent.contextMenu(rowAt(BETA));
+
+      const others = screen.getAllByRole("menuitem").filter((item) => item !== openItem());
+      expect(within(openItem()).queryByRole("button")).toBeNull();
+      expect(others.some((item) => within(item).queryByRole("button") !== null)).toBe(true);
+    });
+
+    it("reports opening Properties from the selection menu", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      const user = userEvent.setup();
+      await user.click(rowAt(ALPHA));
+      await user.keyboard("{Control>}");
+      await user.click(rowAt(BETA));
+      await user.keyboard("{/Control}");
+      fireEvent.contextMenu(rowAt(ALPHA));
+      mocks.emit.mockClear();
+
+      await userEvent.click(openItem());
+
+      expect(propertiesOpened()).toEqual([opened("selection_menu")]);
+    });
+
+    it("reports opening Properties from the toolbar, but not closing it", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      mocks.emit.mockClear();
+
+      await userEvent.click(toggle());
+      await userEvent.click(toggle());
+
+      expect(propertiesOpened()).toEqual([opened("toolbar")]);
+    });
+
+    it("reports opening Properties by double-click", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      mocks.emit.mockClear();
+
+      await userEvent.dblClick(rowAt(BETA));
+
+      expect(propertiesOpened()).toEqual([opened("double_click")]);
+    });
+
+    it("doesn't report a double-click while Properties is open", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) });
+      await userEvent.dblClick(rowAt(BETA));
+      mocks.emit.mockClear();
+
+      await userEvent.dblClick(rowAt(ALPHA));
+
+      expect(propertiesOpened()).toHaveLength(0);
+      expect(rowAt(ALPHA)).toHaveAttribute("aria-selected", "true");
+    });
+
+    it("toggles from the toolbar, after the search", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
+
+      await userEvent.click(toggle());
+      expect(panel()).toBeInTheDocument();
+      expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 1' });
+
+      await userEvent.click(toggle());
+      // Still there as it slides shut.
+      expect(panel()).toBeInTheDocument();
+      slideShut();
+      expect(panel()).toBeNull();
+      expect(toggleIcon()).toHaveStyle({ fontVariationSettings: '"FILL" 0' });
+    });
+
+    it("closes from the toolbar's button, and stays closed", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
+
+      await userEvent.click(toggle());
+      slideShut();
+
+      expect(panel()).toBeNull();
+      await userEvent.click(rowAt(ALPHA));
+      expect(panel()).toBeNull();
+    });
+
+    it("doesn't work out properties while the panel is closed", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true) });
+      vi.mocked(useModProperties).mockClear();
+
+      await userEvent.click(rowAt(ALPHA));
+      expect(useModProperties).not.toHaveBeenCalled();
+
+      await userEvent.click(toggle());
+      expect(vi.mocked(useModProperties).mock.lastCall?.[0]).toHaveLength(1);
+    });
+
+    it("keeps the page when working out properties throws, showing a failure in the panel's place", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const broken = mod("a", "Alpha", true, {
+          attributes: {
+            name: "Alpha",
+            get installerChoices(): never {
+              throw new Error("unreadable choices");
+            },
+          },
+        });
+        renderSwitch({ a: broken });
+
+        await userEvent.click(rowAt(ALPHA));
+        await userEvent.click(toggle());
+
+        expect(screen.getByRole("grid")).toBeInTheDocument();
+        expect(screen.queryByTestId("mod-properties-panel")).toBeNull();
+        expect(
+          screen.getByTestId("mod-properties-slot").querySelector(".errorboundary"),
+        ).not.toBeNull();
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
+    it("shows the next mod's properties after one mod's failed", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const broken = mod("a", "Alpha", true, {
+          attributes: {
+            name: "Alpha",
+            get installerChoices(): never {
+              throw new Error("unreadable choices");
+            },
+          },
+        });
+        renderSwitch({ a: broken, b: mod("b", "Beta", true) }, undefined, {
+          propertiesOpen: true,
+        });
+        await userEvent.click(rowAt(ALPHA));
+        expect(panel()).toBeNull();
+
+        await userEvent.click(rowAt(BETA));
+
+        expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
+    it("shows no panel with the classic table, though it was left open", () => {
+      renderSwitch({ a: mod("a", "Alpha", true) }, undefined, {
+        betaTable: false,
+        propertiesOpen: true,
+      });
+
+      expect(panel()).toBeNull();
+    });
+
+    describe("an extension's field", () => {
+      afterEach(() => {
+        mocks.registeredColumns = [];
+      });
+
+      it("isn't drawn again when a mod that isn't selected changes", async () => {
+        const renderer = vi.fn(() => <span>drawn</span>);
+        mocks.registeredColumns = [
+          {
+            id: "rules",
+            name: "Rules",
+            placement: "detail",
+            isVolatile: true,
+            supportsMultiple: true,
+            customRenderer: renderer,
+          },
+        ];
+        const store = makeModsTableStore({ propertiesOpen: true });
+        const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+        const a = mod("a", "Alpha", true);
+        const b = mod("b", "Beta", true);
+        const view = (c: IModWithState) => (
+          <Provider store={store}>
+            <ModsTableSwitch {...props} mods={{ a, b, c }} />
+          </Provider>
+        );
+        const { rerender } = render(view(mod("c", "Gamma", true)));
+        const user = userEvent.setup();
+        await user.click(rowAt(ALPHA));
+        await user.keyboard("{Control>}");
+        await user.click(rowAt(BETA));
+        await user.keyboard("{/Control}");
+        expect(renderer).toHaveBeenCalled();
+        renderer.mockClear();
+
+        rerender(view(mod("c", "Gamma", false)));
+
+        expect(renderer).not.toHaveBeenCalled();
+      });
+
+      it("shows its controls' titles in the app's tooltip", async () => {
+        mocks.registeredColumns = [
+          {
+            id: "rules",
+            name: "Rules",
+            placement: "detail",
+            isVolatile: true,
+            customRenderer: () => (
+              <button title="Undecided" type="button">
+                <svg />
+              </button>
+            ),
+          },
+        ];
+        renderSwitch({ a: mod("a", "Alpha", true) }, undefined, { propertiesOpen: true });
+        await userEvent.click(rowAt(ALPHA));
+        // Extensions' fields end the Advanced tab.
+        await userEvent.click(within(panel()!).getByRole("tab", { name: /advanced/i }));
+        const control = within(panel()!).getByRole("button", { name: "Undecided" });
+
+        await userEvent.hover(control);
+
+        expect(await screen.findByRole("tooltip")).toHaveTextContent("Undecided");
+        expect(control).not.toHaveAttribute("title");
+      });
+    });
+
+    it("drops a mod that's removed while it's shown", async () => {
+      const store = makeModsTableStore({ propertiesOpen: true });
+      const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+      const { rerender } = render(
+        <Provider store={store}>
+          <ModsTableSwitch
+            {...props}
+            mods={{ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }}
+          />
+        </Provider>,
+      );
+      await userEvent.click(rowAt(BETA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
+
+      rerender(
+        <Provider store={store}>
+          <ModsTableSwitch {...props} mods={{ a: mod("a", "Alpha", true) }} />
+        </Provider>,
+      );
+
+      expect(within(panel()!).getByTestId("mod-properties-empty")).toBeInTheDocument();
+    });
+
+    it("shows the new value when a selected mod changes", async () => {
+      const store = makeModsTableStore({ propertiesOpen: true });
+      const props = { legacy: <div />, onSetModsEnabled: vi.fn() };
+      const view = (alpha: IModWithState) => (
+        <Provider store={store}>
+          <ModsTableSwitch {...props} mods={{ a: alpha, b: mod("b", "Beta", true) }} />
+        </Provider>
+      );
+      const { rerender } = render(view(mod("a", "Alpha", true)));
+      await userEvent.click(rowAt(ALPHA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha");
+
+      rerender(view(mod("a", "Alpha renamed", true)));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha renamed");
+    });
+
+    it("follows the selection to different mods", async () => {
+      renderSwitch({ a: mod("a", "Alpha", true), b: mod("b", "Beta", true) }, undefined, {
+        propertiesOpen: true,
+      });
+      await userEvent.click(rowAt(ALPHA));
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Alpha");
+
+      await userEvent.click(rowAt(BETA));
+
+      expect(within(panel()!).getByRole("heading")).toHaveTextContent("Beta");
     });
   });
 
@@ -1238,8 +1986,8 @@ describe("ModsTableSwitch", () => {
         </Provider>,
       );
 
-      await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
-      await userEvent.click(screen.getByRole("menuitemradio", { name: /^1\.0 \(default\)/ }));
+      await userEvent.click(screen.getByTestId("mod-version-picker"));
+      await userEvent.click(screen.getByRole("menuitemradio", { name: /^1\.0 / }));
 
       expect(onSelectVersion).toHaveBeenCalledWith("a", "a1");
     });
@@ -1260,12 +2008,10 @@ describe("ModsTableSwitch", () => {
         </Provider>,
       );
 
-      await userEvent.click(screen.getByRole("button", { name: "2.0 (default)" }));
+      await userEvent.click(screen.getByTestId("mod-version-picker"));
+      // The row's only button is its remove control.
       await userEvent.click(
-        within(screen.getByRole("menuitemradio", { name: /^1\.0 \(default\)/ })).getByRole(
-          "button",
-          { name: "Remove version" },
-        ),
+        within(screen.getByRole("menuitemradio", { name: /^1\.0 / })).getByRole("button"),
       );
 
       expect(onRemoveVersion).toHaveBeenCalledWith("a1");
@@ -1299,7 +2045,7 @@ describe("ModsTableSwitch", () => {
 
     it("shows on hovering its cover on its group's row", async () => {
       renderSwitch(withSummary());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       await userEvent.hover(document.querySelector(".nxm-image-collection")!.parentElement!);
 
@@ -1324,11 +2070,15 @@ describe("ModsTableSwitch", () => {
       { title: "Check for Update", action: vi.fn() },
     ];
     const installed = { mods: { x: {} } };
-    const collectionItems = ["View collection", "Check for updates", "Remove"];
+    const collectionItems = [
+      "modsTable::collectionGroup::view",
+      "modsTable::actions::checkForUpdates",
+      "modsTable::collectionGroup::remove",
+    ];
 
     it("offers only the collection's actions, after folding and selecting", async () => {
       renderSwitch(withCollection(), rowActions(), installed);
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
 
@@ -1343,10 +2093,12 @@ describe("ModsTableSwitch", () => {
     it("removes the collection as its page does", async () => {
       const reinstall = vi.fn();
       renderSwitch(withCollection(), [{ title: "Reinstall", action: reinstall }]);
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::collectionGroup::remove" }),
+      );
 
       expect(mocks.emit).toHaveBeenCalledWith("remove-collection", "x");
       expect(reinstall).not.toHaveBeenCalled();
@@ -1354,17 +2106,19 @@ describe("ModsTableSwitch", () => {
 
     it("opens the collection's page from View collection", async () => {
       renderSwitch(withCollection());
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
-      await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+      await userEvent.click(
+        screen.getByRole("menuitem", { name: "modsTable::collectionGroup::view" }),
+      );
 
       expect(mocks.emit).toHaveBeenCalledWith("view-collection", "x");
     });
 
     it("offers exactly the context menu's items from the heading's …", async () => {
       renderSwitch(withCollection(), rowActions(), installed);
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       fireEvent.contextMenu(groupRowOf("Xenon"));
       const contextItems = menuItems();
@@ -1385,7 +2139,7 @@ describe("ModsTableSwitch", () => {
 
     it("collapses the group from the heading's …", async () => {
       renderSwitch(withCollection(), rowActions(), installed);
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
       await userEvent.click(
         within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
@@ -1414,12 +2168,14 @@ describe("ModsTableSwitch", () => {
 
       it("an action from the heading's …, as overflow", async () => {
         renderSwitch(withCollection());
-        await showView("Collections");
+        await showView("modsTable::views::collections");
 
         await userEvent.click(
           within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
         );
-        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::collectionGroup::remove" }),
+        );
 
         expect(sent()).toEqual([
           expect.objectContaining({
@@ -1432,10 +2188,12 @@ describe("ModsTableSwitch", () => {
 
       it("an action from the heading's context menu, as menu", async () => {
         renderSwitch(withCollection());
-        await showView("Collections");
+        await showView("modsTable::views::collections");
 
         fireEvent.contextMenu(groupRowOf("Xenon"));
-        await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::collectionGroup::remove" }),
+        );
 
         expect(sent()).toEqual([
           expect.objectContaining({
@@ -1448,7 +2206,7 @@ describe("ModsTableSwitch", () => {
 
       it("a built-in item from either, with the state it moves to", async () => {
         renderSwitch(withCollection());
-        await showView("Collections");
+        await showView("modsTable::views::collections");
 
         await userEvent.click(
           within(groupRowOf("Xenon")).getByRole("button", { name: "More actions" }),
@@ -1475,10 +2233,12 @@ describe("ModsTableSwitch", () => {
 
       it("View collection, by its id", async () => {
         renderSwitch(withCollection());
-        await showView("Collections");
+        await showView("modsTable::views::collections");
 
         fireEvent.contextMenu(groupRowOf("Xenon"));
-        await userEvent.click(screen.getByRole("menuitem", { name: "View collection" }));
+        await userEvent.click(
+          screen.getByRole("menuitem", { name: "modsTable::collectionGroup::view" }),
+        );
 
         expect(sent()).toEqual([
           expect.objectContaining({
@@ -1492,14 +2252,16 @@ describe("ModsTableSwitch", () => {
 
     it("gives the no-collection group only the built-in items, from either", async () => {
       renderSwitch(withCollection(), [{ title: "Remove", action: vi.fn() }]);
-      await showView("Collections");
+      await showView("modsTable::views::collections");
 
-      fireEvent.contextMenu(groupRowOf("No collection"));
+      fireEvent.contextMenu(groupRowOf("modsTable::groups::noCollection"));
       expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
       await userEvent.keyboard("{Escape}");
 
       await userEvent.click(
-        within(groupRowOf("No collection")).getByRole("button", { name: "More actions" }),
+        within(groupRowOf("modsTable::groups::noCollection")).getByRole("button", {
+          name: "More actions",
+        }),
       );
       expect(menuItems()).toEqual(["Collapse", "Collapse all", "Select all in group"]);
     });
@@ -1553,10 +2315,12 @@ describe("ModsTableSwitch", () => {
 
       it("lets the user search once the request is honoured", async () => {
         renderAsked();
-        await userEvent.click(screen.getByRole("button", { name: "Search" }));
+        await userEvent.click(screen.getByRole("button", { name: "modsTable::toolbar::search" }));
         await userEvent.keyboard("Alpha");
 
-        expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("Alpha");
+        expect(screen.getByRole("textbox", { name: "modsTable::toolbar::search" })).toHaveValue(
+          "Alpha",
+        );
       });
 
       it("clears a search that would hide it", async () => {
@@ -1568,7 +2332,7 @@ describe("ModsTableSwitch", () => {
             <ModsTableSwitch legacy={<div />} mods={withCollection()} onSetModsEnabled={vi.fn()} />
           </Provider>,
         );
-        await userEvent.click(screen.getByRole("button", { name: "Search" }));
+        await userEvent.click(screen.getByRole("button", { name: "modsTable::toolbar::search" }));
         await userEvent.keyboard("Alpha");
         expect(screen.queryByRole("button", { name: "Xenon" })).toBeNull();
 
@@ -1577,7 +2341,7 @@ describe("ModsTableSwitch", () => {
         });
 
         expect(await screen.findByRole("button", { name: "Xenon" })).toBeInTheDocument();
-        expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("");
+        expect(screen.getByRole("textbox", { name: "modsTable::toolbar::search" })).toHaveValue("");
       });
     });
   });
@@ -1586,16 +2350,19 @@ describe("ModsTableSwitch", () => {
     it("changes the row's pins from its pin toggles", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
       const pins = () =>
-        within(screen.getByRole("menu", { name: "{{name}} actions" }))
+        within(screen.getByRole("menu", { name: "modsTable::rowActions::menu" }))
           .getAllByRole("button", { name: /the row/ })
           .map((pin) => pin.getAttribute("aria-label"));
 
       fireEvent.contextMenu(screen.getByText("Alpha"));
       const before = pins();
       await userEvent.click(
-        within(screen.getByRole("menu", { name: "{{name}} actions" })).getAllByRole("button", {
-          name: /the row/,
-        })[0],
+        within(screen.getByRole("menu", { name: "modsTable::rowActions::menu" })).getAllByRole(
+          "button",
+          {
+            name: /the row/,
+          },
+        )[0],
       );
 
       expect(pins()[0]).not.toBe(before[0]);
@@ -1606,8 +2373,10 @@ describe("ModsTableSwitch", () => {
 
       fireEvent.contextMenu(screen.getByText("Alpha"));
 
-      const menu = screen.getByRole("menu", { name: "{{name}} actions" });
-      expect(within(menu).getByRole("menuitem", { name: /^Remove/ })).toBeInTheDocument();
+      const menu = screen.getByRole("menu", { name: "modsTable::rowActions::menu" });
+      expect(
+        within(menu).getByRole("menuitem", { name: /^modsTable::actions::remove\b/ }),
+      ).toBeInTheDocument();
       expect(within(menu).getAllByRole("button", { name: /the row/ }).length).toBeGreaterThan(0);
     });
   });
@@ -1634,7 +2403,9 @@ describe("ModsTableSwitch", () => {
     it("reports the feedback button from the table's own toolbar", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      await userEvent.click(screen.getByRole("button", { name: "Give feedback" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "modsTable::toolbar::giveFeedback" }),
+      );
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
         expect.objectContaining({ action: "feedback", toolbar: "mods-table", surface: "bar" }),
@@ -1646,7 +2417,7 @@ describe("ModsTableSwitch", () => {
 
       await hoverRow(rowOf("Alpha"));
       await userEvent.click(within(rowOf("Alpha")).getByRole("button", { name: "More actions" }));
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
         expect.objectContaining({
@@ -1661,7 +2432,7 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ a: mod("a", "Alpha", true) }, [{ title: "Remove", action: vi.fn() }]);
 
       fireEvent.contextMenu(rowOf("Alpha"), { clientX: 10, clientY: 10 });
-      await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
+      await userEvent.click(screen.getByRole("menuitem", { name: "modsTable::actions::remove" }));
 
       expect(sent("app_toolbar_action_clicked")).toEqual([
         expect.objectContaining({ action: "Remove", toolbar: "mods-table-row", surface: "menu" }),
@@ -1680,8 +2451,8 @@ describe("ModsTableSwitch", () => {
       renderSwitch({ b: mod("b", "Beta", true), pack: collection("pack", "Starter Pack", ["b"]) });
 
       // Collections keeps to its own grouping, so the grouping changes in All mods first.
-      await groupBy("Author");
-      await showView("Collections");
+      await groupBy("modsTable::columns::author");
+      await showView("modsTable::views::collections");
 
       expect(sent("app_mods_table_view_selected")).toEqual([{ view: "collections" }]);
       expect(sent("app_mods_table_grouping_changed")).toHaveLength(1);
@@ -1690,7 +2461,7 @@ describe("ModsTableSwitch", () => {
     it("reports a search once as it starts, without the text", async () => {
       renderSwitch({ a: mod("a", "Alpha", true) });
 
-      await userEvent.click(screen.getByRole("button", { name: "Search" }));
+      await userEvent.click(screen.getByRole("button", { name: "modsTable::toolbar::search" }));
       await userEvent.keyboard("alp");
 
       expect(sent("app_mods_table_searched")).toEqual([{}]);

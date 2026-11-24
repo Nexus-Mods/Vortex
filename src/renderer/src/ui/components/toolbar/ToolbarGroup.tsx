@@ -33,7 +33,9 @@ export type IToolbarAction = IMenuAction & {
   showLabel?: boolean;
   /** Said under the label in its tooltip on the bar, where there's more to say than its name. */
   description?: string;
-  /** A `data-testid` for its control on the bar. */
+  /** Turns it off, keeping its tooltip, which says this instead; not for panel actions. */
+  disabledReason?: string;
+  /** A `data-testid` for its control on the bar; its overflow menu row has none. */
   testId?: string;
   /** For a panel action: filled with a way to open its panel, while it's on the bar. */
   panelHandle?: Ref<IToolbarPanelHandle>;
@@ -79,7 +81,10 @@ const widthSignature = (actions: IToolbarAction[]): string =>
 const controlProps = (action: IToolbarAction) => ({
   appearance: "weak" as const,
   brand: action.brand ?? "neutral",
-  className: action.active ? "nxm-button-active" : undefined,
+  className: joinClasses({
+    "nxm-button-active": action.active,
+    "nxm-button-pip": action.hasPip,
+  }),
   "data-testid": action.testId,
   description: action.description,
   disabled: action.disabled,
@@ -175,6 +180,7 @@ const ToolbarControl = ({ action, onClick }: { action: IToolbarAction; onClick?:
     <ToolbarButton
       {...controlProps(action)}
       {...{ [TOOLBAR_CONTROL_ATTRIBUTE]: true }}
+      disabledReason={action.disabledReason}
       onClick={action.onClick}
     />
   );

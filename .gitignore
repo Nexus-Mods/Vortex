@@ -66,6 +66,9 @@ nul
 # Claude Code directory
 .claude/settings.local.json
 
+# Screenshots and video from live tests (the live-test skill), attached to PRs rather than committed
+.live-test/
+
 # PI local config
 /.pi
 

@@ -21,17 +21,18 @@ if (parentPort === null) {
 }
 const port = parentPort;
 
-// hdiff.wasm is copied next to this bundle by src/main/build.mjs. Load it once;
-// the instance is reused for every job.
-const wasm = loadWasm(fs.readFileSync(path.join(__dirname, "hdiff.wasm")));
+// hdiffz.wasm is copied next to this bundle by src/main/build.mjs. Compile it
+// once; every job runs it in a fresh instance.
+const wasm = loadWasm(fs.readFileSync(path.join(__dirname, "hdiffz.wasm")));
 
-async function handleJob(job: BsdiffJob): Promise<void> {
+// jobs run one at a time: each blocks this thread until hdiffz finishes
+function handleJob(job: BsdiffJob): void {
   let result: BsdiffResult;
   try {
     if (job.op === "create") {
-      await createPatchFile(wasm, job.oldPath, job.secondPath, job.outPath);
+      createPatchFile(wasm, job.oldPath, job.secondPath, job.outPath);
     } else {
-      await applyPatchFile(wasm, job.oldPath, job.secondPath, job.outPath);
+      applyPatchFile(wasm, job.oldPath, job.secondPath, job.outPath);
     }
     result = { id: job.id };
   } catch (err) {
@@ -40,6 +41,4 @@ async function handleJob(job: BsdiffJob): Promise<void> {
   port.postMessage(result);
 }
 
-port.on("message", (job: BsdiffJob) => {
-  void handleJob(job);
-});
+port.on("message", handleJob);

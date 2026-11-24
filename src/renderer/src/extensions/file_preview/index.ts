@@ -4,7 +4,6 @@ import Bluebird from "bluebird";
 import type { IExtensionApi, IExtensionContext, IPreviewFile } from "../../types/IExtensionContext";
 import { ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
 import { log } from "../../util/log";
-import opn from "../../util/opn";
 
 interface IPreviewHandler {
   priority: number;
@@ -36,7 +35,7 @@ async function fallbackHandler(api: IExtensionApi, files: IPreviewFile[]): Promi
 
   Object.keys(result.input).forEach((key) => {
     if (result.input[key]) {
-      opn(key).catch((err) => null);
+      window.api.shell.openFile(key);
     }
   });
 

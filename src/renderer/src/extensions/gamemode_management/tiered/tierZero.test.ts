@@ -1,10 +1,10 @@
-import { GameDomain, GameId } from "@vortex/shared";
+import { NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import { assert, describe, it, expect, afterEach } from "vitest";
 
 import type { IGame } from "@/types/IGame";
 import type { IGameStore } from "@/types/IGameStore";
 import type { IGameStoreEntry } from "@/types/IGameStoreEntry";
-import type { ITierZeroGame } from "@/types/IState";
+import type { IState, ITierZeroGame } from "@/types/IState";
 import local from "@/util/local";
 
 import {
@@ -12,8 +12,10 @@ import {
   isTierZeroGame,
   makeTierZeroGame,
   synthesizePersistedTierZeroGames,
+  tierZeroGameFor,
   unregisterTierZeroGame,
 } from "./tierZero";
+import { tierZeroGameId } from "./tierZeroGameId";
 
 const $ = local<{ gameModeManager: { gameStores: IGameStore[] } | undefined }>(
   "gamemode-management",
@@ -22,8 +24,8 @@ const $ = local<{ gameModeManager: { gameStores: IGameStore[] } | undefined }>(
 
 function makeEntry(overrides: Partial<ITierZeroGame> = {}): ITierZeroGame {
   return {
-    gameId: GameId(1234),
-    domain: GameDomain("somegame"),
+    gameId: NexusGameId(1234),
+    domain: NexusGameDomain("somegame"),
     name: "Some Game",
     storeIDs: { steam: [], gog: [], epic: [] },
     ...overrides,
@@ -32,7 +34,7 @@ function makeEntry(overrides: Partial<ITierZeroGame> = {}): ITierZeroGame {
 
 function makeKnownGame(id: string, overrides: Partial<IGame> = {}): IGame {
   return {
-    id,
+    id: VortexGameId(id),
     name: "Known Game",
     queryModPath: () => ".",
     executable: () => "game.exe",
@@ -64,7 +66,24 @@ afterEach(() => {
   $.gameModeManager = undefined;
   // the provenance set is module-level; drop what a test registered so the
   // next test starts clean
-  unregisterTierZeroGame(GameId(1234));
+  unregisterTierZeroGame(NexusGameId(1234));
+});
+
+describe("tierZeroGameFor", () => {
+  const stateWith = (entry: ITierZeroGame) =>
+    ({
+      persistent: { gameMode: { tier0: { [entry.gameId]: entry } } },
+    }) as unknown as IState;
+
+  it("joins the registered id to the persisted entry", () => {
+    const entry = makeEntry();
+    expect(tierZeroGameFor(stateWith(entry), tierZeroGameId(entry.gameId))).toBe(entry);
+  });
+
+  it("does not match the entry's domain", () => {
+    const entry = makeEntry();
+    expect(tierZeroGameFor(stateWith(entry), VortexGameId("somegame"))).toBeUndefined();
+  });
 });
 
 describe("makeTierZeroGame", () => {
@@ -72,7 +91,9 @@ describe("makeTierZeroGame", () => {
     const game = makeTierZeroGame(makeEntry());
     assert(game);
 
-    expect(game.id).toBe("somegame");
+    expect(game.id).toBe("tier-0-1234");
+    // the domain is data on the game, never derived from the id
+    expect(game.details?.nexusPageId).toBe("somegame");
     expect(game.name).toBe("Some Game");
     expect(game.queryModPath("C:\\Games\\SomeGame")).toBe(".");
     expect(game.requiredFiles).toEqual([]);
@@ -92,9 +113,9 @@ describe("makeTierZeroGame", () => {
   it("toggles provenance via unregister", () => {
     const game = makeTierZeroGame(makeEntry());
     expect(game).toBeDefined();
-    expect(isTierZeroGame(GameId(1234))).toBe(true);
-    unregisterTierZeroGame(GameId(1234));
-    expect(isTierZeroGame(GameId(1234))).toBe(false);
+    expect(isTierZeroGame(NexusGameId(1234))).toBe(true);
+    unregisterTierZeroGame(NexusGameId(1234));
+    expect(isTierZeroGame(NexusGameId(1234))).toBe(false);
   });
 });
 
@@ -250,55 +271,58 @@ describe("makeTierZeroGame requiresLauncher", () => {
 
 describe("synthesizePersistedTierZeroGames", () => {
   afterEach(() => {
-    unregisterTierZeroGame(GameId(2345));
-    unregisterTierZeroGame(GameId(3456));
+    unregisterTierZeroGame(NexusGameId(2345));
+    unregisterTierZeroGame(NexusGameId(3456));
   });
 
   it("registers one game per entry in a single addGames call", () => {
     const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
       {
-        [GameId(1234)]: makeEntry(),
-        [GameId(2345)]: makeEntry({ gameId: GameId(2345), domain: GameDomain("othergame") }),
+        [NexusGameId(1234)]: makeEntry(),
+        [NexusGameId(2345)]: makeEntry({
+          gameId: NexusGameId(2345),
+          domain: NexusGameDomain("othergame"),
+        }),
       },
       [],
       (games) => added.push(games),
     );
 
     expect(added).toHaveLength(1);
-    expect(added[0].map((game) => game.id)).toEqual(["somegame", "othergame"]);
+    expect(added[0].map((game) => game.id)).toEqual(["tier-0-1234", "tier-0-2345"]);
   });
 
   it("skips domains owned by a loaded extension game", () => {
     const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
-      { [GameId(1234)]: makeEntry() },
+      { [NexusGameId(1234)]: makeEntry() },
       [makeKnownGame("somegame")],
       (games) => added.push(games),
     );
 
     expect(added).toHaveLength(0);
-    expect(isTierZeroGame(GameId(1234))).toBe(false);
+    expect(isTierZeroGame(NexusGameId(1234))).toBe(false);
   });
 
   it("skips domains owned via the extension's nexusPageId", () => {
     const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
-      { [GameId(1234)]: makeEntry() },
+      { [NexusGameId(1234)]: makeEntry() },
       [makeKnownGame("othergame", { details: { nexusPageId: "somegame" } })],
       (games) => added.push(games),
     );
 
     expect(added).toHaveLength(0);
-    expect(isTierZeroGame(GameId(1234))).toBe(false);
+    expect(isTierZeroGame(NexusGameId(1234))).toBe(false);
   });
 
   it("skips a second entry whose domain an earlier entry of the pass claimed", () => {
     const added: IGame[][] = [];
     synthesizePersistedTierZeroGames(
       {
-        [GameId(1234)]: makeEntry(),
-        [GameId(2345)]: makeEntry({ gameId: GameId(2345) }),
+        [NexusGameId(1234)]: makeEntry(),
+        [NexusGameId(2345)]: makeEntry({ gameId: NexusGameId(2345) }),
       },
       [],
       (games) => added.push(games),
@@ -306,8 +330,8 @@ describe("synthesizePersistedTierZeroGames", () => {
 
     expect(added).toHaveLength(1);
     expect(added[0]).toHaveLength(1);
-    expect(added[0][0].id).toBe("somegame");
-    expect(isTierZeroGame(GameId(2345))).toBe(false);
+    expect(added[0][0].id).toBe("tier-0-1234");
+    expect(isTierZeroGame(NexusGameId(2345))).toBe(false);
   });
 
   it("does not call addGames for an empty map", () => {

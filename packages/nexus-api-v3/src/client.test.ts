@@ -48,7 +48,7 @@ beforeEach(() => {
 describe("auth headers", () => {
   it("sends the apikey header when apiKey is provided", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ apiKey: "my-api-key" }).createUpload(1024, "file.zip");
+    await makeClient({ apiKey: "my-api-key" }).createMultipartUpload(1024, "file.zip");
 
     expect(lastRequest().headers.get("apikey")).toBe("my-api-key");
     expect(lastRequest().headers.get("authorization")).toBeNull();
@@ -56,14 +56,17 @@ describe("auth headers", () => {
 
   it("sends the Authorization header when bearerToken is provided", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ apiKey: undefined, bearerToken: "my-jwt" }).createUpload(1024, "file.zip");
+    await makeClient({ apiKey: undefined, bearerToken: "my-jwt" }).createMultipartUpload(
+      1024,
+      "file.zip",
+    );
 
     expect(lastRequest().headers.get("authorization")).toBe("Bearer my-jwt");
   });
 
   it("prefers bearerToken over apiKey", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ apiKey: "my-api-key", bearerToken: "my-jwt" }).createUpload(
+    await makeClient({ apiKey: "my-api-key", bearerToken: "my-jwt" }).createMultipartUpload(
       1024,
       "file.zip",
     );
@@ -74,38 +77,9 @@ describe("auth headers", () => {
 
   it("sends the user agent from options", async () => {
     mockData({ id: "upload-1" });
-    await makeClient({ userAgent: "Vortex/1.2.3" }).createUpload(1024, "file.zip");
+    await makeClient({ userAgent: "Vortex/1.2.3" }).createMultipartUpload(1024, "file.zip");
 
     expect(lastRequest().headers.get("user-agent")).toBe("Vortex/1.2.3");
-  });
-});
-
-describe("createUpload", () => {
-  it("POSTs size and filename to /uploads and returns the unwrapped data", async () => {
-    mockData({ id: "upload-1", presigned_url: "https://s3/upload" });
-
-    const result = await makeClient().createUpload(1024, "file.zip");
-
-    expect(lastRequest().method).toBe("POST");
-    expect(lastRequest().url).toBe(`${BASE_URL}/uploads`);
-    expect(await lastBody()).toEqual({ size_bytes: 1024, filename: "file.zip" });
-    expect(result.id).toBe("upload-1");
-    expect(result.presigned_url).toBe("https://s3/upload");
-  });
-
-  it("throws V3ApiError on an error response", async () => {
-    fetchMocker.mockResponseOnce(
-      JSON.stringify({
-        type: "about:blank",
-        title: "Bad Request",
-        status: 400,
-        detail: "Invalid size",
-        instance: "/uploads",
-      }),
-      { status: 400, headers: { "content-type": "application/problem+json" } },
-    );
-
-    await expect(makeClient().createUpload(-1, "file.zip")).rejects.toThrow(V3ApiError);
   });
 });
 
@@ -119,6 +93,21 @@ describe("createMultipartUpload", () => {
     expect(lastRequest().url).toBe(`${BASE_URL}/uploads/multipart`);
     expect(await lastBody()).toEqual({ size_bytes: 8_000_000, filename: "big.zip" });
     expect(result.id).toBe("upload-2");
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid size",
+        instance: "/uploads/multipart",
+      }),
+      { status: 400, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(makeClient().createMultipartUpload(-1, "file.zip")).rejects.toThrow(V3ApiError);
   });
 });
 
@@ -226,11 +215,118 @@ describe("editCollection", () => {
   });
 });
 
+describe("getModById", () => {
+  it("GETs /mods/{id} with the id interpolated, and returns the mod", async () => {
+    const gallery_images = [{ id: "9", title: "", url: "a.png", thumbnail_url: "a-thumb.png" }];
+    mockData({
+      id: "7318624273618",
+      name: "SkyUI",
+      tags: [{ id: "1", name: "Interface" }],
+      gallery_images,
+    });
+
+    const result = await makeClient().getModById("7318624273618");
+
+    expect(lastRequest().method).toBe("GET");
+    expect(lastRequest().url).toBe(`${BASE_URL}/mods/7318624273618`);
+    expect(result).toEqual({
+      id: "7318624273618",
+      name: "SkyUI",
+      tags: [{ id: "1", name: "Interface" }],
+      gallery_images,
+    });
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }),
+      { status: 404, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(makeClient().getModById("1")).rejects.toThrow(V3ApiError);
+  });
+});
+
+describe("getModFileVersionDownloadLink", () => {
+  const links = {
+    links: [{ name: "Nexus CDN", short_name: "Nexus", url: "https://cdn/file.7z?sig" }],
+    expires_at: "2026-10-27T20:00:00Z",
+  };
+
+  it("GETs a file version's download links, and returns them", async () => {
+    mockData(links);
+
+    const result = await makeClient().getModFileVersionDownloadLink(
+      "skyrimspecialedition",
+      "345678",
+    );
+
+    expect(lastRequest().method).toBe("GET");
+    expect(lastRequest().url).toBe(
+      `${BASE_URL}/games/skyrimspecialedition/mod-file-versions/345678/download-link`,
+    );
+    expect(result).toEqual(links);
+  });
+
+  it("sends the collection and the application it's for", async () => {
+    mockData(links);
+
+    await makeClient().getModFileVersionDownloadLink("skyrimspecialedition", "345678", {
+      collectionId: 42,
+      applicationName: "Vortex",
+    });
+
+    expect(new URL(lastRequest().url).searchParams.get("collection_id")).toBe("42");
+    expect(lastRequest().headers.get("Application-Name")).toBe("Vortex");
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({ type: "about:blank", title: "Forbidden", status: 403 }),
+      { status: 403, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(
+      makeClient().getModFileVersionDownloadLink("skyrimspecialedition", "345678"),
+    ).rejects.toThrow(V3ApiError);
+  });
+});
+
+describe("searchMods", () => {
+  // Every field with a default is required in the generated type, so the search is given whole.
+  const search = {
+    filters: { games: ["skyrimspecialedition"] },
+    sort: { field: "endorsements", direction: "desc" },
+    pagination: { type: "page", page: 2, page_size: 20 },
+  } as const;
+
+  it("POSTs the search to /mods/search and returns its mods and pagination", async () => {
+    const meta = { type: "page", page: 2, page_size: 20, total_count: 41 };
+    fetchMocker.mockResponseOnce(JSON.stringify({ data: { mods: [{ id: "1" }] }, meta }));
+
+    const result = await makeClient().searchMods(search);
+
+    expect(lastRequest().method).toBe("POST");
+    expect(lastRequest().url).toBe(`${BASE_URL}/mods/search`);
+    expect(await lastBody()).toEqual(search);
+    expect(result).toEqual({ mods: [{ id: "1" }], meta });
+  });
+
+  it("throws V3ApiError on an error response", async () => {
+    fetchMocker.mockResponseOnce(
+      JSON.stringify({ type: "about:blank", title: "Unprocessable Entity", status: 422 }),
+      { status: 422, headers: { "content-type": "application/problem+json" } },
+    );
+
+    await expect(makeClient().searchMods(search)).rejects.toThrow(V3ApiError);
+  });
+});
+
 describe("error fallback", () => {
   it("builds a V3ApiError from the HTTP response when the body is not problem+json", async () => {
     fetchMocker.mockResponseOnce("<html>502 Bad Gateway</html>", { status: 502 });
 
-    const promise = makeClient().createUpload(1024, "file.zip");
+    const promise = makeClient().createMultipartUpload(1024, "file.zip");
 
     await expect(promise).rejects.toBeInstanceOf(V3ApiError);
     await expect(promise).rejects.toMatchObject({

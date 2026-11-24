@@ -24,7 +24,6 @@ import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { isLoggedIn, shouldShowPremiumAd } from "../../nexus_integration/selectors";
 import { AuthorNotesModal } from "../components/author_notes_modal/AuthorNotesModal";
-import { BetaBadge } from "../components/beta_badge/BetaBadge";
 import { IssueSection } from "../components/issue_section/IssueSection";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import { PremiumModal } from "../components/premium_modal/PremiumModal";
@@ -428,20 +427,8 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
     <HealthCheckTrackingProvider api={api}>
       <Page active={active} id="health-check-page" scrollable={false}>
         <PageHeader
-          customTitle={(compact) => (
-            <div className="flex items-center gap-x-1.5">
-              <Typography
-                appearance={compact ? "subdued" : "moderate"}
-                as="h2"
-                className="font-medium transition-colors"
-                typographyType="body-xl"
-              >
-                {t("listing::title")}
-              </Typography>
-
-              <BetaBadge isSubdued={compact} />
-            </div>
-          )}
+          isBeta
+          title={t("listing::title")}
           pictogramName="health-check"
           subtitle={t("listing::subtitle")}
         >

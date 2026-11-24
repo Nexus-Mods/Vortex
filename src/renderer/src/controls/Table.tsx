@@ -43,11 +43,13 @@ import {
 import GroupingRow, { EMPTY_ID } from "./table/GroupingRow";
 import HeaderCell from "./table/HeaderCell";
 import { Table, TBody, TD, TH, THead, TR } from "./table/MyTable";
+import { registerTableAttribute } from "./table/registerTableAttribute";
 import { scrollContainerOf } from "./table/scrollContainer";
 import TableDetail from "./table/TableDetail";
 import TableRow from "./table/TableRow";
-import ToolbarIcon from "./ToolbarIcon";
+import ToolbarIcon from "./toolbar_icon/ToolbarIcon";
 import { UsageAlert } from "./UsageAlert";
+import type VisibilityProxy from "./VisibilityProxy";
 
 export type ChangeDataHandler = (rowId: string, attributeId: string, newValue: any) => void;
 
@@ -173,7 +175,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   // when the pane mounts, which is before any row renders.
   private mScrollContainer: HTMLElement | null;
   private mHeaderRef: HTMLElement;
-  private mRowRefs: { [id: string]: HTMLElement } = {};
+  private mRowRefs: { [id: string]: VisibilityProxy } = {};
   private mLastSelectOnly: number = 0;
   private mLastDetailIds: string[] = [];
   private mDetailTimer: NodeJS.Timeout = null;
@@ -184,6 +186,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
   private mNextVisibility: { [id: string]: boolean } = {};
   private mDelayedVisibility: { [id: string]: boolean } = {};
   private mDelayedVisibilityTimer: NodeJS.Timeout;
+  private mScrollRetryTimer: NodeJS.Timeout | undefined;
   private mProxyHeaderRef: HTMLElement;
   private mVisibleHeaderRef: HTMLElement;
   private mHeaderUpdateDebouncer: Debouncer;
@@ -279,6 +282,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.detachScrollListeners();
     this.mMounted = false;
     this.mColumnReportDebouncer.clear();
+    clearTimeout(this.mScrollRetryTimer);
   }
 
   public UNSAFE_componentWillReceiveProps(newProps: IProps) {
@@ -622,7 +626,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
 
   private scrollTo = (id: string, mayRetry?: boolean) => {
     try {
-      const node = ReactDOM.findDOMNode(this.mRowRefs[id]) as HTMLElement;
+      const node = this.mRowRefs[id]?.element ?? null;
       if (node !== null) {
         this.scrollToItem(node, false);
       } else if (mayRetry !== false) {
@@ -1019,9 +1023,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         // the previously selected row might no longer be visible, which would cause
         // an exception when trying to find the associated dom node
         const lastIdx = sortedRows.indexOf(lastSelected.rowId);
-        if (lastIdx !== -1) {
-          const selectedNode = ReactDOM.findDOMNode(this.mRowRefs[lastSelected.rowId]) as Element;
-          visibleLineCount = this.mScrollRef.clientHeight / selectedNode.clientHeight;
+        const selectedNode = this.mRowRefs[lastSelected.rowId].element;
+        if (lastIdx !== -1 && selectedNode !== null) {
+          visibleLineCount = this.rowScroller().clientHeight / selectedNode.clientHeight;
           // account for the header. quite inaccurate.
           visibleLineCount -= 2;
         }
@@ -1051,11 +1055,9 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
         evt.preventDefault();
         const groupId = evt.currentTarget.getAttribute("data-group") || undefined;
         const newItem = this.selectRelative(offset, groupId, evt.shiftKey);
-        if (this.mRowRefs[newItem] !== undefined && this.mMounted) {
-          this.scrollToItem(
-            ReactDOM.findDOMNode(this.mRowRefs[newItem]) as HTMLElement,
-            Math.abs(offset) > 1,
-          );
+        const newNode = this.mRowRefs[newItem]?.element ?? null;
+        if (newNode !== null && this.mMounted) {
+          this.scrollToItem(newNode, Math.abs(offset) > 1);
         }
       } else {
         const action = this.props.actions.find((iter) =>
@@ -1202,7 +1204,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.mPinnedRef = ref;
   };
 
-  private setRowRef = (ref: any) => {
+  private setRowRef = (ref: VisibilityProxy | null) => {
     if (ref !== null) {
       this.mRowRefs[ref.props["data-rowid"]] = ref;
     }
@@ -1257,34 +1259,52 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
     this.updateState(setSafe(this.mNextState, ["rowState", rowId, "highlighted"], highlighted));
   };
 
-  private scrollToItem = (item: HTMLElement, smooth: boolean, iterations: number = 3) => {
-    const height = this.mScrollRef.offsetHeight;
-    const offset = height / 5;
-    const topLimit = this.mScrollRef.scrollTop + offset;
-    const bottomLimit = this.mScrollRef.scrollTop + this.mScrollRef.clientHeight - offset;
-    const itemBottom = item.offsetTop + item.offsetHeight;
+  // What moves the rows when its scrollTop changes: the main pane, or the page around a
+  // sticky-header table, whose own pane has visible overflow and can't scroll.
+  private rowScroller(): HTMLElement {
+    return this.mScrollContainer ?? (document.scrollingElement as HTMLElement);
+  }
+
+  private scrollToItem = (item: Element, smooth: boolean, iterations: number = 3) => {
+    const scroller = this.rowScroller();
+    // Measured against the scroller rather than the item's offsetParent: the page around a
+    // sticky-header table holds more than the table, so the two don't share an origin.
+    const viewTop =
+      scroller === document.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
+    const itemRect = item.getBoundingClientRect();
+    const itemTop = itemRect.top - viewTop + scroller.scrollTop;
+    const itemBottom = itemTop + itemRect.height;
+
+    // a sticky header covers the top of the scroller, so a row under it isn't in view
+    const covered = this.props.stickyHeader
+      ? ((this.mScrollRef.querySelector(".xthead") as HTMLElement)?.offsetHeight ?? 0)
+      : 0;
+    const offset = scroller.clientHeight / 5;
+    const topLimit = scroller.scrollTop + covered + offset;
+    const bottomLimit = scroller.scrollTop + scroller.clientHeight - offset;
 
     let targetPos: number;
-    if (item.offsetTop < topLimit) {
-      targetPos = Math.max(item.offsetTop - offset, 0);
+    if (itemTop < topLimit) {
+      targetPos = Math.max(itemTop - covered - offset, 0);
     } else if (itemBottom > bottomLimit) {
-      targetPos = itemBottom - this.mScrollRef.clientHeight + offset;
+      targetPos = itemBottom - scroller.clientHeight + offset;
     }
-    if (targetPos !== undefined && targetPos !== this.mScrollRef.scrollTop) {
+    if (targetPos !== undefined && targetPos !== scroller.scrollTop) {
       if (smooth) {
-        smoothScroll(this.mScrollRef, targetPos, SuperTable.SCROLL_DURATION).then((cont: boolean) =>
+        smoothScroll(scroller, targetPos, SuperTable.SCROLL_DURATION).then((cont: boolean) =>
           cont && iterations > 0
             ? this.scrollToItem(item, false, iterations - 1)
             : PromiseBB.resolve(),
         );
       } else {
-        this.mScrollRef.scrollTop = targetPos;
+        scroller.scrollTop = targetPos;
 
         if (iterations > 0) {
           // workaround: since we're not rendering off-screen rows it's possible for row heights to
           //  change as we scroll and then the offset we calculated might not be in the visible
           //  range after all.
-          setTimeout(() => {
+          clearTimeout(this.mScrollRetryTimer);
+          this.mScrollRetryTimer = setTimeout(() => {
             this.scrollToItem(item, smooth, iterations - 1);
           }, 100);
         }
@@ -2118,14 +2138,6 @@ function mapDispatchToProps(dispatch: Redux.Dispatch): IActionProps {
     onSetCollapsedGroups: (tableId: string, collapsed: string[]) =>
       dispatch(setCollapsedGroups(tableId, collapsed)),
   };
-}
-
-function registerTableAttribute(instanceGroup: string, group: string, attribute: ITableAttribute) {
-  if (instanceGroup === group) {
-    return attribute;
-  } else {
-    return undefined;
-  }
 }
 
 function getTableState(state: IState, tableId: string) {

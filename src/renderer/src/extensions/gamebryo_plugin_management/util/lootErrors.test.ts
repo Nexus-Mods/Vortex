@@ -112,6 +112,37 @@ describe("toLootError", () => {
     });
   });
 
+  // dlopen's message, or only the error number where Windows has no text for it in that language
+  test.each([
+    {
+      message:
+        "An Application Control policy has blocked this file.\r\n\\\\?\\C:\\V\\node-loot.node",
+      reason: "An Application Control policy has blocked this file.",
+      blocked: true,
+    },
+    {
+      message: "error: 4551\\\\?\\C:\\V\\node-loot.node",
+      reason: "error: 4551",
+      blocked: true,
+    },
+    {
+      message: "The specified module could not be found.\r\n\\\\?\\C:\\V\\node-loot.node",
+      reason: "The specified module could not be found.",
+      blocked: false,
+    },
+    { message: "error: 126\\\\?\\C:\\V\\node-loot.node", reason: "error: 126", blocked: false },
+  ])("classifies a library that did not load: $reason", ({ message, reason, blocked }) => {
+    const raw = Object.assign(new Error(message), { code: "ERR_DLOPEN_FAILED" });
+
+    expect(toLootError(raw).data).toEqual({ kind: "loot:library-failed", reason, blocked });
+  });
+
+  test("leaves a block message that is not from loading the library to the other kinds", () => {
+    const raw = new Error("An Application Control policy has blocked this file.");
+
+    expect(toLootError(raw).data).toEqual({ kind: "loot:failed" });
+  });
+
   test("falls back to a generic libloot failure for anything else, keeping the message", () => {
     const err = toLootError(new Error("access violation"));
 
@@ -173,5 +204,26 @@ describe("describeLootError", () => {
 
     expect(failure.message).toBe("Vortex asked LOOT for something it could not accept");
     expect(failure.message).not.toContain("parameter 2");
+  });
+
+  const dlopenFailure = (message: string) =>
+    Object.assign(new Error(message), { code: "ERR_DLOPEN_FAILED" });
+
+  test("tells the user Windows blocked LOOT's library", () => {
+    const failure = describe_(dlopenFailure("error: 4551\\\\?\\C:\\V\\node-loot.node"));
+
+    expect(failure.severity).toBe("error");
+    expect(failure.message).toContain("Application Control");
+    expect(failure.message).not.toContain("4551");
+  });
+
+  // Windows phrases the reason in the user's language, which no pattern here could know
+  test("repeats Windows' own reason when the library did not load for another one", () => {
+    const failure = describe_(dlopenFailure("Le module spécifié est introuvable.\r\n\\\\?\\C:\\V"));
+
+    expect(failure.message).toBe(
+      "Vortex couldn't load LOOT's library (node-loot.node): Le module spécifié est introuvable. " +
+        "Reinstalling Vortex usually fixes this.",
+    );
   });
 });

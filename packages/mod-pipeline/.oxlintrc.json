@@ -1,0 +1,18 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../oxlint.base.config.json"],
+  "rules": {
+    "vitest/require-mock-type-parameters": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["zod", "zod/**"],
+            "message": "Import { z } from ./zodJitless so z.config({ jitless: true }) runs before any schema is built."
+          }
+        ]
+      }
+    ]
+  }
+}

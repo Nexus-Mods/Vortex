@@ -1,0 +1,46 @@
+# .github/workflows/discord-release.yml
+#
+# Posts a release announcement card to Discord whenever a Vortex release goes
+# out, stable and beta alike. The card is built by the discord-release action.
+#
+# Required secret: DISCORD_WEBHOOK_URL -> https://discord.com/api/webhooks/<id>/<token>
+
+name: Discord Release Announcement
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to announce (e.g. 'v2.6.1' or 'v2.7.0-beta.1')."
+        required: true
+        type: string
+      dry-run:
+        description: "Print the payload without posting it."
+        type: boolean
+        default: true
+
+concurrency:
+  group: discord-release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/actions/discord-release
+          persist-credentials: false
+
+      - name: Post announcement
+        uses: ./.github/actions/discord-release
+        with:
+          tag: ${{ github.event.release.tag_name || inputs.tag }}
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          dry-run: ${{ inputs.dry-run || false }}

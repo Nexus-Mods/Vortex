@@ -9,6 +9,8 @@ import { Typography } from "@/ui/components/typography/Typography";
 import { TypographyLink } from "@/ui/components/typography/TypographyLink";
 import { bytesToString } from "@/util/util";
 
+import { openGameInfoValue } from "../util/openGameInfoValue";
+
 export interface IGameDetailsModalProps {
   gameId: string;
   gameName: string;
@@ -51,13 +53,14 @@ const formatValue = (value: unknown, type: string | undefined, language: string)
 const InfoValue = ({ entry, language }: { entry: IGameInfoEntry; language: string }) => {
   const value = formatValue(entry.value, entry.type, language);
 
-  if (entry.type === "url") {
+  if (entry.type === "url" || entry.type === "path") {
     return (
       <TypographyLink
         appearance="subdued"
         className="wrap-anywhere"
+        data-testid="game-detail-link"
         typographyType="inherit"
-        onClick={() => window.api.shell.openUrl(value)}
+        onClick={() => openGameInfoValue(entry)}
       >
         {value}
       </TypographyLink>
@@ -107,7 +110,7 @@ export const GameDetailsModal = ({
           {gameName}
         </Typography>
 
-        <Typography appearance="subdued" className="space-y-2" typographyType="body-sm">
+        <Typography appearance="subdued" as="div" className="space-y-2" typographyType="body-sm">
           {!keys.length
             ? t("No information about this game")
             : keys.map((key) => (

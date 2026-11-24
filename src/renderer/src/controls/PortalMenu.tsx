@@ -1,8 +1,9 @@
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import type { SelectCallback } from "react-bootstrap";
 import { Overlay } from "react-overlays";
 
+import { MainContext } from "../contexts/main_context/MainContext";
+import type { IComponentContext } from "../types/IComponentContext";
 import Dropdown from "./Dropdown";
 
 interface IPortalMenuProps {
@@ -22,11 +23,8 @@ function nop() {
 }
 
 class PortalMenu extends React.Component<IPortalMenuProps, { x: number; y: number }> {
-  public static contextTypes: React.ValidationMap<any> = {
-    menuLayer: PropTypes.object,
-  };
-
-  declare public context: { menuLayer: JSX.Element };
+  public static contextType = MainContext;
+  declare public context: IComponentContext;
 
   constructor(props: IPortalMenuProps) {
     super(props);

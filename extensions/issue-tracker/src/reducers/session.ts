@@ -1,20 +1,21 @@
 import { types, util } from "@nexusmods/vortex-api";
 
 import * as actions from "../actions/session";
+import type { IIssuesSessionState } from "../types";
 
-const sessionReducer: types.IReducerSpec = {
-  reducers: {
-    [actions.openFeedbackResponder as any]: (state, open) => {
-      return util.setSafe(state, ["feedbackResponderOpen"], open);
-    },
-    [actions.setOutstandingIssues as any]: (state, issues) => {
-      return util.setSafe(state, ["oustandingIssues"], issues);
-    },
-  },
-  defaults: {
+const sessionReducer: types.IReducerSpec<IIssuesSessionState> = util.actionsToReducerSpec<
+  IIssuesSessionState,
+  typeof actions
+>(
+  {
     feedbackResponderOpen: false,
     oustandingIssues: null,
   },
-};
+  actions,
+  {
+    openFeedbackResponder: (state, open) => util.setSafe(state, ["feedbackResponderOpen"], open),
+    setOutstandingIssues: (state, issues) => util.setSafe(state, ["oustandingIssues"], issues),
+  },
+);
 
 export default sessionReducer;

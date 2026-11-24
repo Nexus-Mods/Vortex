@@ -71,6 +71,8 @@ interface ITableVirtualizerOptions {
   getItemSize: (index: number) => number;
   /** The group headings' rows, in order; the one over the rows in view stays rendered. */
   stickyIndexes?: number[];
+  /** Rows that stay rendered wherever they are, such as the one Tab moves focus to. */
+  keptIndexes?: number[];
 }
 
 /**
@@ -79,12 +81,14 @@ interface ITableVirtualizerOptions {
  * scrolls out of view, so focus and Tab order survive, and the heading of the group in view,
  * which sticks over its rows. With no scroller, every row renders.
  * `scrollToIndex` brings a row to the top: the virtualiser renders it, then the row scrolls
- * into view, a group's row's scroll margin clearing the sticky head.
+ * into view, a group's row's scroll margin clearing the sticky head. Only the scroller moves, not
+ * the layout around it, which can have content cut off past its edges.
  */
 export const useTableVirtualizer = ({
   count,
   getItemKey,
   getItemSize,
+  keptIndexes,
   stickyIndexes,
 }: ITableVirtualizerOptions) => {
   const tableRef = useRef<HTMLDivElement>(null);
@@ -128,11 +132,12 @@ export const useTableVirtualizer = ({
       const kept = [
         stickyIndexes?.findLast((index) => index <= range.startIndex),
         focusedIndex,
+        ...(keptIndexes ?? []),
       ].filter((index) => index !== undefined && index < range.count);
 
       return [...new Set([...defaultRangeExtractor(range), ...kept])].sort((a, b) => a - b);
     },
-    [focusedIndex, stickyIndexes],
+    [focusedIndex, keptIndexes, stickyIndexes],
   );
 
   const virtualizer = useVirtualizer({
@@ -166,7 +171,7 @@ export const useTableVirtualizer = ({
       requestAnimationFrame(() =>
         tableRef.current
           ?.querySelector<HTMLElement>(`[data-index="${index}"]`)
-          ?.scrollIntoView({ block: "start" }),
+          ?.scrollIntoView({ block: "start", container: "nearest" }),
       );
     },
     [scroller, virtualizer],
@@ -197,6 +202,7 @@ export const useTableVirtualizer = ({
     onBlur,
     onFocus,
     ready: scroller !== undefined,
+    scroller,
     scrollToIndex,
     startRef,
     tableRef,

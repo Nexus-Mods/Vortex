@@ -1,11 +1,11 @@
 import update from "immutability-helper";
 import * as _ from "lodash";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { ButtonGroup, Dropdown, MenuItem } from "react-bootstrap";
-import ReactDOM from "react-dom";
 
+import { MainContext } from "../contexts/main_context/MainContext";
 import type { IActionDefinition } from "../types/IActionDefinition";
+import type { IComponentContext } from "../types/IComponentContext";
 import type { IExtensibleProps } from "../types/IExtensionProvider";
 import type { TFunction } from "../util/i18n";
 import { setdefault } from "../util/util";
@@ -14,8 +14,8 @@ import ActionControl from "./ActionControl";
 import { HOVER_DELAY } from "./constants";
 import Icon from "./Icon";
 import PortalMenu from "./PortalMenu";
+import ToolbarIcon from "./toolbar_icon/ToolbarIcon";
 import ToolbarDropdown from "./ToolbarDropdown";
-import ToolbarIcon from "./ToolbarIcon";
 import { IconButton } from "./TooltipControls";
 
 export type ButtonType = "text" | "icon" | "both" | "menu";
@@ -109,7 +109,7 @@ function IconBarIcon(props: IIconBarIconProps) {
     [setOpenMenu, icon.subMenus],
   );
 
-  const itemRef = React.useRef<HTMLElement>();
+  const itemRef = React.useRef<HTMLButtonElement>(null);
 
   const trigger = React.useCallback(() => {
     icon.action?.(instanceIds, icon.data);
@@ -128,14 +128,10 @@ function IconBarIcon(props: IIconBarIconProps) {
   const tooltip =
     typeof icon.show === "string" ? icon.show : t(icon.title, { ns: icon.options?.namespace });
 
-  const setItemRef = (ref) => {
-    itemRef.current = ReactDOM.findDOMNode(ref) as HTMLElement;
-  };
-
   return (
     <ToolbarIcon
       key={actionId}
-      ref={setItemRef}
+      domRef={itemRef}
       className={actionId}
       instanceId={instanceIds}
       icon={hasIcon ? icon.icon : undefined}
@@ -172,11 +168,8 @@ function IconBarIcon(props: IIconBarIconProps) {
  * @extends {ComponentEx<IProps, {}>}
  */
 class IconBar extends React.Component<IProps, { open: boolean }> {
-  public static contextTypes: React.ValidationMap<any> = {
-    menuLayer: PropTypes.object,
-  };
-
-  declare public context: { menuLayer: JSX.Element };
+  public static contextType = MainContext;
+  declare public context: IComponentContext;
 
   private portalTargetRef: Element;
   private mBackgroundClick: (evt: React.MouseEvent<ButtonGroup>) => void;
@@ -462,19 +455,68 @@ class IconBar extends React.Component<IProps, { open: boolean }> {
   }
 }
 
-type ExportType = IBaseProps & IActionControlProps & IExtensibleProps & React.HTMLAttributes<any>;
+interface IReportingProps {
+  /**
+   * Hears which action ran, by its definition and its index in the bar's position
+   * order, just before it runs, whichever way it was clicked (its button, a collapsed
+   * menu, a grouped dropdown or a background click). Submenu entries and component
+   * actions aren't reported: neither runs through the definition's own `action`. Nor is
+   * a disabled action a background click runs.
+   */
+  onAction?: (action: IActionDefinition, index: number) => void;
+}
+
+/** Hands IconBar the actions ActionControl resolved, each reporting itself as it runs. */
+function ReportingIconBar(props: IProps & Required<IReportingProps>) {
+  const { actions, onAction, ...barProps } = props;
+
+  const reporting = React.useMemo(
+    () =>
+      actions?.map((action, index) =>
+        action.action === undefined
+          ? action
+          : {
+              ...action,
+              action: (instanceIds: string | string[], data?: any) => {
+                // clickAnywhere can run a disabled action; that isn't one the user chose
+                if (action.show === true) {
+                  onAction(action, index);
+                }
+                action.action(instanceIds, data);
+              },
+            },
+      ),
+    [actions, onAction],
+  );
+
+  return <IconBar {...barProps} actions={reporting} />;
+}
+
+type ExportType = IBaseProps &
+  IActionControlProps &
+  IExtensibleProps &
+  IReportingProps &
+  React.HTMLAttributes<any>;
 
 class ActionIconBar extends React.Component<ExportType> {
   private static ACTION_PROPS = ["filter", "group", "instanceId", "showAll", "staticElements"];
   public render() {
+    const { onAction } = this.props;
     const actionProps: IActionControlProps = _.pick(
       this.props,
       ActionIconBar.ACTION_PROPS,
     ) as IActionControlProps;
-    const barProps: IBaseProps = _.omit(this.props, ActionIconBar.ACTION_PROPS) as any;
+    const barProps: IBaseProps = _.omit(this.props, [
+      ...ActionIconBar.ACTION_PROPS,
+      "onAction",
+    ]) as any;
     return (
       <ActionControl {...actionProps}>
-        <IconBar {...barProps} />
+        {onAction === undefined ? (
+          <IconBar {...barProps} />
+        ) : (
+          <ReportingIconBar {...barProps} onAction={onAction} />
+        )}
       </ActionControl>
     );
   }

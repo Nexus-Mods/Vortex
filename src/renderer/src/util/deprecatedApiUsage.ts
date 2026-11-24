@@ -22,7 +22,7 @@ export interface IDeprecatedApiSurface<T = unknown> {
 
 /**
  * Registry of deprecated extension-api surfaces, keyed by the export's path in the api namespace
- * (e.g. "util.steam"). Registering is the only thing a future deprecation has to do: the
+ * (e.g. "util.someOldApi"). Registering is the only thing a future deprecation has to do: the
  * per-extension api proxy consults this registry on every property lookup.
  */
 const registry = new Map<string, IDeprecatedApiSurface>();
@@ -60,9 +60,8 @@ const reportedPairs = new Set<string>();
 /**
  * Reports a deprecated API access by the given caller. `state` is the caller's installed-extension
  * entry, resolved by the handout point (or undefined when no state entry matched). The log warning
- * fires once per session per method (method-global, matching the pre-telemetry shim behavior) with
- * the extension named in the metadata; the Mixpanel event fires once per session per
- * extension-and-method pair.
+ * fires once per session per method (method-global) with the extension named in the metadata; the
+ * Mixpanel event fires once per session per extension-and-method pair.
  */
 export function reportDeprecatedApiUsage(
   caller: IRegisteredExtension,
@@ -73,10 +72,12 @@ export function reportDeprecatedApiUsage(
   const props: AppDeprecatedApiUsedProps = {
     api_method: method,
     extension_name: state?.name ?? caller.name,
-    extension_version: state?.version,
+    // Bundled extensions have no installed-state entry (they're rescanned from disk every boot),
+    // so fall back to what the loader recorded on the registered extension.
+    extension_version: state?.version ?? caller.info?.version,
     mod_id: state?.modId,
     file_id: state?.fileId,
-    bundled: Boolean(state?.bundled),
+    bundled: Boolean(state?.bundled ?? caller.info?.bundled),
   };
 
   if (!warnedMethods.has(method)) {

@@ -12,6 +12,7 @@ import type { IState } from "../../../types/IState";
 import {
   generateCollectionSessionId,
   isTerminalMemberStatus,
+  modRuleId,
 } from "../../../util/collectionInstallSession";
 import {
   getCollectionActiveSession,
@@ -19,12 +20,14 @@ import {
   getFailedRequiredMods,
   isActiveSessionStalled,
 } from "../../../util/collectionInstallSessionSelectors";
+import { formatCollectionSource } from "../../../util/collectionMembershipSelectors";
 import {
   reconstructSessionMods,
   resyncCollectionSessionRules,
 } from "../../../util/collectionSessionReconstruct";
 import { markCollectionMemberSkipped } from "../../../util/collectionSkip";
 import Debouncer from "../../../util/Debouncer";
+import { clearErrorContext, setErrorContext } from "../../../util/errorHandling";
 import { getSafe, setSafe } from "../../../util/storeHelper";
 import { batchDispatch } from "../../../util/util";
 import { discoveryByGame } from "../../gamemode_management/selectors";
@@ -59,11 +62,19 @@ import {
   type CollectionInstallRef,
   emitCollectionInstallOutcome,
   emitCollectionInstallStartOrResume,
+  isCollectionInstallResume,
 } from "./collectionInstallAnalytics";
 import { isGamebryoGame } from "./gameSupport";
 import InfoCache from "./InfoCache";
 import { readCollection } from "./readCollection";
 import { getUnfulfilledNotificationId } from "./util";
+
+/**
+ * The error-context key naming the collection being installed. Reported as
+ * `context.installingCollection`. The context is global, so every error raised while the install
+ * runs carries it, related or not: the name says "installing" so it isn't read as the cause.
+ */
+const INSTALLING_COLLECTION_ERROR_CONTEXT = "installingCollection";
 
 export type Step =
   | "prepare"
@@ -548,7 +559,8 @@ class InstallDriver {
     }
     const gameId = this.mGameId;
     const collectionId = this.mCollection.id;
-    const recommendedRules = (this.mCollection.rules ?? []).filter((r) => r.type === "recommends");
+    const liveRules = this.mApi.getState().persistent.mods[gameId]?.[collectionId]?.rules ?? [];
+    const recommendedRules = liveRules.filter((r) => r.type === "recommends");
 
     // Optionals default to skipped (ignored). Selecting them all means clearing the skip: the
     // dependency gather (filterDependencyRules) drops ignored rules, so without this the pass would
@@ -766,6 +778,7 @@ class InstallDriver {
     outcome: "cancelled" | "paused" = "cancelled",
     context: CollectionInstallOutcomeContext = {},
   ) {
+    clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
     this.mPostprocessing = false;
     if (this.mCollection !== undefined) {
       this.mApi.dismissNotification(INSTALLING_NOTIFICATION_ID + this.mCollection.id);
@@ -817,6 +830,7 @@ class InstallDriver {
       return started;
     } finally {
       if (started === false) {
+        clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
         this.mOnStop?.();
       }
     }
@@ -914,13 +928,22 @@ class InstallDriver {
       }
     }
 
+    // Errors raised from here until the install stops name the collection, so a failure can be
+    // traced to the collections it happens in. It says when the error happened, not what caused it.
+    const collectionSlug = this.collectionSlug;
+    const revisionNumber = this.revisionNumber;
+    if (collectionSlug !== undefined && revisionNumber !== undefined) {
+      setErrorContext(
+        INSTALLING_COLLECTION_ERROR_CONTEXT,
+        formatCollectionSource({ collectionSlug, revisionNumber }),
+      );
+    }
+
     this.mApi.events.emit("will-install-collection", gameId, collection.id);
 
     this.mApi.events.emit("view-collection", collection.id);
 
     this.updateProgress(collection);
-
-    this.augmentRules(gameId, collection);
 
     this.mApi.dismissNotification(getUnfulfilledNotificationId(collection.id));
     this.mApi.store.dispatch(setModEnabled(profile.id, collection.id, true));
@@ -1001,15 +1024,27 @@ class InstallDriver {
       }),
     );
 
-    // Default optional members to skipped so they don't block completion. Only optionals with no
-    // explicit ignored choice are defaulted - a defined ignored (a prior skip or select) wins, so
-    // decisions survive re-installs/updates. Reuses the shared skip entry point (writes the durable
-    // rule flag + session status) now that the session exists.
+    // Default optional members to skipped so they don't block completion; the optional-mods prompt
+    // at the end is where the player selects them. A resume keeps this attempt's choices, so only
+    // undecided optionals are defaulted. A fresh install also resets a selection (ignored:false)
+    // left over from an earlier, finished install: the flag lives on the collection mod, shared by
+    // every profile, so otherwise an old "yes" installs the optionals before the prompt and a "no"
+    // there can't take it back. Optionals already installed keep their flag. Reuses the shared
+    // skip entry point (writes the durable rule flag + session status) now that the session exists.
+    const isResume = isCollectionInstallResume(this.mApi, {
+      archiveId: collection.archiveId,
+      collectionModId: collection.id,
+      gameId: this.mGameId,
+    });
     for (const rule of optional) {
-      if (rule.ignored === undefined) {
+      const installed = sessionModInfo[modRuleId(rule)]?.status === "installed";
+      if (rule.ignored === undefined || (!isResume && rule.ignored === false && !installed)) {
         markCollectionMemberSkipped(this.mApi, { reference: rule.reference });
       }
     }
+
+    // after the skips: a large collection's updates are dispatched later and replace whole rules
+    this.augmentRules(gameId, collection);
 
     // Emit started (genuine first start) or resumed (durable installStartedAt marker present),
     // now that the session exists and optionals are defaulted, so the event carries the full
@@ -1042,9 +1077,10 @@ class InstallDriver {
   }
 
   private augmentRules(gameId: string, collection: IMod) {
+    const liveRules = this.mApi.getState().persistent.mods[gameId]?.[collection.id]?.rules ?? [];
     batchDispatch(
       this.mApi.store,
-      (collection.rules ?? [])
+      liveRules
         .map((rule) => {
           if (rule.reference.repo === undefined) {
             return undefined;
@@ -1062,7 +1098,7 @@ class InstallDriver {
             return undefined;
           }
           const revMod = modFiles.find((iter) => this.matchRepo(rule, iter.file));
-          if (revMod?.file !== undefined) {
+          if (revMod?.file !== undefined && rule.extra?.fileName !== revMod.file.uri) {
             const newRule = setSafe(rule, ["extra", "fileName"], revMod.file.uri);
             return addModRule(gameId, collection.id, newRule);
           }
@@ -1112,6 +1148,7 @@ class InstallDriver {
         ? "completed"
         : "failed";
     this.completeInstallationTracking(outcome);
+    clearErrorContext(INSTALLING_COLLECTION_ERROR_CONTEXT);
     this.mCollection = undefined;
     this.setDependentMods([]);
     this.mInstallDone = true;

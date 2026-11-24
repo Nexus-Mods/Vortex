@@ -63,9 +63,12 @@ const { t } = useTranslation(['collection', 'common']);
 - Navigate to your feature
 - Verify text appears correctly
 
-## Example: BrowseNexusPage.tsx
+## Example: BrowseCollections.tsx
 
-See `src/renderer/src/extensions/browse_nexus/views/BrowseNexusPage.tsx` for a complete working example.
+See `src/renderer/src/extensions/browse_nexus/components/browse_collections/BrowseCollections.tsx`
+for a complete working example. It translates through the `collectionT` helper
+in `browse_nexus/util/collectionT.ts`, which passes `isNamespaceKey: true` and
+the `collection` and `common` namespaces for every call.
 
 **Before:**
 

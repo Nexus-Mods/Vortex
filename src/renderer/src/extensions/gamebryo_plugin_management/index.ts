@@ -22,7 +22,6 @@ import type { ITestResult, ProblemSeverity } from "../../types/ITestResult";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import makeReactive from "../../util/makeReactive";
-import opn from "../../util/opn";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch, delay, setdefault } from "../../util/util";
 import { discoveryByGame } from "../gamemode_management/selectors";
@@ -78,9 +77,10 @@ import { checkMissingMasters } from "./util/missingMasters";
 import { handleModEnabled } from "./util/onModEnabled";
 import { handleModInstalled } from "./util/onModInstalled";
 import { handleSetPluginList } from "./util/onSetPluginList";
-import { makePluginConflictPrompt } from "./util/pluginFileConflict";
+import { makeEmptyListNotice, makePluginConflictPrompt } from "./util/pluginFileConflict";
 import PluginHistory from "./util/PluginHistory";
 import { makeSetPluginLight } from "./util/pluginLight";
+import { pluginListContribution } from "./util/pluginListContribution";
 import PluginPersistor from "./util/PluginPersistor";
 import { copyIgnoringMissing, swapUserlistForProfile, userlistPaths } from "./util/profileUserlist";
 import { pluginLink, showPluginCallbacks } from "./util/showPlugin";
@@ -176,8 +176,8 @@ function register(
   context: IExtensionContextExt,
   setPluginLight: (id: string, enable: boolean) => void,
 ) {
-  for (const { path: statePath, reducer } of REDUCER_BINDINGS) {
-    context.registerReducer(statePath, reducer);
+  for (const binding of REDUCER_BINDINGS) {
+    binding.register(context);
   }
 
   context.registerTableAttribute("gamebryo-plugins", genLockIndexAttribute(context.api));
@@ -188,7 +188,7 @@ function register(
     (activity: string[]) => activity !== undefined && activity.length > 0,
   );
 
-  const openLOOTSite = () => opn("https://loot.github.io/").catch(() => null);
+  const openLOOTSite = () => window.api.shell.openUrl("https://loot.github.io/");
 
   const parseESPFile = async (filePath: string, gameMode: string): Promise<IESPFile> => {
     const fileInfo = await ESPFile.open(filePath, gameMode);
@@ -259,6 +259,7 @@ function register(
       onRefreshPlugins: () => {
         void pluginSync.refresh();
       },
+      rescanPlugins: () => pluginSync.refresh(),
       onSetPluginGhost: makeSetPluginGhost(context.api),
       onSetPluginLight: setPluginLight,
     }),
@@ -466,6 +467,7 @@ function initPersistor(context: IExtensionContextExt) {
       () => context.api.store.getState().settings.plugins.autoSort,
     );
     pluginPersistor.setExternalChangeCallback(makePluginConflictPrompt(context.api));
+    pluginPersistor.setEmptyListCallback(makeEmptyListNotice(context.api));
   }
   if (userlistPersistor === undefined) {
     userlistPersistor = new UserlistPersistor("userlist", onError);
@@ -1156,6 +1158,10 @@ function init(context: IExtensionContextExt) {
   const history = new PluginHistory(context.api, makeSetPluginGhost(context.api), setPluginLight);
 
   initPersistor(context);
+  context.optional.registerLockfileContribution(
+    (_state: IState, gameMode: string) => gameSupported(gameMode),
+    pluginListContribution,
+  );
   pluginSync = makePluginSync(context.api, {
     persistors: {
       plugins: pluginPersistor,
@@ -1179,8 +1185,10 @@ function init(context: IExtensionContextExt) {
 
         loot = new LootInterface(context.api);
 
-        deployWatcher = startDeployWatcher(context.api, (profileId) =>
-          onDidDeploy(context.api, profileId),
+        deployWatcher = startDeployWatcher(
+          context.api,
+          (profileId) => onDidDeploy(context.api, profileId),
+          () => pluginSync.scheduleRefresh(),
         );
 
         // folded gamebryo-plugin-indexlock wiring; only attaches listeners, no ordering
@@ -1204,6 +1212,15 @@ function init(context: IExtensionContextExt) {
             }
           },
         );
+
+        // the Data folder watcher sees a removed mod's deployed plugins go, but not the staged
+        // ones of a mod that was never deployed, and its rescan waits for the removal to finish
+        context.api.onAsync("did-remove-mods", (gameId: string) => {
+          if (gameId === activeGameId(context.api.getState()) && gameSupported(gameId)) {
+            pluginSync.scheduleRefresh();
+          }
+          return Promise.resolve();
+        });
 
         context.api.events.on(
           "did-install-mod",

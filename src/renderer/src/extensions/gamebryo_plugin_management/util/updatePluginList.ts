@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import * as path from "path";
 
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
@@ -20,7 +20,7 @@ import { ESPFile } from "../esp/ESPFile";
 import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { isNativePlugin, pluginFormat, supportsBlueprintPlugins } from "./gameSupport";
-import { selectPluginFiles } from "./isPlugin";
+import { selectPluginFiles, selectStagedPlugins } from "./isPlugin";
 import type PluginPersistor from "./PluginPersistor";
 import { withFileRetry } from "./PluginPersistor";
 import { SpanAttribute } from "./spanAttributes";
@@ -81,9 +81,18 @@ async function updatePluginListImpl(
         path: modPath,
         error: getErrorMessageOrDefault(err),
       });
-      recordErrorSpan("the game folder could not be read", unknownToError(err), {
-        [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
-      });
+      // a game that is gone is discovery's to report, not a failed read
+      const gameGone =
+        getErrorCode(err) === "ENOENT" &&
+        (await stat(discovery.path).then(
+          () => false,
+          () => true,
+        ));
+      if (!gameGone) {
+        recordErrorSpan("the game folder could not be read", unknownToError(err), {
+          [SpanAttribute.ErrorCode]: getErrorCode(err) ?? "",
+        });
+      }
       return undefined;
     }
     return selectPluginFiles(modPath, fileNames, gameId);
@@ -109,12 +118,23 @@ async function updatePluginListImpl(
       const modInstPath = path.join(installBasePath, mod.installationPath);
       try {
         const fileNames = await fs.readdirAsync(modInstPath);
-        const candidates = fileNames
-          .map((fileName) => activator?.getDeployedPath(fileName) ?? fileName)
-          .filter((fileName) => !overridden.has(fileName));
-        for (const fileName of await selectPluginFiles(modInstPath, candidates, gameId)) {
-          modIdByFileName[fileName] = mod.id;
-          addPlugin(modInstPath, fileName, mod.id, false);
+        const { staged, movedOut } = await selectStagedPlugins(
+          modInstPath,
+          fileNames,
+          gameId,
+          (fileName) => activator?.getDeployedPath(fileName) ?? fileName,
+        );
+        for (const fileName of staged) {
+          if (!overridden.has(fileName)) {
+            modIdByFileName[fileName] = mod.id;
+            addPlugin(modInstPath, fileName, mod.id, false);
+          }
+        }
+        // the file is in the game folder, or nowhere; staging has no copy to list
+        for (const fileName of movedOut) {
+          if (!overridden.has(fileName)) {
+            modIdByFileName[fileName] = mod.id;
+          }
         }
       } catch (err) {
         readErrors.push(mod.id);
@@ -177,7 +197,8 @@ async function updatePluginListImpl(
       }
     }
   }
-  persistor.setKnownPlugins(fileNameByPluginId, blueprintIds);
+  const modPluginIds = new Set(pluginIds.filter((pluginId) => pluginStates[pluginId].modId !== ""));
+  persistor.setKnownPlugins(fileNameByPluginId, blueprintIds, modPluginIds);
   // rides on every error span for the rest of the session.
   setErrorContext(SpanAttribute.PluginCount, String(pluginIds.length));
   setErrorContext(SpanAttribute.PluginFormat, pluginFormat(gameId));

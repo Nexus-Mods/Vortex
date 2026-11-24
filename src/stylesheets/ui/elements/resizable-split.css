@@ -1,0 +1,40 @@
+@layer components {
+    .nxm-resizable-split {
+        position: relative;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        grid-template-columns: minmax(0, calc(var(--nxm-resizable-split) * 100%)) minmax(0, 1fr);
+    }
+
+    .nxm-resizable-split-handle {
+        position: absolute;
+        inset-block: 0;
+        left: calc(var(--nxm-resizable-split) * 100%);
+        z-index: 10;
+        display: flex;
+        justify-content: center;
+        width: calc(var(--spacing) * 2);
+        padding-block: calc(var(--spacing) * 6);
+        translate: -50% 0;
+        cursor: col-resize;
+        touch-action: none;
+        outline: none;
+    }
+
+    .nxm-resizable-split-rule {
+        width: calc(var(--spacing) * 0.25);
+        background-color: var(--color-stroke-weak);
+        transition-property: background-color;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
+
+        .nxm-resizable-split-handle:is(:hover, [data-dragging]) & {
+            background-color: var(--color-stroke-moderate);
+        }
+
+        .nxm-resizable-split-handle:focus-visible & {
+            width: calc(var(--spacing) * 0.5);
+            background-color: var(--color-focus-subdued);
+        }
+    }
+}

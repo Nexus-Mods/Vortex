@@ -17,6 +17,7 @@ import type {
 import { z } from "zod";
 
 import { clearDownloadCheckpoint, setDownloadCheckpoint } from "./actions/downloads";
+import { downloadNexusIds } from "./extensions/analytics/mixpanel/download_nexus_ids/downloadNexusIds";
 import { classifyErrorCode } from "./extensions/analytics/mixpanel/error-code";
 import {
   CollectionsDownloadCancelledEvent,
@@ -27,7 +28,7 @@ import {
   ModsDownloadFailedEvent,
   ModsDownloadStartedClientEvent,
 } from "./extensions/analytics/mixpanel/MixpanelEvents";
-import { makeModAnalyticsIdentity } from "./extensions/analytics/mixpanel/modAnalyticsIdentity";
+import { makeModDownloadIdentity } from "./extensions/analytics/mixpanel/mod_download_identity/modDownloadIdentity";
 import {
   addLocalDownload,
   downloadProgress,
@@ -53,7 +54,6 @@ import {
 import { knownGames } from "./extensions/gamemode_management/selectors";
 import type { IGameStored } from "./extensions/gamemode_management/types/IGameStored";
 import { nxmUrlFromDownload } from "./extensions/nexus_integration/NXMUrl";
-import { nexusIdsFromDownloadId } from "./extensions/nexus_integration/selectors";
 import { convertGameIdReverse } from "./extensions/nexus_integration/util/convertGameId";
 import { activeGameId } from "./extensions/profile_management/selectors";
 import { log } from "./logging";
@@ -140,9 +140,13 @@ type StoredDownloadInfo = {
   callback?: (err: Error | null, id?: string) => void;
 };
 
+type RedownloadMode = "never" | "ask" | "replace" | "always";
+
 type ActiveDownload = {
   callback?: (err: Error | null, id?: string) => void;
   fileNameHint?: string;
+  // what to do when the final name is another record's archive; unset (resumes) keeps both
+  redownload?: RedownloadMode;
   allowInstall?: boolean;
   lastBytesReceived: number;
   lastProgressDispatch: number;
@@ -312,6 +316,53 @@ export class IPCDownloadAdapter {
     }
   }
 
+  #downloadFolder(state: IState, download: IDownload): string {
+    const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(state));
+    return downloadPathForGame(state, gameId);
+  }
+
+  // Ids of the records whose archive is dlPath/localPath. Different games' folders can hold the
+  // same name, so the folder has to match too.
+  #recordsForFile(state: IState, dlPath: string, localPath: string): string[] {
+    const files = state.persistent.downloads.files ?? {};
+    return Object.keys(files).filter(
+      (id) =>
+        files[id].localPath === localPath && this.#downloadFolder(state, files[id]) === dlPath,
+    );
+  }
+
+  // The archive a new download would duplicate: a finished record of the same Nexus file whose
+  // archive is still on disk, else a file at the caller's name. The name alone misses Nexus
+  // downloads, whose callers pass the file's display name rather than the archive name.
+  async #findExistingArchive(
+    state: IState,
+    dlPath: string,
+    modInfo: ModInfo,
+    fileName: string | undefined,
+  ): Promise<{ fileName: string; downloadId?: string } | undefined> {
+    const ids = nexusFileIdsSchema.safeParse(modInfo).data?.nexus.ids;
+    if (ids !== undefined) {
+      const files = state.persistent.downloads.files ?? {};
+      for (const [id, download] of Object.entries(files)) {
+        const recordIds = nexusFileIdsSchema.safeParse(download.modInfo).data?.nexus.ids;
+        if (
+          download.state === "finished" &&
+          download.localPath !== undefined &&
+          recordIds?.modId === ids.modId &&
+          recordIds.fileId === ids.fileId &&
+          this.#downloadFolder(state, download) === dlPath &&
+          (await fileExists(path.join(dlPath, download.localPath)))
+        ) {
+          return { fileName: download.localPath, downloadId: id };
+        }
+      }
+    }
+    if (fileName !== undefined && (await fileExists(path.join(dlPath, fileName)))) {
+      return { fileName, downloadId: this.#recordsForFile(state, dlPath, fileName)[0] };
+    }
+    return undefined;
+  }
+
   async #discardStaleDownload(downloadId: string, download: IDownload): Promise<void> {
     if (download.localPath !== undefined) {
       const state = this.#api.getState();
@@ -330,20 +381,15 @@ export class IPCDownloadAdapter {
     error?: Error,
   ): void {
     const state = this.#api.getState();
-    const nexusIds = nexusIdsFromDownloadId(state, downloadId);
+    const nexusIds = downloadNexusIds(state, downloadId);
     if (!nexusIds?.numericGameId || isNaN(nexusIds.numericGameId)) return;
 
     const download = state.persistent.downloads.files?.[downloadId];
     const isCollection = nexusIds.collectionSlug !== undefined && nexusIds.revisionId !== undefined;
 
-    // Mod downloads triggered by a collection install carry the parent collection's id and
-    // revision under `modInfo.nexus.parentCollectionId`/`parentRevisionId` (see
-    // InstallManager.downloadURL).
-    const parentCollectionId = download?.modInfo?.nexus?.parentCollectionId;
-    const modCollectionId =
-      isCollection || parentCollectionId === undefined ? null : parentCollectionId;
-    const parentRevisionId = download?.modInfo?.nexus?.parentRevisionId;
-    const modRevisionId = isCollection || parentRevisionId === undefined ? null : parentRevisionId;
+    // A mod's parent collection (see InstallManager.downloadURL) and where the download started
+    // come from what its record saved.
+    const modIdentity = () => makeModDownloadIdentity({ nexusIds, download });
 
     // Durable resume history (persisted on the record, accumulates across restarts).
     const pause_count = download?.pauseCount ?? 0;
@@ -353,9 +399,7 @@ export class IPCDownloadAdapter {
       if (isCollection || nexusIds.modId === undefined || nexusIds.fileId === undefined) return;
       this.#api.events.emit(
         "analytics-track-mixpanel-event",
-        new ModsDownloadStartedClientEvent(
-          makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
-        ),
+        new ModsDownloadStartedClientEvent(modIdentity()),
       );
       return;
     }
@@ -383,7 +427,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadCompletedEvent({
-            ...makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
+            ...modIdentity(),
             file_size,
             duration_ms,
             ...resumeInfo,
@@ -406,9 +450,7 @@ export class IPCDownloadAdapter {
       } else if (nexusIds.modId !== undefined && nexusIds.fileId !== undefined) {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
-          new ModsDownloadCancelledEvent(
-            makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
-          ),
+          new ModsDownloadCancelledEvent(modIdentity()),
         );
       }
       return;
@@ -432,7 +474,7 @@ export class IPCDownloadAdapter {
         this.#api.events.emit(
           "analytics-track-mixpanel-event",
           new ModsDownloadFailedEvent({
-            ...makeModAnalyticsIdentity(nexusIds, modCollectionId, modRevisionId),
+            ...modIdentity(),
             error_code,
             error_message: message,
             ...resumeInfo,
@@ -448,16 +490,49 @@ export class IPCDownloadAdapter {
     activeDownload?: ActiveDownload,
   ): Promise<void> {
     const reduxState = this.#api.getState();
-    const download = reduxState.persistent.downloads.files?.[downloadId];
+    let download = reduxState.persistent.downloads.files?.[downloadId];
 
     if (download?.localPath !== undefined) {
-      const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(reduxState));
-      const dlPath = downloadPathForGame(reduxState, gameId);
+      const dlPath = this.#downloadFolder(reduxState, download);
       const tempPath = path.join(dlPath, download.localPath);
 
       // Determine the final filename: server Content-Disposition > caller hint > temp name.
       const hint = activeDownload?.fileNameHint;
-      const finalName = wireState.fileName ?? hint ?? download.localPath;
+      let finalName = wireState.fileName ?? hint ?? download.localPath;
+
+      if (finalName !== download.localPath) {
+        // Renaming onto an archive another record tracks would leave two records sharing one file,
+        // and removing either would delete it for both.
+        const ownerId = this.#recordsForFile(reduxState, dlPath, finalName).find(
+          (id) => id !== downloadId,
+        );
+        const redownload = activeDownload?.redownload ?? "always";
+        if (ownerId !== undefined && redownload === "always") {
+          finalName = await freeDownloadName(dlPath, finalName);
+        } else if (ownerId !== undefined) {
+          this.#api.store.dispatch(removeDownloadSilent(downloadId));
+          if (redownload !== "replace") {
+            await rm(tempPath, { force: true }).catch((err) => {
+              log("warn", "failed to remove duplicate download", { downloadId, err });
+            });
+            // The request settles on the record that already tracks the archive, as if that were
+            // the download it started. Failing here instead would strand callers the pre-download
+            // check can't cover (collections, requirement helpers): the archive stays on disk, so
+            // every retry would fail the same way.
+            log("info", "download duplicates a tracked archive, reusing it", {
+              downloadId,
+              ownerId,
+              finalName,
+            });
+            this.#settleCompleted(ownerId, reduxState, download, activeDownload);
+            return;
+          }
+          // the fresh copy replaces the archive and finishes under the record that tracks it
+          downloadId = ownerId;
+          download = reduxState.persistent.downloads.files[ownerId];
+        }
+      }
+
       const finalPath = path.join(dlPath, finalName);
 
       if (finalPath !== tempPath) {
@@ -491,6 +566,18 @@ export class IPCDownloadAdapter {
     // Notify listeners that the download completed. InstallManager listens
     // for this to trigger auto-install when automation is enabled.
     this.#api.events.emit("did-finish-download", downloadId, "finished");
+    this.#settleCompleted(downloadId, reduxState, download, activeDownload);
+  }
+
+  // Hands a finished download to whoever requested it: `downloadId` is the record that holds the
+  // archive, `requested` the record the request ran under (the same one unless the request ended
+  // up reusing an archive another record tracks).
+  #settleCompleted(
+    downloadId: string,
+    state: IState,
+    requested: IDownload | undefined,
+    activeDownload?: ActiveDownload,
+  ): void {
     // Fire the start-download callback now that the file is on disk. Callers
     // (e.g. nexus_integration collection download) rely on the callback firing
     // after completion to trigger installation, matching DownloadObserver behaviour.
@@ -499,7 +586,7 @@ export class IPCDownloadAdapter {
     const allowInstall = activeDownload?.allowInstall;
 
     const autoInstall =
-      reduxState.settings.automation?.install || download?.modInfo?.["startedAsUpdate"] === true;
+      state.settings.automation?.install || requested?.modInfo?.["startedAsUpdate"] === true;
 
     // Trigger auto-install respecting the per-download allowInstall override.
     // "force" (stored as true) → always install; false → never; undefined → automation setting.
@@ -514,7 +601,7 @@ export class IPCDownloadAdapter {
     modInfo: ModInfo,
     fileName?: string,
     callback?: (err: Error | null, id?: string) => void,
-    redownload?: "never" | "ask" | "replace" | "always",
+    redownload?: RedownloadMode,
     options?: { allowInstall?: boolean | "force" },
   ): Promise<void> {
     // TODO: decide how to handle multiple URL inputs
@@ -534,39 +621,34 @@ export class IPCDownloadAdapter {
 
     const { state, dlPath, gameIds } = await this.#resolveDownloadTarget(modInfo);
 
-    // Check for an existing file using the caller-supplied name before queuing.
-    // We can only do this when a name is provided; temp-named downloads are always new.
-    if (fileName !== undefined && redownload !== "always") {
-      const namedDest = path.join(dlPath, fileName);
-      const fileExists = await access(namedDest).then(
-        () => true,
-        () => false,
-      );
-      if (fileExists && redownload !== "replace") {
+    // Check for an existing archive before queuing. Unset means "never": completion then reuses an
+    // archive the check missed instead of tracking it twice.
+    let effectiveRedownload = redownload ?? "never";
+    if (redownload !== "always") {
+      const existing = await this.#findExistingArchive(state, dlPath, modInfo, fileName);
+      if (existing !== undefined && redownload !== "replace") {
         let useExisting = true;
         if (redownload === "ask") {
           const result = await this.#api.showDialog?.(
             "question",
             "File already downloaded",
-            { text: `"${fileName}" is already on disk. Download again?` },
+            { text: `"${existing.fileName}" is already on disk. Download again?` },
             [{ label: "Use existing" }, { label: "Re-download" }],
           );
           useExisting = result?.action !== "Re-download";
+          effectiveRedownload = useExisting ? "never" : "replace";
         }
         if (useExisting) {
-          const downloads = state.persistent.downloads.files;
-          let existingId = Object.keys(downloads).find(
-            (id) => downloads[id].localPath === fileName,
-          );
+          let existingId = existing.downloadId;
           const gameId = gameIds[0];
           if (existingId === undefined && gameId !== undefined) {
             // A file no record tracks (dropped in manually, or its record was lost) is adopted
             // the same way the download-folder scan adopts unknown archives, so the caller
             // receives a usable download id. Adoption needs a game id: ADD_LOCAL_DOWNLOAD's
             // sanity check blocks a record without one.
-            const { size } = await stat(namedDest);
+            const { size } = await stat(path.join(dlPath, existing.fileName));
             existingId = randomUUID();
-            this.#api.store.dispatch(addLocalDownload(existingId, gameId, fileName, size));
+            this.#api.store.dispatch(addLocalDownload(existingId, gameId, existing.fileName, size));
             this.#api.store.dispatch(
               setCompatibleGames(
                 existingId,
@@ -575,7 +657,7 @@ export class IPCDownloadAdapter {
             );
           }
           if (existingId !== undefined) {
-            callback?.(new AlreadyDownloaded(fileName, existingId));
+            callback?.(new AlreadyDownloaded(existing.fileName, existingId));
             return;
           }
           // untracked file with no game to record it under: fall through to a fresh download
@@ -612,6 +694,7 @@ export class IPCDownloadAdapter {
       this.#activeDownloads.set(downloadId, {
         callback,
         fileNameHint: fileName,
+        redownload: effectiveRedownload,
         allowInstall,
         lastBytesReceived: 0,
         lastProgressDispatch: 0,
@@ -753,9 +836,14 @@ export class IPCDownloadAdapter {
       // the temp file and Redux record directly.
       this.#activeDownloads.delete(downloadId);
       if (download?.localPath) {
-        const gameId = toInternalGameId(this.#api, download.game?.[0] ?? activeGameId(state));
-        const dlPath = downloadPathForGame(state, gameId);
-        await rm(path.join(dlPath, download.localPath), { force: true });
+        const dlPath = this.#downloadFolder(state, download);
+        // older versions could leave two records tracking one archive
+        const shared = this.#recordsForFile(state, dlPath, download.localPath).some(
+          (id) => id !== downloadId,
+        );
+        if (!shared) {
+          await rm(path.join(dlPath, download.localPath), { force: true });
+        }
       }
       this.#api.store.dispatch(clearDownloadCheckpoint(downloadId));
       this.#api.store.dispatch(removeDownload(downloadId));
@@ -1065,6 +1153,19 @@ export class IPCDownloadAdapter {
     throw new Error(`No protocol handler registered for scheme: ${scheme}`);
   }
 }
+
+async function fileExists(filePath: string): Promise<boolean> {
+  return access(filePath).then(
+    () => true,
+    () => false,
+  );
+}
+
+const nexusFileIdsSchema = z.looseObject({
+  nexus: z.looseObject({
+    ids: z.looseObject({ modId: z.number(), fileId: z.number() }),
+  }),
+});
 
 const modInfoSchema = z
   .looseObject({

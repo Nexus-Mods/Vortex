@@ -143,6 +143,25 @@ describe("event property derivation", () => {
 
     expect(mocks.trackEvent.mock.calls[0][0].properties.bundled).toBe(true);
   });
+
+  it("falls back to the loaded extension's info for bundled extensions without a state entry", () => {
+    const ext: IRegisteredExtension = {
+      ...makeExt("game-skyrimse"),
+      info: {
+        name: "Skyrim SE",
+        author: "Black Tree Gaming",
+        description: "",
+        version: "1.4.0",
+        bundled: true,
+      },
+    };
+
+    reportDeprecatedApiUsage(ext, undefined, "steam.findByName", undefined);
+
+    const { properties } = mocks.trackEvent.mock.calls[0][0];
+    expect(properties.bundled).toBe(true);
+    expect(properties.extension_version).toBe("1.4.0");
+  });
 });
 
 describe("deprecatedApiGet wrapping", () => {

@@ -4,17 +4,20 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 
 import type { IExtensionContext } from "@/types/IExtensionContext";
 import { toUpdateChannel } from "@/types/IState";
+import { isRelaunching } from "@/util/commandLine";
 import { getCPUArch } from "@/util/nativeArch";
 
 import { isHidpiDisplay } from "../../contexts/WindowContext";
 import { activeGameId, activeProfileId } from "../../util/selectors";
+import { isLoggedIn } from "../nexus_integration/selectors";
 import { nexusGamesProm } from "../nexus_integration/util";
 import { zoomFromState } from "../settings_interface/utils/zoom";
 import { setAnalytics } from "./actions/analytics.action";
 import { HELP_ARTICLE, PRIVACY_POLICY } from "./constants";
+import { initGameFolderCheck, registerGameFolderCheckAction } from "./gameFolderCheck";
 import AnalyticsMixpanel from "./mixpanel/MixpanelAnalytics";
 import type { MixpanelEvent } from "./mixpanel/MixpanelEvents";
-import { AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
+import { AppClosedEvent, AppLaunchedEvent, AppUIModeChangedEvent } from "./mixpanel/MixpanelEvents";
 import { numericNexusGameId } from "./mixpanel/numericGameId";
 import settingsReducer from "./reducers/settings.reducer";
 import telemetryReducer from "./reducers/telemetry.reducer";
@@ -28,8 +31,18 @@ function init(context: IExtensionContext): boolean {
   context.registerReducer(["settings", "analytics"], settingsReducer);
   context.registerReducer(["persistent", "analyticsTelemetry"], telemetryReducer);
   context.registerSettings("Vortex", SettingsAnalytics, undefined, undefined, 110);
+  registerGameFolderCheckAction(context);
+
+  // Set in init, not once, so the check is in place before any other
+  // extension's startup code tracks an event. The store isn't set until after
+  // every init has run, hence the optional chain.
+  AnalyticsMixpanel.setConsentGetter(
+    () => context.api.store?.getState().settings.analytics?.enabled,
+  );
 
   context.once(() => {
+    initGameFolderCheck(context.api);
+
     const enabled = () => context.api.store.getState().settings.analytics.enabled;
     const getUserInfo = () => context.api.store.getState().persistent.nexus.userInfo;
     // `?? true` because state persisted before the setting existed has no value for it.
@@ -86,6 +99,22 @@ function init(context: IExtensionContext): boolean {
     // and would otherwise report itself as a switch the user never made.
     context.api.events.on("analytics-track-ui-mode-changed", (isLegacy: boolean) => {
       AnalyticsMixpanel.trackEvent(new AppUIModeChangedEvent({ is_legacy_ui: isLegacy }));
+    });
+
+    // app_closed has to go from here: main's window-all-closed fires after the renderer has gone.
+    window.addEventListener("beforeunload", () => {
+      try {
+        AnalyticsMixpanel.trackEventOnExit(
+          new AppClosedEvent({
+            is_relaunch: isRelaunching(),
+            session_duration_ms: Math.round(performance.now()),
+          }),
+        );
+      } catch (err) {
+        analyticsLog("warn", "Failed to send app_closed", {
+          error: getErrorMessageOrDefault(err),
+        });
+      }
     });
 
     // Store install version telemetry; the per-game change gates make it cheap on deploys that changed nothing.
@@ -215,9 +244,10 @@ function init(context: IExtensionContext): boolean {
                     {
                       label: "Yes, share anonymous data",
                       action: () => {
-                        startAnalytics();
+                        // Save consent before starting, or the tracker drops app_launched.
                         ignoreNextAnalyticsStateChange = true;
                         context.api.store.dispatch(setAnalytics(true));
+                        startAnalytics();
                       },
                       default: true,
                     },
@@ -231,6 +261,12 @@ function init(context: IExtensionContext): boolean {
           },
         ],
       });
+    }
+
+    if (!isLoggedIn(context.api.getState())) {
+      // Launched logged out: there's no login to restore, so close the startup
+      // queue rather than hold events for whoever logs in next.
+      AnalyticsMixpanel.stop();
     }
 
     if (enabled() === undefined && !!getUserInfo()) {

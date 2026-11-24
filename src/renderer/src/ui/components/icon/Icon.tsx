@@ -171,20 +171,29 @@ interface IIconSlotProps {
   icon?: IIconProp;
   /** The size a source is drawn at. Default `none`, for the class to size it. */
   size?: IIconSize;
+  /** Marks it with a dot off its top left, such as while a filter it opens is on. */
+  hasPip?: boolean;
 }
 
 /**
  * The icon a component shows for its `icon` prop: a source drawn by `Icon`, with the class and
  * size the component gives its icons, or an element in a box with that class. Nothing for no icon.
+ * A pip goes on a box around it, as an icon clips what overflows it.
  */
-export const IconSlot = ({ className, icon, size = "none" }: IIconSlotProps) => {
+export const IconSlot = ({ className, icon, size = "none", hasPip = false }: IIconSlotProps) => {
   if (!icon) {
     return null;
   }
 
-  if (isIconSource(icon)) {
-    return <Icon {...getIconProps(icon)} className={className} size={size} />;
+  const slot = isIconSource(icon) ? (
+    <Icon {...getIconProps(icon)} className={className} size={size} />
+  ) : (
+    <span className={joinClasses(["nxm-icon", className])}>{icon}</span>
+  );
+
+  if (!hasPip) {
+    return slot;
   }
 
-  return <span className={joinClasses(["nxm-icon", className])}>{icon}</span>;
+  return <span className="nxm-icon-pip">{slot}</span>;
 };

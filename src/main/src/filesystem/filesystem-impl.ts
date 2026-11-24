@@ -19,10 +19,6 @@ import type {
  * registry, delegates every operation to the backend, and re-tags iterator
  * entries with `QualifiedPath`s rooted at the caller's input.
  *
- * This is the host-side counterpart to the adaptor-side polyfill produced
- * by `createFileSystemClient`. Adaptors see the same {@link NodeFileSystem}
- * surface the host uses directly.
- *
  * @public
  */
 export class NodeFileSystemImpl implements NodeFileSystem {

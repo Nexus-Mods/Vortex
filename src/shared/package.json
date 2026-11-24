@@ -74,6 +74,7 @@
     "zod": "catalog:"
   },
   "peerDependencies": {
+    "@nexusmods/paths": "workspace:*",
     "@opentelemetry/api": "catalog:"
   },
   "devDependencies": {

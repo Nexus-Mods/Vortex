@@ -1,5 +1,7 @@
 import { createAction } from "redux-act";
 
+import type { UserlistRuleType } from "../types/IPlugins";
+
 export const setSource = createAction(
   "SET_PLUGIN_CONNECTION_SOURCE",
   (id: string, pos: { x: number; y: number }) => ({ id, pos }),
@@ -12,7 +14,7 @@ export const setTarget = createAction(
 
 export const setCreateRule = createAction(
   "SET_PLUGIN_CREATE_RULE",
-  (pluginId: string, reference: string, defaultType: string) => ({
+  (pluginId: string, reference: string, defaultType: UserlistRuleType) => ({
     pluginId,
     reference,
     type: defaultType,

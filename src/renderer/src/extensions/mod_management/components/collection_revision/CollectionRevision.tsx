@@ -24,7 +24,7 @@ interface ICollectionRevisionProps {
  * it and one that opens its changelog.
  */
 export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const { revision, newest, hasUpdate, update, updating } = useCollectionRevision(collection);
   const slug: string | undefined = collection.attributes?.collectionSlug;
 
@@ -37,8 +37,9 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
           <ToolbarButton
             appearance="moderate"
             brand="info"
+            data-testid="collection-revision-update"
             isLoading={updating}
-            label={t("Update to {{revision}}", { revision: newest })}
+            label={t("modsTable::collectionRevision::updateTo", { revision: newest })}
             leftIcon="download"
             size="sm"
             onClick={() => void update()}
@@ -57,14 +58,14 @@ export const CollectionRevision = ({ collection }: ICollectionRevisionProps) => 
 
 /** A revision's changelog, fetched as its popover opens, as the panel mounts it then. */
 const CollectionChangelog = ({ slug, revision }: { slug: string; revision: number }) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const changelog = useCollectionChangelog(slug, revision);
 
   switch (changelog.status) {
     case "loading":
       return (
         <span
-          aria-label={t("Loading changelog")}
+          aria-label={t("modsTable::changelog::loading")}
           className="relative flex size-4 animate-spin text-neutral-subdued"
           role="status"
         >
@@ -74,12 +75,24 @@ const CollectionChangelog = ({ slug, revision }: { slug: string; revision: numbe
         </span>
       );
     case "failed":
-      return <PlainText size="sm" text={t("Couldn't load the changelog")} />;
+      return (
+        <PlainText
+          data-testid="changelog-load-failed"
+          size="sm"
+          text={t("modsTable::changelog::loadFailed")}
+        />
+      );
     case "loaded":
       if (changelog.changelog) {
         return <Markdown markdown={changelog.changelog} size="sm" />;
       }
 
-      return <PlainText size="sm" text={t("No changelog for this revision")} />;
+      return (
+        <PlainText
+          data-testid="changelog-none"
+          size="sm"
+          text={t("modsTable::changelog::noneForRevision")}
+        />
+      );
   }
 };

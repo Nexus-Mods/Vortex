@@ -1,11 +1,11 @@
 import { inspect } from "util";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { NexusGameDomain, getErrorMessageOrDefault, VortexGameId } from "@vortex/shared";
+
+import { log } from "@/logging";
 
 import type { IGame } from "../../../types/IGame";
 import type { IState } from "../../../types/IState";
-import { log } from "../../../util/log";
-import { truthy } from "../../../util/util";
 import { SITE_ID } from "../../gamemode_management/constants";
 // the game selectors directly rather than through util/selectors: that barrel re-exports this
 // extension's own selectors, and importing it from here would close an import cycle onto a leaf
@@ -17,26 +17,34 @@ import type { IGameStored, IGameStoredExt } from "../../gamemode_management/type
  * get the nexus page id for a game
  * TODO: some games have hard-coded transformations here, should move all of that to game.details
  */
-export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string): string {
+export function nexusGameId(
+  game: IGameStored | IGame,
+  fallbackGameId?: string,
+): NexusGameDomain | undefined {
   if (game === undefined && fallbackGameId === undefined) {
     return undefined;
   }
 
-  if (truthy(game) && game.details !== undefined && game.details.nexusPageId !== undefined) {
-    return game.details.nexusPageId;
+  if (
+    game &&
+    game.details !== undefined &&
+    "nexusPageId" in game.details &&
+    typeof game.details.nexusPageId === "string"
+  ) {
+    return NexusGameDomain(game.details.nexusPageId);
   }
 
   const gameId = game?.id ?? fallbackGameId;
 
   try {
-    return (
+    return NexusGameDomain(
       {
         skyrimse: "skyrimspecialedition",
         skyrimvr: "skyrimspecialedition",
         falloutnv: "newvegas",
         fallout4vr: "fallout4",
         teso: "elderscrollsonline",
-      }[gameId.toLowerCase()] || gameId
+      }[gameId.toLowerCase()] || gameId,
     );
   } catch (err) {
     log("error", "failed to convert game id to domain", {
@@ -44,6 +52,7 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
       game: inspect(game),
       fallbackGameId,
     });
+
     throw err;
   }
 }
@@ -51,8 +60,9 @@ export function nexusGameId(game: IGameStored | IGame, fallbackGameId?: string):
 /**
  * get our internal game id for a nexus page id
  */
-export function convertGameIdReverse(knownGames: IGameStored[], input: string): string {
-  if (input?.toLowerCase === undefined) {
+export function convertGameIdReverse(knownGames: IGameStored[], input: string): VortexGameId {
+  // an empty string is no game id either, and branding one would throw
+  if (input?.toLowerCase === undefined || input === "") {
     return undefined;
   }
 
@@ -64,21 +74,23 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
 
   // We obviously prefer the exact match first.
   const game = validGames.find((iter) => iter.id === input.toLowerCase());
+  // the stored games are keyed by the id their extension registered
   if (game !== undefined) {
-    return game.id;
+    return VortexGameId(game.id);
   }
 
   // Alternatively - there may be a nexus page id match.
   if (validGames.length > 0) {
-    return validGames[0].id;
+    return VortexGameId(validGames[0].id);
   }
 
-  return (
+  // no known game matches: assume an extension game that isn't registered (yet) uses the domain as its id
+  return VortexGameId(
     {
       skyrimspecialedition: "skyrimse",
       newvegas: "falloutnv",
       elderscrollsonline: "teso",
-    }[input.toLowerCase()] || input.toLowerCase()
+    }[input.toLowerCase()] || input.toLowerCase(),
   );
 }
 
@@ -86,7 +98,7 @@ export function convertGameIdReverse(knownGames: IGameStored[], input: string): 
  * the nexus page id (domain) for the game an nxm url names, mapping the link's game id through
  * the games Vortex knows about
  */
-export function nxmPageId(state: IState, nxmGameId: string): string {
+export function nxmPageId(state: IState, nxmGameId: string): NexusGameDomain {
   const gameId = convertNXMIdReverse(knownGames(state), nxmGameId);
   return nexusGameId(gameById(state, gameId), nxmGameId);
 }
@@ -94,14 +106,14 @@ export function nxmPageId(state: IState, nxmGameId: string): string {
 /**
  * get our internal game id for a nxm link id
  */
-export function convertNXMIdReverse(knownGames: IGameStored[], input: string): string {
-  if (input === undefined) {
+export function convertNXMIdReverse(knownGames: IGameStored[], input: string): VortexGameId {
+  if (input === undefined || input === "") {
     return undefined;
   }
 
   const clearGameMatch = knownGames.find((iter) => iter.id === input.toLowerCase());
   if (clearGameMatch) {
-    return clearGameMatch.id;
+    return VortexGameId(clearGameMatch.id);
   }
 
   const game = knownGames.find(
@@ -111,10 +123,10 @@ export function convertNXMIdReverse(knownGames: IGameStored[], input: string): s
   );
 
   if (game !== undefined) {
-    return game.id;
+    return VortexGameId(game.id);
   }
 
-  return input.toLowerCase();
+  return VortexGameId(input.toLowerCase());
 }
 
 /**

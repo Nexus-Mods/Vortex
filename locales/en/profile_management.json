@@ -1,3 +1,10 @@
 {
-  "_comment": "Profile management strings - to be populated during migration"
+  "_comment": "Profile management strings - to be populated during migration",
+  "tierZero": {
+    "title": "Experimental game support",
+    "warning": "Adding a Tier 0 is experimental and doesn't have full feature support. You can install mods but you won't be able to download or install collections.",
+    "dontAskAgain": "Don't ask me again",
+    "cancel": "Cancel",
+    "manage": "Manage"
+  }
 }

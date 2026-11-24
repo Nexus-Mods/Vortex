@@ -7,7 +7,7 @@ vi.mock("../modSource", () => ({
 
 import { collectionsByMod } from "../../../collections/util/collectionsByMod";
 import type { IModWithState } from "../../types/IModProps";
-import { availableViews, groupMods, sharedMods } from "./modsTableViews";
+import { allModRows, availableViews, groupMods, sharedMods } from "./modsTableViews";
 
 const t = ((key: string) => key) as Parameters<typeof groupMods>[2];
 
@@ -54,6 +54,12 @@ describe("sharedMods", () => {
   it("finds none for the mods in no collection", () => {
     expect(sharedMods(group("no-collection"), collectionsByMod(MODS)).rows).toEqual([]);
   });
+
+  it("names a collection with no name by its id", () => {
+    const mods = { ...MODS, y: collection("y", "", ["c"]) };
+
+    expect(sharedMods(group("x"), collectionsByMod(mods)).collections).toEqual(["y", "Zinc"]);
+  });
 });
 
 describe("groupMods by collection", () => {
@@ -76,6 +82,18 @@ describe("groupMods by collection", () => {
     expect(summary({ ...MODS, y: collection("y", "Yttrium", ["c", "c"]) })).toContainEqual([
       "y",
       ["c"],
+    ]);
+  });
+
+  it("labels a collection with no name by its id, sorted among the others", () => {
+    const mods = { ...MODS, y: collection("y", "", ["c"]) };
+    const groups = groupMods(mods, "collection", t, collectionsByMod(mods));
+
+    expect(groups.map(({ label }) => label)).toEqual([
+      "modsTable::groups::noCollection",
+      "Xenon",
+      "y",
+      "Zinc",
     ]);
   });
 
@@ -102,10 +120,25 @@ describe("groupMods by a column", () => {
     const groups = groupMods(CATEGORISED, "category", t, {}, category);
 
     expect(groups.map(({ id, label, rows }) => [id, label, rows.map((row) => row.name)])).toEqual([
-      ["no-category", "No {{column}}", ["Delta"]],
+      ["no-category", "modsTable::groups::noValue", ["Delta"]],
       ["category:Armour", "Armour", ["Beta"]],
       ["category:Weapons", "Weapons", ["Alpha", "Gamma"]],
     ]);
+  });
+
+  it("names the group without a value as the column says, whole", () => {
+    const groups = groupMods(
+      CATEGORISED,
+      "category",
+      t,
+      {},
+      {
+        ...category,
+        noValueLabel: "Keine Kategorie",
+      },
+    );
+
+    expect(groups[0]).toMatchObject({ id: "no-category", label: "Keine Kategorie" });
   });
 
   it("puts the values a column orders first, in its order, then the rest by name", () => {
@@ -120,7 +153,37 @@ describe("groupMods by a column", () => {
       },
     );
 
-    expect(groups.map(({ label }) => label)).toEqual(["No {{column}}", "Weapons", "Armour"]);
+    expect(groups.map(({ label }) => label)).toEqual([
+      "modsTable::groups::noValue",
+      "Weapons",
+      "Armour",
+    ]);
+  });
+
+  it("keys and orders a column's groups by its values, each showing the name it gives", () => {
+    // Values that are ids, as Status's are, named in the language the table is shown in.
+    const names: { [value: string]: string } = { on: "Zuerst", off: "Aus" };
+    const groups = groupMods(
+      {
+        a: mod("a", "Alpha", { enabled: true }),
+        b: mod("b", "Beta", { enabled: false }),
+      },
+      "enabled",
+      t,
+      {},
+      {
+        id: "enabled",
+        header: "Enabled",
+        groupBy: ({ mod }) => (mod.enabled ? "on" : "off"),
+        groupOrder: ["on", "off"],
+        groupValueLabel: (value) => names[value],
+      },
+    );
+
+    expect(groups.map(({ id, label }) => [id, label])).toEqual([
+      ["enabled:on", "Zuerst"],
+      ["enabled:off", "Aus"],
+    ]);
   });
 
   it("leaves the mods ungrouped without the column it names", () => {
@@ -160,5 +223,21 @@ describe("availableViews", () => {
     });
 
     expect(offersUpdates({ x })).toBe(true);
+  });
+});
+
+describe("allModRows", () => {
+  it("sorts a mod with no attributes by its id instead of throwing", () => {
+    const nameless = { id: "dl-1", enabled: false } as unknown as IModWithState;
+
+    const rows = allModRows({ b: mod("b", "Beta"), n: nameless, a: mod("a", "Alpha") });
+
+    expect(rows.map(({ name }) => name)).toEqual(["Alpha", "Beta", "dl-1"]);
+  });
+
+  it("sorts a mod with every name field empty and no install path by its id", () => {
+    const rows = allModRows({ n: mod("n", ""), a: mod("a", "Alpha") });
+
+    expect(rows.map(({ name }) => name)).toEqual(["Alpha", "n"]);
   });
 });

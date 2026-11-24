@@ -74,6 +74,23 @@ describe("NoResults", () => {
       expect(openUrl).toHaveBeenCalledWith(expect.stringContaining("help.nexusmods.com"));
     });
 
+    it("offers to try again before contacting support, given a retry", async () => {
+      const onRetry = vi.fn();
+      renderComponent({ isError: true, onRetry, title: "" });
+
+      const buttons = screen.getAllByRole("button").map((button) => button.textContent);
+      expect(buttons).toEqual(["Try again", "Contact support"]);
+
+      await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+      expect(onRetry).toHaveBeenCalled();
+    });
+
+    it("offers only to contact support without a retry", () => {
+      renderComponent({ isError: true, title: "" });
+
+      expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+    });
+
     it("renders custom children instead of the default error button", () => {
       renderComponent({
         children: <div data-testid="custom">custom</div>,
@@ -113,5 +130,20 @@ describe("NoResults", () => {
   it("merges a custom className on the container", () => {
     renderComponent({ className: "my-class" });
     expect(document.querySelector(".my-class")).toBeInTheDocument();
+  });
+
+  describe("footnote", () => {
+    it("shows a footnote under the actions", () => {
+      renderComponent({
+        children: <button type="button">Act</button>,
+        footnote: <span>Hidden mods</span>,
+      });
+
+      const action = screen.getByRole("button", { name: "Act" });
+      const footnote = screen.getByText("Hidden mods");
+      expect(
+        action.compareDocumentPosition(footnote) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
   });
 });

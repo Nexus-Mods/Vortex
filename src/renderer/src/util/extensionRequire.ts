@@ -9,8 +9,9 @@ import ExtensionManager from "../ExtensionManager";
 import { findInstalled } from "../extensions/extension_manager/queries";
 import type { IRegisteredExtension } from "../types/extensions";
 import type { IExtensionState } from "../types/IState";
-import { deprecatedApiGet } from "./deprecatedApiUsage";
+import { deprecatedApiGet, makeCallerReporter } from "./deprecatedApiUsage";
 import type { LogLevel } from "./log";
+import { makeExtensionReactMarkdown } from "./react_markdown/ReactMarkdown";
 import { webpackRequireHack } from "./webpack-hacks";
 
 const identity = (input) => input;
@@ -98,6 +99,9 @@ class ExtProxyHandlerReduxAct implements ProxyHandler<typeof reduxAct> {
 
 const handlerMapAPI: { [extId: string]: typeof api } = {};
 const handlerMapReactAct: { [extId: string]: typeof reduxAct } = {};
+const handlerMapReactMarkdown: {
+  [extId: string]: ReturnType<typeof makeExtensionReactMarkdown>;
+} = {};
 
 /**
  * require wrapper to allow extensions to load modules from
@@ -127,6 +131,17 @@ function extensionRequire(
       }
     } else if (id === "react-select") {
       return reactSelect;
+    } else if (id === "react-markdown") {
+      const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
+      const key = ext?.name ?? "";
+      if (handlerMapReactMarkdown[key] === undefined) {
+        const report =
+          ext === undefined
+            ? () => undefined
+            : makeCallerReporter(ext, findInstalled(getInstalled(), { path: ext.path })?.extension);
+        handlerMapReactMarkdown[key] = makeExtensionReactMarkdown(report);
+      }
+      return handlerMapReactMarkdown[key];
     } else if (id === "redux-act") {
       const ext = getExtensions().find((iter) => this.filename.startsWith(iter.path));
       if (ext !== undefined) {

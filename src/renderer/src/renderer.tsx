@@ -112,6 +112,8 @@ import { EventEmitter } from "events";
 import { readFile } from "node:fs/promises";
 import * as path from "path";
 
+import { QueryClientProvider } from "@tanstack/react-query";
+
 import "./util/application.electron";
 import { getErrorCode, getErrorMessageOrDefault, unknownToError } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
@@ -169,6 +171,7 @@ import GlobalNotifications from "./util/GlobalNotifications";
 import { init as getI18n, changeLanguage, fallbackTFunc, type TFunction } from "./util/i18n";
 import { showError } from "./util/message";
 import migrate from "./util/migrate";
+import { queryClient } from "./util/queryClient";
 import { applyReduceMotion, reduceMotionFromState } from "./util/reduceMotion";
 import { readStartupSettings } from "./util/startupSettings";
 import { getSafe } from "./util/storeHelper";
@@ -903,13 +906,15 @@ async function load(extensions: ExtensionManager): Promise<void> {
   ReactDOM.render(
     <Provider store={store}>
       <FlagsProvider>
-        <DndProvider backend={HTML5Backend}>
-          <I18nextProvider i18n={i18n}>
-            <ExtensionContext.Provider value={extensions}>
-              <AppLayout className="full-height" />
-            </ExtensionContext.Provider>
-          </I18nextProvider>
-        </DndProvider>
+        <QueryClientProvider client={queryClient}>
+          <DndProvider backend={HTML5Backend}>
+            <I18nextProvider i18n={i18n}>
+              <ExtensionContext.Provider value={extensions}>
+                <AppLayout className="full-height" />
+              </ExtensionContext.Provider>
+            </I18nextProvider>
+          </DndProvider>
+        </QueryClientProvider>
       </FlagsProvider>
     </Provider>,
     document.getElementById("content"),

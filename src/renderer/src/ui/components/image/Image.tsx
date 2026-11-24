@@ -6,8 +6,10 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 export interface IImageProps extends Omit<
   ImgHTMLAttributes<HTMLImageElement>,
-  "className" | "alt"
+  "className" | "alt" | "src"
 > {
+  /** Where the picture is; `null`, as an API sends for a picture it hasn't got, means none. */
+  src?: string | null;
   /** The picture's text alternative, which also names the fallback icon; "" if decorative. */
   alt: string;
   /** Classes for the frame's size and corners; an `other` frame collapses without a height. */
@@ -24,6 +26,8 @@ export interface IImageProps extends Omit<
   isBlurred?: boolean;
   /** Shows the spinner, for a picture the caller knows is coming before it has a `src`. */
   isLoading?: boolean;
+  /** Gives the frame its background and border. Default `true`. */
+  isStyled?: boolean;
 }
 
 const imageTypeMap: Record<NonNullable<IImageProps["imageType"]>, string> = {
@@ -44,6 +48,7 @@ export const Image = ({
   imageType = "other",
   isBlurred,
   isLoading,
+  isStyled = true,
   onError,
   onLoad,
   src,
@@ -71,7 +76,11 @@ export const Image = ({
   const showFallback = errored || (fallbackIcon !== undefined && !src && isLoading !== true);
 
   return (
-    <div className={joinClasses(["nxm-image", imageTypeMap[imageType], className])}>
+    <span
+      className={joinClasses(["nxm-image", imageTypeMap[imageType], className], {
+        "nxm-image-styled": isStyled,
+      })}
+    >
       {!showFallback ? (
         <img
           {...rest}
@@ -88,7 +97,7 @@ export const Image = ({
             },
           )}
           ref={settleIfComplete}
-          src={src}
+          src={src ?? undefined}
           onError={(event) => {
             setErrored(true);
             onError?.(event);
@@ -117,7 +126,7 @@ export const Image = ({
 
       {children}
 
-      <div className="nxm-image-frame" />
-    </div>
+      {isStyled && <span className="nxm-image-frame" />}
+    </span>
   );
 };

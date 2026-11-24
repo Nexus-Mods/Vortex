@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setZoomFactor } from "@/actions";
 
-import { setAlwaysCompactHeaders, setReduceMotion } from "./actions/interface";
+import { setAlwaysCompactHeaders, setReduceMotion, setShowGameArt } from "./actions/interface";
 
 const { baseState, dispatch, state } = vi.hoisted(() => {
   const baseState = () => ({
@@ -23,6 +23,7 @@ const { baseState, dispatch, state } = vi.hoisted(() => {
         profilesVisible: true,
         reduceMotion: false,
         relativeTimes: false,
+        showGameArt: true,
       },
       notifications: { suppress: {} },
       window: { customTitlebar: true, zoomFactor: 1 },
@@ -158,5 +159,17 @@ describe("SettingsInterface Accessibility section", () => {
     await userEvent.click(handle);
 
     expect(dispatch).toHaveBeenCalledWith(setAlwaysCompactHeaders(true));
+  });
+
+  it("reflects the stored Show game artwork value and dispatches on toggle", async () => {
+    state.current.settings.interface.showGameArt = true;
+    renderForm();
+
+    const handle = toggleHandleFor("Show game artwork");
+    expect(handle).toHaveClass("toggle-on");
+
+    await userEvent.click(handle);
+
+    expect(dispatch).toHaveBeenCalledWith(setShowGameArt(false));
   });
 });

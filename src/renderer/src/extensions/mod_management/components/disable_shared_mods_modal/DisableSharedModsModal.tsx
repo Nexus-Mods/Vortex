@@ -29,39 +29,32 @@ export const DisableSharedModsModal = ({
   onDisableAll,
   onClose,
 }: IDisableSharedModsModalProps) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const names = collections.join(", ");
 
   return (
-    <Modal isOpen={isOpen} size="sm" title={t("Disable mods?")} onClose={onClose}>
+    <Modal isOpen={isOpen} size="sm" title={t("modsTable::disableShared::title")} onClose={onClose}>
       <div className="space-y-2">
         <Typography typographyType="body-sm">
-          {sharedCount === 1
-            ? t("1 mod is shared with: {{collections}}", { collections: names })
-            : t("{{count}} mods are shared with: {{collections}}", {
-                count: sharedCount,
-                collections: names,
-              })}
+          {t("modsTable::disableShared::shared", { count: sharedCount, collections: names })}
         </Typography>
 
         <Typography appearance="subdued" typographyType="body-sm">
-          {t(
-            "Disabling them may affect those collections. Keep the shared mods enabled to avoid issues.",
-          )}
+          {t("modsTable::disableShared::caution")}
         </Typography>
       </div>
 
       <div className="mt-4 grid gap-y-2">
         <Button className="w-full" onClick={onKeepShared}>
-          {t("Keep shared mods enabled")}
+          {t("modsTable::disableShared::keepShared")}
         </Button>
 
         <Button appearance="moderate" brand="neutral" className="w-full" onClick={onDisableAll}>
-          {t("Disable all mods")}
+          {t("modsTable::disableShared::disableAll")}
         </Button>
 
         <Button appearance="weak" brand="neutral" className="w-full" onClick={onClose}>
-          {t("Cancel")}
+          {t("modsTable::cancel")}
         </Button>
       </div>
     </Modal>

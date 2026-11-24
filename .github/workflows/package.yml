@@ -101,7 +101,7 @@ jobs:
 
       - name: Create GitHub Release
         if: ${{ inputs.release }}
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@v3.0.4
         with:
           # the .blockmap enables differential downloads: the auto-updater
           # fetches only the changed blocks of the installer when the previous
@@ -118,7 +118,7 @@ jobs:
 
       - name: Create GitHub Release on Vortex-Staging
         if: ${{ inputs.staging-release }}
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@v3.0.4
         with:
           files: |
             ./dist/vortex-setup-*.*.*.exe
@@ -135,7 +135,7 @@ jobs:
     name: Upload Installer to R2
     needs: build
     if: ${{ inputs.upload-to-r2 }}
-    runs-on: platform-cluster-public
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:

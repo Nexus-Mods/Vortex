@@ -14,6 +14,7 @@ const defaultState: ISettingsGameMode = {
   sortManaged: "alphabetical",
   sortUnmanaged: "alphabetical",
   sortDetected: "recentlydetected",
+  confirmTierZero: true,
 };
 
 /**
@@ -171,4 +172,5 @@ export const settingsReducer = actionsToReducerSpec(defaultState, actions, {
   setSortManaged: (state, payload) => ({ ...state, sortManaged: payload }),
   setSortUnmanaged: (state, payload) => ({ ...state, sortUnmanaged: payload }),
   setSortDetected: (state, payload) => ({ ...state, sortDetected: payload }),
+  setConfirmTierZero: (state, payload) => ({ ...state, confirmTierZero: payload }),
 });

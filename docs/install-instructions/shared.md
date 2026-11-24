@@ -64,6 +64,12 @@ The version you installed in step 2 only bootstraps the process. `pnpm` reads
 downloads the pinned `node.js` runtime declared in `devEngines.runtime`. Building
 the native modules is the slow part of this step.
 
+The repository pins pnpm 12. A pnpm 11 install (11.10 or newer) still switches to
+it, so you do not need to upgrade your global `pnpm` first. To upgrade it anyway,
+run `pnpm self-update` outside the repository. If `pnpm --version` still reports
+an older version afterwards, an older `pnpm` is earlier on `PATH`: find it with
+`where.exe pnpm` on Windows or `which -a pnpm` on Linux.
+
 This also installs the git pre-commit hook for auto-formatting. If the hook is
 missing, install it by hand:
 
@@ -88,8 +94,7 @@ which is not necessarily the one on your `PATH`.
 ## Notes
 
 - Corepack, `npm` and a global `node.js` are not required. The `node.js` version
-  is pinned by `devEngines.runtime` in `package.json` and by the `node`
-  runtime entry in the `pnpm-workspace.yaml` catalog.
+  is pinned by `devEngines.runtime` in `package.json`.
 - `nx` is a dev dependency of the repository. Always run it as `pnpm nx <target>`;
   do not install it globally.
 - If you want `node` and `npm` on `PATH` for unrelated projects, install `node.js`

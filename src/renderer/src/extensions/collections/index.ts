@@ -264,7 +264,7 @@ async function cloneInstalledCollection(api: IExtensionApi, collectionId: string
 
 async function createNewCollection(api: IExtensionApi, profile: IProfile, name: string) {
   const id = makeCollectionId(shortid());
-  await createCollection(api, profile.gameId, id, name, []);
+  await createCollection(api, VortexGameId(profile.gameId), id, name, []);
 
   const state = api.store.getState();
   const game = selectors.gameById(state, profile.gameId);
@@ -676,6 +676,7 @@ async function updateMeta(api: IExtensionApi, collectionId?: string) {
               pictureUrl: info.collection.tileImage?.url,
               description: info.collection.description,
               shortDescription: info.collection.summary,
+              adultContent: info.adultContent,
               newestFileId: latestPublishedRev?.id,
               newestVersion: latestPublishedRev?.revisionNumber?.toString?.(),
               metadata: info.metadata,
@@ -814,7 +815,7 @@ function register(context: IExtensionContext, collectionsCB: ICallbackMap) {
     visible: () => {
       const state = context.api.getState();
       const activeId = selectors.activeGameId(state);
-      return activeId !== undefined && !isTierZeroManagedGame(state, VortexGameId(activeId));
+      return activeId !== undefined && !isTierZeroManagedGame(state, activeId);
     },
     props: () => ({
       driver,

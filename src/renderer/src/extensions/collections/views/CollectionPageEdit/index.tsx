@@ -20,7 +20,6 @@ import { isDependencyRule } from "../../../../extensions/mod_management/util/tes
 import type { IProfile } from "../../../../extensions/profile_management/types/IProfile";
 import { log } from "../../../../logging";
 import type { IState } from "../../../../types/IState";
-import opn from "../../../../util/opn";
 import { getSafe, setSafe } from "../../../../util/storeHelper";
 import { Campaign, nexusModsURL, Section } from "../../../../util/util";
 import { startAddModsToCollection } from "../../actions/session";
@@ -391,7 +390,7 @@ class CollectionEdit extends ComponentEx<ICollectionEditProps, ICollectionEditSt
         "Collections",
         "View on site Workshop Collection",
       );
-      opn(
+      window.api.shell.openUrl(
         nexusModsURL(
           [
             collection.game.domainName,

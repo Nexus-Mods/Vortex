@@ -35,6 +35,12 @@ const COLUMNS: Array<ITableColumn<IRow>> = [
 const renderTable = () =>
   render(<Table columns={COLUMNS} getRowId={(row) => row.id} label="Files" rows={ROWS} />);
 
+/** The element that lays the grid out, which carries its tracks and styles. */
+const layoutOf = (grid: HTMLElement) => grid.parentElement as HTMLElement;
+
+/** The last track: the right gutter, and room for an aside. */
+const END_TRACK = "calc(var(--nxm-table-gutter) + var(--nxm-table-aside-width))";
+
 describe("Table", () => {
   it("is a grid named by its label, with a header row and a row per item", () => {
     renderTable();
@@ -45,11 +51,28 @@ describe("Table", () => {
     expect(within(grid).getAllByRole("columnheader")).toHaveLength(COLUMNS.length);
   });
 
+  it("adds an item's own classes to its row", () => {
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowClassName={(row) => (row.size > 1 ? "large" : undefined)}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const [, alpha, beta] = screen.getAllByRole("row");
+    expect(alpha).toHaveClass("nxm-table-row");
+    expect(alpha).not.toHaveClass("large");
+    expect(beta).toHaveClass("nxm-table-row", "large");
+  });
+
   it("makes its tracks from the column widths, between the gutters", () => {
     renderTable();
 
-    expect(screen.getByRole("grid").style.gridTemplateColumns).toBe(
-      "var(--nxm-table-gutter-start) minmax(280px, 1fr) 80px var(--nxm-table-gutter)",
+    expect(layoutOf(screen.getByRole("grid")).style.gridTemplateColumns).toBe(
+      `var(--nxm-table-gutter-start) minmax(280px, 1fr) 80px ${END_TRACK}`,
     );
   });
 
@@ -139,7 +162,7 @@ describe("Table", () => {
       />,
     );
 
-    const table = screen.getByRole("grid");
+    const table = layoutOf(screen.getByRole("grid"));
     expect(table).toHaveAttribute("data-sticky-reveal");
     expect(table.style.getPropertyValue("--nxm-table-sticky-reveal")).toBe("72px");
 
@@ -151,7 +174,7 @@ describe("Table", () => {
         rows={ROWS}
       />,
     );
-    expect(screen.getByRole("grid")).not.toHaveAttribute("data-sticky-reveal");
+    expect(layoutOf(screen.getByRole("grid"))).not.toHaveAttribute("data-sticky-reveal");
   });
 
   // A sticky column fades what passes under it, so the table's edge needn't.
@@ -220,7 +243,10 @@ describe("Table sorted by a column", () => {
     );
 
     const [nameHeader, sizeHeader] = screen.getAllByRole("columnheader");
+    const arrow = () => nameHeader.querySelector("[data-symbol]")?.getAttribute("data-symbol");
+
     expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(arrow()).toBe("arrow_upward");
     expect(sizeHeader).not.toHaveAttribute("aria-sort");
     expect(within(sizeHeader).queryByRole("button")).toBeNull();
     expect(names()).toEqual(["Alpha", "Beta"]);
@@ -228,7 +254,46 @@ describe("Table sorted by a column", () => {
     await userEvent.click(within(nameHeader).getByRole("button", { name: "Name" }));
 
     expect(nameHeader).toHaveAttribute("aria-sort", "descending");
+    expect(arrow()).toBe("arrow_downward");
     expect(names()).toEqual(["Beta", "Alpha"]);
+  });
+
+  it("sorts by the sort it's given, and reports a header click without sorting itself", async () => {
+    const onSortChange = vi.fn();
+    render(
+      <Table
+        columns={SORTABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        sort={{ columnId: "name", direction: "descending" }}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    expect(names()).toEqual(["Beta", "Alpha"]);
+
+    await userEvent.click(within(screen.getAllByRole("columnheader")[0]).getByRole("button"));
+
+    expect(onSortChange).toHaveBeenCalledWith({ columnId: "name", direction: "ascending" });
+    expect(names()).toEqual(["Beta", "Alpha"]);
+  });
+
+  it("keeps the rows in their given order when sorted by a column it doesn't have", () => {
+    render(
+      <Table
+        columns={SORTABLE}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={[ROWS[1], ROWS[0]]}
+        sort={{ columnId: "missing", direction: "ascending" }}
+        onSortChange={vi.fn()}
+      />,
+    );
+
+    const [nameHeader] = screen.getAllByRole("columnheader");
+    expect(names()).toEqual(["Beta", "Alpha"]);
+    expect(nameHeader).toHaveAttribute("aria-sort", "none");
   });
 
   it("sorts each group's rows, leaving the groups in their order", () => {
@@ -318,7 +383,7 @@ describe("Table with selectable rows", () => {
       },
     ];
 
-    const renderFive = () =>
+    const renderFive = (onRowDoubleClick?: (row: IRow) => void) =>
       render(
         <Table
           selectable
@@ -327,6 +392,7 @@ describe("Table with selectable rows", () => {
           getRowLabel={(row) => row.name}
           label="Files"
           rows={FIVE}
+          onRowDoubleClick={onRowDoubleClick}
         />,
       );
 
@@ -457,7 +523,9 @@ describe("Table with selectable rows", () => {
 
       await userEvent.click(cell("Alpha"));
       await clickWith("Gamma", "Control");
-      await userEvent.click(screen.getByRole("grid"));
+      // On the element that lays the grid out, as a browser targets empty space: the grid adds
+      // no box of its own.
+      await userEvent.click(layoutOf(screen.getByRole("grid")));
 
       expect(selected()).toEqual([]);
     });
@@ -492,6 +560,269 @@ describe("Table with selectable rows", () => {
 
       expect(selected()).toEqual(["Alpha"]);
     });
+
+    describe("double-clicked", () => {
+      // FIVE's rows come after the header row.
+      const rowOf = (index: number) => screen.getAllByRole("row")[index + 1];
+
+      it("reports a row's double-click, leaving only that row selected", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.click(rowOf(0));
+        await clickWith("Gamma", "Control");
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onRowDoubleClick).toHaveBeenCalledTimes(1);
+        expect(onRowDoubleClick).toHaveBeenCalledWith(FIVE[1]);
+        expect(selected()).toEqual(["Beta"]);
+      });
+
+      it("keeps a row that was the only one selected, though its first click deselects it", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.click(rowOf(1));
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onRowDoubleClick).toHaveBeenCalledWith(FIVE[1]);
+        expect(selected()).toEqual(["Beta"]);
+      });
+
+      it("never empties the selection on its second click", async () => {
+        const onSelectedIdsChange = vi.fn();
+        render(
+          <Table
+            selectable
+            columns={WITH_CONTROL}
+            getRowId={(row) => row.id}
+            label="Files"
+            rows={FIVE}
+            onRowDoubleClick={vi.fn()}
+            onSelectedIdsChange={onSelectedIdsChange}
+          />,
+        );
+
+        await userEvent.dblClick(rowOf(1));
+
+        expect(onSelectedIdsChange).not.toHaveBeenCalledWith(new Set());
+        expect(onSelectedIdsChange).toHaveBeenLastCalledWith(new Set(["beta"]));
+      });
+
+      it("Ctrl+clicking a row twice quickly toggles it twice and opens nothing", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+        await userEvent.click(rowOf(0));
+
+        fireEvent.click(rowOf(1), { ctrlKey: true, detail: 1 });
+        expect(selected()).toEqual(["Alpha", "Beta"]);
+        fireEvent.click(rowOf(1), { ctrlKey: true, detail: 2 });
+        fireEvent.doubleClick(rowOf(1), { ctrlKey: true });
+
+        expect(selected()).toEqual(["Alpha"]);
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+      });
+
+      it("Shift+double-click opens nothing", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+        await userEvent.click(rowOf(0));
+
+        fireEvent.doubleClick(rowOf(2), { shiftKey: true });
+
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+        expect(selected()).toEqual(["Alpha"]);
+      });
+
+      it("ignores a double-click on a control in the row", async () => {
+        const onRowDoubleClick = vi.fn();
+        renderFive(onRowDoubleClick);
+
+        await userEvent.dblClick(screen.getByRole("button", { name: "Open Beta" }));
+
+        expect(onRowDoubleClick).not.toHaveBeenCalled();
+      });
+
+      it("doesn't select the word under it", () => {
+        renderFive(vi.fn());
+
+        // fireEvent says false once the default, selecting the word, is prevented.
+        expect(fireEvent.mouseDown(rowOf(1), { detail: 2 })).toBe(false);
+        expect(fireEvent.mouseDown(rowOf(1), { detail: 1 })).toBe(true);
+      });
+
+      it("still deselects the only selected row on two slow clicks", async () => {
+        renderFive(vi.fn());
+
+        await userEvent.click(rowOf(0));
+        await userEvent.click(rowOf(0));
+
+        expect(selected()).toEqual([]);
+      });
+    });
+  });
+});
+
+describe("Table with resizable columns", () => {
+  const RESIZABLE: Array<ITableColumn<IRow>> = [{ ...COLUMNS[0], resizable: false }, COLUMNS[1]];
+
+  type Widths = { [columnId: string]: number | undefined };
+
+  const tracks = () => layoutOf(screen.getByRole("grid")).style.gridTemplateColumns;
+
+  const renderResizable = ({
+    columns = RESIZABLE,
+    columnWidths,
+    resizes = true,
+  }: {
+    columns?: Array<ITableColumn<IRow>>;
+    columnWidths?: { [columnId: string]: number };
+    resizes?: boolean;
+  } = {}) => {
+    const onColumnWidthsChange = vi.fn<(widths: Widths) => void>();
+    render(
+      <Table
+        columnWidths={columnWidths}
+        columns={columns}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        onColumnWidthsChange={resizes ? onColumnWidthsChange : undefined}
+      />,
+    );
+    return onColumnWidthsChange;
+  };
+
+  /** Draws every element 120px wide, or as `widths` has it by the column whose header it is. */
+  const drawWidths = (widths: { [columnId: string]: number } = {}) =>
+    vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { width: widths[this.dataset.columnId ?? ""] ?? 120 } as DOMRect;
+      });
+
+  beforeEach(() => {
+    drawWidths();
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1000);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("gives a resizable column's header a handle, from its width", () => {
+    renderResizable();
+
+    const [nameHeader, sizeHeader] = screen.getAllByRole("columnheader");
+    expect(within(nameHeader).queryByRole("separator")).toBeNull();
+    expect(within(sizeHeader).getByRole("separator")).toHaveAttribute("aria-valuemin", "80");
+  });
+
+  it("gives no handles, and no gap, to a table that doesn't resize its columns", () => {
+    renderResizable({ columns: [COLUMNS[1]], resizes: false });
+
+    expect(screen.queryByRole("separator")).toBeNull();
+    expect(tracks()).toBe(`var(--nxm-table-gutter-start) 80px ${END_TRACK}`);
+  });
+
+  it("draws a column at the width it was resized to", () => {
+    renderResizable({ columnWidths: { size: 200 } });
+
+    expect(tracks()).toContain("200px");
+  });
+
+  it("resizes a column a step at a time from the keyboard, to its bounds, and resets it", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+
+    for (const key of ["ArrowRight", "ArrowLeft", "Home", "End", "Enter"]) {
+      fireEvent.keyDown(handle, { key });
+    }
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([
+      [{ size: 136 }],
+      [{ size: 104 }],
+      [{ size: undefined }],
+      [{ size: 1000 }],
+      [{ size: undefined }],
+    ]);
+  });
+
+  it("resets a column on a double-click", () => {
+    const onColumnWidthsChange = renderResizable({ columnWidths: { size: 200 } });
+
+    fireEvent.doubleClick(screen.getByRole("separator"));
+
+    expect(onColumnWidthsChange).toHaveBeenCalledWith({ size: undefined });
+  });
+
+  it("draws a drag as it goes and keeps its width once it's let go of", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 150 });
+
+    expect(tracks()).toContain("170px");
+    expect(handle).toHaveAttribute("aria-valuenow", "170");
+    expect(onColumnWidthsChange).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(handle, { clientX: 150 });
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([[{ size: 170 }]]);
+  });
+
+  it("keeps nothing from a drag that's cancelled, and draws the kept widths again", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+    const kept = tracks();
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 150 });
+    fireEvent.pointerCancel(handle);
+
+    expect(onColumnWidthsChange).not.toHaveBeenCalled();
+    expect(tracks()).toBe(kept);
+  });
+
+  it("never drags a column below its width, and keeps nothing when it's dragged back to it", () => {
+    const onColumnWidthsChange = renderResizable();
+    const handle = screen.getByRole("separator");
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 0 });
+
+    expect(tracks()).toContain("80px");
+
+    fireEvent.pointerUp(handle, { clientX: 0 });
+
+    expect(onColumnWidthsChange).toHaveBeenCalledWith({ size: undefined });
+  });
+
+  it("holds a column that shares what's left at its drawn width, kept with the resize in one change", () => {
+    drawWidths({ name: 500 });
+    const onColumnWidthsChange = renderResizable({ columns: COLUMNS });
+    const [, sizeHandle] = screen.getAllByRole("separator");
+
+    fireEvent.pointerDown(sizeHandle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(sizeHandle, { clientX: 120 });
+
+    expect(tracks()).toContain("500px 140px");
+    expect(onColumnWidthsChange).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(sizeHandle, { clientX: 120 });
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([[{ name: 500, size: 140 }]]);
+  });
+
+  it("holds nothing whose header can't be measured", () => {
+    drawWidths({ name: 0 });
+    const onColumnWidthsChange = renderResizable({ columns: COLUMNS });
+    const [, sizeHandle] = screen.getAllByRole("separator");
+
+    fireEvent.keyDown(sizeHandle, { key: "ArrowRight" });
+
+    expect(onColumnWidthsChange.mock.calls).toEqual([[{ size: 136 }]]);
   });
 });
 
@@ -514,6 +845,88 @@ describe("Table with a toolbar", () => {
     expect(header).toHaveAttribute("aria-rowindex", "2");
     expect(first).toHaveAttribute("aria-rowindex", "3");
     expect(grid).toHaveAttribute("aria-rowcount", String(ROWS.length + 2));
+  });
+
+  it("leaves the room it's given at the columns' right for an aside", () => {
+    const renderWith = (asideWidth?: `${number}rem`) => (
+      <Table
+        asideWidth={asideWidth}
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />
+    );
+    const { rerender } = render(renderWith("27rem"));
+
+    const layout = () => layoutOf(screen.getByRole("grid"));
+    expect(layout().style.getPropertyValue("--nxm-table-aside-width")).toBe("27rem");
+    expect(layout()).toHaveAttribute("data-aside");
+
+    rerender(renderWith());
+    expect(layout().style.getPropertyValue("--nxm-table-aside-width")).toBe("");
+    expect(layout()).not.toHaveAttribute("data-aside");
+  });
+
+  it("lays its aside out with it but outside the grid", () => {
+    render(
+      <Table
+        aside={<button type="button">Close</button>}
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+      />,
+    );
+
+    const grid = screen.getByRole("grid");
+    const close = screen.getByRole("button", { name: "Close" });
+    expect(grid).not.toContainElement(close);
+    expect(layoutOf(grid)).toContainElement(close);
+  });
+
+  it("keeps the selection when its aside is clicked", async () => {
+    const onSelectedIdsChange = vi.fn();
+    render(
+      <Table
+        aside={<button type="button">Close</button>}
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        selectable
+        selectedIds={new Set(["a"])}
+        onSelectedIdsChange={onSelectedIdsChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(onSelectedIdsChange).not.toHaveBeenCalled();
+  });
+
+  it("tells how far below its top the header row starts, under the toolbar", () => {
+    // Nothing is laid out here, so the head is at 0 and the header row where the toolbar ends.
+    const rect = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        return { top: this.classList.contains("nxm-table-header") ? 52 : 0 } as DOMRect;
+      });
+    const onHeaderOffsetChange = vi.fn();
+
+    render(
+      <Table
+        columns={COLUMNS}
+        getRowId={(row) => row.id}
+        label="Files"
+        rows={ROWS}
+        toolbar={<button type="button">Search</button>}
+        onHeaderOffsetChange={onHeaderOffsetChange}
+      />,
+    );
+    rect.mockRestore();
+
+    expect(onHeaderOffsetChange).toHaveBeenLastCalledWith(52);
   });
 });
 
@@ -658,6 +1071,26 @@ describe("Table with groups", () => {
     await userEvent.click(toggle);
 
     expect(screen.getAllByRole("row")).toHaveLength(6);
+  });
+
+  // So the sticky column's shadow runs on under the last row, whatever that row is.
+  it("has a strip for the sticky column's shadow below its rows, only with a sticky column", () => {
+    const { unmount } = renderGrouped();
+    expect(document.querySelector(".nxm-table-end")).toBeNull();
+    unmount();
+
+    render(
+      <Table
+        columns={[GROUPED_COLUMNS[0], { ...GROUPED_COLUMNS[1], sticky: "end" }]}
+        getRowId={(row) => row.id}
+        groups={GROUPS}
+        label="Files"
+      />,
+    );
+
+    const strip = document.querySelector(".nxm-table-end");
+    expect(strip).toHaveAttribute("aria-hidden");
+    expect(screen.getByRole("treegrid")).not.toContainElement(strip as HTMLElement);
   });
 });
 
@@ -1183,7 +1616,7 @@ describe("Table's context menus", () => {
     it("opens from the keyboard under the focused control, handing focus back to it", async () => {
       renderWithMenu();
       const control = checkbox("Alpha");
-      control.focus();
+      act(() => control.focus());
 
       fireEvent.contextMenu(control, { button: -1 });
       expect(
@@ -1327,6 +1760,7 @@ describe("Table's focused group", () => {
     expect(onGroupFocused).toHaveBeenCalledTimes(1);
     await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
     expect(scrollIntoView.mock.contexts[0]).toBe(groupRow("Second"));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", container: "nearest" });
   });
 
   it("waits for a group it doesn't have yet", () => {
@@ -1340,6 +1774,62 @@ describe("Table's focused group", () => {
     rerender(table({ focusGroupId: "second", onGroupFocused }));
 
     expect(onGroupFocused).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Table's focused row", () => {
+  const GROUPS = [
+    { id: "first", label: "First", rows: [ROWS[0]] },
+    { id: "second", label: "Second", rows: [ROWS[1]] },
+  ];
+  const scrollIntoView = vi.fn();
+
+  beforeEach(() => {
+    scrollIntoView.mockClear();
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  const table = (props: {
+    focusRowId?: string;
+    onRowFocused?: () => void;
+    onSelectedIdsChange?: (ids: ReadonlySet<string>) => void;
+  }) => (
+    <Table
+      selectable
+      columns={COLUMNS}
+      focusRowId={props.focusRowId}
+      getRowId={(r) => r.id}
+      groups={GROUPS}
+      label="Files"
+      onRowFocused={props.onRowFocused}
+      onSelectedIdsChange={props.onSelectedIdsChange}
+    />
+  );
+
+  it("opens the row's group, scrolls to it, selects it alone and says so", async () => {
+    const onRowFocused = vi.fn();
+    const onSelectedIdsChange = vi.fn();
+    const { rerender } = render(table({}));
+    await userEvent.click(screen.getByRole("button", { name: "Second" }));
+
+    rerender(table({ focusRowId: "b", onRowFocused, onSelectedIdsChange }));
+
+    expect(screen.getByRole("button", { name: "Second" })).toHaveAttribute("aria-expanded", "true");
+    expect(onSelectedIdsChange).toHaveBeenCalledWith(new Set(["b"]));
+    expect(onRowFocused).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByText("Beta").closest('[role="row"]'));
+  });
+
+  it("waits for a row it doesn't have yet", () => {
+    const onRowFocused = vi.fn();
+    render(table({ focusRowId: "c", onRowFocused }));
+
+    expect(onRowFocused).not.toHaveBeenCalled();
   });
 });
 

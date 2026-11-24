@@ -106,21 +106,21 @@ export const GameTile = ({
             className="group/tile absolute inset-0 z-1 flex flex-col justify-between overflow-hidden bg-linear-to-t from-scrim-strong via-scrim-moderate via-30% to-scrim-weak to-85% p-3"
             data-menu-open={open || undefined}
           >
-            <div className="flex gap-x-4">
-              {!!supportTier && (
-                <Pill appearance="scrim" brand="light">
-                  {supportTier}
-                </Pill>
-              )}
-
+            <div className="flex items-center gap-x-2">
               {!!store && (
                 <Pill appearance="scrim" brand="light" icon={knownStore?.icon}>
                   {knownStore?.label ?? titleCase(store)}
                 </Pill>
               )}
 
+              {!!supportTier && (
+                <Pill appearance="scrim" brand="light" className="ml-auto">
+                  {supportTier}
+                </Pill>
+              )}
+
               {!!menu && (
-                <div className="ml-auto">
+                <div className={supportTier ? undefined : "ml-auto"}>
                   <Tooltip content={t("More")} disabled={open} placement="top">
                     <PopoverButton
                       appearance="scrim"

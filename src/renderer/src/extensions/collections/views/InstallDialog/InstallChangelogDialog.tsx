@@ -3,8 +3,9 @@ import React from "react";
 import { useContext, useCallback, Component } from "react";
 import { Button, Media, Modal } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import { useSelector } from "react-redux";
+
+import { Markdown } from "@/ui/components/prose/markdown/Markdown";
 
 import { MainContext } from "../../../../contexts";
 import FlexLayout from "../../../../controls/FlexLayout";
@@ -14,7 +15,6 @@ import renderModName from "../../../../extensions/mod_management/util/modName";
 import type { IState } from "../../../../types/IState";
 import { UserCanceled } from "../../../../util/CustomErrors";
 import makeReactive from "../../../../util/makeReactive";
-import opn from "../../../../util/opn";
 import { Campaign, Section, nexusModsURL } from "../../../../util/util";
 import CollectionThumbnail from "../CollectionTile";
 
@@ -44,7 +44,7 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
       "Collections",
       "View on site Updated Collection",
     );
-    opn(
+    window.api.shell.openUrl(
       nexusModsURL(
         [revisionInfo.collection.game.domainName, "collections", revisionInfo.collection.slug],
         {
@@ -96,7 +96,12 @@ function InstallChangelogDialogImpl(props: IInstallChangelogDialogProps) {
           </FlexLayout>
 
           <div className="changelog-scroll">
-            <ReactMarkdown>{changelog.description}</ReactMarkdown>
+            <Markdown
+              // A boolean from the API, though nexus-api types it as a string.
+              isFromAdultContent={!!revisionInfo.adultContent}
+              markdown={changelog.description}
+              size="sm"
+            />
           </div>
         </Media.Right>
 

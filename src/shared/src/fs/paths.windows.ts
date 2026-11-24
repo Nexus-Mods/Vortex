@@ -1,4 +1,6 @@
-import type { OSPathBase, PathProvider, QualifiedPath } from "./paths";
+import type { QualifiedPath } from "@nexusmods/paths";
+
+import type { OSPathBase, PathProvider } from "./paths";
 
 /**
  * Bases supported by all OS path providers.

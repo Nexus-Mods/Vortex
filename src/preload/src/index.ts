@@ -1,6 +1,12 @@
 import { VortexError } from "@vortex/shared";
-import type { QualifiedPathWire, StatResult, Status, StatusTime } from "@vortex/shared/filesystem";
-import { QualifiedPath } from "@vortex/shared/filesystem";
+import type {
+  QualifiedPath,
+  QualifiedPathWire,
+  StatResult,
+  Status,
+  StatusTime,
+} from "@vortex/shared/filesystem";
+import { fromWire, toWire } from "@vortex/shared/filesystem";
 import type {
   AppInitMetadata,
   EnumerateEntryWire,
@@ -69,18 +75,6 @@ try {
     extensions: {
       initializeAllMain: (installType: string) =>
         betterIpcRenderer.send("extensions:init-all-main", installType),
-    },
-
-    adaptors: {
-      list: () => betterIpcRenderer.invoke("adaptors:list"),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      listWithInfoSync: () => ipcRenderer.sendSync("adaptors:list-with-info"),
-      call: (adaptorName: string, serviceUri: string, method: string, args: unknown[]) =>
-        betterIpcRenderer.invoke("adaptors:call", adaptorName, serviceUri, method, args),
-      buildSnapshot: (store: string, gamePath: string) =>
-        betterIpcRenderer.invoke("adaptors:build-snapshot", store, gamePath),
-      detectVersion: (source: { type: string; path: { value: string }; regex?: string }) =>
-        betterIpcRenderer.invoke("adaptors:detect-version", source),
     },
 
     updater: {
@@ -251,7 +245,6 @@ try {
     },
 
     uploader: {
-      file: (request) => betterIpcRenderer.invoke("upload:file", request),
       s3Multipart: (request) => betterIpcRenderer.invoke("upload:s3-multipart", request),
       getProgress: (uploadId) => betterIpcRenderer.invoke("upload:getProgress", uploadId),
       cancel: (uploadId) => betterIpcRenderer.invoke("upload:cancel", uploadId),
@@ -267,6 +260,16 @@ try {
     hash: {
       compute: (algorithm, filePath) =>
         betterIpcRenderer.invoke("hash:compute", algorithm, filePath),
+    },
+
+    gameFolderCheck: {
+      start: (input) => betterIpcRenderer.invoke("game-folder-check:start", input),
+      cancel: (gameId) => betterIpcRenderer.send("game-folder-check:cancel", gameId),
+      onSubmit: (handler) =>
+        betterIpcRenderer.callback("game-folder-check:submit", (_collationId, result) =>
+          handler(result),
+        ),
+      runManual: (input) => betterIpcRenderer.invoke("game-folder-check:run-manual", input),
     },
 
     diag: {
@@ -302,31 +305,31 @@ try {
 
     fs: {
       copy(source, target, options) {
-        return betterIpcRenderer.invoke("fs:copy", source.toWire(), target.toWire(), options);
+        return betterIpcRenderer.invoke("fs:copy", toWire(source), toWire(target), options);
       },
       createDirectory(path) {
-        return betterIpcRenderer.invoke("fs:createDirectory", path.toWire());
+        return betterIpcRenderer.invoke("fs:createDirectory", toWire(path));
       },
       createLink(from, to, type) {
-        return betterIpcRenderer.invoke("fs:createLink", from.toWire(), to.toWire(), type);
+        return betterIpcRenderer.invoke("fs:createLink", toWire(from), toWire(to), type);
       },
       delete(path) {
-        return betterIpcRenderer.invoke("fs:delete", path.toWire());
+        return betterIpcRenderer.invoke("fs:delete", toWire(path));
       },
       deleteRecursive(path) {
-        return betterIpcRenderer.invoke("fs:deleteRecursive", path.toWire());
+        return betterIpcRenderer.invoke("fs:deleteRecursive", toWire(path));
       },
       writeFile(path, contents) {
-        return betterIpcRenderer.invoke("fs:writeFile", path.toWire(), contents);
+        return betterIpcRenderer.invoke("fs:writeFile", toWire(path), contents);
       },
       async readFile(path) {
-        return betterIpcRenderer.invoke("fs:readFile", path.toWire());
+        return betterIpcRenderer.invoke("fs:readFile", toWire(path));
       },
       move(source, target, options) {
-        return betterIpcRenderer.invoke("fs:move", source.toWire(), target.toWire(), options);
+        return betterIpcRenderer.invoke("fs:move", toWire(source), toWire(target), options);
       },
       async stat(path, options) {
-        const result = await betterIpcRenderer.invoke("fs:stat", path.toWire(), options);
+        const result = await betterIpcRenderer.invoke("fs:stat", toWire(path), options);
         return statFromWire(result);
       },
 
@@ -381,7 +384,7 @@ async function openReadStream(
   path: QualifiedPath,
   options?: { start?: number; end?: number },
 ): Promise<ReadableStream<Uint8Array>> {
-  const handle = await betterIpcRenderer.invoke("fs:stream-open", path.toWire(), "r", options);
+  const handle = await betterIpcRenderer.invoke("fs:stream-open", toWire(path), "r", options);
 
   let exhausted = false;
   let closed = false;
@@ -423,7 +426,7 @@ async function openWriteStream(
   path: QualifiedPath,
   options?: { start?: number },
 ): Promise<WritableStream<Uint8Array>> {
-  const handle = await betterIpcRenderer.invoke("fs:stream-open", path.toWire(), "w", options);
+  const handle = await betterIpcRenderer.invoke("fs:stream-open", toWire(path), "w", options);
 
   let closed = false;
 
@@ -494,7 +497,7 @@ async function openEnumeration(
     exclude?: string;
   },
 ): Promise<AsyncIterableIterator<QualifiedPath | [QualifiedPath, Status], undefined>> {
-  const handle = await betterIpcRenderer.invoke("fs:enumerate-open", path.toWire(), options);
+  const handle = await betterIpcRenderer.invoke("fs:enumerate-open", toWire(path), options);
   const withStatus = Boolean(options?.includeStatus);
 
   let buffer: EnumerateEntryWire[] = [];
@@ -543,12 +546,12 @@ async function openEnumeration(
 
       if (!withStatus) {
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-        return { done: false, value: QualifiedPath.of(entry as unknown as QualifiedPathWire) };
+        return { done: false, value: fromWire(entry as unknown as QualifiedPathWire) };
       }
 
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const [wirePath, wireStatus] = entry as unknown as [QualifiedPathWire, TemporalWire<Status>];
-      return { done: false, value: [QualifiedPath.of(wirePath), statusFromWire(wireStatus)] };
+      return { done: false, value: [fromWire(wirePath), statusFromWire(wireStatus)] };
     },
     async return() {
       close();

@@ -79,3 +79,11 @@ export const setPickerLayout = createAction(
 export const setSortManaged = createAction("SET_SORT_MANAGED", (order: string) => order);
 export const setSortUnmanaged = createAction("SET_SORT_UNMANAGED", (order: string) => order);
 export const setSortDetected = createAction("SET_SORT_DETECTED", (order: string) => order);
+
+/**
+ * whether to show the experimental-support dialog before managing a Tier 0 game
+ */
+export const setConfirmTierZero = createAction(
+  "SET_CONFIRM_TIER_ZERO",
+  (confirm: boolean) => confirm,
+);

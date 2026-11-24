@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import type { IGameStored } from "../../types/IGameStored";
 
-const { baseState, state } = vi.hoisted(() => {
+const { baseState, emit, state } = vi.hoisted(() => {
   const baseState = () => ({
     persistent: { profiles: {} },
     settings: {
@@ -15,8 +15,13 @@ const { baseState, state } = vi.hoisted(() => {
     },
   });
 
-  return { baseState, state: { current: baseState() } };
+  return { baseState, emit: vi.fn(), state: { current: baseState() } };
 });
+
+vi.mock("@/contexts", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useMainContext: () => ({ api: { events: { emit } } }),
+}));
 
 vi.mock("react-redux", async () => {
   const actual = await vi.importActual<typeof ReactReduxTypes>("react-redux");
@@ -83,6 +88,7 @@ const shownNames = () => screen.getByTestId("games-grid").textContent?.split(","
 
 describe("SupportedGames", () => {
   beforeEach(() => {
+    emit.mockReset();
     state.current = baseState();
   });
 
@@ -133,6 +139,15 @@ describe("SupportedGames", () => {
     });
   });
 
+  it("records nothing when the reader re-picks the order already chosen", async () => {
+    renderComponent({ count: "1", games: games(1) });
+
+    await userEvent.click(screen.getByRole("button", { name: /Most Popular/ }));
+    await userEvent.click(screen.getByRole("option", { name: "Most Popular" }));
+
+    expect(emit).not.toHaveBeenCalledWith("analytics-track-mixpanel-event", expect.anything());
+  });
+
   it("hands the reader's choice of order back to the caller", async () => {
     const { onSortChange } = renderComponent({ count: "1", games: games(1) });
 
@@ -140,5 +155,9 @@ describe("SupportedGames", () => {
     await userEvent.click(screen.getByRole("option", { name: "Name A-Z" }));
 
     expect(onSortChange).toHaveBeenCalledWith("alphabetical");
+    expect(emit).toHaveBeenCalledWith("analytics-track-mixpanel-event", {
+      eventName: "app_games_sort_changed",
+      properties: { section: "supported", sort: "alphabetical" },
+    });
   });
 });

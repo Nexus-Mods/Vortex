@@ -148,15 +148,7 @@
         "single": "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running.",
         "all": "1-click in app installs are a Premium feature.\n\nFree users download through the website mod pages where ads help keep the platform running."
       },
-      "benefits_title": "With Premium you get:",
-      "benefits": {
-        "downloads": "1-click in app downloads and mod updates",
-        "collections": "1-click collection installs",
-        "speed": "Uncapped download speeds",
-        "ad_free": "Ad-free for life, even if you cancel later"
-      },
       "buttons": {
-        "primary": "Unlock 1-click installs",
         "secondary": {
           "single": "Install via mod page (free)",
           "all": "Return and open mod pages"

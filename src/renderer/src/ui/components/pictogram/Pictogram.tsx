@@ -29,6 +29,7 @@ export type IPictogramName =
   | "game"
   | "health-check"
   | "mod"
+  | "nexus-mods"
   | "no-mod"
   | "preferences"
   | "premium"

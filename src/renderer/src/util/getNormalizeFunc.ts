@@ -63,12 +63,12 @@ function isCaseSensitive(testPath: string): PromiseBB<boolean> {
       }
 
       // to find out if case sensitive, stat the file itself and the upper and lower case variants.
-      // if they are all the same file, it's case insensitive
+      // if they are all the same file, it's case insensitive. BigInt: ReFS ids exceed 2^53
       return PromiseBB.map([fileName, fileName.toLowerCase(), fileName.toUpperCase()], (file) =>
-        PromiseBB.resolve(fsOrig.stat(path.join(testPath, file))).reflect(),
+        PromiseBB.resolve(fsOrig.stat(path.join(testPath, file), { bigint: true })).reflect(),
       );
     })
-    .then((stats: Array<PromiseBB.Inspection<fsOrig.Stats>>) => {
+    .then((stats: Array<PromiseBB.Inspection<fsOrig.BigIntStats>>) => {
       if (stats === null) {
         return isCaseSensitiveFailed(testPath, "Not found");
       }

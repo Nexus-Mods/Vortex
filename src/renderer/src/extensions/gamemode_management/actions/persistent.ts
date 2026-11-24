@@ -1,7 +1,21 @@
-import type { GameDomain, GameId } from "@vortex/shared";
+import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
-import type { ITierZeroGame } from "@/types/IState";
+import type {
+  IGameUidRetirement,
+  IManualInstallerPreferences,
+  ITierZeroGame,
+} from "@/types/IState";
+
+/**
+ * append uid retirements to the history, in order. The only write to the history: entries are
+ * never edited or removed, a wrong mapping is fixed by appending a correction. Invalid entries
+ * (not lowercase uids, or mapping a uid to itself) are dropped with a logged error.
+ */
+export const appendGameUidRetirements = createAction(
+  "APPEND_GAME_UID_RETIREMENTS",
+  (entries: IGameUidRetirement[]) => ({ entries }),
+);
 
 export const setGameInfo = createAction(
   "SET_GAME_INFO",
@@ -19,12 +33,20 @@ export const setGameInfo = createAction(
  */
 export const setTierZeroGame = createAction(
   "SET_TIER_ZERO_GAME",
-  (gameId: GameId, entry: ITierZeroGame) => ({ gameId, entry }),
+  (gameId: NexusGameId, entry: ITierZeroGame) => ({ gameId, entry }),
+);
+
+/**
+ * set the user's Manual Installer preferences for a Tier 0 game
+ */
+export const setManualInstallerPreferences = createAction(
+  "SET_MANUAL_INSTALLER_PREFERENCES",
+  (gameId: NexusGameId, preferences: IManualInstallerPreferences) => ({ gameId, preferences }),
 );
 
 /**
  * forget a Tier 0 game (un-manage or extension takeover)
  */
-export const removeTierZeroGame = createAction("REMOVE_TIER_ZERO_GAME", (gameId: GameId) => ({
+export const removeTierZeroGame = createAction("REMOVE_TIER_ZERO_GAME", (gameId: NexusGameId) => ({
   gameId,
 }));

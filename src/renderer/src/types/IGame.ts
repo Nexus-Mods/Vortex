@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import type PromiseBB from "bluebird";
 
 import type { IModType } from "../extensions/gamemode_management/types/IModType";
@@ -15,6 +16,12 @@ export type DirectoryCleaningMode = "tag" | "all";
  * @interface IGame
  */
 export interface IGame extends ITool {
+  /**
+   * the id Vortex knows this game by, which profiles, mods and game settings are keyed on.
+   * Create it with `VortexGameId("mygame")`
+   */
+  id: VortexGameId;
+
   /**
    * determine the default directory where mods for this game
    * should be stored.
@@ -221,14 +228,6 @@ export interface IGame extends ITool {
    *   or not. In some (unusual) cases this may break mods
    */
   directoryCleaning?: DirectoryCleaningMode;
-
-  /**
-   * list of game ids. If one of the games listed here is discovered in the same location as this
-   * extension they get disabled.
-   * This allows third-party extensions or total conversions to take precedence over the original
-   * they're replacing
-   */
-  overrides?: string[];
 
   /**
    * if set this function is always called before automatic deployment and it will be delayed

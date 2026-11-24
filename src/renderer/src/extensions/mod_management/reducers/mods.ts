@@ -3,18 +3,9 @@ import * as _ from "lodash";
 import type { IRule } from "modmeta-db";
 
 import { actionsToReducerSpec } from "../../../reducers/builder";
-import type { IReducerSpec } from "../../../types/IExtensionContext";
 import { VerifierDropParent } from "../../../types/IExtensionContext";
+import type { IModTable } from "../../../types/IState";
 import { log } from "../../../util/log";
-import { removeValue } from "../../../util/storeHelper";
-import {
-  deleteOrNop,
-  getSafe,
-  merge,
-  pushSafe,
-  removeValueIf,
-  setSafe,
-} from "../../../util/storeHelper";
 import * as actions from "../actions/mods";
 import type { IMod, IModRule } from "../types/IMod";
 import { referenceEqual, referenceIndex } from "../util/testModReference";
@@ -25,6 +16,15 @@ import { referenceEqual, referenceIndex } from "../util/testModReference";
 // heal (healInvalidKeys) so both agree on what's recoverable.
 function isUnusableModId(modId: string): boolean {
   return isClobberedKeySegment(modId);
+}
+
+// A mod record's map key is its mod id, so a lost leaf that mirrors it can be
+// rebuilt from the key. A record whose key is itself unusable is dropped.
+function modIdFromRecordKey(modId: string | undefined): string {
+  if (typeof modId === "string" && modId.length > 0 && !isUnusableModId(modId)) {
+    return modId;
+  }
+  throw new VerifierDropParent();
 }
 
 function reduceRule(input: IRule): IRule {
@@ -83,110 +83,103 @@ function replaceRules(
   return slots.filter((rule): rule is IModRule => rule !== undefined);
 }
 
-/** keyed by game id, then by mod id */
-type IModsState = Record<string, Record<string, IMod>>;
+type ModTable = IModTable;
 
-const modRulesReducer = actionsToReducerSpec<
-  IModsState,
-  { modRulesReplaced: typeof actions.modRulesReplaced }
->(
-  {},
-  { modRulesReplaced: actions.modRulesReplaced },
-  {
-    modRulesReplaced: (state, { gameId, modId, replacements }) => {
-      const mod = state[gameId]?.[modId];
-      if (mod === undefined) {
-        return state;
-      }
-      return {
-        ...state,
-        [gameId]: {
-          ...state[gameId],
-          [modId]: { ...mod, rules: replaceRules(mod.rules ?? [], replacements) },
-        },
-      };
-    },
-  },
-);
+/** The table with one mod replaced, copying each level on the way down. */
+function withMod(state: ModTable, gameId: string, modId: string, mod: IMod): ModTable {
+  return { ...state, [gameId]: { ...state[gameId], [modId]: mod } };
+}
 
 /**
  * reducer for changes to the known mods
  */
-export const modsReducer: IReducerSpec = {
-  reducers: {
-    ...modRulesReducer.reducers,
-    [actions.addMod as any]: (state, payload) => {
-      const { gameId, mod } = payload;
-      return setSafe(state, [gameId, mod.id], mod);
-    },
-    [actions.addMods as any]: (state, payload) => {
-      const { gameId, mods } = payload;
+export const modsReducer = actionsToReducerSpec<ModTable, typeof actions>(
+  {},
+  actions,
+  {
+    addMod: (state, { gameId, mod }) => withMod(state, gameId, mod.id, mod),
+    addMods: (state, { gameId, mods }) => {
       const modDict = mods.reduce((prev: { [key: string]: IMod }, value: IMod) => {
         prev[value.id] = value;
         return prev;
       }, {});
-      return merge(state, [gameId], modDict);
+      return { ...state, [gameId]: { ...state[gameId], ...modDict } };
     },
-    [actions.removeMod as any]: (state, payload) => {
-      const { gameId, modId } = payload;
-      return deleteOrNop(state, [gameId, modId]);
-    },
-    [actions.setModArchiveId as any]: (state, payload) => {
-      const { gameId, modId, archiveId } = payload;
-      if (state[gameId]?.[modId] === undefined) {
+    // a mod or game that isn't there leaves the state as it was
+    removeMod: (state, { gameId, modId }) => {
+      const game = state[gameId];
+      if (game == null || !Object.hasOwn(game, modId)) {
         return state;
       }
-      return setSafe(state, [gameId, modId, "archiveId"], archiveId);
+      const { [modId]: _removed, ...rest } = game;
+      return { ...state, [gameId]: rest };
     },
-    [actions.setModInstallationPath as any]: (state, payload) => {
-      const { gameId, modId, installPath } = payload;
-      if (state[gameId]?.[modId] === undefined) {
+    setModArchiveId: (state, { gameId, modId, archiveId }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
-      return setSafe(state, [gameId, modId, "installationPath"], installPath);
+      return withMod(state, gameId, modId, { ...mod, archiveId });
     },
-    [actions.setModState as any]: (state, payload) => {
-      const { gameId, modId, modState } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+    setModInstallationPath: (state, { gameId, modId, installPath }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
-      return setSafe(state, [gameId, modId, "state"], modState);
+      return withMod(state, gameId, modId, { ...mod, installationPath: installPath });
     },
-    [actions.setModAttribute as any]: (state, payload) => {
-      const { gameId, modId, attribute, value } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+    setModState: (state, { gameId, modId, modState }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
+        return state;
+      }
+      return withMod(state, gameId, modId, { ...mod, state: modState });
+    },
+    setModAttribute: (state, { gameId, modId, attribute, value }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
       if (value === undefined) {
-        return deleteOrNop(state, [gameId, modId, "attributes", attribute]);
-      } else {
-        return setSafe(state, [gameId, modId, "attributes", attribute], value);
+        // removing an attribute the mod doesn't have leaves the state as it was
+        if (mod.attributes == null || !Object.hasOwn(mod.attributes, attribute)) {
+          return state;
+        }
+        const { [attribute]: _removed, ...attributes } = mod.attributes;
+        return withMod(state, gameId, modId, { ...mod, attributes });
       }
+      return withMod(state, gameId, modId, {
+        ...mod,
+        attributes: { ...mod.attributes, [attribute]: value },
+      });
     },
-    [actions.setModAttributes as any]: (state, payload) => {
-      const { gameId, modId, attributes } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+    setModAttributes: (state, { gameId, modId, attributes }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
-      return merge(state, [gameId, modId, "attributes"], attributes);
+      return withMod(state, gameId, modId, {
+        ...mod,
+        attributes: { ...mod.attributes, ...attributes },
+      });
     },
-    [actions.setModType as any]: (state, payload) => {
-      const { gameId, modId, type } = payload;
-      if (getSafe(state, [gameId, modId], undefined) === undefined) {
+    setModType: (state, { gameId, modId, type }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod == null) {
         return state;
       }
-      return setSafe(state, [gameId, modId, "type"], type);
+      return withMod(state, gameId, modId, { ...mod, type });
     },
-    [actions.clearModRules as any]: (state, payload) => {
-      const { gameId, modId } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+    clearModRules: (state, { gameId, modId }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
-      return setSafe(state, [gameId, modId, "rules"], []);
+      return withMod(state, gameId, modId, { ...mod, rules: [] });
     },
-    [actions.addModRule as any]: (state, payload) => {
-      const { gameId, modId, rule } = payload;
-      if (state[gameId] === undefined || state[gameId][modId] === undefined) {
+    addModRule: (state, { gameId, modId, rule }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         log("warn", "tried to add mod rule to mod that isn't installed", {
           gameId,
           modId,
@@ -206,78 +199,90 @@ export const modsReducer: IReducerSpec = {
         group = [rule.type];
       }
 
-      const idx = getSafe(state, [gameId, modId, "rules"], []).findIndex((iterRule: IRule) => {
+      const rules: IModRule[] = Array.isArray(mod.rules) ? mod.rules : [];
+      const idx = rules.findIndex((iterRule: IRule) => {
         const typeMatch = group.indexOf(rule.type) !== -1;
         const filteredIter = _.omitBy(iterRule.reference, _.isUndefined);
         return typeMatch && referenceEqual(filteredRef, filteredIter);
       });
 
-      if (idx !== -1) {
-        return setSafe(state, [gameId, modId, "rules", idx], rule);
-      } else {
-        return pushSafe(state, [gameId, modId, "rules"], rule);
-      }
-    },
-    [actions.removeModRule as any]: (state, payload) => {
-      const { gameId, modId, rule } = payload;
-
-      if (state[gameId]?.[modId] === undefined) {
-        return state;
-      }
-
-      return removeValueIf(state, [gameId, modId, "rules"], (iterRule: IRule) =>
-        ruleEqual(iterRule, rule),
-      );
-    },
-    [actions.cacheModReference as any]: (state, payload) => {
-      const { gameId, modId, reference, refModId } = payload;
-
-      if (state[gameId]?.[modId] === undefined) {
-        return state;
-      }
-
-      const indices: number[] = [];
-      const rules: IRule[] = getSafe(state, [gameId, modId, "rules"], []);
-      for (let i = 0; i < rules.length; ++i) {
-        if (referenceEqual(rules[i].reference, reference)) {
-          indices.push(i);
-        }
-      }
-      indices.forEach((idx) => {
-        state = setSafe(state, [gameId, modId, "rules", idx, "reference", "idHint"], refModId);
+      return withMod(state, gameId, modId, {
+        ...mod,
+        rules: idx !== -1 ? rules.with(idx, rule) : [...rules, rule],
       });
-      return state;
     },
-    [actions.setINITweakEnabled as any]: (state, payload) => {
-      const { gameId, modId, tweak, enabled } = payload;
-
-      if (state[gameId]?.[modId] === undefined) {
+    removeModRule: (state, { gameId, modId, rule }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
-
-      return enabled
-        ? pushSafe(state, [gameId, modId, "enabledINITweaks"], tweak)
-        : removeValue(state, [gameId, modId, "enabledINITweaks"], tweak);
+      return withMod(state, gameId, modId, {
+        ...mod,
+        rules: (mod.rules ?? []).filter((iterRule: IRule) => !ruleEqual(iterRule, rule)),
+      });
     },
-    [actions.setFileOverride as any]: (state, payload) => {
-      const { gameId, modId, files } = payload;
+    modRulesReplaced: (state, { gameId, modId, replacements }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
+        return state;
+      }
+      return withMod(state, gameId, modId, {
+        ...mod,
+        rules: replaceRules(mod.rules ?? [], replacements),
+      });
+    },
+    // when no rule references the mod, the state stays as it was
+    cacheModReference: (state, { gameId, modId, reference, refModId }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
+        return state;
+      }
+      let changed = false;
+      const rules = (mod.rules ?? []).map((rule) => {
+        if (!referenceEqual(rule.reference, reference)) {
+          return rule;
+        }
+        changed = true;
+        return { ...rule, reference: { ...rule.reference, idHint: refModId } };
+      });
+      return changed ? withMod(state, gameId, modId, { ...mod, rules }) : state;
+    },
+    setINITweakEnabled: (state, { gameId, modId, tweak, enabled }) => {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
+        return state;
+      }
+      const tweaks = Array.isArray(mod.enabledINITweaks) ? mod.enabledINITweaks : [];
+      if (enabled) {
+        return withMod(state, gameId, modId, { ...mod, enabledINITweaks: [...tweaks, tweak] });
+      }
+      // disabling a tweak that isn't enabled leaves the state as it was
+      const idx = tweaks.indexOf(tweak);
+      if (idx === -1) {
+        return state;
+      }
+      return withMod(state, gameId, modId, {
+        ...mod,
+        enabledINITweaks: tweaks.toSpliced(idx, 1),
+      });
+    },
+    setFileOverride: (state, { gameId, modId, files }) => {
       if (!Array.isArray(files)) {
         // this should never happen
         return state;
       }
-      if (state[gameId]?.[modId] === undefined) {
+      const mod = state[gameId]?.[modId];
+      if (mod === undefined) {
         return state;
       }
       const hasInvalidEntry = files.find((file) => typeof file !== "string") !== undefined;
       if (hasInvalidEntry) {
         return state;
       }
-
-      return setSafe(state, [gameId, modId, "fileOverrides"], files);
+      return withMod(state, gameId, modId, { ...mod, fileOverrides: files });
     },
   },
-  defaults: {},
-  verifiers: {
+  {
     _: {
       type: "object",
       description: () => "Severe! Corrupted mod list",
@@ -310,13 +315,19 @@ export const modsReducer: IReducerSpec = {
               // write / bit-rot leaves U+FFFD replacement chars or control chars,
               // producing a phantom that would otherwise nag "Mods changed on
               // disk" every launch.
-              repair: (_input, _def, context) => {
-                const modId = context?.parentKey;
-                if (typeof modId === "string" && modId.length > 0 && !isUnusableModId(modId)) {
-                  return modId;
-                }
-                throw new VerifierDropParent();
-              },
+              repair: (_input, _def, context) => modIdFromRecordKey(context?.parentKey),
+            },
+            id: {
+              type: "string",
+              description: () => "Mod with invalid id will be self-healed from its record key.",
+              noUndefined: true,
+              noNull: true,
+              noEmpty: true,
+              required: true,
+              // The id leaf can be lost to the same partial write as installationPath.
+              // Code that brands mod.id throws on such a record, which fails every
+              // deploy and conflict check until it is repaired.
+              repair: (_input, _def, context) => modIdFromRecordKey(context?.parentKey),
             },
             attributes: {
               type: "object",
@@ -344,4 +355,4 @@ export const modsReducer: IReducerSpec = {
       },
     },
   },
-};
+);

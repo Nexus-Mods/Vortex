@@ -13,6 +13,10 @@ interface ITableCellProps {
   ariaSort?: "ascending" | "descending" | "none";
   /** Whether the rows are sorted by its column. */
   sorted?: boolean;
+  /** Whether it's a header with a handle that resizes its column. */
+  resizable?: boolean;
+  /** Its column's id, on a header, for the table to find it by. */
+  columnId?: string;
   /** From the column's own `sticky`. */
   sticky?: ITableColumn<unknown>["sticky"];
 }
@@ -24,12 +28,16 @@ export const TableCell = ({
   children,
   role = "gridcell",
   sorted = false,
+  resizable = false,
+  columnId,
   sticky,
 }: ITableCellProps) => (
   <div
     aria-sort={ariaSort}
     className="nxm-table-cell"
     data-align={align}
+    data-column-id={columnId}
+    data-resizable={resizable ? "" : undefined}
     data-sorted={sorted ? "" : undefined}
     data-sticky={sticky}
     role={role}

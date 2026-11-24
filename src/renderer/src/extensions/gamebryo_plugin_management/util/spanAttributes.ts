@@ -18,6 +18,8 @@ export const SpanAttribute = {
   LootRecovering: "loot.recovering",
   LootRestartsLeft: "loot.restarts_left",
   LootSortRequested: "loot.sort_requested",
+  LootStrayConnections: "loot.stray_connections",
+  LootWorkerRunning: "loot.worker_running",
 
   /** The plugin a signal is about, and the list it sits in. */
   PluginName: "plugin.name",

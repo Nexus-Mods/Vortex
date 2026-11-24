@@ -1,12 +1,16 @@
 import type { TFunction } from "i18next";
 
-import type { ITableGroup } from "@/ui/components/table/Table.types";
+import type { ITableGroup, ITableSort } from "@/ui/components/table/Table.types";
 
 import { MOD_TYPE as COLLECTION_TYPE } from "../../../collections/constants";
 import type { IMod } from "../../types/IMod";
 import type { IModWithState } from "../../types/IModProps";
 import { modHasUpdate } from "../mod_has_update/modHasUpdate";
 import modName from "../modName";
+import {
+  type IModsTableFilters,
+  NO_MODS_TABLE_FILTERS,
+} from "../mods_table_filters/modsTableFilters";
 import { uploaderAvatar } from "../uploaderAvatar";
 
 export interface IModRow {
@@ -30,14 +34,22 @@ export type ModsTableGrouping = string;
 export interface IModsTableGroupingColumn {
   id: string;
   header: string;
-  /** The value a row is grouped under; "" for none. */
+  /** The value a row is grouped under, which keys its group; "" for none. */
   groupBy: (row: IModRow) => string;
   /** Values whose groups come first, in this order; the rest follow by name. */
-  groupOrder?: string[];
+  groupOrder?: readonly string[];
+  /** The name a value's group shows, for values that are ids; the value itself, without one. */
+  groupValueLabel?: (value: string) => string;
+  /** The name of the group for rows without a value, whole, as languages don't build it alike. */
+  noValueLabel?: string;
 }
 
 /** How a view starts out, before the user changes it. */
 export interface IModsTableViewDefaults {
+  /** How its mods are sorted. */
+  sort: ITableSort;
+  /** Which mods it shows. */
+  filters: IModsTableFilters;
   /** What its mods are grouped by. */
   grouping: ModsTableGrouping;
   /** The toggleable columns it shows, by id; the rest are hidden. */
@@ -47,7 +59,7 @@ export interface IModsTableViewDefaults {
 export interface IModsTableView {
   /** Stable, unique, and language-independent, so a choice of view can be stored. */
   id: string;
-  /** The view's name: untranslated for a built-in one, as the user typed it for their own. */
+  /** The view's name: its translation key for a built-in one, as the user typed it for their own. */
   label: string;
   defaults: IModsTableViewDefaults;
   /** Whether it's one of the user's own, which has no defaults to reset to. */
@@ -62,32 +74,70 @@ interface IBuiltInModsTableView extends IModsTableView {
 
 const BASE_COLUMNS = ["version", "installTime"];
 
+/** By name, A to Z: how every view sorts until the user sorts it otherwise. */
+export const BY_NAME: ITableSort = { columnId: "name", direction: "ascending" };
+
 /** How a view the user makes starts out. */
 export const NEW_VIEW_DEFAULTS: IModsTableViewDefaults = {
+  sort: BY_NAME,
+  filters: NO_MODS_TABLE_FILTERS,
   grouping: "none",
   columns: BASE_COLUMNS,
 };
 
 /** The views every user has, in order, each offered while it has anything to show. */
 export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
-  { id: "all", label: "All mods", defaults: { grouping: "none", columns: BASE_COLUMNS } },
-  { id: "status", label: "Status", defaults: { grouping: "status", columns: BASE_COLUMNS } },
+  {
+    id: "all",
+    label: "modsTable::views::all",
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "none",
+      columns: BASE_COLUMNS,
+    },
+  },
+  {
+    id: "status",
+    label: "modsTable::views::status",
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "status",
+      columns: BASE_COLUMNS,
+    },
+  },
   {
     id: "updates",
-    label: "Updates",
-    defaults: { grouping: "version", columns: BASE_COLUMNS },
+    label: "modsTable::views::updates",
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "version",
+      columns: BASE_COLUMNS,
+    },
     isAvailable: (mods) =>
       Object.values(mods).some((mod) => mod.state === "installed" && modHasUpdate(mod)),
   },
   {
     id: "categories",
-    label: "Categories",
-    defaults: { grouping: "category", columns: BASE_COLUMNS },
+    label: "modsTable::views::categories",
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "category",
+      columns: BASE_COLUMNS,
+    },
   },
   {
     id: "collections",
-    label: "Collections",
-    defaults: { grouping: "collection", columns: ["version", "collection", "installTime"] },
+    label: "modsTable::views::collections",
+    defaults: {
+      sort: BY_NAME,
+      filters: NO_MODS_TABLE_FILTERS,
+      grouping: "collection",
+      columns: ["version", "collection", "installTime"],
+    },
     isAvailable: (mods) => Object.values(mods).some((mod) => mod.type === COLLECTION_TYPE),
   },
 ];
@@ -96,10 +146,16 @@ export const MODS_TABLE_VIEWS: IBuiltInModsTableView[] = [
 export const availableViews = (mods: { [id: string]: IModWithState }): IModsTableView[] =>
   MODS_TABLE_VIEWS.filter((view) => view.isAvailable?.(mods) ?? true);
 
+/**
+ * The name the table shows for a mod. One with no name, like a finished download that
+ * isn't installed or a collection without attributes, goes by its id.
+ */
+export const displayName = (mod: IMod): string => modName(mod) ?? mod.id;
+
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
 
 const toRows = (mods: IModWithState[]): IModRow[] =>
-  mods.map((mod) => ({ mod, name: modName(mod) })).sort(byName);
+  mods.map((mod) => ({ mod, name: displayName(mod) })).sort(byName);
 
 // Every view's rows; a collection heads its group instead, so it's never one.
 const installedMods = (mods: { [id: string]: IModWithState }) =>
@@ -147,7 +203,7 @@ const groupByCollection = (
 
   const collectionGroups = Object.values(mods)
     .filter((mod) => mod.type === COLLECTION_TYPE)
-    .map((collection) => ({ collection, name: modName(collection) }))
+    .map((collection) => ({ collection, name: displayName(collection) }))
     .sort(byName)
     .map(({ collection, name }) => ({
       id: collection.id,
@@ -161,7 +217,10 @@ const groupByCollection = (
     return undefined;
   }
 
-  return [...ungroupedFirst("no-collection", t("No collection"), ungrouped), ...collectionGroups];
+  return [
+    ...ungroupedFirst("no-collection", t("modsTable::groups::noCollection"), ungrouped),
+    ...collectionGroups,
+  ];
 };
 
 /**
@@ -205,10 +264,12 @@ const groupByAuthor = (mods: { [id: string]: IModWithState }, t: TFunction): IMo
   }).sort((a, b) => a.label.localeCompare(b.label));
 
   // No one to show, but the same place for it, so the names line up.
-  const noAuthor = ungroupedFirst("no-author", t("No author"), unknown).map((group) => ({
-    ...group,
-    avatar: {},
-  }));
+  const noAuthor = ungroupedFirst("no-author", t("modsTable::groups::noAuthor"), unknown).map(
+    (group) => ({
+      ...group,
+      avatar: {},
+    }),
+  );
 
   return [...noAuthor, ...authorGroups];
 };
@@ -236,20 +297,20 @@ const groupByColumn = (
     addRow(byValue, value, row);
   });
 
+  const order = column.groupOrder ?? [];
+  // Unlisted values rank after every listed one, then fall back to their names.
+  const rank = (value: string) => (order.includes(value) ? order.indexOf(value) : order.length);
+
   const valueGroups = Array.from(byValue, ([value, rows]) => ({
-    id: `${column.id}:${value}`,
-    label: value,
-    rows,
-  })).sort((a, b) => {
-    const order = column.groupOrder ?? [];
-    // Unlisted values rank after every listed one, then fall back to their names.
-    const rank = (value: string) => (order.includes(value) ? order.indexOf(value) : order.length);
-    return rank(a.label) - rank(b.label) || a.label.localeCompare(b.label);
-  });
+    value,
+    group: { id: `${column.id}:${value}`, label: column.groupValueLabel?.(value) ?? value, rows },
+  }))
+    .sort((a, b) => rank(a.value) - rank(b.value) || a.group.label.localeCompare(b.group.label))
+    .map(({ group }) => group);
 
   const noValue = ungroupedFirst(
     `no-${column.id}`,
-    t("No {{column}}", { column: column.header.toLocaleLowerCase() }),
+    column.noValueLabel ?? t("modsTable::groups::noValue"),
     none,
   );
 
@@ -307,7 +368,7 @@ export const sharedMods = (
     const others = (memberships[mod.id] ?? []).filter(
       (collection) => collection.id !== group.collection?.id,
     );
-    others.forEach((collection) => collections.set(collection.id, modName(collection)));
+    others.forEach((collection) => collections.set(collection.id, displayName(collection)));
     return others.length > 0;
   });
 

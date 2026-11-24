@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import * as reduxAct from "redux-act";
 
 import safeCreateAction from "../../../actions/safeCreateAction";
@@ -49,7 +50,20 @@ export const setAlwaysCompactHeaders = safeCreateAction(
 );
 
 /**
+ * show the open game's artwork behind the layout
+ */
+export const setShowGameArt = safeCreateAction("SET_SHOW_GAME_ART", (enabled: boolean) => enabled);
+
+/**
  * turn non-essential animation down. Dispatching this records an explicit choice; until
  * then the setting is absent and the operating system's preference is followed.
  */
 export const setReduceMotion = safeCreateAction("SET_REDUCE_MOTION", (enabled: boolean) => enabled);
+
+/**
+ * remember the page open in a game, or on Home when gameId is unset
+ */
+export const setLastPage = reduxAct.createAction(
+  "SET_LAST_PAGE",
+  (page: { pageId: string; gameId?: VortexGameId }) => page,
+);

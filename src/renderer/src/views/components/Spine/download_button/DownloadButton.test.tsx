@@ -4,6 +4,11 @@ import React from "react";
 import type * as ReactRedux from "react-redux";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
+import { makeModInstallInfo, makeRule, makeSession } from "@/test-utils/builders";
+import type {
+  CollectionModStatus,
+  ICollectionInstallSession,
+} from "@/types/collections/ICollectionInstallSession";
 import type { IState } from "@/types/IState";
 
 import type { SpineSelection } from "../spine_selection/spineSelection.util";
@@ -45,9 +50,14 @@ interface IDownloadFixture {
   state: string;
   size?: number;
   received: number;
+  modInfo?: { referenceTags: string[] };
 }
 
-const setStore = (downloads: IDownloadFixture[], speedMBps = 0) => {
+const setStore = (
+  downloads: IDownloadFixture[],
+  speedMBps = 0,
+  activeSession?: ICollectionInstallSession,
+) => {
   mocks.state = {
     persistent: {
       downloads: {
@@ -55,8 +65,22 @@ const setStore = (downloads: IDownloadFixture[], speedMBps = 0) => {
         speed: speedMBps * MB,
       },
     },
+    session: { collections: { activeSession, sessionHistory: {} } },
   } as unknown as IState;
 };
+
+/** A collection install whose members are keyed by their tag, each expecting `fileSize` bytes. */
+const collectionSession = (
+  members: { tag: string; status: CollectionModStatus; fileSize: number }[],
+): ICollectionInstallSession =>
+  makeSession({
+    mods: Object.fromEntries(
+      members.map(({ tag, status, fileSize }) => [
+        tag,
+        makeModInstallInfo({ rule: makeRule({ reference: { tag, fileSize } }), status }),
+      ]),
+    ),
+  });
 
 // Only the variants that carry no extra data — "game" would need a gameId with it.
 const setSelection = (type: "downloads" | "home") => {
@@ -134,6 +158,115 @@ describe("DownloadButton", () => {
       const { arc } = renderComponent();
       // 750 of 2000 → 37.5%.
       expect(Number(arc().getAttribute("stroke-dashoffset"))).toBeCloseTo(CIRCUMFERENCE * 0.625, 3);
+    });
+  });
+
+  describe("collection install", () => {
+    const tagged = (tag: string, received: number, state = "started"): IDownloadFixture => ({
+      state,
+      size: 100,
+      received,
+      modInfo: { referenceTags: [tag] },
+    });
+
+    const offset = (container: HTMLElement) =>
+      Number(container.querySelectorAll("circle")[1].getAttribute("stroke-dashoffset"));
+
+    it("keeps rising across the collection instead of resetting per mod", () => {
+      // "a" was installed before this install started, so it isn't part of what's left.
+      setStore(
+        [tagged("b", 50)],
+        1,
+        collectionSession([
+          { tag: "a", status: "installed", fileSize: 100 },
+          { tag: "b", status: "downloading", fileSize: 100 },
+          { tag: "c", status: "pending", fileSize: 100 },
+        ]),
+      );
+      const { container, rerender } = render(<DownloadButton />);
+      // 50 of the 200 bytes left → 25%, not the single download's 50%.
+      expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.75, 3);
+
+      setStore(
+        [tagged("b", 100, "finished"), tagged("c", 0)],
+        1,
+        collectionSession([
+          { tag: "a", status: "installed", fileSize: 100 },
+          { tag: "b", status: "installed", fileSize: 100 },
+          { tag: "c", status: "downloading", fileSize: 100 },
+        ]),
+      );
+      rerender(<DownloadButton />);
+      // "b" finishing moves the ring on to 50%; it doesn't drop back to "c"'s 0%.
+      expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.5, 3);
+    });
+
+    it("measures the next install of the same collection from where it starts", () => {
+      setStore(
+        [tagged("b", 50)],
+        1,
+        collectionSession([
+          { tag: "a", status: "installed", fileSize: 100 },
+          { tag: "b", status: "downloading", fileSize: 100 },
+        ]),
+      );
+      const { container, rerender } = render(<DownloadButton />);
+
+      setStore([]);
+      rerender(<DownloadButton />);
+
+      // Same collection and profile, so the same session id, but "b" is now already done.
+      setStore(
+        [tagged("c", 50)],
+        1,
+        collectionSession([
+          { tag: "a", status: "installed", fileSize: 100 },
+          { tag: "b", status: "installed", fileSize: 100 },
+          { tag: "c", status: "downloading", fileSize: 100 },
+        ]),
+      );
+      rerender(<DownloadButton />);
+      expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.5, 3);
+    });
+
+    // Free users start each member's download by hand, so there are gaps with nothing in
+    // flight while the collection still has mods to download.
+    it("stays up between a collection's downloads", () => {
+      const members = (aStatus: CollectionModStatus) =>
+        collectionSession([
+          { tag: "a", status: aStatus, fileSize: 100 },
+          { tag: "b", status: "pending", fileSize: 100 },
+        ]);
+      setStore([tagged("a", 50)], 1, members("downloading"));
+      const { container, rerender } = render(<DownloadButton />);
+
+      // The adapter's last speed report, from the final tick of "a", is still in the store.
+      setStore([tagged("a", 100, "finished")], 12, members("downloaded"));
+      rerender(<DownloadButton />);
+
+      const button = within(container).getByRole("button", { name: "Downloads" });
+      expect(offset(container)).toBeCloseTo(CIRCUMFERENCE * 0.5, 3);
+      // Nothing is downloading, so the speed reads 0 rather than the stale 12.
+      expect(button).toHaveTextContent("0.0mb/s");
+      expect(button).not.toHaveTextContent("paused");
+    });
+
+    it("goes back to the icon once the collection has nothing left to download", () => {
+      setStore(
+        [tagged("a", 50)],
+        1,
+        collectionSession([{ tag: "a", status: "downloading", fileSize: 100 }]),
+      );
+      const { container, rerender } = render(<DownloadButton />);
+
+      setStore(
+        [tagged("a", 100, "finished")],
+        0,
+        collectionSession([{ tag: "a", status: "installing", fileSize: 100 }]),
+      );
+      rerender(<DownloadButton />);
+
+      expect(container.querySelectorAll("circle")).toHaveLength(0);
     });
   });
 

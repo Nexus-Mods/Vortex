@@ -1,4 +1,6 @@
+import type { Tier } from "../../gamemode_management/tiered/types";
 import type { GameSource } from "../../gamemode_management/types/GameSource";
+import type { DownloadSource } from "./download_source/downloadSource";
 import type { ExtensionInstallSource } from "./extensionInstallAnalytics";
 
 /**
@@ -70,6 +72,30 @@ export class AppLaunchedEvent implements MixpanelEvent {
       // Named as the toolbar toggle's clicks name the view they switch to.
       mods_table_view,
     };
+  }
+}
+
+export interface AppClosedProps {
+  is_relaunch: boolean;
+  session_duration_ms: number;
+}
+
+/**
+ * Sent when the window closes normally, the pair to app_launched. It goes out from the
+ * renderer's beforeunload, so a crash or a killed process sends nothing, and neither do
+ * exits through app.exit() (File > Close, error dialog Quit buttons) or a quit after
+ * logging out. See docs/analytics.md, "Events at quit".
+ * @param is_relaunch True when the close is an in-app restart (Settings, extension
+ *   changes and so on). An auto-update install restarts from main and reports false.
+ * @param session_duration_ms How long the window was open, in whole milliseconds. It's
+ *   the renderer's performance.now(), so an in-app restart starts it again from zero, and
+ *   on macOS and Linux it may not count time the machine was asleep.
+ */
+export class AppClosedEvent implements MixpanelEvent {
+  readonly eventName = "app_closed";
+  readonly properties: Record<string, unknown>;
+  constructor(props: AppClosedProps) {
+    this.properties = { ...props };
   }
 }
 
@@ -325,6 +351,9 @@ export interface GameManagedProps {
   // The Games page list the user picked the game from, null when the add started
   // elsewhere (command line, extension install flows).
   game_source: GameSource | null;
+  // From supportTier. Omitted only when the numeric Nexus id couldn't be resolved
+  // (game_id is null then).
+  support_tier?: Tier;
 }
 
 /**
@@ -341,11 +370,23 @@ export class AppGameManagedEvent implements MixpanelEvent {
   }
 }
 
-/** Sent when a game is unmanaged (its profiles and mods are removed). */
+/** Sent when a game is unmanaged (its profiles and mods are removed). `game_store` is as on
+ * app_game_manage. */
 export class AppGameUnmanagedEvent implements MixpanelEvent {
   readonly eventName = "app_game_unmanage";
   readonly properties: Record<string, unknown>;
-  constructor(props: { game_id: number | null }) {
+  constructor(props: { game_id: number | null; game_store: string | null; support_tier?: Tier }) {
+    this.properties = { ...props };
+  }
+}
+
+/** Sent when the active game switches to a game managed before, however the switch was started
+ * (Games page, spine, quick launcher). A game's first activation is app_game_manage's.
+ * `game_store` is as on app_game_manage. */
+export class AppGameActivatedEvent implements MixpanelEvent {
+  readonly eventName = "app_game_activate";
+  readonly properties: Record<string, unknown>;
+  constructor(props: { game_id: number | null; game_store: string | null; support_tier?: Tier }) {
     this.properties = { ...props };
   }
 }
@@ -362,6 +403,9 @@ export interface GameLaunchedProps {
   launch_method: GameLaunchMethod;
   enabled_mod_count: number;
   launch_session_id: string;
+  // Store id from discovery, as on app_game_manage; null when Vortex couldn't tell.
+  game_store: string | null;
+  support_tier?: Tier;
 }
 
 export class AppGameLaunchedEvent implements MixpanelEvent {
@@ -385,6 +429,9 @@ export interface GameExitedProps {
   duration_reliable: boolean;
   // Process exit code, when Vortex launched the process itself; null for store launches.
   exit_code: number | null;
+  // Captured at launch like the other paired fields.
+  game_store: string | null;
+  support_tier?: Tier;
 }
 
 /**
@@ -691,6 +738,12 @@ export interface ModAnalyticsIdentity {
 }
 
 /**
+ * The identity of a mod's download, and of the install from it: the shared identity plus where the
+ * download started, null when not in a Vortex feature or on the website one sent the user to.
+ */
+export type ModDownloadIdentity = ModAnalyticsIdentity & { download_source: DownloadSource | null };
+
+/**
  * Event sent when a mod download is started from the client. Complements the
  * server-side mods_download_started event to enable success-rate calculations by
  * matching with _completed or _failed.
@@ -699,7 +752,7 @@ export interface ModAnalyticsIdentity {
 export class ModsDownloadStartedClientEvent implements MixpanelEvent {
   readonly eventName = "mods_download_started_client";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity) {
+  constructor(props: ModDownloadIdentity) {
     this.properties = { ...props };
   }
 }
@@ -718,7 +771,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_completed";
   readonly properties: Record<string, any>;
   constructor(
-    props: ModAnalyticsIdentity & { file_size: number; duration_ms: number } & DownloadResumeInfo,
+    props: ModDownloadIdentity & { file_size: number; duration_ms: number } & DownloadResumeInfo,
   ) {
     this.properties = { ...props };
   }
@@ -728,7 +781,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
 export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_download_cancelled";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity) {
+  constructor(props: ModDownloadIdentity) {
     this.properties = { ...props };
   }
 }
@@ -738,7 +791,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_failed";
   readonly properties: Record<string, any>;
   constructor(
-    props: ModAnalyticsIdentity & {
+    props: ModDownloadIdentity & {
       error_code: string;
       error_message: string;
     } & DownloadResumeInfo,
@@ -763,8 +816,8 @@ export type ModInstallKind =
   | "variant"
   | "profile_replace";
 
-/** Fields shared by every per-mod install event: identity + how the install came about. */
-type ModInstallProps = ModAnalyticsIdentity & { install_kind: ModInstallKind };
+/** Fields shared by every per-mod install event: its download's identity + how the install came about. */
+type ModInstallProps = ModDownloadIdentity & { install_kind: ModInstallKind };
 
 /** Event sent when mod installation is started. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationStartedEvent implements MixpanelEvent {
@@ -870,6 +923,7 @@ export interface ModsDeployedProps {
   manual: boolean;
   is_collection_postprocess: boolean;
   duration_ms: number;
+  support_tier?: Tier;
 }
 
 /**

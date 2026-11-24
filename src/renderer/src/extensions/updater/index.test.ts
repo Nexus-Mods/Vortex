@@ -50,9 +50,11 @@ function makeContext() {
   };
   const showDialog = vi.fn().mockResolvedValue({ action: "Close" });
   const dispatch = vi.fn();
+  const registerDialog = vi.fn();
   const context = {
     registerReducer: vi.fn(),
     registerSettings: vi.fn(),
+    registerDialog,
     once: (cb: () => void) => onceCallbacks.push(cb),
     api: {
       getState: () => state,
@@ -70,6 +72,7 @@ function makeContext() {
     dismissNotification,
     showDialog,
     dispatch,
+    registerDialog,
     notifications,
     runOnce: () => onceCallbacks.forEach((cb) => cb()),
   };
@@ -134,6 +137,7 @@ async function setup(initialSnapshot: UpdaterSnapshot = idle) {
     dismissNotification,
     showDialog,
     dispatch,
+    registerDialog,
     notifications,
     runOnce,
   } = makeContext();
@@ -149,6 +153,7 @@ async function setup(initialSnapshot: UpdaterSnapshot = idle) {
     dismissNotification,
     showDialog,
     dispatch,
+    registerDialog,
     notifications,
     updater,
     pushState,
@@ -581,6 +586,64 @@ describe("post-update notice", () => {
     await pushState({ type: "available", version: "2.7.0" }, "2.5.9");
     expect(notifications.some((entry) => entry.id === "vortex-updated")).toBe(false);
     expect(notifications.some((entry) => entry.id === "vortex-update-available")).toBe(true);
+  });
+});
+
+describe("What's New dialog", () => {
+  // the dialog's button, as the registered dialog is given it
+  const confirmOf = (registerDialog: ReturnType<typeof vi.fn>) =>
+    (registerDialog.mock.calls[0]![2] as () => { onConfirm: () => void })().onConfirm;
+
+  it("registers the dialog with a button that acts on the update", async () => {
+    const { registerDialog } = await setup();
+
+    expect(registerDialog.mock.calls[0]![0]).toBe("new-update-changelog-dialog");
+    expect(typeof confirmOf(registerDialog)).toBe("function");
+  });
+
+  it("shows the notes of an update on offer with a Download button", async () => {
+    const { sendNotification, dispatch, registerDialog, updater, pushState } = await setup();
+
+    await pushState({ type: "available", version: "2.7.0", releaseNotes: "<p>Notes</p>" });
+    const whatsNew = sent(sendNotification, "vortex-update-available")[0]!.actions![0]!;
+    whatsNew.action(() => undefined);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "SET_WHATS_NEW",
+        payload: { version: "2.7.0", notes: "<p>Notes</p>", action: "download" },
+      }),
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "SET_DIALOG_VISIBLE",
+        payload: { dialogId: "new-update-changelog-dialog" },
+      }),
+    );
+
+    confirmOf(registerDialog)();
+    expect(updater.downloadUpdate).toHaveBeenCalledWith("stable", false);
+  });
+
+  it("shows the notes after an update with no button to act on", async () => {
+    const { sendNotification, dispatch, registerDialog, updater, pushState } = await setup();
+    updater.getUpdateChangelog.mockResolvedValue("<p>Changes</p>");
+
+    await pushState({ type: "idle" }, "2.5.9");
+    sent(sendNotification, "vortex-updated")[0]!.actions![0]!.action(() => undefined);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "SET_WHATS_NEW",
+        payload: { version: "2.6.0-beta.1", notes: "<p>Changes</p>", action: undefined },
+      }),
+    );
+
+    confirmOf(registerDialog)();
+    expect(updater.downloadUpdate).not.toHaveBeenCalled();
+    expect(updater.restartAndInstall).not.toHaveBeenCalled();
   });
 });
 

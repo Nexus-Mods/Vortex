@@ -1,0 +1,39 @@
+@layer components {
+    /* Two buttons drawn as one: a main part and a second beside it, square where they meet, with
+       a divider down the second's leading edge. Each part keeps its own button look and states. */
+    .nxm-split-button {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: stretch;
+
+        & .nxm-split-button-main {
+            border-start-end-radius: 0;
+            border-end-end-radius: 0;
+        }
+
+        /* Over the main part's last pixel, so the divider lies on whichever part is hovered. */
+        & .nxm-split-button-action {
+            margin-inline-start: -1px;
+            border-start-start-radius: 0;
+            border-end-start-radius: 0;
+
+            &::before {
+                content: "";
+                position: absolute;
+                inset-block: 0;
+                inset-inline-start: 0;
+                width: 1px;
+                background-color: var(--color-stroke-weak);
+            }
+        }
+
+        /* A bordered pair draws one border round both, not one each. */
+        & .nxm-split-button-main.nxm-button-subdued {
+            border-inline-end: 0;
+        }
+
+        & .nxm-split-button-action.nxm-button-subdued {
+            border-inline-start: 0;
+        }
+    }
+}

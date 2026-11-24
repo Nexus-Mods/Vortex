@@ -43,14 +43,16 @@ const installedSize = (state: IState, collection: IMod) => {
  * opens, as matching every mod against every rule is too much to redo on each store change.
  */
 const CollectionStats = ({ collection }: { collection: IMod }) => {
-  const { t } = useTranslation(["common"]);
+  const { t } = useTranslation("mod_management");
   const store = useStore<IState>();
   const count = (collection.rules ?? []).filter(isDependencyRule).length;
   const size = useMemo(() => installedSize(store.getState(), collection), [collection, store]);
 
   return (
     <span className="flex shrink-0 items-center gap-x-2">
-      <span>{count === 1 ? t("1 mod") : t("{{count}} mods", { count })}</span>
+      <span data-testid="collection-hover-card-mod-count">
+        {t("modsTable::collectionHoverCard::modCount", { count })}
+      </span>
 
       {!!size && (
         <>

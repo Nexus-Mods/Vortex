@@ -4,10 +4,10 @@ import * as React from "react";
 import { ComponentEx, connect } from "../../../controls/ComponentEx";
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
 import type { IGameInfoEntry, IState } from "../../../types/IState";
-import opn from "../../../util/opn";
 import { bytesToString } from "../../../util/util";
 import type { IDiscoveryResult } from "../types/IDiscoveryResult";
 import type { IGameStored } from "../types/IGameStored";
+import { openGameInfoValue } from "../util/openGameInfoValue";
 
 export interface IBaseProps {
   t: TFunction;
@@ -92,18 +92,26 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
         {t(gameInfo[key].title)}
       </div>,
       <div key={`${key}-value`} className="game-info-value">
-        {this.renderValue(gameInfo[key].value, gameInfo[key].type || "string")}
+        {this.renderValue(gameInfo[key])}
       </div>,
     ];
   };
 
-  private renderValue = (value: any, type: string) => {
+  private renderValue = (entry: IGameInfoEntry) => {
     const { language } = this.props;
+    const { value } = entry;
+    const type = entry.type || "string";
     if (type === "date") {
       return new Date(value).toLocaleString(language);
-    } else if (type === "url") {
+    } else if (type === "url" || type === "path") {
       return (
-        <a onClick={this.openUrl} href={value}>
+        <a
+          href={type === "url" ? value : "#"}
+          onClick={(evt) => {
+            evt.preventDefault();
+            openGameInfoValue(entry);
+          }}
+        >
           {value}
         </a>
       );
@@ -112,11 +120,6 @@ class GameInfoPopover extends ComponentEx<IProps, { loading: boolean }> {
     } else {
       return value;
     }
-  };
-
-  private openUrl = (evt: React.MouseEvent<any>) => {
-    evt.preventDefault();
-    opn(evt.currentTarget.href).catch((err) => undefined);
   };
 }
 

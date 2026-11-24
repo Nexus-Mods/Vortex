@@ -90,7 +90,7 @@ async function fetchCandidateRows(client: V3Client, sourceIds: string[]): Promis
 }
 
 /** Read version details for the given versions, across id chunks. */
-async function fetchVersionDetailRows(
+export async function fetchVersionDetailRows(
   client: V3Client,
   versionIds: string[],
 ): Promise<V3VersionDetail[]> {

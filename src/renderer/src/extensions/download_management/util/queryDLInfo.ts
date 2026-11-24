@@ -170,7 +170,9 @@ export function queryInfoInternal(
   }
   log("info", "lookup mod meta info", { dlId, md5: dl.fileMD5 });
 
-  let metaGameId = convertNXMIdReverse(knownGames, gameId);
+  // starts as our id for the game but may be replaced by the meta server's own game id, which
+  // is not necessarily a VortexGameId
+  let metaGameId: string = convertNXMIdReverse(knownGames, gameId);
   // Add timeout to prevent slow metadata lookups from blocking new downloads
   const lookupPromise = api
     .lookupModMeta(

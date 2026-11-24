@@ -13,7 +13,7 @@ import { acceptConsent } from "../helpers/consent";
 import { stubOpenDialog } from "../helpers/dialogs";
 import { Timeouts } from "../helpers/timeouts";
 import { freeUser, premiumUser } from "../helpers/users";
-import { ModsPage } from "../selectors/modsPage";
+import { MOD_STATUS, ModsPage } from "../selectors/modsPage";
 import { NavBar } from "../selectors/navbar";
 import { NexusModPage } from "../selectors/nexusModPage";
 
@@ -45,6 +45,7 @@ test.describe("Mods - Manual Downloads", () => {
         });
 
         let downloadedFilePath: string | null = null;
+        const archivePrefix = `qa-e2e-${tier}-${Date.now()}-`;
 
         await test.step("Click Manual and capture the download", async () => {
           // Premium skips the slow-download interstitial — set up the listener
@@ -70,7 +71,7 @@ test.describe("Mods - Manual Downloads", () => {
 
           const download = await downloadPromise;
           const filename = download.suggestedFilename();
-          downloadedFilePath = path.join(os.tmpdir(), `qa-e2e-${tier}-${Date.now()}-${filename}`);
+          downloadedFilePath = path.join(os.tmpdir(), `${archivePrefix}${filename}`);
           await download.saveAs(downloadedFilePath);
         });
 
@@ -93,9 +94,10 @@ test.describe("Mods - Manual Downloads", () => {
         });
 
         await test.step("Verify SMAPI is installed in Vortex", async () => {
-          const modsPage = new ModsPage(vortexWindow);
-          await expect(modsPage.row(/SMAPI/i)).toBeVisible({
-            timeout: Timeouts.NETWORK,
+          const smapiRow = new ModsPage(vortexWindow).rowByModIdPrefix(archivePrefix);
+          await expect(smapiRow).toHaveCount(1, { timeout: Timeouts.NETWORK });
+          await expect(smapiRow.locator("#btn-mods-enabled")).toHaveText(MOD_STATUS.enabled, {
+            timeout: Timeouts.MOD_INSTALL,
           });
         });
       });

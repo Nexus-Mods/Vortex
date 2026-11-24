@@ -22,9 +22,12 @@ info:
     and migration guidance.\n\n**Beta endpoints:** Changes will be marked as `deprecated`
     with a minimum **10-day\ndeprecation period** and migration guidance.\n\nDeprecated
     fields continue to function during the deprecation period.\n\n### Upcoming Changes\n\n|
-    Date | Change |\n| ---- | ------ |\n| 2026-12-01 | `md5` becomes required on [create
-    upload](#tag/uploads/operation/createUpload). Single-part uploads that omit it
-    will be rejected. |\n"
+    Date | Change |\n| ---- | ------ |\n| 2026-11-23 | `description` is limited to
+    255 characters on [create mod file](#tag/mod-files/operation/createModFile) and
+    [create a new mod file version](#tag/mod-files/operation/createModFileVersion).
+    Longer descriptions will be rejected. |\n| 2026-12-01 | `md5` becomes required
+    on [create upload](#tag/uploads/operation/createUpload). Single-part uploads that
+    omit it will be rejected. |\n"
   contact:
     name: Nexus Mods
     url: https://nexusmods.com
@@ -34,6 +37,10 @@ info:
 tags:
   - name: collections
     description: Collection management
+  - name: content-settings
+    description: A user's content preferences and blocks
+  - name: mod-bugs
+    description: Mod bug report triage
   - name: mod-files
     description: Mod file management
   - name: mods
@@ -74,17 +81,9 @@ paths:
         "204":
           description: Successfully updated the collection.
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
           description: The collection was not found.
           content:
@@ -92,11 +91,39 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
-          description: The request body failed validation.
+          "$ref": "#/components/responses/ValidationFailed"
+  "/content-settings":
+    get:
+      tags:
+        - content-settings
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Get my content settings
+      description: |
+        The authenticated user's content settings: whether they see adult content, whether
+        adult images are blurred, and the tags and users they have blocked.
+
+        A user who has never changed these settings gets the defaults: adult content hidden
+        and adult images blurred, with nothing blocked.
+      operationId: getContentSettings
+      security:
+        - ApiKeyAuth: []
+        - BearerJwtAuth: []
+      responses:
+        "200":
+          description: The user's content settings.
           content:
-            application/problem+json:
+            application/json:
               schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ContentSettings"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
   "/games/{game_domain}/trending-mods":
     get:
       tags:
@@ -132,11 +159,7 @@ paths:
                   data:
                     "$ref": "#/components/schemas/TrendingModsResponse"
         "404":
-          description: Game not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/GameNotFound"
   "/games/{game_domain}/dlcs":
     get:
       tags:
@@ -170,11 +193,7 @@ paths:
                   data:
                     "$ref": "#/components/schemas/GameDlcsResponse"
         "404":
-          description: Game not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/GameNotFound"
   "/games/{game_domain}/mods/{game_scoped_id}":
     get:
       tags:
@@ -183,10 +202,19 @@ paths:
         - name: Experimental
           color: orange
       summary: Get mod
-      description: "Retrieve specified mod, from a specified game.
+      description: |
+        Retrieve specified mod, from a specified game.
 
-        "
+        A credential is optional.
+
+        An adult mod is withheld with a 451 when the caller is not age verified and the request comes from a
+        country that requires age verification, or from an unknown country. It is withheld with a 403 from an
+        authenticated user whose preferences exclude adult content.
       operationId: getMod
+      security:
+        - ApiKeyAuth: []
+        - BearerJwtAuth: []
+        - {}
       parameters:
         - name: game_domain
           in: path
@@ -206,6 +234,7 @@ paths:
             This is the mod identifier which appears in URLs on the site e.g. `12604` from path `/skyrimspecialedition/mods/12604`.
           schema:
             type: string
+            pattern: "^[0-9]+$"
       responses:
         "200":
           description: Mod details
@@ -219,19 +248,15 @@ paths:
                   data:
                     "$ref": "#/components/schemas/GetModDetails"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "403":
-          description: Forbidden
+          "$ref": "#/components/responses/Forbidden"
+        "451":
+          "$ref": "#/components/responses/AgeVerificationRequired"
+        "422":
+          description: The mod id is not a number.
           content:
             application/problem+json:
               schema:
@@ -280,24 +305,170 @@ paths:
                   data:
                     "$ref": "#/components/schemas/ModFileVersion"
         "400":
-          description: Bad Request
+          "$ref": "#/components/responses/BadRequest"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+  "/games/{game_domain}/mod-file-versions/{game_scoped_id}/download-link":
+    get:
+      tags:
+        - mods
+      summary: Get download links for a mod file version
+      description: |
+        Issue signed CDN download links for a mod file version, and record the download.
+
+        Premium users, files with direct download enabled and official files are always eligible. Other users must pass the `key` and `expires` values the website generates for them; a missing pair is rejected with 403, an invalid key with 400 and an expired one with 410.
+
+        Quarantined files and mods under moderation are never downloadable. Links expire after four hours.
+      operationId: getModFileVersionDownloadLink
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: game_domain
+          in: path
+          required: true
+          description: |
+            Game domain name.
+
+            This is the human readable game name which appears in URLs on the site e.g. `skyrimspecialedition` and `fallout4`.
+          schema:
+            type: string
+        - name: game_scoped_id
+          in: path
+          required: true
+          description: "The game-scoped identifier for the mod file version.
+
+            "
+          schema:
+            type: string
+            pattern: "^[0-9]+$"
+        - name: key
+          in: query
+          required: false
+          description: Free-user download key generated by the website. Required with
+            `expires` unless the user is otherwise eligible.
+          schema:
+            type: string
+        - name: expires
+          in: query
+          required: false
+          description: Unix timestamp at which `key` stops being valid. Required with
+            `key` unless the user is otherwise eligible.
+          schema:
+            type: integer
+        - name: collection_id
+          in: query
+          required: false
+          description: The collection the download was started from, recorded against
+            the download.
+          schema:
+            type: integer
+        - name: Application-Name
+          in: header
+          required: false
+          description: The client making the request, recorded against the download.
+          schema:
+            type: string
+        - name: Application-Version
+          in: header
+          required: false
+          description: The version of the client making the request, recorded against
+            the download.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Signed download links, one per available CDN location.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModFileVersionDownloadLinks"
+        "400":
+          description: The free-user download key is invalid.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          description: The file is quarantined, the mod is unavailable or under moderation,
+            or the user is not eligible without a download key.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "404":
-          description: Not Found
+          description: The game or mod file version was not found.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
-        "403":
-          description: Forbidden
+        "410":
+          description: The free-user download key has expired.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "422":
+          description: The request failed validation, e.g. a non-numeric file ID.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
   "/mods/{id}":
+    get:
+      tags:
+        - mods
+      summary: Retrieve specified mod by id
+      description: |
+        A credential is optional.
+
+        An adult mod is withheld with a 451 when the caller is not age verified and the request comes from a
+        country that requires age verification, or from an unknown country. It is withheld with a 403 from an
+        authenticated user whose preferences exclude adult content.
+      operationId: getModById
+      security:
+        - ApiKeyAuth: []
+        - BearerJwtAuth: []
+        - {}
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier for the mod.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Mod details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/GetModDetails"
+        "400":
+          "$ref": "#/components/responses/BadRequest"
+        "404":
+          "$ref": "#/components/responses/NotFound"
+        "403":
+          "$ref": "#/components/responses/Forbidden"
+        "451":
+          "$ref": "#/components/responses/AgeVerificationRequired"
     patch:
       tags:
         - mods
@@ -331,29 +502,13 @@ paths:
         "204":
           description: Successfully updated the mod.
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModNotFound"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mods/{id}/files":
     get:
       tags:
@@ -392,17 +547,9 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "403":
-          description: Access to the mod is forbidden.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModForbidden"
         "404":
-          description: The mod was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModNotFound"
   "/mods/{id}/changelogs":
     post:
       tags:
@@ -443,23 +590,11 @@ paths:
                   data:
                     "$ref": "#/components/schemas/AddModChangelogEntriesSuccess"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModNotFound"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mods/{id}/toggle-legacy-mod-requirements":
     put:
       tags:
@@ -491,23 +626,319 @@ paths:
           description: Successfully updated the mod's legacy mod requirements enabled
             state.
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod was not found.
+          "$ref": "#/components/responses/ModNotFound"
+        "409":
+          description: The mod has been removed.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
-          description: The request body failed validation.
+          "$ref": "#/components/responses/ValidationFailed"
+  "/team-mods":
+    get:
+      tags:
+        - mods
+      summary: List my team mods
+      description: |
+        Mods the authenticated user owns or has been given access to as a team
+        member, with each mod's bug tracker setting and open bug report count,
+        ordered by name. These are the mods whose bug reports the user can
+        triage through the mod bug endpoints. Removed mods are not included.
+      operationId: getMyTeamMods
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: affiliation
+          in: query
+          required: false
+          description: |
+            Only return mods with this affiliation:
+            * `owner` - mods the user uploaded
+            * `contributor` - mods the user has been given access to
+          schema:
+            "$ref": "#/components/schemas/TeamModAffiliation"
+        - name: page
+          in: query
+          required: false
+          description: Page number (1-indexed).
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          required: false
+          description: Number of results per page.
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: A page of the user's team mods.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/TeamModsData"
+                  meta:
+                    "$ref": "#/components/schemas/PaginationMeta"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "422":
+          description: Unprocessable - invalid query parameters.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-bugs":
+    get:
+      tags:
+        - mod-bugs
+      summary: List my team mods' bug reports
+      description: |
+        Bug reports across every mod the authenticated user owns or is a team
+        member of (see `getMyTeamMods`), including private reports. Reports
+        hidden by moderators and reports on removed mods are not included.
+
+        To work through reports while changing them (for example, triaging
+        every `new` report), use `sort=oldest` with `after_id` set to the last
+        id you have seen, rather than page numbers: a report whose status
+        changes drops out of a status filter and would shift every later page.
+      operationId: getMyModBugs
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: mod_id
+          in: query
+          required: false
+          description: Only return reports for this mod (the mod's unique identifier).
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: |
+            Only return reports in this state:
+            * `open` - `new`, `known_issue`, `investigating` and `needs_more_info`
+            * `closed` - `fixed`, `duplicate`, `not_a_bug` and `wont_fix`
+          schema:
+            "$ref": "#/components/schemas/ModBugState"
+        - name: status
+          in: query
+          required: false
+          description: Only return reports with this status.
+          schema:
+            "$ref": "#/components/schemas/ModBugStatus"
+        - name: priority
+          in: query
+          required: false
+          description: Only return reports with this priority.
+          schema:
+            "$ref": "#/components/schemas/ModBugPriority"
+        - name: updated_since
+          in: query
+          required: false
+          description: Only return reports created or replied to at or after this time.
+          schema:
+            type: string
+            format: date-time
+        - name: after_id
+          in: query
+          required: false
+          description: Only return reports with an id greater than this one.
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: |
+            Order of the results:
+            * `last_activity` - most recently created or replied to first
+            * `newest` - most recently created first
+            * `oldest` - oldest first, by id
+          schema:
+            type: string
+            enum:
+              - last_activity
+              - newest
+              - oldest
+            default: last_activity
+        - name: page
+          in: query
+          required: false
+          description: Page number (1-indexed).
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          required: false
+          description: Number of results per page.
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: A page of bug reports.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModBugsData"
+                  meta:
+                    "$ref": "#/components/schemas/PaginationMeta"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "422":
+          description: Unprocessable - invalid query parameters.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+  "/mod-bugs/{id}":
+    get:
+      tags:
+        - mod-bugs
+      summary: Get a mod bug report
+      description: |
+        A bug report and its replies. Only the mod's team can read reports
+        through this endpoint. Replies hidden by moderators are not included.
+      operationId: getModBug
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the bug report.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The bug report and its replies.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModBugWithReplies"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/NotOnModTeam"
+        "404":
+          "$ref": "#/components/responses/ModBugNotFound"
+    patch:
+      tags:
+        - mod-bugs
+      summary: Update a mod bug report
+      description: |
+        Changes a bug report's status, priority or fixed version. Only the
+        mod's team can update a report. Fields left out are not changed.
+      operationId: updateModBug
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the bug report.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateModBugRequest"
+      responses:
+        "204":
+          description: The bug report was updated.
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          "$ref": "#/components/responses/NotOnModTeam"
+        "404":
+          "$ref": "#/components/responses/ModBugNotFound"
+        "422":
+          "$ref": "#/components/responses/ValidationFailed"
+  "/mod-bugs/{id}/replies":
+    post:
+      tags:
+        - mod-bugs
+      summary: Reply to a mod bug report
+      description: |
+        Posts a reply to a bug report as the authenticated user. Only the mod's
+        team can reply through this endpoint. The reply is public and, like a
+        reply posted on the website, notifies the reporter and the mod's team.
+      operationId: createModBugReply
+      x-badges:
+        - name: Experimental
+          color: orange
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the bug report.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateModBugReplyRequest"
+      responses:
+        "201":
+          description: The reply was posted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModBugReply"
+        "401":
+          "$ref": "#/components/responses/Unauthorized"
+        "403":
+          description: The user is not on the mod's team, the report is locked, the
+            mod's bug tracker is disabled, or the user is blocked from interacting
+            with the mod.
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        "404":
+          "$ref": "#/components/responses/ModBugNotFound"
+        "422":
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-files/{id}":
     get:
       tags:
@@ -540,17 +971,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/ModFileWithAggregates"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileNotFound"
     put:
       tags:
         - mods
@@ -578,23 +1001,11 @@ paths:
         "204":
           description: Successfully updated the mod file.
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileNotFound"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/{id}/quarantine":
     post:
       tags:
@@ -611,6 +1022,11 @@ paths:
 
         A file manually verified by staff is never overridden (409 is returned instead) —
         staff re-verification is also the route for reversing a quarantine.
+
+        With `place_mod_under_review`, the file's mod is also placed under moderator review and
+        reported to the moderation team; `mod_review` says what happened. This is best-effort: if
+        it fails, the file stays quarantined, the call still succeeds and `mod_review` is `failed`.
+        Reversing the quarantine does not release the mod, nor the reverse.
       operationId: quarantineModFileVersion
       x-badges:
         - name: Experimental
@@ -645,24 +1061,11 @@ paths:
                   data:
                     "$ref": "#/components/schemas/QuarantineModFileVersionSuccess"
         "401":
-          description: No usable service credential - the request carries no token,
-            a user token, an API key or a malformed token.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ServiceCredentialRequired"
         "403":
-          description: The service token does not carry the required scope.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/InsufficientServiceScope"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
         "409":
           description: The file has been manually verified by staff and cannot be
             quarantined automatically.
@@ -671,11 +1074,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/{id}/dependencies":
     get:
       tags:
@@ -708,23 +1107,11 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ModFileVersionDependenciesResponse"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
   "/mod-file-versions/{id}/dependencies/ranges":
     get:
       tags:
@@ -752,23 +1139,11 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ModFileVersionDependencyRangesResponse"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
     put:
       tags:
         - mods
@@ -804,29 +1179,19 @@ paths:
         "204":
           description: Successfully updated the mod file version dependency ranges.
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
+          "$ref": "#/components/responses/ModFileVersionNotFound"
+        "409":
+          description: The mod has been removed.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/{id}/dependencies/dlc":
     get:
       tags:
@@ -852,23 +1217,11 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ModFileVersionDlcDependenciesResponse"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
     put:
       tags:
         - mods
@@ -904,23 +1257,17 @@ paths:
         "204":
           description: Successfully updated the mod file version DLC dependencies.
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
+          "$ref": "#/components/responses/ModFileVersionNotFound"
+        "409":
+          description: The mod has been removed.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/{id}/dependencies/ranges/materialized":
     get:
       tags:
@@ -948,23 +1295,11 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ModFileVersionDependencyRangesMaterializedResponse"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
   "/mod-file-versions/dependencies/materialized/batch":
     post:
       tags:
@@ -1012,17 +1347,9 @@ paths:
                   meta:
                     "$ref": "#/components/schemas/PaginationMeta"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/dependencies/ranges/materialized/batch":
     post:
       tags:
@@ -1069,17 +1396,9 @@ paths:
                   meta:
                     "$ref": "#/components/schemas/PaginationMeta"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/batch":
     post:
       tags:
@@ -1115,17 +1434,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/ModFileVersionsBatchResponse"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mods/batch":
     post:
       tags:
@@ -1162,17 +1473,61 @@ paths:
                   data:
                     "$ref": "#/components/schemas/ModsBatchResponse"
         "400":
-          description: Bad Request
+          "$ref": "#/components/responses/BadRequest"
+        "422":
+          "$ref": "#/components/responses/ValidationFailed"
+  "/mods/search":
+    post:
+      tags:
+        - mods
+      x-badges:
+        - name: Experimental
+          color: orange
+      summary: Search mods
+      description: |
+        Search published mods, sorted and optionally filtered by game and by creation or update time.
+
+        A credential is optional. With one, mods by authors and with tags the user has blocked are
+        left out.
+
+        Adult mods are left out when the user's adult content preference is off. In a country that
+        requires age verification, or when the country is unknown, they are also left out unless the
+        user is age verified. The `adult` filter narrows the results further, to adult mods only or
+        to mods that are not adult.
+      operationId: searchMods
+      security:
+        - ApiKeyAuth: []
+        - BearerJwtAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ModsSearchRequest"
+      responses:
+        "200":
+          description: A page of mods.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    "$ref": "#/components/schemas/ModsSearchResponse"
+                  meta:
+                    "$ref": "#/components/schemas/ModsSearchPaginationMeta"
+        "401":
+          description: The credential is invalid or expired.
           content:
             application/problem+json:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-files/{id}/versions":
     get:
       tags:
@@ -1211,27 +1566,26 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileNotFound"
     post:
       tags:
         - mod-files
       x-badges:
         - name: Experimental
           color: orange
+        - name: Upcoming change
+          color: orange
       summary: Create a new mod file version
       description: |
-        Creates a new version of an existing mod file. The upload specified in the request becomes
-        the most recent entry in the update chain.
+        > ⚠️ **Upcoming changes to this operation**
+        >
+        > - `CreateModFileVersionRequest.description` (request): `maxLength: 255` will be enforced from 2026-11-23
+
+        Creates a new version of an existing mod file from the upload specified in the request. The
+        new version is inserted after `previous_version_id`, or after the latest version if that is
+        omitted.
       operationId: createModFileVersion
       parameters:
         - name: id
@@ -1259,23 +1613,11 @@ paths:
                   data:
                     "$ref": "#/components/schemas/CreateModFileVersionSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "422":
           description: Unprocessable Content
           content:
@@ -1312,19 +1654,11 @@ paths:
                   - data
                 properties:
                   data:
-                    "$ref": "#/components/schemas/ModFileVersion"
+                    "$ref": "#/components/schemas/ModFileVersionWithStats"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
   "/mod-file-versions/{id}/download-repacked":
     post:
       tags:
@@ -1347,6 +1681,13 @@ paths:
           description: The client making the request, recorded against the download.
           schema:
             type: string
+        - name: Application-Version
+          in: header
+          required: false
+          description: The version of the client making the request, recorded against
+            the download.
+          schema:
+            type: string
       responses:
         "200":
           description: A link to the repacked archive.
@@ -1355,17 +1696,9 @@ paths:
               schema:
                 "$ref": "#/components/schemas/DownloadRepackedModFileVersionResponse"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file version was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileVersionNotFound"
   "/mod-file-versions/move":
     post:
       tags:
@@ -1405,23 +1738,11 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileNotFound"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/mod-file-versions/move-to-new-mod-file":
     post:
       tags:
@@ -1456,23 +1777,11 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "404":
-          description: The mod file was not found.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ModFileNotFound"
         "422":
-          description: The request body failed validation.
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/ValidationFailed"
   "/uploads/{id}":
     get:
       tags:
@@ -1509,23 +1818,11 @@ paths:
                   data:
                     "$ref": "#/components/schemas/GetUploadSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
   "/uploads":
     post:
       tags:
@@ -1582,17 +1879,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/CreateUploadSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "422":
           description: Unprocessable Entity
           content:
@@ -1654,17 +1943,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/CreateMultipartUploadSuccess"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "422":
           description: Unprocessable Content
           content:
@@ -1706,17 +1987,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/FinaliseUploadSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "422":
           description: Unprocessable Entity
           content:
@@ -1724,11 +1997,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
   "/collections":
     post:
       tags:
@@ -1758,17 +2027,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/CreateCollectionSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "422":
           description: Unprocessable Entity
           content:
@@ -1778,11 +2039,7 @@ paths:
                   - "$ref": "#/components/schemas/ProblemDetails"
                   - "$ref": "#/components/schemas/ValidationProblem"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
   "/collections/{id}/revisions":
     post:
       tags:
@@ -1820,17 +2077,9 @@ paths:
                   data:
                     "$ref": "#/components/schemas/CreateCollectionRevisionSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "422":
           description: Unprocessable Entity
           content:
@@ -1840,11 +2089,7 @@ paths:
                   - "$ref": "#/components/schemas/ProblemDetails"
                   - "$ref": "#/components/schemas/ValidationProblem"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
   "/mod-files":
     post:
       tags:
@@ -1852,8 +2097,14 @@ paths:
       x-badges:
         - name: Experimental
           color: orange
+        - name: Upcoming change
+          color: orange
       summary: Create mod file
       description: |
+        > ⚠️ **Upcoming changes to this operation**
+        >
+        > - `CreateModFileRequest.description` (request): `maxLength: 255` will be enforced from 2026-11-23
+
         Creates a new mod file using the data from a finalised [upload session](#tag/uploads/operation/createUpload).
 
         Note that this is for entirely new files, not new versions of existing files.
@@ -1883,30 +2134,18 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ProblemDetails"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
   "/mod-file-update-groups/{group_id}/versions":
     post:
       tags:
         - mod-files
       summary: Create a new update group version (updates a mod file)
       description: |
-        Creates a new version of an update group (tied to a mod file), the upload specified in the request becomes the most recent entry in the update chain.
+        Creates a new version of an update group (tied to a mod file) from the upload specified in the request. The new version is inserted after `previous_version_id`, or after the latest version if that is omitted.
 
         **Deprecated** since 2026-06-11. Use "Create a new mod file version"
         (`POST /mod-files/{id}/versions`, operationId `createModFileVersion`) instead.
@@ -1941,23 +2180,11 @@ paths:
                   data:
                     "$ref": "#/components/schemas/CreateUpdateGroupVersionSuccess"
         "400":
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/BadRequest"
         "404":
-          description: Not Found
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/NotFound"
         "403":
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Forbidden"
         "422":
           description: Unprocessable Content
           content:
@@ -2011,11 +2238,7 @@ paths:
                   data:
                     "$ref": "#/components/schemas/VortexData"
         "400":
-          description: Bad Request - invalid parameters
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/InvalidParameters"
   "/vortex/detected-games":
     post:
       tags:
@@ -2050,11 +2273,7 @@ paths:
                   data:
                     "$ref": "#/components/schemas/DetectedGames"
         "401":
-          description: Unauthorized
-          content:
-            application/problem+json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
+          "$ref": "#/components/responses/Unauthorized"
         "422":
           description: Unprocessable - the request body failed schema validation.
           content:
@@ -2160,6 +2379,22 @@ components:
           type: integer
           description: Total number of items matching the query across all pages.
           example: 4123
+    CursorPaginationMeta:
+      type: object
+      description: Pagination metadata for cursor-paginated responses.
+      required:
+        - page_size
+        - next_cursor
+      properties:
+        page_size:
+          type: integer
+          description: The maximum number of items requested for this page.
+          example: 100
+        next_cursor:
+          type: string
+          nullable: true
+          description: Pass as `cursor` to fetch the next page. Null when there are
+            no more items.
     EditCollectionRequest:
       type: object
       properties:
@@ -2267,8 +2502,21 @@ components:
       type: object
       required:
         - id
+        - name
+        - description
         - game_scoped_id
         - game_id
+        - adult_content
+        - version
+        - author
+        - uploader
+        - category
+        - status
+        - stats
+        - tags
+        - primary_image
+        - gallery_images
+        - main_file_version
       properties:
         id:
           type: string
@@ -2281,8 +2529,162 @@ components:
           description: The unique identifier for game this mod belongs to.
         name:
           type: string
+          description: Mod name.
+        description:
+          type: string
           nullable: true
-          description: Mod name (only shown if mod is available).
+          description: Mod description as raw BBCode.
+        version:
+          type: string
+          description: The mod's current version string.
+        author:
+          type: string
+          description: Free-text author credit set by the uploader.
+        adult_content:
+          type: boolean
+          description: Whether the mod contains adult content.
+        uploader:
+          allOf:
+            - "$ref": "#/components/schemas/ModUploader"
+          nullable: true
+          description: The user who uploaded the mod.
+        category:
+          allOf:
+            - "$ref": "#/components/schemas/ModCategory"
+          nullable: true
+          description: The mod's category, or null if uncategorised.
+        stats:
+          "$ref": "#/components/schemas/ModStats"
+        tags:
+          type: array
+          description: The mod's active tags.
+          items:
+            "$ref": "#/components/schemas/ModTag"
+        status:
+          "$ref": "#/components/schemas/ModStatus"
+        primary_image:
+          allOf:
+            - "$ref": "#/components/schemas/ModImage"
+          nullable: true
+          description: The mod's primary image, or null if the mod has none or is
+            under moderation or removed by staff.
+        gallery_images:
+          type: array
+          description: |
+            The mod's gallery, in the order the authors arranged it. Empty when the mod is under
+            moderation or removed by staff.
+          items:
+            "$ref": "#/components/schemas/ModGalleryImage"
+        main_file_version:
+          allOf:
+            - "$ref": "#/components/schemas/ModMainFileVersion"
+          nullable: true
+          description: The primary main file version, or the newest if none is primary,
+            among those whose `security_scan_status` is `cleared`. Null when there
+            is none.
+    ModUploader:
+      type: object
+      description: The user who uploaded a mod.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the user.
+        name:
+          type: string
+          nullable: true
+          description: The user's name, or null if the account no longer exists.
+    ModCategory:
+      type: object
+      description: A mod category within a game.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The game-scoped category identifier.
+        name:
+          type: string
+          description: The category name.
+    ModStats:
+      type: object
+      description: Aggregate counters for a mod.
+      required:
+        - downloads
+        - unique_downloads
+        - views
+        - endorsements
+      properties:
+        downloads:
+          type: integer
+          description: Total downloads.
+        unique_downloads:
+          type: integer
+          description: Unique downloads.
+        views:
+          type: integer
+          description: Page views.
+        endorsements:
+          type: integer
+          description: Number of endorsements.
+    ModTag:
+      type: object
+      description: A tag applied to a mod.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the tag.
+        name:
+          type: string
+          description: The tag name.
+    ModImage:
+      type: object
+      description: |
+        An image in each available size. For an adult mod, show the blurred versions when the user has
+        chosen to blur adult images. There is no blurred full-size image.
+      required:
+        - url
+        - thumbnail_url
+        - large_thumbnail_url
+        - blurred_thumbnail_url
+        - blurred_large_thumbnail_url
+      properties:
+        url:
+          type: string
+          description: The full-size image.
+        thumbnail_url:
+          type: string
+          description: A small thumbnail.
+        large_thumbnail_url:
+          type: string
+          description: A large thumbnail, sized for previews.
+        blurred_thumbnail_url:
+          type: string
+          description: Blurred version of the small thumbnail.
+        blurred_large_thumbnail_url:
+          type: string
+          description: Blurred version of the large thumbnail.
+    ModGalleryImage:
+      description: An image from the mod's gallery, as uploaded by the mod's authors.
+      allOf:
+        - "$ref": "#/components/schemas/ModImage"
+        - type: object
+          required:
+            - id
+            - title
+          properties:
+            id:
+              type: string
+              description: The unique identifier for the image within its game.
+            title:
+              type: string
+              description: The image title. Empty string when the image has none.
     ModFile:
       type: object
       description: A mod file - the persistent, updatable file on a mod page. Its
@@ -2352,6 +2754,10 @@ components:
         - version
         - category
         - uploaded_at
+        - manifest_url
+        - supports_mod_managers
+        - security_scan_status
+        - size_in_bytes
       properties:
         id:
           type: string
@@ -2377,11 +2783,56 @@ components:
           type: string
           format: date-time
           description: The date and time the version was uploaded.
+        manifest_url:
+          type: string
+          nullable: true
+          description: |
+            Public URL of the archive's manifest (file paths, sizes and hashes). Null when there is none.
+            May briefly return 404 while a new upload is still processing.
         is_primary:
           type: boolean
           description: Whether this version is the primary file for the mod. The primary
             file represents the default download file for a mod page. There can be
             at most one primary file per mod. Defaults to false if omitted.
+        supports_mod_managers:
+          type: boolean
+          description: Whether the author allows this file to be installed with a
+            mod manager.
+        security_scan_status:
+          "$ref": "#/components/schemas/SecurityScanStatus"
+        size_in_bytes:
+          type: integer
+          format: int64
+          description: The size of the archive, in bytes.
+    ModFileVersionStats:
+      type: object
+      description: Download counters for a mod file version.
+      required:
+        - downloads
+        - unique_downloads
+      properties:
+        downloads:
+          type: integer
+          description: Total downloads of this version.
+        unique_downloads:
+          type: integer
+          description: Downloads of this version by distinct users.
+    ModFileVersionWithStats:
+      description: A mod file version with its download counters and description.
+      allOf:
+        - "$ref": "#/components/schemas/ModFileVersion"
+        - type: object
+          required:
+            - stats
+            - description
+          properties:
+            stats:
+              "$ref": "#/components/schemas/ModFileVersionStats"
+            description:
+              type: string
+              nullable: true
+              description: The author's description of this version. Null when there
+                is none.
     ModFilesResponse:
       type: object
       required:
@@ -2399,7 +2850,7 @@ components:
         versions:
           type: array
           items:
-            "$ref": "#/components/schemas/ModFileVersion"
+            "$ref": "#/components/schemas/ModFileVersionWithStats"
     ModFileCategory:
       type: string
       enum:
@@ -2441,6 +2892,36 @@ components:
           type: boolean
           nullable: true
           description: Whether the mod is marked as adult content.
+    ModMainFileVersion:
+      type: object
+      description: The version of a mod's main file to download by default.
+      required:
+        - id
+        - game_scoped_id
+        - is_primary
+        - supports_mod_managers
+        - count
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the mod file version.
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod file version.
+        is_primary:
+          type: boolean
+          description: Whether the author marked this version as the mod's primary
+            file.
+        supports_mod_managers:
+          type: boolean
+          description: Whether the author allows this file to be installed with a
+            mod manager.
+        count:
+          type: integer
+          minimum: 1
+          description: The number of the mod's main file versions that have cleared
+            the security scan, including this one. `1` means the mod has no other
+            main file to choose from.
     ModStatus:
       type: string
       description: The effective visibility status of a mod.
@@ -2451,6 +2932,19 @@ components:
         - under_moderation
         - removed
         - removed_by_staff
+    SecurityScanStatus:
+      type: string
+      description: |
+        Whether the file's security scan allows it to be downloaded.
+        - `cleared`: the file is cleared for download.
+        - `pending`: the scan has not finished.
+        - `quarantined`: the file has been quarantined as possible malware and can't be downloaded.
+        - `unverified`: the file has not been scanned, or its scan could not complete.
+      enum:
+        - cleared
+        - pending
+        - quarantined
+        - unverified
     MinimalGame:
       type: object
       description: A minimal representation of a game.
@@ -2469,6 +2963,245 @@ components:
           type: string
           description: The URL-friendly slug for the game.
           example: skyrimspecialedition
+    TeamModAffiliation:
+      type: string
+      description: How the user is related to a mod.
+      enum:
+        - owner
+        - contributor
+    ModBugTracker:
+      type: string
+      description: |
+        The mod's bug tracker setting:
+        * `disabled` - no bug reports
+        * `open` - anyone can read reports; users who downloaded the mod can file them
+        * `team_reports_only` - anyone can read reports; only the mod's team can file them
+        * `private` - only the mod's team can read or file reports
+      enum:
+        - disabled
+        - open
+        - team_reports_only
+        - private
+    TeamModsData:
+      type: object
+      required:
+        - mods
+      properties:
+        mods:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TeamMod"
+    TeamMod:
+      type: object
+      description: A mod the user owns or is a team member of.
+      required:
+        - mod
+        - affiliation
+        - bug_tracker
+        - open_bug_count
+      properties:
+        mod:
+          "$ref": "#/components/schemas/MinimalMod"
+        affiliation:
+          "$ref": "#/components/schemas/TeamModAffiliation"
+        bug_tracker:
+          "$ref": "#/components/schemas/ModBugTracker"
+        open_bug_count:
+          type: integer
+          description: Number of bug reports in the `open` state, excluding reports
+            hidden by moderators.
+          example: 4
+    ModBugStatus:
+      type: string
+      description: |
+        The status of a bug report. `new`, `known_issue`, `investigating` and
+        `needs_more_info` are open; the rest are closed.
+      enum:
+        - new
+        - known_issue
+        - investigating
+        - needs_more_info
+        - fixed
+        - duplicate
+        - not_a_bug
+        - wont_fix
+    ModBugState:
+      type: string
+      description: Whether a bug report's status is open or closed.
+      enum:
+        - open
+        - closed
+    ModBugPriority:
+      type: string
+      description: The priority the mod's team gave a bug report.
+      enum:
+        - not_set
+        - low
+        - medium
+        - high
+    ModBugUser:
+      type: object
+      description: A user who filed or replied to a bug report.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the user.
+        name:
+          type: string
+          nullable: true
+          description: The user's name, or null if the account no longer exists.
+    ModBugDownloadedVersion:
+      type: object
+      description: The file the reporter said they downloaded.
+      required:
+        - file_name
+        - version
+      properties:
+        file_name:
+          type: string
+          description: The name of the file.
+        version:
+          type: string
+          nullable: true
+          description: The version of the file, if the reporter gave one.
+    ModBug:
+      type: object
+      description: A bug report filed against a mod.
+      required:
+        - id
+        - mod
+        - title
+        - description
+        - status
+        - priority
+        - is_private
+        - is_locked
+        - reporter
+        - downloaded_version
+        - fixed_version
+        - reply_count
+        - created_at
+        - last_activity_at
+        - url
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the bug report.
+        mod:
+          "$ref": "#/components/schemas/MinimalMod"
+        title:
+          type: string
+          description: The title of the bug report.
+        description:
+          type: string
+          description: The body of the bug report as plain text, which may contain
+            BBCode.
+        status:
+          "$ref": "#/components/schemas/ModBugStatus"
+        priority:
+          "$ref": "#/components/schemas/ModBugPriority"
+        is_private:
+          type: boolean
+          description: Whether only the reporter and the mod's team can see the report.
+        is_locked:
+          type: boolean
+          description: Whether replies are closed.
+        reporter:
+          "$ref": "#/components/schemas/ModBugUser"
+        downloaded_version:
+          allOf:
+            - "$ref": "#/components/schemas/ModBugDownloadedVersion"
+          nullable: true
+          description: The file the reporter said they downloaded, if they gave one.
+        fixed_version:
+          type: string
+          nullable: true
+          description: The version the mod's team said fixes the bug, if any.
+        reply_count:
+          type: integer
+          description: Number of replies, excluding replies hidden by moderators.
+        created_at:
+          type: string
+          format: date-time
+          description: When the report was filed.
+        last_activity_at:
+          type: string
+          format: date-time
+          description: When the report was filed or last replied to, whichever is
+            later.
+        url:
+          type: string
+          format: uri
+          description: The mod's bug reports page on the website.
+    ModBugsData:
+      type: object
+      required:
+        - bugs
+      properties:
+        bugs:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModBug"
+    ModBugReply:
+      type: object
+      description: A reply to a bug report.
+      required:
+        - id
+        - author
+        - content
+        - created_at
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the reply.
+        author:
+          "$ref": "#/components/schemas/ModBugUser"
+        content:
+          type: string
+          description: The reply as plain text, which may contain BBCode.
+        created_at:
+          type: string
+          format: date-time
+          description: When the reply was posted.
+    ModBugWithReplies:
+      description: A bug report with its replies, oldest first.
+      allOf:
+        - "$ref": "#/components/schemas/ModBug"
+        - type: object
+          required:
+            - replies
+          properties:
+            replies:
+              type: array
+              items:
+                "$ref": "#/components/schemas/ModBugReply"
+    UpdateModBugRequest:
+      type: object
+      description: The fields to change. At least one must be given.
+      properties:
+        status:
+          "$ref": "#/components/schemas/ModBugStatus"
+        priority:
+          "$ref": "#/components/schemas/ModBugPriority"
+        fixed_version:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: The version that fixes the bug. Null clears it.
+    CreateModBugReplyRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: The reply as plain text. BBCode is supported; HTML is shown
+            as text.
     ToggleLegacyModRequirementsRequest:
       type: object
       required:
@@ -2526,12 +3259,21 @@ components:
           description: Why the file is being quarantined (recorded in service logs).
           minLength: 1
           maxLength: 1000
+        place_mod_under_review:
+          type: boolean
+          description: |
+            Also place the file's mod under moderator review once the file is quarantined (or was
+            already). The mod is hidden from the public and its authors cannot edit it until a moderator
+            has reviewed it. A mod already under review is left as it is.
+          default: false
     QuarantineModFileVersionSuccess:
       type: object
       required:
         - id
         - status
         - already_quarantined
+        - mod_review
+        - mod_review_reported
       properties:
         id:
           type: string
@@ -2542,6 +3284,25 @@ components:
         already_quarantined:
           type: boolean
           description: True when the file was already quarantined and nothing changed.
+        mod_review:
+          "$ref": "#/components/schemas/ModReviewOutcome"
+        mod_review_reported:
+          type: boolean
+          description: True when this call reported the mod to the moderation team.
+            Only a call that places the mod under review reports it.
+    ModReviewOutcome:
+      type: string
+      description: |
+        What happened to the file's mod when the caller asked for it to be placed under moderator review.
+        `not_requested`: the caller did not ask. `placed_under_review`: the mod is now hidden from the
+        public and locked for moderator review. `already_under_review`: the mod was already under review,
+        so nothing changed. `failed`: the mod could not be placed under review; the file is still
+        quarantined.
+      enum:
+        - not_requested
+        - placed_under_review
+        - already_under_review
+        - failed
     DownloadRepackedModFileVersionResponse:
       type: object
       required:
@@ -2555,6 +3316,37 @@ components:
           type: string
           format: date-time
           description: The date and time when the download URL will expire.
+    ModFileVersionDownloadLinks:
+      type: object
+      required:
+        - links
+        - expires_at
+      properties:
+        links:
+          type: array
+          description: Download links, with the user's preferred CDN location first.
+          items:
+            "$ref": "#/components/schemas/ModFileVersionDownloadLink"
+        expires_at:
+          type: string
+          format: date-time
+          description: The date and time when the download links will expire.
+    ModFileVersionDownloadLink:
+      type: object
+      required:
+        - name
+        - short_name
+        - url
+      properties:
+        name:
+          type: string
+          description: The CDN location's display name.
+        short_name:
+          type: string
+          description: The CDN location's short name.
+        url:
+          type: string
+          description: The signed URL to download the file from.
     MoveModFileVersionsRequest:
       type: object
       required:
@@ -2976,6 +3768,7 @@ components:
         - name
         - version
         - position
+        - manifest_url
       properties:
         id:
           type: string
@@ -2997,6 +3790,12 @@ components:
           type: string
           format: decimal
           description: Position within the mod file. Higher = newer within the chain.
+        manifest_url:
+          type: string
+          nullable: true
+          description: |
+            Public URL of the archive's manifest (file paths, sizes and hashes). Null when there is none.
+            May briefly return 404 while a new upload is still processing.
     ModsBatchRequest:
       type: object
       required:
@@ -3060,6 +3859,414 @@ components:
         adult_content:
           type: boolean
           description: Whether the mod is flagged as adult content.
+    ModsSearchRequest:
+      type: object
+      description: A mod search. Every field is optional.
+      additionalProperties: false
+      properties:
+        query:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: |
+            Text to find in mod names, with at least 2 characters other than spaces. Each
+            space-separated word must appear in the name, as typed: punctuation matches as written.
+            Case is ignored for the letters A to Z only. Combines with `filters`. Mods are not
+            searched by name when left out.
+        filters:
+          allOf:
+            - "$ref": "#/components/schemas/ModsSearchFilters"
+          default: {}
+        sort:
+          allOf:
+            - "$ref": "#/components/schemas/ModsSearchSort"
+          default: {}
+        pagination:
+          allOf:
+            - "$ref": "#/components/schemas/ModsSearchPagination"
+          default: {}
+    ModsSearchFilters:
+      type: object
+      description: Which mods to search. Every field is optional.
+      additionalProperties: false
+      properties:
+        games:
+          type: array
+          description: Restrict to these games, by domain name. All games when left
+            out.
+          maxItems: 100
+          items:
+            type: string
+            maxLength: 64
+          example:
+            - skyrimspecialedition
+        created_at:
+          description: Only mods whose `created_at` is in this range.
+          allOf:
+            - "$ref": "#/components/schemas/DateTimeRange"
+        updated_at:
+          description: Only mods whose `updated_at` is in this range.
+          allOf:
+            - "$ref": "#/components/schemas/DateTimeRange"
+        exclude_mods:
+          type: array
+          description: IDs of mods to leave out.
+          maxItems: 2000
+          items:
+            type: string
+            pattern: "^[0-9]+$"
+          example:
+            - "7318624273618"
+        adult:
+          type: string
+          enum:
+            - include
+            - exclude
+            - only
+          description: |
+            Whether to include adult mods, leave them out, or return adult mods only. Defaults to
+            `include`. Adult mods that age verification or the user's adult content preference leave
+            out are never returned, so `only` returns no mods for a user who cannot see adult content.
+        supports_mod_managers:
+          type: boolean
+          description: |
+            `true` returns only mods that can be installed with a mod manager, `false` only mods that
+            cannot. Mods are not filtered on mod manager support when left out.
+        requirements:
+          type: array
+          description: |
+            Only mods that have at least one of these kinds of requirement. Mods are not filtered on
+            requirements when left out.
+          maxItems: 4
+          uniqueItems: true
+          items:
+            "$ref": "#/components/schemas/ModsSearchRequirement"
+          example:
+            - mod
+            - external
+        exclude_requirements:
+          type: array
+          description: |
+            Leaves out mods that have any of these kinds of requirement; mods with no requirements are
+            kept. Combines with `requirements`, which still picks from the mods left. Mods are not
+            filtered on requirements when left out.
+          maxItems: 4
+          uniqueItems: true
+          items:
+            "$ref": "#/components/schemas/ModsSearchRequirement"
+          example:
+            - dlc
+    DateTimeRange:
+      type: object
+      description: |
+        A time range: `gte` is the earliest time included, and `lt` the time the range ends before. Give
+        either or both; no other operators (such as `lte` or `gt`) are accepted. Times need a UTC offset,
+        as in `2026-04-01T00:00:00Z`.
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        gte:
+          type: string
+          format: date-time
+          description: Included when at or after this time.
+          example: "2026-04-01T00:00:00Z"
+        lt:
+          type: string
+          format: date-time
+          description: Included when before this time. Must be after `gte`.
+          example: "2026-10-01T00:00:00Z"
+    ModsSearchSort:
+      type: object
+      description: The order of the results.
+      additionalProperties: false
+      properties:
+        field:
+          type: string
+          enum:
+            - new
+            - updated
+            - endorsements
+            - downloads
+          default: endorsements
+          description: |
+            `new` orders by `created_at`, `updated` by `updated_at`, `endorsements` by endorsement
+            count and `downloads` by total downloads. A mod never updated has an `updated_at` equal to
+            its `created_at`. Sorting never leaves mods out: `filters` choose the mods, so the most
+            endorsed mods created since a time are `endorsements` with `created_at.gte`.
+        direction:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+    ModsSearchRequirement:
+      type: string
+      enum:
+        - mod
+        - file
+        - external
+        - dlc
+      description: |
+        A kind of requirement a mod can have: `mod` for another mod, `file` for a specific mod file,
+        `external` for something hosted outside Nexus Mods, and `dlc` for a DLC or expansion of the game.
+    ModsSearchPagination:
+      description: Pages by cursor (`type` `cursor`, the default) or by number (`type`
+        `page`). The response `meta` has the same `type`.
+      oneOf:
+        - "$ref": "#/components/schemas/ModsSearchCursorPagination"
+        - "$ref": "#/components/schemas/ModsSearchPagePagination"
+    ModsSearchPagePagination:
+      type: object
+      description: Pages by number, up to page 100.
+      additionalProperties: false
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - page
+        page:
+          type: integer
+          default: 1
+          minimum: 1
+          maximum: 100
+          description: Page number, starting at 1. Use cursor pagination to go further.
+        page_size:
+          "$ref": "#/components/schemas/ModsSearchPageSize"
+    ModsSearchCursorPagination:
+      type: object
+      description: Pages by cursor, with no page limit.
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          enum:
+            - cursor
+          default: cursor
+        cursor:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: |
+            The `next_cursor` of the previous page. Leave it out for the first page.
+
+            Send the same filters, sort and direction as that request; a cursor sent with any of them changed is rejected. Filters count as the same when they select the same mods, so the order of `games` and `exclude_mods` and the time zone of a `created_at` or `updated_at` time do not matter, and leaving out `adult` is the same as sending its default. `page_size` may change. Results are not a snapshot, so a mod that moves between requests can be repeated or missed. Cursors are for paging, not for storing.
+        page_size:
+          "$ref": "#/components/schemas/ModsSearchPageSize"
+    ModsSearchPageSize:
+      type: integer
+      default: 20
+      minimum: 1
+      maximum: 100
+      description: Number of mods per page.
+    ModsSearchPaginationMeta:
+      description: Pagination for the returned page, of the same `type` as the request.
+      oneOf:
+        - "$ref": "#/components/schemas/ModsSearchPagePaginationMeta"
+        - "$ref": "#/components/schemas/ModsSearchCursorPaginationMeta"
+    ModsSearchPagePaginationMeta:
+      description: Pagination for a page requested by number.
+      allOf:
+        - "$ref": "#/components/schemas/PaginationMeta"
+        - type: object
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum:
+                - page
+    ModsSearchCursorPaginationMeta:
+      description: Pagination for a page requested by cursor.
+      allOf:
+        - "$ref": "#/components/schemas/CursorPaginationMeta"
+        - type: object
+          required:
+            - type
+            - total_count
+          properties:
+            type:
+              type: string
+              enum:
+                - cursor
+            total_count:
+              type: integer
+              description: Number of mods that match the search.
+              example: 4123
+    ModsSearchResponse:
+      type: object
+      required:
+        - mods
+      properties:
+        mods:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ModSummary"
+    ModSummary:
+      type: object
+      description: A mod in search results.
+      required:
+        - id
+        - game_scoped_id
+        - game
+        - name
+        - summary
+        - version
+        - author
+        - category
+        - thumbnail_url
+        - blurred_thumbnail_url
+        - endorsements
+        - downloads
+        - unique_downloads
+        - file_size_kilobytes
+        - created_at
+        - updated_at
+        - adult
+        - supports_vortex
+      properties:
+        id:
+          type: string
+          description: Composite mod UID (gameId << 32 | modId).
+          example: "7318624273618"
+        game_scoped_id:
+          type: string
+          description: The game-scoped identifier for the mod.
+          example: "1234"
+        game:
+          "$ref": "#/components/schemas/ModSummaryGame"
+        name:
+          type: string
+        summary:
+          type: string
+          nullable: true
+          description: The mod's summary, as plain text.
+        version:
+          type: string
+          nullable: true
+        author:
+          "$ref": "#/components/schemas/ModSummaryAuthor"
+        category:
+          nullable: true
+          allOf:
+            - "$ref": "#/components/schemas/ModSummaryCategory"
+        thumbnail_url:
+          type: string
+          nullable: true
+        blurred_thumbnail_url:
+          type: string
+          nullable: true
+          description: Blurred version of the thumbnail.
+        endorsements:
+          type: integer
+        downloads:
+          type: integer
+          description: Total downloads.
+        unique_downloads:
+          type: integer
+          description: Downloads by distinct users.
+        file_size_kilobytes:
+          type: integer
+          description: Size of the mod's primary file, in kilobytes.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        adult:
+          type: boolean
+          description: Whether the mod is flagged as adult content.
+        supports_vortex:
+          type: boolean
+          description: Whether the mod can be installed with Vortex.
+    ModSummaryGame:
+      type: object
+      required:
+        - id
+        - domain_name
+        - name
+      properties:
+        id:
+          type: string
+          example: "1704"
+        domain_name:
+          type: string
+          example: skyrimspecialedition
+        name:
+          type: string
+          example: Skyrim Special Edition
+    ModSummaryAuthor:
+      type: object
+      description: The mod's uploader.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          example: "42"
+        name:
+          type: string
+    ModSummaryCategory:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          example: "7"
+        name:
+          type: string
+          example: Gameplay
+    BlockedAuthor:
+      type: object
+      description: A user whose content another user has blocked.
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the user, comparable with a mod's
+            `uploader.id`.
+        name:
+          type: string
+          nullable: true
+          description: The user's name, or null if the account no longer exists.
+    ContentSettings:
+      type: object
+      description: The content a user has chosen to see, blur or block across the
+        site.
+      required:
+        - adult
+        - blur_adult_images
+        - blocked_tags
+        - blocked_authors
+      properties:
+        adult:
+          type: boolean
+          description: Whether the user has chosen to see adult content.
+        blur_adult_images:
+          type: boolean
+          description: Whether adult images should be blurred until the user reveals
+            them.
+        blocked_tags:
+          type: array
+          description: |
+            Tags the user has blocked. Content carrying any of these tags should be shown as
+            blocked. Empty when the user has blocked no tags.
+          items:
+            "$ref": "#/components/schemas/ModTag"
+        blocked_authors:
+          type: array
+          description: |
+            Users whose content this user has blocked. Content they uploaded should be shown as
+            blocked. Empty when the user has blocked no one.
+          items:
+            "$ref": "#/components/schemas/BlockedAuthor"
     CreateModFileRequest:
       type: object
       required:
@@ -3092,13 +4299,18 @@ components:
           pattern: "^[a-zA-Z0-9.-]+$"
         description:
           type: string
-          description: Description of the mod file.
+          description: |-
+            Description of the mod file.
+
+            > ⚠️ **Upcoming change:** `maxLength: 255` will be enforced from 2026-11-23.
           nullable: true
         file_category:
           "$ref": "#/components/schemas/NewModFileCategory"
         primary_mod_manager_download:
           type: boolean
           description: Whether this file is the default download for mod managers.
+            Only a main file can be the default; `true` with another category is rejected
+            with a 422.
           default: false
         allow_mod_manager_download:
           type: boolean
@@ -3300,6 +4512,9 @@ components:
         primary_mod_manager_download:
           type: boolean
           description: Whether this file is the default download for mod managers.
+            If omitted, a main file takes over as the default download when the version
+            it replaces was the default. Only a main file can be the default; `true`
+            with another category is rejected with a 422.
         allow_mod_manager_download:
           type: boolean
           description: Whether mod manager downloads are enabled for this file.
@@ -3314,8 +4529,8 @@ components:
         previous_version_id:
           type: string
           nullable: true
-          description: The unique identifier for the mod file version this version
-            is replacing.
+          description: The version of this mod file to insert the new version directly
+            after. If omitted, the new version is inserted after the latest version.
     CreateUpdateGroupVersionSuccess:
       allOf:
         - "$ref": "#/components/schemas/UploadModFile"
@@ -3338,7 +4553,10 @@ components:
           pattern: "^[a-zA-Z0-9 _'().-]+$"
         description:
           type: string
-          description: Description of the mod file
+          description: |-
+            Description of the mod file
+
+            > ⚠️ **Upcoming change:** `maxLength: 255` will be enforced from 2026-11-23.
           nullable: true
         version:
           type: string
@@ -3350,6 +4568,9 @@ components:
         primary_mod_manager_download:
           type: boolean
           description: Whether this file is the default download for mod managers.
+            If omitted, a main file takes over as the default download when the version
+            it replaces was the default. Only a main file can be the default; `true`
+            with another category is rejected with a 422.
         allow_mod_manager_download:
           type: boolean
           description: Whether mod manager downloads are enabled for this file.
@@ -3368,8 +4589,8 @@ components:
         previous_version_id:
           type: string
           nullable: true
-          description: The unique identifier for the mod file version this version
-            is replacing.
+          description: The version of this mod file to insert the new version directly
+            after. If omitted, the new version is inserted after the latest version.
     CreateModFileVersionSuccess:
       type: object
       required:
@@ -3852,3 +5073,102 @@ components:
                 BCP 47 language tag the translation's strings are in (e.g. `pt-BR`).
                 Null when a locale could not be determined for it.
               example: pt-BR
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    InvalidParameters:
+      description: Bad Request - invalid parameters
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ServiceCredentialRequired:
+      description: No usable service credential - the request carries no token, a
+        user token, an API key or a malformed token.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    InsufficientServiceScope:
+      description: The service token does not carry the required scope.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ModForbidden:
+      description: Access to the mod is forbidden.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    AgeVerificationRequired:
+      description: The content is adult content, which is not available from the caller's
+        country without age verification.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    NotOnModTeam:
+      description: The user is not on the mod's team.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    NotFound:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ModNotFound:
+      description: The mod was not found.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ModFileNotFound:
+      description: The mod file was not found.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ModFileVersionNotFound:
+      description: The mod file version was not found.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    GameNotFound:
+      description: Game not found.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ModBugNotFound:
+      description: The bug report was not found.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"
+    ValidationFailed:
+      description: The request body failed validation.
+      content:
+        application/problem+json:
+          schema:
+            "$ref": "#/components/schemas/ProblemDetails"

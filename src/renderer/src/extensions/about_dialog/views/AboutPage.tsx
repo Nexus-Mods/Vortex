@@ -10,7 +10,8 @@ import { getErrorMessageOrDefault } from "@vortex/shared";
 import I18next from "i18next";
 import * as React from "react";
 import { Image, Media, Panel } from "react-bootstrap";
-import ReactMarkdown from "react-markdown";
+
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import { ComponentEx, translate } from "../../../controls/ComponentEx";
 import More from "../../../controls/More";
@@ -18,7 +19,6 @@ import { getApplication } from "../../../util/application";
 import getVortexPath from "../../../util/getVortexPath";
 import github from "../../../util/github";
 import { log } from "../../../util/log";
-import opn from "../../../util/opn";
 import MainPage from "../../../views/MainPage";
 
 interface IBomModule {
@@ -145,7 +145,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     const imgPath = path.resolve(getVortexPath("assets"), "images", "vortex.png");
 
     const licenseBox = ownLicense ? (
-      <ReactMarkdown className="license-text-own" disallowedElements={["link"]}>
+      <ReactMarkdown className="license-text-own" disallowedElements={["a"]} unwrapDisallowed>
         {ownLicenseText}
       </ReactMarkdown>
     ) : (
@@ -205,7 +205,7 @@ class AboutPage extends ComponentEx<IProps, IComponentState> {
     evt.preventDefault();
     const url = evt.currentTarget.getAttribute("data-url");
     if (url !== null) {
-      opn(url).catch(() => null);
+      window.api.shell.openUrl(url);
     }
   };
 
