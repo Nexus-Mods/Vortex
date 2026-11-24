@@ -586,6 +586,12 @@ describe("BBCode", () => {
       expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
     });
 
+    it("draws a size inside a link", () => {
+      render(<BBCode bbcode="[url=https://www.nexusmods.com/a][size=2]Small[/size][/url]" />);
+
+      expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
+    });
+
     it("leaves sizes at the text's own where the context says it isn't prose", () => {
       render(<BBCode bbcode="[size=6]Big[/size]" context={{ isProse: false }} />);
 
