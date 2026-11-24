@@ -239,6 +239,58 @@ describe("BBCode", () => {
       expect(container.querySelector("iframe")).toBeNull();
     });
 
+    it.each([
+      "[youtube]dQw4w9WgXcQ[/youtube]",
+      "[video] dQw4w9WgXcQ [/video]",
+      "[youtube]https://youtu.be/dQw4w9WgXcQ[/youtube]",
+      "[video]https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share[/video]",
+    ])("embeds %s as a video", (bbcode) => {
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(screen.getByTestId("youtube-video")).toBeInTheDocument();
+      expect(container.querySelector("iframe")).toHaveAttribute(
+        "src",
+        "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      );
+    });
+
+    it("links a video where the context doesn't embed videos", () => {
+      const { container } = render(
+        <BBCode bbcode="[youtube]dQw4w9WgXcQ&t=30[/youtube]" context={{ embedVideos: false }} />,
+      );
+
+      expect(container.querySelector("iframe")).toBeNull();
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s",
+      );
+    });
+
+    it.each([
+      "[youtube]https://example.com/watch?v=dQw4w9WgXcQ[/youtube]",
+      '[youtube]dQw4w9WgXc" onload="alert(1)[/youtube]',
+      "[youtube][b]dQw4w9WgXcQ[/b]x[/youtube]",
+    ])("links %s rather than playing it", (bbcode) => {
+      const { container } = render(<BBCode bbcode={bbcode} />);
+
+      expect(screen.queryByTestId("youtube-video")).toBeNull();
+      expect(container.querySelector("iframe")).toBeNull();
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^https:\/\/www\.youtube\.com\/watch\?v=/),
+      );
+    });
+
+    it("links what isn't a video as it's written", () => {
+      render(<BBCode bbcode="[youtube]a&b[/youtube]" />);
+
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://www.youtube.com/watch?v=a%26b",
+      );
+      expect(screen.getByRole("link").textContent).toBe("https://www.youtube.com/watch?v=a&b");
+    });
+
     it("links a twitter handle", () => {
       render(<BBCode bbcode="[twitter]NexusSites[/twitter]" />);
 

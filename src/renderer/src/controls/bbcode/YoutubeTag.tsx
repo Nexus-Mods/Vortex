@@ -1,27 +1,43 @@
-import { Tag } from "bbcode-to-react";
 import * as React from "react";
 
-class YoutubeTag extends Tag {
+import {
+  YoutubeVideo,
+  youtubeVideo,
+  youtubeWatchUrl,
+} from "@/ui/components/prose/youtube_video/YoutubeVideo";
+
+import EmbedLinkTag from "./EmbedLinkTag";
+
+/**
+ * `[youtube]`, or the site's `[video]`, as a video player where the context's `embedVideos` asks,
+ * otherwise a link to the video. It takes a video id, with or without a start time, or a link to
+ * the video. Anything else is a link or text, as `EmbedLinkTag` draws it, and as HTML, nothing.
+ */
+class YoutubeTag extends EmbedLinkTag {
   public toHTML(): string[] {
-    return [
-      `<iframe src="https://www.youtube-nocookie.com/embed/${this.getContent()}" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; web-share" title="YouTube video player"/>`,
-    ];
+    const video = youtubeVideo(this.contentText());
+
+    if (!video) {
+      return super.toHTML();
+    }
+
+    const href = youtubeWatchUrl(video);
+    return [`<a href="${href}">${href}</a>`];
   }
 
   public toReact() {
-    return (
-      <div className="youtube-embed-container">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${this.getContent()}`}
-          referrerPolicy="strict-origin-when-cross-origin"
-          allow="encrypted-media; web-share"
-          title="YouTube video player"
-        />
-        <p className="youtube-privacy-notice">
-          Playing this video will store cookies on your device
-        </p>
-      </div>
-    );
+    const video = youtubeVideo(this.contentText());
+
+    if (!video) {
+      return super.toReact();
+    }
+
+    if (!this.renderer.options.embedVideos) {
+      const href = youtubeWatchUrl(video);
+      return <a href={href}>{href}</a>;
+    }
+
+    return <YoutubeVideo video={video} />;
   }
 }
 

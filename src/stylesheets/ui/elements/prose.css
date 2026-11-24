@@ -183,6 +183,11 @@
         margin-block: calc(var(--spacing) * 4);
     }
 
+    /* A video, clear of the lines around it. */
+    .nxm-prose-video {
+        margin-block: calc(var(--spacing) * 4);
+    }
+
     /* Small prose, as in a popover. Where a size's headings should stand apart by size too,
        that's set here, per size. */
     .nxm-prose-sm {
