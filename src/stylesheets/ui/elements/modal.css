@@ -19,8 +19,6 @@
 
         .nxm-modal-panel {
             width: 100%;
-            /* Never taller than the window: a long body scrolls inside the panel, so its
-               buttons can't end up below the bottom edge. */
             max-height: 100%;
             overflow-y: auto;
             position: relative;

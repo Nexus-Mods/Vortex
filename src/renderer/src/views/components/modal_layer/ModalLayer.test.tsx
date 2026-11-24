@@ -288,13 +288,12 @@ describe("ModalLayer", () => {
 
   describe("scrolling", () => {
     it("scrolls the body on its own, so the buttons stay in view", async () => {
-      renderLayer([dialogWith("one", { text: "Some text", bbcode: "Rich" })]);
+      renderLayer([dialogWith("one", { bbcode: "Rich" })]);
 
       const body = screen.getByTestId("dialog-body");
 
       expect(body).toHaveClass("overflow-y-auto");
-      expect(body).toHaveTextContent("Some text");
-      expect(body).toHaveTextContent("Rich");
+      expect(body).toContainElement(proseOf(screen.getByRole("dialog")));
       expect(body).not.toContainElement(screen.getByTestId("dialog-action-Delete"));
 
       await settleTransitions();

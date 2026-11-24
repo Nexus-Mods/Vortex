@@ -67,9 +67,7 @@ const fillParameters = (text: string, parameters: IDialogContent["parameters"] =
     text,
   );
 
-// A table squeezed into the medium modal wraps every cell onto several lines, so a dialog with one
-// gets the large modal. Markdown has no tables here, so only bbcode and HTML are looked at. The
-// bbcode is looked at once filled in, as a parameter can hold the table.
+// A table needs the large modal; the bbcode is checked filled in, as a parameter can hold it.
 const hasTable = (content: IDialogContent) =>
   /\[table\b/i.test(fillParameters(content.bbcode ?? "", content.parameters)) ||
   /<table\b/i.test(content.htmlText ?? "");
@@ -82,8 +80,7 @@ const modalSize = (content: IDialogContent, needsRoom: boolean, textLength: numb
   return needsRoom || textLength > SMALL_MAX_TEXT_LENGTH ? "md" : "sm";
 };
 
-// Prose puts no gap above a table that follows a line of text, and a check's table follows its
-// intro line straight on, so a table in a dialog gets room above and below it.
+// Prose leaves no gap between a line of text and a table after it.
 const TABLE_GAP = "[&_table]:my-2";
 
 // A part of the dialog's body, named the way the dialog's `order` option names it.
@@ -473,13 +470,9 @@ export const ModalLayer = () => {
       size={modalSize(content, needsRoom, text.length)}
       onClose={ignoreClose}
     >
-      {/* Only the body scrolls, so a long list never pushes the buttons off the screen. */}
-      <ModalPanel className="flex flex-col" showCloseButton={false} title={translate(title)}>
-        {/* The padding, taken back by the margin, leaves room for the focus rings the scroll
-            area would otherwise cut off. The first part's top margin is dropped, as it used to
-            fold into the title's. */}
+      <ModalPanel className="flex flex-col" showCloseButton={false} title={translateBody(title)}>
         <div
-          className="-m-1 min-h-0 overflow-y-auto p-1 [&>:first-child]:mt-0"
+          className="-m-1 min-h-0 overflow-y-auto p-1 [&>:first-child]:mt-0 [&>:last-child]:mb-0"
           data-testid="dialog-body"
         >
           {orderedSections(sections, content.options?.order).map((section) => (

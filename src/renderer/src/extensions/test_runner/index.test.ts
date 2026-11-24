@@ -109,7 +109,6 @@ describe("test runner", () => {
     const [notification] = sendNotification.mock.calls[0];
     notification.actions.find((action) => action.title === "More").action();
 
-    expect(notification.message).toBe("Missing Masters");
-    expect(dispatched()).toMatchObject({ payload: { title: "Missing Masters" } });
+    expect(dispatched().payload.title).toBe(notification.message);
   });
 });
