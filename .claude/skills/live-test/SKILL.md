@@ -47,8 +47,8 @@ top of it. If the page it lists isn't from this checkout, ask the user before go
 curl -s http://127.0.0.1:9222/json/list                   # bash
 ```
 
-Otherwise run `pnpm run dev` from the repo root, in the background. It rebuilds the renderer on
-save, reloads the window after each rebuild, and listens for DevTools on `127.0.0.1:9222`. Don't run `pnpm run verify` while it is up (see
+Otherwise run `pnpm run dev` from the repo root, in the background. It serves the renderer with
+HMR and listens for DevTools on `127.0.0.1:9222`. Don't run `pnpm run verify` while it is up (see
 `AGENTS.md`).
 
 An agent's shell often needs three fixes first, in the shell that starts the app:
@@ -122,8 +122,9 @@ games Vortex has a folder for, and any open dialogs. After that, calls are one-l
 | `waitFor(state => ...)`                          | Wait on the app's state instead of the clock.              |
 | `resize(1280, 800)`                              | Size the window before capturing.                          |
 
-A reload drops the handle, and every rebuild of the renderer reloads the window, so expect to
-attach again after any edit under `src/renderer`. Step 7 reloads on purpose.
+A reload drops the handle. Not every code change reloads the window: HMR applies most component
+edits in place and only reloads when it can't. So don't wait for the handle to go; step 7 reloads
+on purpose.
 
 ## 5. Set the stage
 
@@ -232,10 +233,9 @@ start a second run on top.
 How the app picks up each swap depends on what the change touches:
 
 - **Only files under `src/renderer`:** leave the app running. Give the watcher time to rebuild
-  (the dev output prints `[vortex-dev] built renderer.js`; allow ten seconds when you can't see
-  it), then reload the window yourself and attach again. The watcher reloads the window too, but
-  reloading yourself once the build is done means you never attach to the window the swap
-  started in.
+  (the dev output prints `[vortex-dev] built renderer.mjs`; allow ten seconds when you can't see
+  it), then reload the window yourself and attach again. HMR alone isn't enough: it applies most
+  edits in place, which keeps state from the other version and never drops the handle.
 
     ```sh
     node .claude/skills/live-test/scripts/mcp-call.mjs "js:() => { window.location.reload(); return true; }" \

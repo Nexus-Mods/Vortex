@@ -37,15 +37,23 @@ ls src/main/build/main.cjs
 2. Press **F5** or select **Debug Electron**
 3. Vortex launches with debuggers attached to both main and renderer processes
 
-### Dev loop (`pnpm run dev`)
+### Hot Reload (`pnpm run dev`)
 
 When iterating on renderer/UI code, `pnpm run dev` avoids the rebuild/restart
-cycle: it starts rolldown, `tsc` and tailwind in watch mode, launches Electron,
-and reloads the window after each renderer rebuild (see `CONTRIBUTING.md` →
-"Dev loop"). DevTools debugging works as usual (`START_DEVTOOLS=true` in
+cycle entirely: it starts rolldown's dev engine, `tsc` and tailwind in watch
+mode and launches Electron with hot module replacement (see `CONTRIBUTING.md` →
+"Hot reload"). DevTools debugging works as usual (`START_DEVTOOLS=true` in
 `.env`, or pass `--inspect=9229` through: `pnpm run dev --inspect=9229`).
-Messages prefixed `[vortex-dev]` report builds and reloads, and `[tsc]` lines
-report type errors.
+Terminal lines prefixed `[vortex-dev]` report builds and hot updates, console
+messages prefixed `[vortex-hmr]` report applied updates and fallback reloads,
+and `[tsc]` lines report type errors. Note that hot-swapped code can make
+_line-based_ breakpoints go stale until the next full reload — reload the
+window (Ctrl+R) if breakpoints stop hitting.
+
+In dev the renderer is an ES module (`renderer.mjs`, loaded by a small
+`renderer.js`), because rolldown's dev engine only produces ESM; production
+builds are CommonJS. Updates travel as files under `src/main/build/hmr/`; see
+`src/renderer/hmr-client.js` for how they're applied.
 
 ### Set Breakpoints
 

@@ -93,16 +93,20 @@ expect your formatting to be rewritten. Running `pnpm run format` first makes th
 hook a no-op. The hook can also trigger a dependency install mid-commit, so a
 commit sometimes takes about 30 seconds and prints install output.
 
-### Dev loop (`pnpm run dev`)
+### Hot reload (`pnpm run dev`)
 
-For iterating on renderer (UI) code, `pnpm run dev` starts Vortex with the
-renderer rebuilt on save, instead of the build/start cycle:
+For iterating on renderer (UI) code, `pnpm run dev` starts Vortex with hot
+module replacement instead of the build/start cycle:
 
-- Saving a file under `src/renderer` rebuilds the renderer bundle, in well
-  under a second, and reloads the window. You stay on the same page; other UI
-  state, such as open dialogs and form input, is lost.
+- Edits to function components swap in place via react-refresh, usually in
+  well under a second. React and Redux state are preserved; no reload.
+- Edits that can't be hot-applied (class components, reducers, utils,
+  extension `index.ts` init code) reload the window. You stay on the same page;
+  other UI state, such as open dialogs and form input, is lost.
+- A save with a syntax error is reported in the terminal and the window keeps
+  running the last good code.
 - `tsc --watch` runs alongside and prints type errors prefixed `[tsc]`. They
-  never block a rebuild.
+  never block an update.
 - Tailwind class changes rebuild `tailwind-v4.css` and swap the stylesheet in
   place, without a reload.
 - **Not covered:** main-process (`src/main`), preload, and `@vortex/shared`
