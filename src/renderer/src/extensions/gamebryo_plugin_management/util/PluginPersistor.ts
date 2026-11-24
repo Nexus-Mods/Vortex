@@ -566,8 +566,15 @@ class PluginPersistor implements IPersistor {
         this.mLastWriteTime = writtenAt;
       })
       .catch((err: unknown) => {
-        // the files no longer hold what Vortex holds, so no later read may pass for its write
-        this.mWritten = undefined;
+        // a write that would have changed the files leaves them behind what Vortex holds, so no
+        // later read may pass for its write; one that only restated them changes nothing. Only
+        // the original format reads loadorder.txt back.
+        if (
+          !this.holdsOurLastWrite(this.toPluginList(sorted), true) ||
+          (this.mPluginFormat === "original" && !this.holdsOurLastWrite(sorted, false))
+        ) {
+          this.mWritten = undefined;
+        }
         const code = fileErrorCode(err);
         if (code === "EBUSY") {
           // the file is held by another process, quite possibly the game itself

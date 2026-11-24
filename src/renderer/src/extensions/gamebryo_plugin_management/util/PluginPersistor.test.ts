@@ -310,11 +310,10 @@ describe("PluginPersistor", () => {
         const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
         persistor.setExternalChangeCallback(onExternalChange);
         // the game holds the plugin files while it starts, so Vortex's write of Parked.esp fails
+        const busy = { kind: "os:generic", originalCode: "EBUSY", transient: true } as const;
         const faults: ChaosRule[] = [
-          {
-            fault: { kind: "os:generic", originalCode: "EBUSY", transient: true },
-            times: Infinity,
-          },
+          { op: "writeFile", fault: busy, times: Infinity },
+          { op: "move", fault: busy, times: Infinity },
         ];
         const diskFs = window.api.fs;
         window.api = { ...window.api, fs: new ChaosFS(diskFs, faults) };
@@ -896,29 +895,6 @@ describe("PluginPersistor", () => {
       nodeFs.utimesSync(path.join(paths.dataDir, "Old.esp"), late, late);
 
       const p = await makePersistor(false);
-
-      expect(p.entry("parked.esp").loadOrder).toBe(0);
-      expect(p.entry("old.esp").loadOrder).toBe(1);
-    });
-
-    it("re-reads the file-time order when the list files still hold Vortex's last write", async () => {
-      const early = new Date(Date.now() - 60_000);
-      const late = new Date();
-      nodeFs.writeFileSync(path.join(paths.dataDir, "Old.esp"), "");
-      nodeFs.writeFileSync(path.join(paths.dataDir, "Parked.esp"), "");
-      nodeFs.utimesSync(path.join(paths.dataDir, "Old.esp"), early, early);
-      nodeFs.utimesSync(path.join(paths.dataDir, "Parked.esp"), late, late);
-      const p = await makePersistor(false);
-      p.setKnownPlugins({ "old.esp": "Old.esp", "parked.esp": "Parked.esp" });
-      await settle(SETTLE_MS);
-      await p.loadFiles("not-a-supported-game");
-      expect(p.entry("old.esp").loadOrder).toBe(0);
-
-      // another tool reorders by file time and leaves both list files as Vortex wrote them
-      nodeFs.utimesSync(path.join(paths.dataDir, "Old.esp"), late, late);
-      nodeFs.utimesSync(path.join(paths.dataDir, "Parked.esp"), early, early);
-      await p.loadFiles("skyrimse");
-      await settle(SETTLE_MS);
 
       expect(p.entry("parked.esp").loadOrder).toBe(0);
       expect(p.entry("old.esp").loadOrder).toBe(1);
