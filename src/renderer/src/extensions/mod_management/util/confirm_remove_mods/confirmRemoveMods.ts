@@ -154,9 +154,9 @@ const removalTargets = (state: IState, gameId: VortexGameId, modIds: string[]) =
 
 /**
  * Removes mods from a game once the user confirms, as the classic table's Remove asks: the
- * mods, their archives, or both. Lists each as removing from confirmation until it's done, so
- * its row shows it and no second removal starts on it. Never rejects: resolves to whether it
- * finished.
+ * mods, their archives, or both. Lists each, and each archive it deletes, as removing from
+ * confirmation until it's done, so its row shows it and no second removal starts on it. Never
+ * rejects: resolves to whether it finished.
  */
 export const confirmRemoveMods = async (
   api: IExtensionApi,
@@ -187,12 +187,16 @@ export const confirmRemoveMods = async (
   }
   const { installedIds, archiveIds } = removalTargets(state, gameId, confirmed);
 
+  // The archives being deleted too: once a mod is gone, the list shows its archive in a row of
+  // its own, by the archive's id, until the archive is deleted as well.
+  const listed = [...new Set([...confirmed, ...(result.input?.archive ? archiveIds : [])])];
+
   // In one batch each way, so the rows work out whether they're busy once, not once per mod.
   const listAsRemoving = (action: typeof startActivity) => {
     if (api.store !== undefined) {
       batchDispatch(
         api.store,
-        confirmed.map((modId) => action(REMOVING_ACTIVITY, modId)),
+        listed.map((id) => action(REMOVING_ACTIVITY, id)),
       );
     }
   };

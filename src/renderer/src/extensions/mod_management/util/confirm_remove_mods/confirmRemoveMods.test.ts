@@ -181,9 +181,35 @@ describe("confirmRemoveMods", () => {
 
     expect(dispatched(api)).toEqual([
       startActivity(REMOVING_ACTIVITY, "a"),
+      startActivity(REMOVING_ACTIVITY, "archive-a"),
       stopActivity(REMOVING_ACTIVITY, "a"),
+      stopActivity(REMOVING_ACTIVITY, "archive-a"),
     ]);
     expect(removeMods).not.toHaveBeenCalled();
+  });
+
+  // Once the mod is gone, the list shows its archive in a row of its own until it's deleted.
+  it("lists the archives it deletes as removing too, each once", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: true, archive: true });
+    let listed: unknown[] = [];
+    api.events.emit.mockImplementation((_event, _id, cb: (err: Error | null) => void) => {
+      listed = dispatched(api);
+      cb(null);
+    });
+
+    expect(await remove(api, ["a", "dl"])).toBe(true);
+
+    expect(listed).toEqual([
+      startActivity(REMOVING_ACTIVITY, "a"),
+      startActivity(REMOVING_ACTIVITY, "dl"),
+      startActivity(REMOVING_ACTIVITY, "archive-a"),
+    ]);
+    expect(dispatched(api).slice(3)).toEqual([
+      stopActivity(REMOVING_ACTIVITY, "a"),
+      stopActivity(REMOVING_ACTIVITY, "dl"),
+      stopActivity(REMOVING_ACTIVITY, "archive-a"),
+    ]);
   });
 
   it("does nothing when neither option is ticked", async () => {
