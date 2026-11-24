@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -293,16 +293,17 @@ describe("GameActions", () => {
     await settleTransitions();
   });
 
+  // Found by role and test id, not text: see docs/testing.md. The copy itself is E2E's to check.
   describe("while a purge runs", () => {
-    it("shows it as a neutral Updating files bar that can't be pressed", async () => {
+    it("shows it as a neutral progress bar that can't be pressed", async () => {
       context.isPurging = true;
       context.purgeProgress = 35;
 
       render(<GameActions />);
 
-      const bar = screen.getByRole("progressbar", { name: "Updating files" });
+      const bar = screen.getByRole("progressbar");
       expect(bar).toHaveAttribute("aria-valuenow", "35");
-      expect(bar).toHaveTextContent("Updating files");
+      expect(within(bar).getByTestId("menu-apply-label")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Appl/ })).toBeNull();
       // Orange is Apply's colour only.
       for (const element of [bar, ...bar.querySelectorAll("*")]) {
@@ -319,12 +320,12 @@ describe("GameActions", () => {
       context.isPurging = true;
       const { rerender } = render(<GameActions />);
 
-      expect(screen.getByRole("progressbar", { name: "Updating files" })).toBeInTheDocument();
+      expect(screen.getByRole("progressbar")).toBeInTheDocument();
 
       context.autoDeploy = true;
       rerender(<GameActions />);
 
-      expect(screen.getByRole("progressbar", { name: "Updating files" })).toBeInTheDocument();
+      expect(screen.getByRole("progressbar")).toBeInTheDocument();
 
       await settleTransitions();
     });
@@ -335,10 +336,19 @@ describe("GameActions", () => {
 
       await userEvent.hover(screen.getByRole("progressbar"));
 
-      expect(await screen.findByText("Updating mod files")).toBeInTheDocument();
-      expect(
-        screen.getByText("Vortex is updating which files are in the game after your last change."),
-      ).toBeInTheDocument();
+      expect(await screen.findByTestId("menu-apply-purge-help")).toBeInTheDocument();
+
+      await settleTransitions();
+    });
+
+    it("doesn't explain a purge while applying", async () => {
+      context.isDeploying = true;
+      render(<GameActions />);
+
+      await userEvent.hover(screen.getByRole("progressbar"));
+      await screen.findByRole("tooltip");
+
+      expect(screen.queryByTestId("menu-apply-purge-help")).toBeNull();
 
       await settleTransitions();
     });
@@ -349,9 +359,7 @@ describe("GameActions", () => {
 
       render(<GameActions />);
 
-      expect(screen.getByRole("progressbar", { name: "Updating files" })).not.toHaveTextContent(
-        "Updating files",
-      );
+      expect(within(screen.getByRole("progressbar")).queryByTestId("menu-apply-label")).toBeNull();
 
       await settleTransitions();
     });

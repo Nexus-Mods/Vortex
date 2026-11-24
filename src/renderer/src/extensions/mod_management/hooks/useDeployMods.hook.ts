@@ -12,6 +12,14 @@ import { purged } from "../selectors";
 import { getAllActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
 
+/** A purge is running, whether the user asked for it or Vortex started it. */
+const purgeRunning = (state: IState): boolean =>
+  (state.session.base.activity?.mods ?? []).includes("purging");
+
+/** How far along the running purge is, 0-100; undefined before it reports any progress. */
+const purgePercentDone = (state: IState): number | undefined =>
+  state.session.base.progress?.mods?.purging?.percent;
+
 /** Tells the user no deployment method is set, and offers to take them there. */
 export const useNoMethodWarning = () => {
   const { api } = useMainContext();
@@ -90,12 +98,8 @@ export const useDeployMods = (): {
     (state: IState) => state.session.base.progress?.mods?.deployment?.percent,
   );
   const step = useSelector((state: IState) => state.session.base.progress?.mods?.deployment?.text);
-  const isPurging = useSelector((state: IState) =>
-    (state.session.base.activity?.mods ?? []).includes("purging"),
-  );
-  const purgePercent = useSelector(
-    (state: IState) => state.session.base.progress?.mods?.purging?.percent,
-  );
+  const isPurging = useSelector(purgeRunning);
+  const purgePercent = useSelector(purgePercentDone);
   const gameId = useSelector(selectors.activeGameId);
   const profileId = useSelector((state: IState) =>
     selectors.lastActiveProfileForGame(state, gameId),

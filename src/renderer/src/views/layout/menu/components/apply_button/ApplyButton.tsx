@@ -39,7 +39,8 @@ const Content = ({
         { "animate-spin reduce-motion:animate-none": isBusy },
       ])}
       name="autorenew"
-      size="lg"
+      // The purge's label is longer, so its icon and text are a size smaller to fit on one line.
+      size={isPurging ? "md" : "lg"}
     />
 
     {!isCollapsed && (
@@ -47,7 +48,8 @@ const Content = ({
         // While busy the bar sets the colour, so the text picks it up from there.
         {...(isBusy ? { brand: "none" as const } : { appearance: "inverted" as const })}
         as="span"
-        className="font-medium"
+        className={joinClasses(["font-medium", { "whitespace-nowrap": isPurging }])}
+        data-testid="menu-apply-label"
         typographyType={isPurging ? "body-md" : "body-lg"}
       >
         {label}
@@ -93,7 +95,7 @@ export const ApplyButton = ({
             <p>{headline}</p>
 
             {isPurging && (
-              <p className="text-neutral-subdued">
+              <p className="text-neutral-subdued" data-testid="menu-apply-purge-help">
                 {t("Vortex is updating which files are in the game after your last change.")}
               </p>
             )}
@@ -111,7 +113,8 @@ export const ApplyButton = ({
             aria-valuenow={progress}
             className={joinClasses([
               "relative flex w-full cursor-progress items-center justify-center gap-x-2 overflow-hidden rounded-sm px-2",
-              isPurging ? "bg-neutral-weak text-neutral-900" : "bg-primary-600/80 text-primary-950",
+              // Fixed ramp steps, as in the design, so the bar reads the same in either theme.
+              isPurging ? "bg-neutral-500 text-neutral-900" : "bg-primary-600/80 text-primary-950",
               height,
             ])}
             data-testid="menu-apply"
@@ -120,12 +123,17 @@ export const ApplyButton = ({
             <div
               className={joinClasses([
                 "absolute inset-y-0 left-0 transition-[width] duration-300 reduce-motion:duration-0",
-                isPurging ? "bg-neutral-moderate" : "bg-primary-moderate",
+                isPurging ? "bg-neutral-300" : "bg-primary-moderate",
               ])}
               style={{ width: `${progress}%` }}
             />
 
-            <span className="relative flex items-center gap-x-2">
+            <span
+              className={joinClasses([
+                "relative flex items-center",
+                isPurging ? "gap-x-1" : "gap-x-2",
+              ])}
+            >
               <Content isBusy isCollapsed={isCollapsed} isPurging={isPurging} label={label} />
             </span>
           </div>
