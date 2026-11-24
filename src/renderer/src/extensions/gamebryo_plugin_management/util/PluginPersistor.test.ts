@@ -21,12 +21,23 @@ vi.mock("./gameSupport", () => ({
   nativePlugins: () => paths.native,
 }));
 
+// the listener of the latest watcher the persistor started, for tests that raise its events
+const watched = vi.hoisted(() => ({
+  listener: undefined as ((evt: string, fileName: string | null) => void) | undefined,
+}));
+
 // the persistor watches its plugin directory for foreign rewrites; a real watcher on the temp
 // dirs fires on the tests' own writes and holds the vitest worker open
 vi.mock("node:fs", async (importOriginal) => {
   const actual = await importOriginal<typeof nodeFs>();
-  const watch = () =>
-    ({ close: () => undefined, on: () => undefined }) as unknown as nodeFs.FSWatcher;
+  const watch = (
+    _dir: string,
+    _options: unknown,
+    listener: (evt: string, fileName: string | null) => void,
+  ) => {
+    watched.listener = listener;
+    return { close: () => undefined, on: () => undefined } as unknown as nodeFs.FSWatcher;
+  };
   return { ...actual, default: { ...actual, watch }, watch };
 });
 
@@ -235,6 +246,128 @@ describe("PluginPersistor", () => {
       await settle(SETTLE_MS);
 
       expect(onExternalChange).not.toHaveBeenCalled();
+    });
+
+    describe("Skyrim SE rewriting plugins.txt as it starts", () => {
+      const GAME_NOTE = "# Please do not modify this file.";
+      const OURS = `${VORTEX_HEADER}\r\n*Old.esp\r\nParked.esp\r\n*Main.esp\r\n`;
+      // the watcher's refresh waits 500ms before it reads the file
+      const REFRESH_MS = 800;
+
+      // Vortex holds two active plugins and an inactive one between them
+      beforeEach(async () => {
+        persistor.setKnownPlugins({
+          "old.esp": "Old.esp",
+          "parked.esp": "Parked.esp",
+          "main.esp": "Main.esp",
+        });
+        await persistor.syncFromState("skyrimse", { "main.esp": { enabled: true, loadOrder: 2 } });
+        await settleWrites();
+        expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(OURS);
+      });
+
+      /**
+       * Writes plugins.txt under the given name the way the game does (its own header, LF line
+       * ends) and raises the watcher's event for it.
+       */
+      const gameRewrite = async (fileName: string, ...entries: string[]) => {
+        const content = [SKYRIM_HEADER, GAME_NOTE, ...entries, ""].join("\n");
+        nodeFs.writeFileSync(pluginsFile(), content, { encoding: "latin1" });
+        // after Vortex's write, whatever the file system's time resolution
+        const later = new Date(Date.now() + 10_000);
+        nodeFs.utimesSync(pluginsFile(), later, later);
+        watched.listener?.("change", fileName);
+        await settle(REFRESH_MS);
+        return content;
+      };
+
+      const asked = () => {
+        const onExternalChange = vi.fn(() => new Promise<"keep" | "revert">(() => undefined));
+        persistor.setExternalChangeCallback(onExternalChange);
+        return onExternalChange;
+      };
+
+      it("keeps Vortex's order when the game only moves an inactive plugin to the top", async () => {
+        const onExternalChange = asked();
+
+        const content = await gameRewrite("plugins.txt", "Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).not.toHaveBeenCalled();
+        // the inactive plugin stays where Vortex put it, between the active ones
+        expect(persistor.entry("parked.esp").enabled).toBe(false);
+        expect(persistor.entry("old.esp").loadOrder).toBeLessThan(
+          persistor.entry("parked.esp").loadOrder,
+        );
+        expect(persistor.entry("parked.esp").loadOrder).toBeLessThan(
+          persistor.entry("main.esp").loadOrder,
+        );
+        // and nothing is written back while the game starts
+        expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(content);
+      });
+
+      it("asks when the game's rewrite activates a plugin", async () => {
+        const onExternalChange = asked();
+        await gameRewrite("plugins.txt", "*Parked.esp", "*Old.esp", "*Main.esp");
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
+      it("asks when the game's rewrite reorders the active plugins", async () => {
+        const onExternalChange = asked();
+        await gameRewrite("plugins.txt", "Parked.esp", "*Main.esp", "*Old.esp");
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
+      it("asks when the game's rewrite drops a plugin", async () => {
+        const onExternalChange = asked();
+        await gameRewrite("plugins.txt", "*Old.esp", "*Main.esp");
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
+      it("sees a change to the file under the game's name, Plugins.txt", async (ctx) => {
+        // Plugins.txt is the same file only where names ignore case (Windows, macOS)
+        if (!nodeFs.existsSync(path.join(paths.pluginDir, "Plugins.txt"))) {
+          ctx.skip();
+        }
+        const onExternalChange = asked();
+        await gameRewrite("Plugins.txt", "*Parked.esp", "*Old.esp", "*Main.esp");
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
+      it("asks when the game's rewrite follows a write of Vortex's that the game blocked", async () => {
+        const onExternalChange = asked();
+        // the game holds the plugin files while it starts, so Vortex's write of Parked.esp fails
+        const busy = { kind: "os:generic", originalCode: "EBUSY", transient: true } as const;
+        const faults: ChaosRule[] = [
+          { op: "writeFile", fault: busy, times: Infinity },
+          { op: "move", fault: busy, times: Infinity },
+        ];
+        const diskFs = window.api.fs;
+        window.api = { ...window.api, fs: new ChaosFS(diskFs, faults) };
+        // waits for the write attempt itself to give up, however long its retries take
+        const writeFiles = vi.spyOn(
+          persistor as unknown as { writeFiles: (...args: unknown[]) => Promise<Date> },
+          "writeFiles",
+        );
+        try {
+          await persistor.syncFromState("skyrimse", {
+            "parked.esp": { enabled: true, loadOrder: 1 },
+          });
+          await vi.waitFor(() => expect(writeFiles).toHaveBeenCalled(), { timeout: 2000 });
+          await writeFiles.mock.results[0].value.catch(() => undefined);
+          await settle(SETTLE_MS);
+        } finally {
+          writeFiles.mockRestore();
+          window.api = { ...window.api, fs: diskFs };
+        }
+        expect(persistor.entry("parked.esp").enabled).toBe(true);
+        // the write did not land
+        expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(OURS);
+
+        // the game rewrites the list it had, which is the last one Vortex managed to write
+        await gameRewrite("plugins.txt", "Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      }, 15_000);
     });
 
     // with nothing known to compare against, an empty file cannot be judged unchanged

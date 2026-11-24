@@ -33,6 +33,14 @@ export const PluginFileConflict = {
 
 export type PluginFileConflict = (typeof PluginFileConflict)[keyof typeof PluginFileConflict];
 
+/** The plugin files the persistor writes and watches, named as it writes them. */
+const PLUGIN_FILES = ["loadorder.txt", "plugins.txt"];
+
+/** Whether two lists hold the same entries in the same order. */
+function sameEntries(lhs: string[], rhs: string[]): boolean {
+  return lhs.length === rhs.length && lhs.every((entry, idx) => entry === rhs[idx]);
+}
+
 interface IPluginMap {
   [id: string]: IPluginLoadOrderEntry;
 }
@@ -561,6 +569,15 @@ class PluginPersistor implements IPersistor {
         this.mLastWriteTime = writtenAt;
       })
       .catch((err: unknown) => {
+        // a write that would have changed the files leaves them behind what Vortex holds, so the
+        // next read must not pass for Vortex's own write and be passed over. A write that only
+        // restated the files (the game holding them while it starts) changes nothing.
+        if (
+          !this.holdsOurLastWrite(this.toPluginList(sorted), true) ||
+          (this.mPluginFormat === "original" && !this.holdsOurLastWrite(sorted, false))
+        ) {
+          this.mWritten = undefined;
+        }
         const code = fileErrorCode(err);
         if (code === "EBUSY") {
           // the file is held by another process, quite possibly the game itself
@@ -626,14 +643,26 @@ class PluginPersistor implements IPersistor {
     return (await withFileRetry(() => stat(pluginsFile))).mtime;
   }
 
-  /** Whether a file still holds exactly the entries this persistor last wrote into it. */
+  /**
+   * Whether a file still holds what this persistor last wrote into it, as far as the game reads
+   * it. Where plugins.txt marks the active plugins (the fallout4 format), the game ignores where
+   * the inactive ones sit, and Skyrim SE moves them about each time it starts; so there only the
+   * plugins listed, which of them are active and the order of the active ones count.
+   */
   private holdsOurLastWrite(entries: string[], plugins: boolean): boolean {
     const ours = this.mWritten?.[plugins ? "plugins" : "loadorder"];
+    if (ours === undefined || ours.length === 0 || entries.length !== ours.length) {
+      return false;
+    }
+    const theirs = entries.map((entry) => entry.toLowerCase());
+    const mine = ours.map((entry) => entry.toLowerCase());
+    if (!plugins || this.mPluginFormat !== "fallout4") {
+      // the load order itself, or a plugins.txt that lists only the active plugins
+      return sameEntries(theirs, mine);
+    }
+    const active = (list: string[]) => list.filter((entry) => entry.startsWith("*"));
     return (
-      ours !== undefined &&
-      ours.length > 0 &&
-      entries.length === ours.length &&
-      entries.every((entry, idx) => entry.toLowerCase() === ours[idx].toLowerCase())
+      sameEntries(active(theirs), active(mine)) && sameEntries([...theirs].sort(), [...mine].sort())
     );
   }
 
@@ -775,6 +804,17 @@ class PluginPersistor implements IPersistor {
           return delayed(RETRY_DELAY_MS).then(() => this.deserialize(true, adoptForeign));
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
+        if (
+          !adoptForeign &&
+          this.mPluginFormat === "fallout4" &&
+          this.holdsOurLastWrite(keys, true)
+        ) {
+          // the file says what Vortex last wrote, though maybe not where the inactive plugins
+          // sit (the game moves them as it starts). Taking it in would only lose the positions
+          // Vortex gave them, which they load at once activated, so Vortex keeps its own.
+          this.adoptParsed(this.mPlugins);
+          return Promise.resolve();
+        }
         this.initFromKeyList(newPlugins, keys, true, offset);
 
         return this.orderByFileTime(newPlugins).then(() => {
@@ -896,7 +936,8 @@ class PluginPersistor implements IPersistor {
         if (
           !this.mSerializing &&
           fileName !== null &&
-          ["loadorder.txt", "plugins.txt"].includes(fileName) &&
+          // the game names it Plugins.txt, which a file written in place keeps
+          PLUGIN_FILES.includes(fileName.toLowerCase()) &&
           this.mPluginPath !== undefined
         ) {
           withFileRetry(() => stat(path.join(this.mPluginPath, fileName)))
