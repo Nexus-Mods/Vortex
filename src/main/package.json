@@ -403,6 +403,7 @@
     "electron-builder": "catalog:",
     "electron-extension-installer": "catalog:",
     "openapi-typescript": "catalog:",
+    "react-refresh": "catalog:",
     "redux-freeze": "catalog:",
     "vitest-fetch-mock": "catalog:"
   }

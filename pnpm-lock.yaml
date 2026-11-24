@@ -773,6 +773,9 @@ catalogs:
     react-redux:
       specifier: 7.2.9
       version: 7.2.9
+    react-refresh:
+      specifier: 0.18.0
+      version: 0.18.0
     react-select:
       specifier: 1.3.0
       version: 1.3.0
@@ -4462,6 +4465,9 @@ importers:
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0
+      react-refresh:
+        specifier: 'catalog:'
+        version: 0.18.0
       redux-freeze:
         specifier: 'catalog:'
         version: 0.1.7
@@ -10969,6 +10975,10 @@ packages:
         optional: true
       react-native:
         optional: true
+
+  react-refresh@0.18.0:
+    resolution: {integrity: sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw==}
+    engines: {node: '>=0.10.0'}
 
   react-select@1.3.0:
     resolution: {integrity: sha512-g/QAU1HZrzSfxkwMAo/wzi6/ezdWye302RGZevsATec07hI/iSxcpB1hejFIp7V63DJ8mwuign6KmB3VjdlinQ==}
@@ -18273,6 +18283,8 @@ snapshots:
       react-is: 17.0.2
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
+
+  react-refresh@0.18.0: {}
 
   react-select@1.3.0(react-dom@18.3.1)(react@18.3.1):
     dependencies:
