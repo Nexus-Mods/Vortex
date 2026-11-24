@@ -19,7 +19,7 @@ import { RadioGroupField } from "@/ui/components/form/radio_group_field/RadioGro
 import { TextAreaField } from "@/ui/components/form/text_area_field/TextAreaField";
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
-import { Modal } from "@/ui/components/modal/Modal";
+import { ModalPanel, ModalWrapper } from "@/ui/components/modal/Modal";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { Html } from "@/ui/components/prose/html/Html";
 import { Markdown } from "@/ui/components/prose/markdown/Markdown";
@@ -66,6 +66,22 @@ const fillParameters = (text: string, parameters: IDialogContent["parameters"] =
     (filled, [name, value]) => filled.split(`{{${name}}}`).join(String(value)),
     text,
   );
+
+// A table needs the large modal; the bbcode is checked filled in, as a parameter can hold it.
+const hasTable = (content: IDialogContent) =>
+  /\[table\b/i.test(fillParameters(content.bbcode ?? "", content.parameters)) ||
+  /<table\b/i.test(content.htmlText ?? "");
+
+const modalSize = (content: IDialogContent, needsRoom: boolean, textLength: number) => {
+  if (hasTable(content)) {
+    return "lg";
+  }
+
+  return needsRoom || textLength > SMALL_MAX_TEXT_LENGTH ? "md" : "sm";
+};
+
+// Prose leaves no gap between a line of text and a table after it.
+const TABLE_GAP = "[&_table]:my-2";
 
 // A part of the dialog's body, named the way the dialog's `order` option names it.
 interface ISection {
@@ -263,6 +279,7 @@ export const ModalLayer = () => {
       node: (
         <BBCode
           bbcode={fillParameters(content.bbcode, content.parameters)}
+          className={TABLE_GAP}
           context={content.options?.bbcodeContext}
           size="sm"
         />
@@ -294,7 +311,10 @@ export const ModalLayer = () => {
   }
 
   if (content.htmlText !== undefined) {
-    sections.push({ id: "htmlText", node: <Html html={content.htmlText} size="sm" /> });
+    sections.push({
+      id: "htmlText",
+      node: <Html className={TABLE_GAP} html={content.htmlText} size="sm" />,
+    });
   }
 
   if (inputs.length > 0) {
@@ -443,33 +463,38 @@ export const ModalLayer = () => {
   }
 
   return (
-    <Modal
+    <ModalWrapper
       initialFocusRef={inputs.length > 0 ? firstInputRef : defaultButtonRef}
       isOpen
       key={id}
-      showCloseButton={false}
-      size={needsRoom || text.length > SMALL_MAX_TEXT_LENGTH ? "md" : "sm"}
-      title={translate(title)}
+      size={modalSize(content, needsRoom, text.length)}
       onClose={ignoreClose}
     >
-      {orderedSections(sections, content.options?.order).map((section) => (
-        <React.Fragment key={section.id}>{section.node}</React.Fragment>
-      ))}
+      <ModalPanel className="flex flex-col" showCloseButton={false} title={translateBody(title)}>
+        <div
+          className="-m-1 min-h-0 overflow-y-auto p-1 [&>:first-child]:mt-0 [&>:last-child]:mb-0"
+          data-testid="dialog-body"
+        >
+          {orderedSections(sections, content.options?.order).map((section) => (
+            <React.Fragment key={section.id}>{section.node}</React.Fragment>
+          ))}
+        </div>
 
-      <div className="mt-4 flex flex-wrap justify-end gap-2">
-        {actions.map((action) => (
-          <Button
-            data-testid={`dialog-action-${action}`}
-            disabled={isDisabled(action)}
-            key={action}
-            ref={action === defaultAction ? defaultButtonRef : undefined}
-            {...buttonColour(action)}
-            onClick={() => answer(action)}
-          >
-            {t(action)}
-          </Button>
-        ))}
-      </div>
-    </Modal>
+        <div className="mt-4 flex shrink-0 flex-wrap justify-end gap-2">
+          {actions.map((action) => (
+            <Button
+              data-testid={`dialog-action-${action}`}
+              disabled={isDisabled(action)}
+              key={action}
+              ref={action === defaultAction ? defaultButtonRef : undefined}
+              {...buttonColour(action)}
+              onClick={() => answer(action)}
+            >
+              {t(action)}
+            </Button>
+          ))}
+        </div>
+      </ModalPanel>
+    </ModalWrapper>
   );
 };
