@@ -111,11 +111,12 @@ function runCheck(api: IExtensionApi, check: ICheckEntry): Promise<void> {
           });
         }
 
+        // The dialog has the notification's title, so it reads as more on the same problem.
         const showMore = () =>
           api.store.dispatch(
             showDialog(
               "info",
-              "Check failed",
+              result.description.short,
               {
                 bbcode: result.description.long,
                 parameters: result.description.replace,

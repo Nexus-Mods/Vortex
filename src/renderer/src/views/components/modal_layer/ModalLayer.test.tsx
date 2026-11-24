@@ -263,6 +263,27 @@ describe("ModalLayer", () => {
 
       await settleTransitions();
     });
+
+    it("sets an html table apart from the text around it", async () => {
+      renderLayer([dialogWith("one", { htmlText: "Missing:<table><tr><td>A</td></tr></table>" })]);
+
+      expect(proseOf(screen.getByRole("dialog"))).toHaveClass("[&_table]:my-2");
+
+      await settleTransitions();
+    });
+
+    it("uses the large modal for a bbcode table passed in as a parameter", async () => {
+      renderLayer([
+        dialogWith("one", {
+          bbcode: "Missing:{{rows}}",
+          parameters: { rows: "[table][tr][td]A.esp[/td][/tr][/table]" },
+        }),
+      ]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-lg");
+
+      await settleTransitions();
+    });
   });
 
   describe("scrolling", () => {

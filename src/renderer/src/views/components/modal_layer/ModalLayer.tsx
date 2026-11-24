@@ -59,10 +59,20 @@ const DISMISS_ACTIONS = new Set(["Close"]);
 const SMALL_MAX_TEXT_LENGTH = 200;
 const MAX_BUTTONS_IN_SMALL = 3;
 
+// bbcode is raw text, not a translation key, and i18next would split it on its key separators. So
+// the parameters are put in by hand, as in the legacy renderer.
+const fillParameters = (text: string, parameters: IDialogContent["parameters"] = {}) =>
+  Object.entries(parameters).reduce(
+    (filled, [name, value]) => filled.split(`{{${name}}}`).join(String(value)),
+    text,
+  );
+
 // A table squeezed into the medium modal wraps every cell onto several lines, so a dialog with one
-// gets the large modal. Markdown has no tables here, so only bbcode and HTML are looked at.
+// gets the large modal. Markdown has no tables here, so only bbcode and HTML are looked at. The
+// bbcode is looked at once filled in, as a parameter can hold the table.
 const hasTable = (content: IDialogContent) =>
-  /\[table\b/i.test(content.bbcode ?? "") || /<table\b/i.test(content.htmlText ?? "");
+  /\[table\b/i.test(fillParameters(content.bbcode ?? "", content.parameters)) ||
+  /<table\b/i.test(content.htmlText ?? "");
 
 const modalSize = (content: IDialogContent, needsRoom: boolean, textLength: number) => {
   if (hasTable(content)) {
@@ -72,13 +82,9 @@ const modalSize = (content: IDialogContent, needsRoom: boolean, textLength: numb
   return needsRoom || textLength > SMALL_MAX_TEXT_LENGTH ? "md" : "sm";
 };
 
-// bbcode is raw text, not a translation key, and i18next would split it on its key separators. So
-// the parameters are put in by hand, as in the legacy renderer.
-const fillParameters = (text: string, parameters: IDialogContent["parameters"] = {}) =>
-  Object.entries(parameters).reduce(
-    (filled, [name, value]) => filled.split(`{{${name}}}`).join(String(value)),
-    text,
-  );
+// Prose puts no gap above a table that follows a line of text, and a check's table follows its
+// intro line straight on, so a table in a dialog gets room above and below it.
+const TABLE_GAP = "[&_table]:my-2";
 
 // A part of the dialog's body, named the way the dialog's `order` option names it.
 interface ISection {
@@ -276,9 +282,7 @@ export const ModalLayer = () => {
       node: (
         <BBCode
           bbcode={fillParameters(content.bbcode, content.parameters)}
-          // Bbcode has no gaps between its blocks, and a check's table follows its intro line
-          // straight on, so a table in a dialog gets room above and below it.
-          className="[&_table]:my-2"
+          className={TABLE_GAP}
           context={content.options?.bbcodeContext}
           size="sm"
         />
@@ -310,7 +314,10 @@ export const ModalLayer = () => {
   }
 
   if (content.htmlText !== undefined) {
-    sections.push({ id: "htmlText", node: <Html html={content.htmlText} size="sm" /> });
+    sections.push({
+      id: "htmlText",
+      node: <Html className={TABLE_GAP} html={content.htmlText} size="sm" />,
+    });
   }
 
   if (inputs.length > 0) {

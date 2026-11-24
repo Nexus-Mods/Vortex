@@ -12,6 +12,10 @@ function startTestRunner() {
   let onceCallback: () => void = () => undefined;
   const stateHandlers: Record<string, () => void> = {};
   const registerAPI = vi.fn();
+  const sendNotification = vi.fn();
+  // showDialog is a thunk, so it is run against a dispatch that keeps the action it adds
+  const added = vi.fn();
+  const dispatch = vi.fn((thunk: (inner: typeof added) => unknown) => thunk(added));
   const context: any = {
     registerAPI,
     once: (cb: () => void) => {
@@ -23,12 +27,14 @@ function startTestRunner() {
         stateHandlers[statePath.join(".")] = cb;
       },
       dismissNotification: vi.fn(),
+      sendNotification,
+      store: { dispatch },
     },
   };
   init(context);
   onceCallback();
 
-  const check = vi.fn(() => undefined);
+  const check = vi.fn((): unknown => undefined);
   context.registerTest("probe", "settings-changed", check);
 
   const withSuppressedTests: SuppressFn = registerAPI.mock.calls.find(
@@ -39,6 +45,8 @@ function startTestRunner() {
     check,
     withSuppressedTests,
     changeSettings: () => stateHandlers.settings(),
+    sendNotification,
+    dispatched: () => added.mock.calls[0]?.[0],
   };
 }
 
@@ -85,5 +93,23 @@ describe("test runner", () => {
     await flush();
 
     expect(check).toHaveBeenCalledTimes(1);
+  });
+
+  it("titles the dialog behind More with the notification's title", async () => {
+    const { check, changeSettings, sendNotification, dispatched } = startTestRunner();
+    check.mockResolvedValue({
+      description: { short: "Missing Masters", long: "Some plugins need others" },
+      severity: "warning",
+    });
+
+    changeSettings();
+    vi.advanceTimersByTime(500);
+    await flush();
+
+    const [notification] = sendNotification.mock.calls[0];
+    notification.actions.find((action) => action.title === "More").action();
+
+    expect(notification.message).toBe("Missing Masters");
+    expect(dispatched()).toMatchObject({ payload: { title: "Missing Masters" } });
   });
 });
