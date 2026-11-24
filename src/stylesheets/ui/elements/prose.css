@@ -188,11 +188,83 @@
         margin-block: calc(var(--spacing) * 4);
     }
 
-    /* Small prose, as in a popover. Where a size's headings should stand apart by size too,
-       that's set here, per size. */
+    /* A bbcode size, as one of the app's text sizes with its line height and spacing, so sizes left
+       open or inside each other don't multiply. Size 3 is body text. Its variables let small
+       prose, below, take each a step smaller. */
+    .nxm-prose-size-1 {
+        font-size: var(--nxm-prose-size-1, var(--text-body-xs));
+        line-height: var(--nxm-prose-size-1--line-height, var(--text-body-xs--line-height));
+        letter-spacing: var(
+            --nxm-prose-size-1--letter-spacing,
+            var(--text-body-xs--letter-spacing)
+        );
+    }
+
+    .nxm-prose-size-2 {
+        font-size: var(--nxm-prose-size-2, var(--text-body-sm));
+        line-height: var(--nxm-prose-size-2--line-height, var(--text-body-sm--line-height));
+        letter-spacing: var(
+            --nxm-prose-size-2--letter-spacing,
+            var(--text-body-sm--letter-spacing)
+        );
+    }
+
+    .nxm-prose-size-3 {
+        font-size: var(--nxm-prose-size-3, var(--text-body-md));
+        line-height: var(--nxm-prose-size-3--line-height, var(--text-body-md--line-height));
+        letter-spacing: var(
+            --nxm-prose-size-3--letter-spacing,
+            var(--text-body-md--letter-spacing)
+        );
+    }
+
+    .nxm-prose-size-4 {
+        font-size: var(--nxm-prose-size-4, var(--text-body-lg));
+        line-height: var(--nxm-prose-size-4--line-height, var(--text-body-lg--line-height));
+        letter-spacing: var(
+            --nxm-prose-size-4--letter-spacing,
+            var(--text-body-lg--letter-spacing)
+        );
+    }
+
+    .nxm-prose-size-5 {
+        font-size: var(--nxm-prose-size-5, var(--text-body-2xl));
+        line-height: var(--nxm-prose-size-5--line-height, var(--text-body-2xl--line-height));
+        letter-spacing: var(
+            --nxm-prose-size-5--letter-spacing,
+            var(--text-body-2xl--letter-spacing)
+        );
+    }
+
+    .nxm-prose-size-6 {
+        font-size: var(--nxm-prose-size-6, var(--text-heading-sm));
+        line-height: var(--nxm-prose-size-6--line-height, var(--text-heading-sm--line-height));
+        letter-spacing: var(
+            --nxm-prose-size-6--letter-spacing,
+            var(--text-heading-sm--letter-spacing)
+        );
+    }
+
+    /* Small prose, as in a popover, its bbcode sizes a step smaller. Where a size's headings
+       should stand apart by size too, that's set here, per size. */
     .nxm-prose-sm {
         font-size: var(--text-body-sm);
         line-height: var(--text-body-sm--line-height);
         letter-spacing: var(--text-body-sm--letter-spacing);
+        --nxm-prose-size-2: var(--text-body-xs);
+        --nxm-prose-size-2--line-height: var(--text-body-xs--line-height);
+        --nxm-prose-size-2--letter-spacing: var(--text-body-xs--letter-spacing);
+        --nxm-prose-size-3: var(--text-body-sm);
+        --nxm-prose-size-3--line-height: var(--text-body-sm--line-height);
+        --nxm-prose-size-3--letter-spacing: var(--text-body-sm--letter-spacing);
+        --nxm-prose-size-4: var(--text-body-md);
+        --nxm-prose-size-4--line-height: var(--text-body-md--line-height);
+        --nxm-prose-size-4--letter-spacing: var(--text-body-md--letter-spacing);
+        --nxm-prose-size-5: var(--text-body-xl);
+        --nxm-prose-size-5--line-height: var(--text-body-xl--line-height);
+        --nxm-prose-size-5--letter-spacing: var(--text-body-xl--letter-spacing);
+        --nxm-prose-size-6: var(--text-body-2xl);
+        --nxm-prose-size-6--line-height: var(--text-body-2xl--line-height);
+        --nxm-prose-size-6--letter-spacing: var(--text-body-2xl--letter-spacing);
     }
 }

@@ -18,7 +18,8 @@ interface IBBCodeProps extends IProseWithImagesProps {
 /**
  * Bbcode we don't write ourselves, such as a mod's description, in the app's prose styles. Images
  * show only if they're from Nexus Mods, others as placeholders where `externalImagePlaceholders`
- * asks, and links open only where `context` allows. Videos play in a sandboxed player.
+ * asks, and links open only where `context` allows. Videos play in a sandboxed player, and
+ * sizes are the app's text sizes.
  */
 export const BBCode = ({
   bbcode,
@@ -34,7 +35,7 @@ export const BBCode = ({
     })}
   >
     {renderSafeBBCode(bbcode, {
-      embedVideos: true,
+      isProse: true,
       ...context,
       isFromAdultContent,
       externalImagePlaceholders,

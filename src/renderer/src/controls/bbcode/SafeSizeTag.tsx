@@ -1,17 +1,30 @@
-import SizeTag from "./SizeTag";
+import * as React from "react";
 
-/** The site's sizes as a browser draws them, against size 3, the text's own. */
-const SIZES: Record<number, number> = { 1: 0.625, 2: 0.8125, 3: 1, 4: 1.125, 5: 1.5, 6: 2 };
+import SizeTag from "./SizeTag";
 
 /** The site's older percentage sizes, as the sizes it now draws them at. */
 const PERCENTAGES: Record<number, number> = { 50: 1, 85: 2, 100: 3, 150: 4, 200: 6 };
 
-/** A size for bbcode we don't write ourselves, scaled as the site scales it; others don't scale. */
-class SafeSizeTag extends SizeTag {
-  protected calc(size: number): string {
-    const scale = SIZES[PERCENTAGES[size] ?? size] ?? 1;
+/** The site's size, 1 to 6, that `size` stands for; the text's own, 3, if none. */
+const levelOf = (size: number | string) => {
+  const level = PERCENTAGES[Number(size)] ?? Number(size);
+  return Number.isInteger(level) && level >= 1 && level <= 6 ? level : 3;
+};
 
-    return `${scale}em`;
+/**
+ * A size for bbcode we don't write ourselves, drawn by `.nxm-prose-size-<size>` as one of the app's
+ * text sizes, so a size left open or inside another doesn't shrink or grow what follows, as on the
+ * site, where the context's `isProse` says it's prose; otherwise at the size of the text around it.
+ */
+class SafeSizeTag extends SizeTag {
+  public toReact(): React.ReactChild[] {
+    const size = this.params.size;
+
+    if (isNaN(size) || !this.renderer.options.isProse) {
+      return this.getComponents();
+    }
+
+    return [<span className={`nxm-prose-size-${levelOf(size)}`}>{this.getComponents()}</span>];
   }
 }
 

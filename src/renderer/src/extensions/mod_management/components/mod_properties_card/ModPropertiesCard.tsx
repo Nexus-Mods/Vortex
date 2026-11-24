@@ -81,7 +81,6 @@ export const ModPropertiesCard = ({ card }: IModPropertiesCardProps) => {
                     card.pageUrl ? { websiteUrl: card.pageUrl } : undefined
                   }
                   isFromAdultContent={card.isAdult}
-                  size="sm"
                 />
               </div>
             </Modal>

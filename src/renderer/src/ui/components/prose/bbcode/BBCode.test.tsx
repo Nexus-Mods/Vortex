@@ -254,9 +254,9 @@ describe("BBCode", () => {
       );
     });
 
-    it("links a video where the context doesn't embed videos", () => {
+    it("links a video where the context says it isn't prose", () => {
       const { container } = render(
-        <BBCode bbcode="[youtube]dQw4w9WgXcQ&t=30[/youtube]" context={{ embedVideos: false }} />,
+        <BBCode bbcode="[youtube]dQw4w9WgXcQ&t=30[/youtube]" context={{ isProse: false }} />,
       );
 
       expect(container.querySelector("iframe")).toBeNull();
@@ -568,16 +568,28 @@ describe("BBCode", () => {
 
   describe("size", () => {
     it.each([
-      ["draws size 3 as the text's own", "[size=3]", "1em"],
-      ["draws size 6 as the site does", "[size=6]", "2em"],
-      ["draws size 1 as the site does", "[size=1]", "0.625em"],
-      ["draws an older percentage as the size it stands for", "[size=150]", "1.125em"],
-      ["leaves a size the site doesn't have at the text's own", "[size=2000]", "1em"],
-      ["leaves a negative size at the text's own", "[size=-20]", "1em"],
-    ])("%s", (_name, tag, fontSize) => {
+      ["draws size 3 as the text's own", "[size=3]", 3],
+      ["draws size 6", "[size=6]", 6],
+      ["draws size 1", "[size=1]", 1],
+      ["draws an older percentage as the size it stands for", "[size=150]", 4],
+      ["leaves a size the site doesn't have at the text's own", "[size=2000]", 3],
+      ["leaves a negative size at the text's own", "[size=-20]", 3],
+    ])("%s", (_name, tag, level) => {
       render(<BBCode bbcode={`${tag}Big[/size]`} />);
 
-      expect(screen.getByText("Big").style.fontSize).toBe(fontSize);
+      expect(screen.getByText("Big")).toHaveClass(`nxm-prose-size-${level}`);
+    });
+
+    it("draws a size inside one left open as its own size, not of the size around it", () => {
+      render(<BBCode bbcode="[size=1][size=2]Small[/size] Left open" />);
+
+      expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
+    });
+
+    it("leaves sizes at the text's own where the context says it isn't prose", () => {
+      render(<BBCode bbcode="[size=6]Big[/size]" context={{ isProse: false }} />);
+
+      expect(screen.getByText("Big")).not.toHaveClass("nxm-prose-size-6");
     });
   });
 
