@@ -179,6 +179,8 @@ class PluginPersistor implements IPersistor {
   // the entries of each plugin file as Vortex last held them: its last write, or what it last
   // took in from the files
   private mWritten: { loadorder: string[]; plugins: string[] } | undefined;
+  // Vortex adopted the files while a write of its older state was in flight
+  private mStaleWrite: boolean = false;
   private mRecord: typeof recordErrorSpan;
 
   constructor(
@@ -577,6 +579,7 @@ class PluginPersistor implements IPersistor {
       .catch((err: unknown) => {
         // the files no longer hold what Vortex holds, so no later read may pass for its write
         this.mWritten = undefined;
+        this.mStaleWrite = false;
         const code = fileErrorCode(err);
         if (code === "EBUSY") {
           // the file is held by another process, quite possibly the game itself
@@ -621,7 +624,8 @@ class PluginPersistor implements IPersistor {
         "latin1",
       ),
     );
-    this.mWritten = { loadorder: sorted, plugins: filtered };
+    this.mWritten = this.mStaleWrite ? undefined : { loadorder: sorted, plugins: filtered };
+    this.mStaleWrite = false;
 
     if (this.mPluginFormat === "original" && this.mControlOrder()) {
       const offset = 946684800;
@@ -643,8 +647,8 @@ class PluginPersistor implements IPersistor {
   }
 
   /**
-   * Whether a file still holds what this persistor last wrote into it, as far as the game reads
-   * it. Skyrim SE rewrites plugins.txt every time it starts, moving inactive plugins about, so
+   * Whether a file still holds what Vortex last held for it (its last write or its last adoption),
+   * as far as the game reads it. Skyrim SE rewrites plugins.txt every time it starts, moving inactive plugins about, so
    * where the file marks the active plugins only the plugins listed, which of them are active
    * and the order of the active ones count.
    */
@@ -832,6 +836,11 @@ class PluginPersistor implements IPersistor {
               loadorder: loadOrderKeys ?? this.mWritten?.loadorder ?? [],
               plugins: keys,
             };
+          } else {
+            // the write in flight carries the state from before this adoption, so neither it nor
+            // the older snapshot may stand for what Vortex holds
+            this.mWritten = undefined;
+            this.mStaleWrite = true;
           }
           this.adoptParsed(newPlugins);
           return Promise.resolve();

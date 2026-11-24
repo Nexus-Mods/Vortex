@@ -334,12 +334,20 @@ describe("PluginPersistor", () => {
         ];
         const diskFs = window.api.fs;
         window.api = { ...window.api, fs: new ChaosFS(diskFs, faults) };
+        // waits for the write attempt itself to give up, however long its retries take
+        const writeFiles = vi.spyOn(
+          persistor as unknown as { writeFiles: (...args: unknown[]) => Promise<Date> },
+          "writeFiles",
+        );
         try {
           await persistor.syncFromState("skyrimse", {
             "parked.esp": { enabled: true, loadOrder: 1 },
           });
-          await settle(4000);
+          await vi.waitFor(() => expect(writeFiles).toHaveBeenCalled(), { timeout: 2000 });
+          await writeFiles.mock.results[0].value.catch(() => undefined);
+          await settle(SETTLE_MS);
         } finally {
+          writeFiles.mockRestore();
           window.api = { ...window.api, fs: diskFs };
         }
         expect(persistor.entry("parked.esp").enabled).toBe(true);
