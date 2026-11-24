@@ -692,6 +692,39 @@ describe("ModsTableSwitch", () => {
       expect(installButton(row)).toBeDisabled();
     });
 
+    // The store no longer says whether a gone mod was removed or uninstalled, so the row
+    // keeps saying what it was doing.
+    it.each([
+      ["mods-removing", "modsTable::rowActions::removing"],
+      ["mods-uninstalling", "modsTable::rowActions::uninstalling"],
+    ])(
+      "keeps saying what it was doing once %s is done, until the list drops its row",
+      async (group, label) => {
+        const props = {
+          legacy: <div />,
+          mods: { a: mod("a", "Alpha", true, { state: "installed" }) },
+          onSetModsEnabled: vi.fn(),
+        };
+        const { rerender } = render(
+          <Provider store={makeModsTableStore({ activity: { [group]: ["a"] }, mods: { a: {} } })}>
+            <ModsTableSwitch {...props} />
+          </Provider>,
+        );
+
+        rerender(
+          <Provider store={makeModsTableStore({ mods: {} })}>
+            <ModsTableSwitch {...props} />
+          </Provider>,
+        );
+
+        const [row] = bodyRows(screen.getByRole("grid"));
+        expect(installButton(row)).toBeDisabled();
+        await hoverRow(row);
+        await userEvent.hover(installButton(row).parentElement!);
+        expect(await screen.findByRole("tooltip")).toHaveTextContent(label);
+      },
+    );
+
     it("keeps an archive removing once deleted, until the list drops its row", async () => {
       renderSwitch({ a: mod("a", "Alpha", false, { state: "downloaded" }) }, [], {
         downloads: {},
@@ -2053,7 +2086,7 @@ describe("ModsTableSwitch", () => {
       expect(onSelectVersion).toHaveBeenCalledWith("a", "a1");
     });
 
-    // Through the table's own Remove, so the version shows as removing and isn't removed twice.
+    // Through the table's own Remove, so a version already being removed isn't removed again.
     it("removes one of a mod's versions from its row through the table's Remove", async () => {
       mocks.removeMods.mockClear();
       const current = mod("a", "Alpha", true, { attributes: { name: "Alpha", version: "2.0" } });

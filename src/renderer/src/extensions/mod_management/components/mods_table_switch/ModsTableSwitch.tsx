@@ -203,7 +203,9 @@ export const ModsTableSwitch = ({
   const enableInstalled = useCallback((ids: string[]) => setEnabled(ids, true), [setEnabled]);
   const installMods = useInstallMods(enableInstalled);
   const install = useCallback((modId: string) => void installMods([modId]), [installMods]);
-  // Through the table's own Remove, as the row menu's, so a version can't be removed twice.
+  // Through the table's own Remove, as the row menu's, so a version can't be removed twice: a
+  // second click while it's being removed does nothing. The picker doesn't show it as removing,
+  // as a version that isn't in use has no row of its own.
   const removeMods = useRemoveMods();
   const removeVersion = useCallback(
     (alternativeId: string) => void removeMods([alternativeId]),

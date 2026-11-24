@@ -1,4 +1,6 @@
 import { VortexGameId } from "@vortex/shared";
+import type { AnyAction } from "redux";
+import { batch } from "redux-act";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { startActivity, stopActivity } from "@/actions/session";
@@ -67,7 +69,11 @@ const remove = (api: TestApi, modIds: string[]) =>
 const confirmWith = (api: TestApi, input: { mod?: boolean; archive?: boolean }) =>
   api.showDialog.mockResolvedValue({ action: "Remove", input });
 
-const dispatched = (api: TestApi) => api.store.dispatch.mock.calls.map(([action]) => action);
+// What was dispatched, each batch as the actions in it, in order.
+const dispatched = (api: TestApi) =>
+  api.store.dispatch.mock.calls.flatMap(([action]: [AnyAction]) =>
+    action.type === batch.getType() ? action.payload : [action],
+  );
 
 // Answers each archive removal as the download manager does once it's gone.
 const answerDownloads = (api: TestApi, err: Error | null = null) =>
@@ -123,8 +129,8 @@ describe("confirmRemoveMods", () => {
       startActivity(REMOVING_ACTIVITY, "a"),
       startActivity(REMOVING_ACTIVITY, "b"),
     ]);
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "b"));
+    expect(dispatched(api)).toContainEqual(stopActivity(REMOVING_ACTIVITY, "a"));
+    expect(dispatched(api)).toContainEqual(stopActivity(REMOVING_ACTIVITY, "b"));
     expect(api.showErrorNotification).toHaveBeenCalledWith(
       "Failed to remove mods",
       expect.any(Error),
@@ -140,6 +146,54 @@ describe("confirmRemoveMods", () => {
 
     expect(removeMods).not.toHaveBeenCalled();
     expect(api.store.dispatch).not.toHaveBeenCalled();
+  });
+
+  // One store update each way however many mods, so the rows don't each work theirs out again.
+  it("lists and unlists the mods as removing in one batch each", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: true });
+
+    await remove(api, ["a", "b"]);
+
+    expect(api.store.dispatch).toHaveBeenCalledTimes(2);
+  });
+
+  // With Delete Archive off, an archive-only row is left as it is, so it isn't shown removing.
+  it("lists only the rows the chosen options do something to", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: true, archive: false });
+
+    expect(await remove(api, ["a", "dl"])).toBe(true);
+
+    expect(dispatched(api)).toEqual([
+      startActivity(REMOVING_ACTIVITY, "a"),
+      stopActivity(REMOVING_ACTIVITY, "a"),
+    ]);
+    expect(api.events.emit).not.toHaveBeenCalled();
+  });
+
+  it("lists an installed mod for its archive alone, unless it has none", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: false, archive: true });
+    answerDownloads(api);
+
+    expect(await remove(api, ["a", "b"])).toBe(true);
+
+    expect(dispatched(api)).toEqual([
+      startActivity(REMOVING_ACTIVITY, "a"),
+      stopActivity(REMOVING_ACTIVITY, "a"),
+    ]);
+    expect(removeMods).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when neither option is ticked", async () => {
+    const { api } = makeApi();
+    confirmWith(api, { mod: false, archive: false });
+
+    expect(await remove(api, ["a", "dl"])).toBe(false);
+
+    expect(api.store.dispatch).not.toHaveBeenCalled();
+    expect(removeMods).not.toHaveBeenCalled();
   });
 
   it("reports a dialog that fails to open, rather than rejecting", async () => {
@@ -208,14 +262,14 @@ describe("confirmRemoveMods", () => {
     expect(api.events.emit).toHaveBeenCalledWith("remove-download", "dl", expect.any(Function), {
       confirmed: true,
     });
-    expect(api.store.dispatch).not.toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
+    expect(dispatched(api)).not.toContainEqual(stopActivity(REMOVING_ACTIVITY, "a"));
 
     callbacks.forEach((cb) => cb(null));
 
     expect(await done).toBe(true);
     expect(removeMods).toHaveBeenCalledWith(api, GAME, ["a"]);
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "dl"));
+    expect(dispatched(api)).toContainEqual(stopActivity(REMOVING_ACTIVITY, "a"));
+    expect(dispatched(api)).toContainEqual(stopActivity(REMOVING_ACTIVITY, "dl"));
   });
 
   it("offers only Delete Archive, ticked, for archive-only rows", async () => {
@@ -256,7 +310,7 @@ describe("confirmRemoveMods", () => {
       expect.any(Error),
       { allowReport: true },
     );
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "dl"));
+    expect(dispatched(api)).toContainEqual(stopActivity(REMOVING_ACTIVITY, "dl"));
   });
 
   it("reports only the archive when the mod was removed, and stays removing until every archive is done", async () => {
@@ -271,7 +325,7 @@ describe("confirmRemoveMods", () => {
     callbacks.get("archive-a")!(new Error("locked"));
     // Lets the failure settle, as it would have ended the removal early.
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(api.store.dispatch).not.toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
+    expect(dispatched(api)).not.toContainEqual(stopActivity(REMOVING_ACTIVITY, "a"));
 
     callbacks.get("dl")!(null);
 
@@ -283,7 +337,7 @@ describe("confirmRemoveMods", () => {
       expect.any(Error),
       { allowReport: true },
     );
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity(REMOVING_ACTIVITY, "a"));
+    expect(dispatched(api)).toContainEqual(stopActivity(REMOVING_ACTIVITY, "a"));
   });
 
   it("keeps the archives when the mods couldn't be removed", async () => {

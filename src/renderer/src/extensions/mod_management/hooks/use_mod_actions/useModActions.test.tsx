@@ -321,6 +321,26 @@ describe("useModRowActions", () => {
     expect(condition).toHaveBeenCalledWith(["c"]);
   });
 
+  // Each would install from an archive a removal may be deleting, or into a mod it's taking away.
+  it("offers Install, Unpack and Reinstall only on a row that isn't being removed or uninstalled", () => {
+    const mods = {
+      a: { id: "a", archiveId: "archive-a" },
+      b: { id: "b", archiveId: "archive-b" },
+      c: { id: "c" },
+    };
+    const installs = [{ title: "Install" }, { title: "Unpack (as-is)" }, { title: "Reinstall" }];
+    const { result } = renderRowActions(installs, [], mods, {
+      "mods-removing": ["a"],
+      "mods-uninstalling": ["b"],
+    });
+
+    for (const { title } of installs) {
+      expect(ids(result.current.actionsFor("a"))).not.toContain(title);
+      expect(ids(result.current.actionsFor("b"))).not.toContain(title);
+      expect(ids(result.current.actionsFor("c"))).toContain(title);
+    }
+  });
+
   // The Mod size column has nothing to click, so the size is worked out again from here.
   it("works out the mod's size again when Refresh content runs", () => {
     calculateModSize.mockClear();

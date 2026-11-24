@@ -182,8 +182,12 @@ const OTHER_SECTION = "other";
 /** The mod-content extension's, which also works out the mods' sizes again here. */
 const REFRESH_CONTENT = "Refresh Content";
 
-/** The legacy table's, which removes straight away, without marking any row as removing. */
-const REMOVE_RELATED = "Remove related";
+/**
+ * The legacy table's that act on a mod's files or its archive, none of which knows a row is
+ * being removed: Remove related removes straight away, and the others install from an archive
+ * a removal may be deleting, or into a mod it's taking away.
+ */
+const NOT_WHILE_REMOVING = new Set(["Remove related", "Install", "Unpack (as-is)", "Reinstall"]);
 
 type IMenuItems = Map<string, IRowMenuItem & { section: string; order: number }>;
 
@@ -320,9 +324,9 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
             },
           };
 
-    // So Remove related can't start a second removal on a mod already being removed.
+    // So none of these starts on a mod that's being removed or uninstalled.
     const notWhileBusy = (definition: IActionDefinition): IActionDefinition =>
-      definition.title !== REMOVE_RELATED
+      !NOT_WHILE_REMOVING.has(definition.title)
         ? definition
         : {
             ...definition,

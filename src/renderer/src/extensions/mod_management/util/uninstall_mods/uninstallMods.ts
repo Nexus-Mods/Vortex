@@ -2,6 +2,7 @@ import type { VortexGameId } from "@vortex/shared";
 
 import { startActivity, stopActivity } from "@/actions/session";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { batchDispatch } from "@/util/util";
 
 import { removeMods } from "../removeMods";
 import { reportRemovalFailure } from "../report_removal_failure/reportRemovalFailure";
@@ -23,7 +24,17 @@ export const uninstallMods = async (
   gameId: VortexGameId,
   modIds: string[],
 ): Promise<boolean> => {
-  modIds.forEach((modId) => api.store?.dispatch(startActivity(UNINSTALLING_ACTIVITY, modId)));
+  // In one batch each way, so the rows work out whether they're busy once, not once per mod.
+  const listAsUninstalling = (action: typeof startActivity) => {
+    if (api.store !== undefined) {
+      batchDispatch(
+        api.store,
+        modIds.map((modId) => action(UNINSTALLING_ACTIVITY, modId)),
+      );
+    }
+  };
+
+  listAsUninstalling(startActivity);
 
   try {
     await removeMods(api, gameId, modIds);
@@ -32,6 +43,6 @@ export const uninstallMods = async (
     reportRemovalFailure(api, "Failed to uninstall mods", err);
     return false;
   } finally {
-    modIds.forEach((modId) => api.store?.dispatch(stopActivity(UNINSTALLING_ACTIVITY, modId)));
+    listAsUninstalling(stopActivity);
   }
 };

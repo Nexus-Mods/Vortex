@@ -39,17 +39,21 @@ const BUSY_LABEL: Record<RowBusy, string> = {
   removing: "modsTable::rowActions::removing",
 };
 
+/** A mod gone from the store whose row the list hasn't dropped yet, for a moment. */
+type RowGone = "gone";
+
 /**
  * What a row's mod is under way with, if anything, as a plain value, so a row re-renders
  * only when its own answer changes, not on every write to the store.
  *
  * The list catches up with the store after a debounce, so a row can outlive what it shows:
- * an archive a mod in the store now comes from has just been installed, a mod gone from the
- * store has just been uninstalled, and an archive gone from the downloads has just been
- * removed. Each stays loading until the list catches up.
+ * an archive a mod in the store now comes from has just been installed, and an archive gone
+ * from the downloads has just been removed. Each stays loading until the list catches up.
+ * A mod gone from the store could have been uninstalled or removed, which the store no longer
+ * says, so the row keeps what it last showed, uninstalling if it showed nothing.
  */
-const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined =>
-  useSelector((state: IState) => {
+const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined => {
+  const busy = useSelector((state: IState): RowBusy | RowGone | undefined => {
     const activity = state.session?.base?.activity;
     const justInstalled = modState === "downloaded" && storedArchiveIds(state).has(modId);
     if (
@@ -66,14 +70,21 @@ const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | 
       return "removing";
     }
 
-    const stored = storedMods(state);
-    const removed = modState === "installed" && stored !== undefined && !stored[modId];
-    if (activity?.[UNINSTALLING_ACTIVITY]?.includes(modId) || removed) {
+    if (activity?.[UNINSTALLING_ACTIVITY]?.includes(modId)) {
       return "uninstalling";
     }
 
-    return undefined;
+    const stored = storedMods(state);
+    return modState === "installed" && stored !== undefined && !stored[modId] ? "gone" : undefined;
   });
+
+  // What the row showed before its mod was gone, kept while it's gone.
+  const before = useRef<RowBusy | undefined>(undefined);
+  if (busy !== "gone") {
+    before.current = busy;
+  }
+  return busy === "gone" ? (before.current ?? "uninstalling") : busy;
+};
 
 // The switch and the menu's button; each pinned action adds a 28px button and an 8px gap.
 const ACTIONS_WIDTH = 78;

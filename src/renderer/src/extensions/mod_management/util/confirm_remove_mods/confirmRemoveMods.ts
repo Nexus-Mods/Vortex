@@ -4,7 +4,7 @@ import { startActivity, stopActivity } from "@/actions/session";
 import type { ICheckbox, IDialogResult } from "@/types/IDialog";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
-import { toPromise } from "@/util/util";
+import { batchDispatch, toPromise } from "@/util/util";
 
 import { modsForGame } from "../../selectors";
 import filterModInfo from "../filterModInfo";
@@ -122,6 +122,25 @@ const askToRemove = async (
   );
 };
 
+/**
+ * The rows the chosen options do something to: an installed mod if it's removed, or its archive
+ * deleted, and an archive-only row if archives are deleted. Any other is left as it was, so it
+ * isn't shown as removing.
+ */
+const touchedBy = (
+  state: IState,
+  gameId: VortexGameId,
+  modIds: string[],
+  input: { mod?: boolean; archive?: boolean } | undefined,
+): string[] => {
+  const installed = modsForGame(state, gameId);
+  return modIds.filter((modId) =>
+    installed[modId] !== undefined
+      ? !!input?.mod || (!!input?.archive && installed[modId].archiveId !== undefined)
+      : !!input?.archive,
+  );
+};
+
 /** The installed mods among these, and the archives they and any archive-only rows come from. */
 const removalTargets = (state: IState, gameId: VortexGameId, modIds: string[]) => {
   const installed = modsForGame(state, gameId);
@@ -162,13 +181,23 @@ export const confirmRemoveMods = async (
 
   // Read again once confirmed: another removal may have started on some while the dialog was open.
   const state = api.getState();
-  const confirmed = removableMods(state, gameId, asked);
+  const confirmed = touchedBy(state, gameId, removableMods(state, gameId, asked), result.input);
   if (confirmed.length === 0) {
     return false;
   }
   const { installedIds, archiveIds } = removalTargets(state, gameId, confirmed);
 
-  confirmed.forEach((modId) => api.store?.dispatch(startActivity(REMOVING_ACTIVITY, modId)));
+  // In one batch each way, so the rows work out whether they're busy once, not once per mod.
+  const listAsRemoving = (action: typeof startActivity) => {
+    if (api.store !== undefined) {
+      batchDispatch(
+        api.store,
+        confirmed.map((modId) => action(REMOVING_ACTIVITY, modId)),
+      );
+    }
+  };
+
+  listAsRemoving(startActivity);
 
   try {
     if (result.input?.mod) {
@@ -182,6 +211,6 @@ export const confirmRemoveMods = async (
     }
     return result.input?.archive ? await deleteArchives(api, archiveIds) : true;
   } finally {
-    confirmed.forEach((modId) => api.store?.dispatch(stopActivity(REMOVING_ACTIVITY, modId)));
+    listAsRemoving(stopActivity);
   }
 };
