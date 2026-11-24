@@ -181,6 +181,7 @@
       "combine": "Combine",
       "track": "Track",
       "untrack": "Untrack",
+      "highlightMods": "Highlight mods",
       "refreshContent": "Refresh content",
       "fixMissingIds": "Fix missing IDs",
       "generateModReport": "Generate mod report"

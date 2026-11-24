@@ -8,7 +8,7 @@ import type { ITableRowAction } from "@/controls/Table";
 import { MODS_TABLE_TEST_GAME, makeModsTableStore } from "@/test-utils/modsTableStore";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmCollection } from "@/ui/icon-paths";
+import { nxmCollection, nxmHighlight } from "@/ui/icon-paths";
 
 const { registered, uninstall, remove, calculateModSize } = vi.hoisted(() => ({
   registered: { current: {} as { [group: string]: IActionDefinition[] } },
@@ -504,6 +504,41 @@ describe("useModSelectionActions", () => {
 
     expect(condition).toHaveBeenCalledWith(["a", "b"]);
     expect(action).toHaveBeenCalledWith(["a", "b"]);
+  });
+
+  it("opens an action's panel for every selected mod, in place of running it", () => {
+    const panel = vi.fn(() => <Dummy />);
+    const { result } = renderSelectionActions(
+      [],
+      ["a", "b"],
+      [{ title: "Highlight Mods", options: { panel } }],
+    );
+
+    const highlight = result.current.find(({ id }) => id === "Highlight Mods");
+    const controls = { close: vi.fn(), dismiss: vi.fn() };
+    highlight?.panel?.(controls);
+
+    expect(highlight?.onClick).toBeUndefined();
+    expect(panel).toHaveBeenCalledWith(["a", "b"], controls);
+  });
+
+  it("offers Highlight mods unpinned, with the classic table's highlight icon", () => {
+    const { result } = renderSelectionActions(
+      [{ title: "Combine", multiRowAction: true, singleRowAction: false }],
+      ["a"],
+      [{ title: "Highlight Mods", icon: "highlight", options: { panel: () => null } }],
+    );
+
+    const highlight = result.current.find(({ id }) => id === "Highlight Mods");
+    expect(highlight).toMatchObject({
+      label: "modsTable::actions::highlightMods",
+      icon: { path: nxmHighlight },
+      section: "organise",
+      pinned: false,
+    });
+    expect(
+      result.current.filter(({ section }) => section === "organise").map(({ id }) => id),
+    ).toEqual(["Combine", "Highlight Mods"]);
   });
 
   it("uninstalls only the selected mods it could install again, leaving the rest to Remove", () => {

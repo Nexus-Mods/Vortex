@@ -105,7 +105,7 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | react-dom | 18.3.1 |
 | react-hot-toast | 2.6.0 |
 | react-i18next | 11.18.6 |
-| react-markdown | 6.0.3 |
+| react-markdown | 9.1.0 |
 | react-overlays | 1.2.0 |
 | react-redux | 7.2.9 |
 | react-select | 1.3.0 |
@@ -128,12 +128,12 @@ This is a list of all modules leaked by Vortex to extensions. Any module listed 
 | temporal-polyfill | 1.0.4 |
 | tmp | 0.1.0 |
 | tough-cookie | 6.0.1 |
-| turbowalk | 3.1.1 |
+| turbowalk | 3.2.0 |
 | universal-analytics | 0.4.23 |
 | uuid | 3.4.0 |
 | vortex-parse-ini | 0.4.0 |
 | wholocks | 1.1.0 |
-| winapi-bindings | 2.7.3 |
+| winapi-bindings | 2.8.0 |
 | winston | 2.4.7 |
 | write-file-atomic | 3.0.3 |
 | ws | 7.5.10 |

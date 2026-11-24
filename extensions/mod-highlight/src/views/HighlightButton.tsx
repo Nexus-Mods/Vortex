@@ -73,14 +73,14 @@ class HighlightButton extends HighlightBase<IProps, IComponentState> {
     );
   }
 
-  private toggleIcon = (evt) => {
+  private toggleIcon = (icon: string) => {
     const { gameMode, mod, onSetModAttribute } = this.props;
-    onSetModAttribute(gameMode, mod.id, "icon", evt.currentTarget.id);
+    onSetModAttribute(gameMode, mod.id, "icon", icon);
   };
 
-  private toggleColors = (color) => {
+  private toggleColors = (color: string) => {
     const { gameMode, mod, onSetModAttribute } = this.props;
-    onSetModAttribute(gameMode, mod.id, "color", color.currentTarget.value);
+    onSetModAttribute(gameMode, mod.id, "color", color);
   };
 
   private toggleOverlay = () => {

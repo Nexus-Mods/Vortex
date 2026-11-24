@@ -60,6 +60,9 @@ export interface ITableRowAction extends IActionDefinition {
   subMenus?: ITableRowAction[];
 }
 
+/** This is the classic table, so it leaves out what's registered for the new UI only. */
+const notModernOnly = (action: IActionDefinition) => !action.options?.isModernOnly;
+
 export interface IBaseProps {
   tableId: string;
   /** This table's id in the analytics. Defaults to `tableId`; set where two tables share one. */
@@ -543,6 +546,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <div className="table-footer">
         <IconBar
           className="menubar"
+          filter={notModernOnly}
           group={`${tableId}-multirow-actions`}
           groupByIcon={false}
           instanceId={selected}

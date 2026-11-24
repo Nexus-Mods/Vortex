@@ -26,6 +26,12 @@ vi.mock("./ComponentEx", async (importOriginal) => {
   };
 });
 
+// The selected rows' bar draws icons, whose icon set would load after the test is torn down.
+vi.mock("./Icon", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  default: () => null,
+}));
+
 const observedRoots = new Map<Element, Element | null>();
 
 class FakeIntersectionObserver {
@@ -389,5 +395,52 @@ describe("SuperTable scroll retry", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("SuperTable selected rows' bar", () => {
+  it("leaves out an action meant for the new UI only", async () => {
+    const action = { singleRowAction: false, multiRowAction: true, action: vi.fn() };
+    let tableInstance: any;
+    const { container } = render(
+      <AppContext>
+        <Table
+          ref={(instance: any) => {
+            if (instance) tableInstance = instance;
+          }}
+          t={(key: string) => key}
+          tableId="test"
+          data={data}
+          objects={attributes}
+          actions={[
+            { ...action, icon: "add", title: "Classic action" },
+            { ...action, icon: "add", title: "Modern action", options: { isModernOnly: true } },
+          ]}
+          attributeState={{}}
+          language="en"
+          collapsedGroups={[]}
+          hasActions={false}
+          onChangeSelection={vi.fn()}
+          showDetails={false}
+          onSetAttributeVisible={vi.fn()}
+          onSetAttributeSort={vi.fn()}
+          onSetAttributeFilter={vi.fn()}
+          onSetGroupingAttribute={vi.fn()}
+          onCollapseGroup={vi.fn()}
+          onSetCollapsedGroups={vi.fn()}
+        />
+      </AppContext>,
+    );
+    await rowsOf(container);
+
+    act(() => tableInstance.selectAll());
+
+    const footer = await waitFor(() => {
+      const element = container.querySelector(".table-footer");
+      expect(element).not.toBeNull();
+      return element as Element;
+    });
+    expect(footer.textContent).toContain("Classic action");
+    expect(footer.textContent).not.toContain("Modern action");
   });
 });

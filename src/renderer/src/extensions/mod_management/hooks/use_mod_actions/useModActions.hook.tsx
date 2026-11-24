@@ -11,7 +11,7 @@ import type { IState } from "@/types/IState";
 import { NexusBadge } from "@/ui/components/badges/nexus_badge/NexusBadge";
 import type { IIconProp } from "@/ui/components/icon/Icon";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
-import { nxmCollection, nxmCollectionOutline } from "@/ui/icon-paths";
+import { nxmCollection, nxmCollectionOutline, nxmHighlight } from "@/ui/icon-paths";
 import { activeGameId } from "@/util/selectors";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
@@ -135,6 +135,11 @@ const ROW_MENU: Array<{ section: string; items: IRowMenuItem[] }> = [
         title: "Untrack",
         label: "modsTable::actions::untrack",
         icon: { name: "pets", filled: true },
+      },
+      {
+        title: "Highlight Mods",
+        label: "modsTable::actions::highlightMods",
+        icon: { path: nxmHighlight },
       },
     ],
   },
@@ -391,6 +396,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
         }
 
         const menuItem = source.menu.get(definition.title);
+        const panel = definition.options?.panel;
 
         list.push({
           // The registered title, not its translation, so a pin survives a language change.
@@ -405,7 +411,9 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
           pinned: source.defaultPins.has(definition.title),
           disabled: condition !== true,
           extension: definition.options?.namespace,
-          onClick: () => definition.action?.(instanceIds),
+          ...(panel !== undefined
+            ? { panel: (controls) => panel(instanceIds, controls) }
+            : { onClick: () => definition.action?.(instanceIds) }),
         });
 
         return list;

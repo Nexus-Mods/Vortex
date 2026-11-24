@@ -7,6 +7,7 @@ import { setSelectedMods } from "./actions/session";
 import { sessionReducer } from "./reducers/session";
 import HighlightButton from "./views/HighlightButton";
 import HighlightIconBar from "./views/HighlightIconBar";
+import HighlightModsPanel, { installedModIds } from "./views/HighlightModsPanel";
 import TextareaNotes from "./views/TextareaNotes";
 
 function init(context: types.IExtensionContext) {
@@ -71,6 +72,20 @@ function init(context: types.IExtensionContext) {
       }
       return true;
     },
+  );
+
+  // The Mods table's selection bar can't show a component, so it gets the same picker in a panel.
+  context.registerAction(
+    "mods-multirow-actions",
+    300,
+    "highlight",
+    {
+      isModernOnly: true,
+      panel: (modIds) => <HighlightModsPanel modIds={modIds} />,
+    },
+    "Highlight Mods",
+    undefined,
+    (modIds) => installedModIds(context.api.store.getState(), modIds ?? []).length > 0,
   );
 
   context.once(() => {
