@@ -199,7 +199,7 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
         {!!file.description && (
           <Typography appearance="subdued" as="div" typographyType="body-sm">
             <div className="line-clamp-2">
-              <BBCode bbcode={file.description} size="sm" />
+              <BBCode bbcode={file.description} context={{ embedVideos: false }} size="sm" />
             </div>
           </Typography>
         )}
