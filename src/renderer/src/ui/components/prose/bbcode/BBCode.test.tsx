@@ -353,6 +353,18 @@ describe("BBCode", () => {
       expect(codes[1].previousElementSibling?.tagName).toBe("BR");
     });
 
+    it("keeps one-line code in its sentence when a line break closes its tag", () => {
+      const { container } = render(
+        <BBCode bbcode={"change [code]A.bsa[/code] to [code]B.bsa\n<br />[/code]\n<br />Then"} />,
+      );
+
+      expect(container.querySelector("pre")).toBeNull();
+      expect([...container.querySelectorAll("code")].map((code) => code.textContent)).toEqual([
+        "A.bsa",
+        "B.bsa",
+      ]);
+    });
+
     it("shows tags inside code as written", () => {
       const { container } = render(<BBCode bbcode="Set [code]a [b]b[/b] c[/code] here" />);
 

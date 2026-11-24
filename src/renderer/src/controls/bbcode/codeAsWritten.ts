@@ -40,8 +40,8 @@ const codeTag = (
   const after = textOf(input.slice(offset + tag.length).split(LINE_BREAK)[0]);
   const startsLine = !!breakBefore || !textOf(before);
   const endsSentence = !breakAfter && /^\p{P}+$/u.test(after);
-  const isOneLine =
-    !LINE_BREAK.test(content.replace(OUTER_BLANKS, "")) && !content.trim().includes("\n");
+  const inner = content.replace(OUTER_BLANKS, "");
+  const isOneLine = !LINE_BREAK.test(inner) && !inner.includes("\n");
   const isInline = param === "inline" || (isOneLine && (!startsLine || endsSentence));
 
   if (isInline) {
