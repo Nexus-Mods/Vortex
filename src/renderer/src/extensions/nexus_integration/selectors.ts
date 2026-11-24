@@ -55,6 +55,18 @@ export const isLoggedIn = (state: IState) => {
 };
 
 /**
+ * Whether the user is logged in through OAuth, as every login made today is. An install that
+ * logged in before OAuth, and has stayed logged in since, holds an API key instead, which
+ * services other than the API don't take.
+ */
+export const hasOAuthLogin = (state: IState) => {
+  if (!hasConfidentialWithNexus(state.confidential)) {
+    return false;
+  }
+  return truthy(state.confidential.account.nexus?.OAuthCredentials);
+};
+
+/**
  * Whether the user can see adult content, which the API leaves out otherwise: not while logged out,
  * nor once their preferences say no. While their preferences aren't known yet, as just after
  * logging in, they're taken as yes, so nothing is locked that the API then shows.

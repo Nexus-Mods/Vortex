@@ -1,5 +1,6 @@
 /**
- * Redaction applied to every text file in a support bundle before it is archived.
+ * Redaction applied to every text file in a support bundle before it is archived, and to the
+ * logs, state and screen recording of a feedback before it is sent.
  *
  * The aim is to remove what identifies the person or grants access to something, and nothing
  * else: paths keep their shape, URLs keep their host, file and expiry, so a log still says

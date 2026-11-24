@@ -16,5 +16,74 @@
       "close": "Close",
       "tryAgain": "Try again"
     }
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "intro": "Tell the Vortex team what happened. Your feedback is linked to your Nexus Mods account so the team can follow up.",
+    "choose": {
+      "intro": "How do you want to share your feedback?",
+      "send": {
+        "title": "Send it to the Vortex team",
+        "description": "Write what happened and send it from here, with your support data and a screenshot if you want. It is linked to your Nexus Mods account.",
+        "button": "Write feedback"
+      },
+      "logIn": {
+        "description": "Your login to Nexus Mods is from an older version of Vortex and can't be used to send feedback. Log in again, then choose Send feedback once more.",
+        "button": "Log in again"
+      },
+      "bundle": {
+        "title": "Create a support bundle",
+        "description": "Save your logs, app state and crash dumps as a file on this computer, to share in the forums or on Discord.",
+        "button": "Create bundle"
+      }
+    },
+    "text": {
+      "label": "What happened?"
+    },
+    "advanced": {
+      "label": "Advanced options"
+    },
+    "supportData": {
+      "label": "Include support data",
+      "hint": "Vortex's recent logs, the current app state and a summary of recent crashes. Usernames in file paths and login details are removed. Crash dump files stay on this computer."
+    },
+    "logWindow": {
+      "label": "Logs to include",
+      "hint": "Choose a period that covers when the problem happened.",
+      "minutes": "The past minute",
+      "minutes_plural": "The past {{count}} minutes",
+      "hours": "The past hour",
+      "hours_plural": "The past {{count}} hours"
+    },
+    "screenshot": {
+      "label": "Include a screenshot",
+      "hint": "A picture of the Vortex window, taken when you opened this dialog.",
+      "alt": "The screenshot that will be sent"
+    },
+    "replay": {
+      "label": "Include a recording of the last few minutes",
+      "hint": "Shows what happened in the Vortex window before you opened this dialog. Every piece of text in it is hidden, and pictures are left out."
+    },
+    "sending": "Sending feedback...",
+    "sendingProgress": "Sending feedback... {{sent}}/{{total}}",
+    "sentTitle": "Feedback sent",
+    "sent": "Thank you. Your feedback was sent to the Vortex team.",
+    "quoteId": "Quote this ID if you contact the team about it",
+    "idKept": "The ID stays in your notifications after you close this.",
+    "failed": {
+      "unknown": "Vortex could not send your feedback.",
+      "unauthorized": "Vortex could not send your feedback because your login was not accepted. Log in again, then send your feedback once more.",
+      "rateLimited": "You have sent a lot of feedback recently. Try again later.",
+      "unavailable": "Vortex could not reach Nexus Mods. Check your connection and try again.",
+      "refused": "The feedback service did not accept this feedback. Go back and send it without the support data, or create a support bundle instead."
+    },
+    "buttons": {
+      "send": "Send feedback",
+      "cancel": "Cancel",
+      "close": "Close",
+      "back": "Back",
+      "tryAgain": "Try again",
+      "copyId": "Copy ID"
+    }
   }
 }

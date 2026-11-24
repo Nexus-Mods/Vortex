@@ -23,12 +23,21 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type {
+  FeedbackSendResult,
+  IFeedbackReplayBatch,
+  IFeedbackReplayInfo,
+  IFeedbackScreenshot,
+  IFeedbackSendProgress,
+  IFeedbackSendRequest,
+} from "./feedback";
 import type { FeatureFlag } from "./flags";
 import type { GameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
 import type { VortexGameId } from "./ids";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
 
+export type * from "./feedback";
 export type * from "./gameFolderCheck";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
@@ -303,6 +312,14 @@ export interface RendererChannels extends RendererCallbackChannels {
   // Telemetry: Forward a completed span from renderer to main for buffering/export
   "telemetry:forward-span": (span: SerializedSpan) => void;
 
+  // Feedback: a few seconds of the window recording, masked and redacted, oldest first, which main
+  // compresses and keeps
+  "feedback:replay-batch": (batch: IFeedbackReplayBatch) => void;
+  // Feedback: recording stopped, so main forgets what it kept
+  "feedback:replay-reset": () => void;
+  // Feedback: the dialog closed, so main lets go of the recording it put aside for it
+  "feedback:replay-release": () => void;
+
   // Feature flags: renderer reports evaluation metrics to main for forwarding to Unleash
   "flags:metrics": (bucket: FlagMetricsBucket) => void;
 
@@ -384,6 +401,19 @@ export interface InvokeChannels {
   // bsdiff binary patching, run on a main-process worker_thread (only paths cross IPC)
   "bsdiff:create": (oldPath: string, newPath: string, patchPath: string) => Promise<void>;
   "bsdiff:apply": (oldPath: string, patchPath: string, outputPath: string) => Promise<void>;
+
+  // Feedback: a JPEG of the calling window, or null when it could not be captured
+  "feedback:capture-window": () => Promise<IFeedbackScreenshot | null>;
+  // Feedback: puts the recording so far aside for the dialog being opened, or null when none
+  "feedback:freeze-replay": () => Promise<IFeedbackReplayInfo | null>;
+  // Feedback: gathers, builds and sends one feedback. Sending the same feedback id again after a
+  // failure resumes it; a failed send is reported in the result, never thrown.
+  "feedback:send": (request: IFeedbackSendRequest, token: string) => Promise<FeedbackSendResult>;
+  "feedback:progress": (feedbackId: string) => Promise<IFeedbackSendProgress | null>;
+  // Feedback: stops a send in progress; the call that started it resolves as canceled
+  "feedback:cancel": (feedbackId: string) => Promise<void>;
+  // Feedback: forgets what main built for a feedback that will not be sent again
+  "feedback:discard": (feedbackId: string) => Promise<void>;
 
   // file hashing, run on a main-process worker_thread (only the path crosses IPC)
   "hash:compute": (

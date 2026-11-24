@@ -59,6 +59,7 @@ import {
   sendPendingNativeCrashReport,
   sendReportFile,
 } from "./errorReporting";
+import { initFeedbackIpc } from "./feedback/ipc";
 import { NodeFileSystemBackendImpl } from "./filesystem/backend";
 import { NodeFileSystemImpl } from "./filesystem/filesystem-impl";
 import { initFileSystem } from "./filesystem/instance";
@@ -324,6 +325,7 @@ async function main(): Promise<void> {
   initUploadIpc(uploadManager);
   initTelemetryIpcHandler();
   initGameFolderCheckIpc();
+  initFeedbackIpc();
 
   StylesheetCompiler.init();
 

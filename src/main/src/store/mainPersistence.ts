@@ -343,6 +343,23 @@ export async function readHiveData(hive: string): Promise<{ [key: string]: Seria
 }
 
 /**
+ * The rows of one persisted hive as they are stored, keys without the hive, once every change the
+ * renderer has sent so far is written. Keys `exclude` matches (see `LevelPersist.getKVsExcluding`)
+ * are left out without their values being read. Empty before persistence is set up.
+ */
+export async function readPersistedRows(
+  hive: string,
+  exclude: string,
+): Promise<Array<{ key: string[]; value: string }>> {
+  if (levelPersist === undefined) {
+    return [];
+  }
+  await finalizeMainWrite();
+  const rows = await levelPersist.getKVsExcluding(hive, exclude);
+  return rows.map(({ key, value }) => ({ key: key.slice(1), value }));
+}
+
+/**
  * Get all hive names that have persisted data in LevelDB.
  * This allows discovering unknown hives that were previously persisted.
  *

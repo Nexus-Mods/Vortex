@@ -229,6 +229,26 @@ class LevelPersist implements IPersistor {
     }));
   }
 
+  /**
+   * The key-value pairs under `prefix`, leaving out every key the regular expression `exclude`
+   * matches. The filter runs in DuckDB, so the values of the keys left out are never read into
+   * JavaScript. `exclude` is matched against the whole key, segments joined by `###`, and has to
+   * be valid both as an RE2 pattern (DuckDB's `regexp_matches`) and as a JavaScript one.
+   */
+  public async getKVsExcluding(
+    prefix: string,
+    exclude: string,
+  ): Promise<Array<{ key: string[]; value: string }>> {
+    const reader = await this.#mConnection.runAndReadAll(
+      `SELECT key, value FROM ${this.#mAlias}.kv WHERE starts_with(key, $1) AND NOT regexp_matches(key, $2)`,
+      [`${prefix}${SEPARATOR}`, exclude],
+    );
+    return reader.getRows().map((row) => ({
+      key: (row[0] as string).split(SEPARATOR),
+      value: row[1] as string,
+    }));
+  }
+
   public async setItem(statePath: string[], newState: string | null): Promise<void> {
     // No internal BEGIN/COMMIT here. The previous implementation issued
     // three statements (SELECT-then-UPDATE-or-INSERT) and self-wrapped in a

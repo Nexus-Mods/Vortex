@@ -469,3 +469,20 @@ describe("LevelPersist.create error classification", () => {
     expect(err).toBeInstanceOf(DataInvalid);
   });
 });
+
+describe("LevelPersist.getKVsExcluding", () => {
+  it("filters in the query, by prefix and by the pattern to leave out", async () => {
+    const { persist, connection } = createPersist();
+    connection.runAndReadAll.mockResolvedValueOnce({
+      getRows: () => [[`persistent${SEPARATOR}mods${SEPARATOR}a`, "1"]],
+    });
+
+    const rows = await persist.getKVsExcluding("persistent", "^persistent###changelogs(###|$)");
+
+    expect(connection.runAndReadAll).toHaveBeenCalledWith(
+      "SELECT key, value FROM db.kv WHERE starts_with(key, $1) AND NOT regexp_matches(key, $2)",
+      [`persistent${SEPARATOR}`, "^persistent###changelogs(###|$)"],
+    );
+    expect(rows).toEqual([{ key: ["persistent", "mods", "a"], value: "1" }]);
+  });
+});

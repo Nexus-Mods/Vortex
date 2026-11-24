@@ -1,0 +1,27 @@
+@layer components {
+    .nxm-slider {
+        cursor: pointer;
+        flex: 1 1 0;
+        min-width: 0;
+        height: calc(var(--spacing) * 4);
+
+        accent-color: var(--color-neutral-strong);
+
+        &:is([data-focus], :focus-visible) {
+            outline: 2px solid var(--color-focus-subdued);
+            outline-offset: 2px;
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+    }
+
+    .nxm-slider-value {
+        flex-shrink: 0;
+        min-width: 20ch;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+}

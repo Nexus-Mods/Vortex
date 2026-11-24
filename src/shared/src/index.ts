@@ -17,3 +17,7 @@ export type {
 export { parseError } from "./errors/parser";
 
 export { isPromiseLike } from "./guard";
+
+export * from "./feedback";
+export type * from "./types/feedbackRecords";
+export * from "./redact";

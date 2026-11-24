@@ -11,6 +11,7 @@ import {
   isTelemetryEnabled,
   isUnconsentedReportingEnabled,
   lateResourceAttributes,
+  recordExportedTrace,
   setProcessor,
 } from "./state";
 
@@ -39,6 +40,9 @@ export const createMainTelemetryProvider = (options?: RingBufferOptions): void =
     ...options,
     onExportSpans: (spans) => {
       if (!isTelemetryEnabled() && !isUnconsentedReportingEnabled()) return;
+      for (const span of spans) {
+        recordExportedTrace(span.spanContext().traceId);
+      }
       exporter.export(spans, (result) => {
         if (result.error) {
           const { message, code } = result.error as Error & {

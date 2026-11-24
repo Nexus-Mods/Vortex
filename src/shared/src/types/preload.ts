@@ -17,6 +17,14 @@ import type {
   TraceConfig,
   TraceCategoriesAndOptions,
 } from "./electron";
+import type {
+  FeedbackSendResult,
+  IFeedbackReplayBatch,
+  IFeedbackReplayInfo,
+  IFeedbackScreenshot,
+  IFeedbackSendProgress,
+  IFeedbackSendRequest,
+} from "./feedback";
 import type { FeatureFlag } from "./flags";
 import type { GameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
 import type { VortexGameId } from "./ids";
@@ -114,6 +122,9 @@ export interface Api {
 
   /** Steam game folder check (MOD-80), run in main */
   gameFolderCheck: GameFolderCheckApi;
+
+  /** What main gathers for a user's feedback */
+  feedback: IFeedbackApi;
 
   /** Diagnostic APIs */
   diag: Diag;
@@ -585,4 +596,34 @@ export interface FeatureFlagsApi {
 export interface TelemetryApi {
   /** Forward a completed span to main process for buffering and OTLP export */
   forwardSpan(span: SerializedSpan): void;
+}
+
+/** A user's feedback, which main gathers, keeps the window recording for, and sends. */
+export interface IFeedbackApi {
+  /** A JPEG of this window, or null when it could not be captured. */
+  captureWindow(): Promise<IFeedbackScreenshot | null>;
+
+  /** Hands a batch of the recording to main, which keeps the last few minutes. */
+  replayBatch(batch: IFeedbackReplayBatch): void;
+
+  /** Makes main forget the recording, once recording stops. */
+  replayReset(): void;
+
+  /** Puts the recording so far aside for the dialog being opened, or null when there is none. */
+  freezeReplay(): Promise<IFeedbackReplayInfo | null>;
+
+  /** Lets main drop the recording put aside for a dialog that has closed. */
+  releaseReplay(): void;
+
+  /** Gathers, builds and sends one feedback; never rejects for a failed send. */
+  send(request: IFeedbackSendRequest, token: string): Promise<FeedbackSendResult>;
+
+  /** How far the send of a feedback has got, or null when none is running. */
+  progress(feedbackId: string): Promise<IFeedbackSendProgress | null>;
+
+  /** Stops the send of a feedback. */
+  cancel(feedbackId: string): Promise<void>;
+
+  /** Forgets a feedback that will not be sent again. */
+  discard(feedbackId: string): Promise<void>;
 }

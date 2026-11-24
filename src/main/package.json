@@ -234,6 +234,7 @@
     "@electron/remote": "catalog:",
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
+    "@mixpanel/rrweb": "catalog:",
     "@msgpack/msgpack": "catalog:",
     "@nexusmods/file-dependency-resolver": "workspace:*",
     "@nexusmods/fomod-installer-ipc": "catalog:",

@@ -1,10 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { setDialogVisible } from "@/actions";
 import { useExtensionContext } from "@/ExtensionProvider";
 import { AppSupportBundleClickedEvent } from "@/extensions/analytics/mixpanel/MixpanelEvents";
+import { isLoggedIn } from "@/extensions/nexus_integration/selectors";
+import { openFeedbackDialog } from "@/extensions/support_bundle/util/openFeedbackDialog";
 import type { IActionDefinition } from "@/types/IActionDefinition";
 import type { IIconSource } from "@/ui/components/icon/Icon";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
@@ -30,6 +32,7 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
   const extensions = useExtensionContext();
   const api = extensions.getApi();
   const { t } = useTranslation();
+  const loggedIn = useSelector(isLoggedIn);
 
   const globalIconActions = useGlobalIconActions(extensions);
 
@@ -56,9 +59,16 @@ export const useHelpMenuSections = (): IMenuAction[][] => {
         onClick: () => dispatch(setDialogVisible("diagnostics-files-dialog")),
       },
       {
-        icon: "package_2",
-        label: t("Create support bundle"),
+        // Sending to the team needs an account, so the feedback dialog, which offers the
+        // choice, is for a logged-in user; anyone else is offered the support bundle by name.
+        icon: loggedIn ? "rate_review" : "package_2",
+        label: loggedIn ? t("Send feedback") : t("Create support bundle"),
         onClick: () => {
+          if (loggedIn) {
+            void openFeedbackDialog(() => dispatch(setDialogVisible("feedback-dialog")));
+            return;
+          }
+
           api.events.emit(
             "analytics-track-mixpanel-event",
             new AppSupportBundleClickedEvent({ source: "help_menu" }),

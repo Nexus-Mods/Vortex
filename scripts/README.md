@@ -59,6 +59,17 @@ Scripts wired into `package.json` can also be called with `pnpm run <name>`.
 
 ---
 
+## Local Stand-ins
+
+- `mock-feedback-api.mjs` -- stands in for the vortex-feedback service
+  (`POST /v1/records`), so the feedback dialog can send from a dev build. Saves
+  each request it accepts as it was sent, decompressed, one folder per feedback.
+  Run `node scripts/mock-feedback-api.mjs`, then start Vortex with
+  `VORTEX_FEEDBACK_API_BASE=http://localhost:9878`. Options are described at the
+  top of the script.
+
+---
+
 ## TypeScript Editor Support
 
 The `.ts` files in this directory are standalone Node scripts run via

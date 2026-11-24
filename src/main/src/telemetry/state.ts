@@ -38,6 +38,23 @@ export const isUnconsentedReportingEnabled = (): boolean => {
   return unconsentedReportingEnabled;
 };
 
+const MAX_EXPORTED_TRACE_IDS = 200;
+
+/** Ids of the traces handed to the exporter in this session, oldest first. */
+const exportedTraceIds = new Set<string>();
+
+export const recordExportedTrace = (traceId: string): void => {
+  exportedTraceIds.add(traceId);
+  if (exportedTraceIds.size > MAX_EXPORTED_TRACE_IDS) {
+    for (const oldest of exportedTraceIds) {
+      exportedTraceIds.delete(oldest);
+      break;
+    }
+  }
+};
+
+export const getExportedTraceIds = (): string[] => [...exportedTraceIds];
+
 // the install's persisted instance id
 const ATTR_SERVICE_STATE_ID = "service.state.id";
 

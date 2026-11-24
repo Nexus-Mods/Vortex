@@ -322,8 +322,11 @@ export class AppUpsellClickedEvent implements MixpanelEvent {
   constructor() {}
 }
 
-/** Where the support bundle was asked for. Only the Help menu today. */
-export type SupportBundleSource = "help_menu";
+/**
+ * Where the support bundle was asked for: straight from the Help menu, or as the choice
+ * made in the feedback dialog.
+ */
+export type SupportBundleSource = "help_menu" | "feedback_dialog";
 
 /**
  * Sent when the user asks Vortex to prepare a support bundle (Help > Create support bundle).

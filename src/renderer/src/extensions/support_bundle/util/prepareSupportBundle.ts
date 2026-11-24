@@ -1,5 +1,6 @@
 import * as path from "path";
 
+import { hasNonAscii, isBundledLogFile, redactSensitiveText } from "@vortex/shared";
 import type * as Redux from "redux";
 
 import { BACKUP_HIVES, serializeState } from "../../../store/store";
@@ -11,7 +12,6 @@ import getVortexPath from "../../../util/getVortexPath";
 import { log } from "../../../util/log";
 import { userInfo } from "../../../util/selectors";
 import { sanitizeFilename } from "../../../util/util";
-import { hasNonAscii, redactSensitiveText } from "./redact";
 
 export interface IPrepareSupportBundleOptions {
   /** 7-Zip progress, 0 to 100. */
@@ -60,7 +60,7 @@ export interface IBuildManifestParams {
  * run to tens of MB and is about to be stringified anyway. Dropped fields are set to `undefined`
  * rather than removed, which JSON.stringify leaves out all the same.
  */
-function scrubState(state: IState): IState {
+export function scrubState(state: IState): IState {
   let scrubbed = state;
 
   const sessionNexus = state.session.nexus;
@@ -87,8 +87,6 @@ function scrubState(state: IState): IState {
 
   return scrubbed;
 }
-
-const LOG_FILE_RE = /^vortex\d?\.log$/;
 
 function pad(value: number, width: number = 2): string {
   return value.toString().padStart(width, "0");
@@ -120,14 +118,6 @@ export function buildBundleFilename(
     `vortex-support-bundle_${filenamePart(version)}_${filenamePart(who)}` +
     `_${formatBundleTimestamp(date)}.zip`
   );
-}
-
-/**
- * The files winston writes next to the state. `startup.log` is deliberately out: it's written
- * by the main process before logging is configured and holds nothing we can't get elsewhere.
- */
-export function isBundledLogFile(name: string): boolean {
-  return LOG_FILE_RE.test(name) || name === "network.log";
 }
 
 /**

@@ -131,6 +131,8 @@ type PersistApi = {
 // entry can call flushPendingDiffsSync() from a beforeunload handler. The app
 // creates exactly one instance; tests create their own (the most recent wins).
 let activeSyncFlush: (() => void) | undefined;
+// Likewise its asynchronous flush, for a reader in main that needs the latest state persisted.
+let activeFlush: (() => void) | undefined;
 
 /**
  * Get the persist API lazily - it may not be available at module load time
@@ -227,6 +229,12 @@ export function createPersistDiffMiddleware(
 
   // Expose this instance's synchronous flush for the quit-time beforeunload hook.
   activeSyncFlush = flushDiffsSync;
+  activeFlush = () => {
+    if (flushTimeout != null) {
+      clearTimeout(flushTimeout);
+    }
+    flushDiffs();
+  };
 
   /**
    * Schedule a flush of pending diffs
@@ -338,4 +346,14 @@ export const persistDiffMiddleware = createPersistDiffMiddleware();
  */
 export function flushPendingDiffsSync(): void {
   activeSyncFlush?.();
+}
+
+/**
+ * Sends any pending (debounced) diffs to main now, rather than when the debounce ends. Main takes
+ * IPC messages from a window in the order they were sent and queues the writes in that order, so
+ * a request sent after this finds every change made so far once main waits on its write queue
+ * (`finalizeMainWrite`). No-op if the middleware/persist API isn't ready.
+ */
+export function flushPendingDiffs(): void {
+  activeFlush?.();
 }

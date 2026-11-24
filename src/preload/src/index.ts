@@ -228,6 +228,18 @@ try {
       forwardSpan: (span) => betterIpcRenderer.send("telemetry:forward-span", span),
     },
 
+    feedback: {
+      captureWindow: () => betterIpcRenderer.invoke("feedback:capture-window"),
+      replayBatch: (batch) => betterIpcRenderer.send("feedback:replay-batch", batch),
+      replayReset: () => betterIpcRenderer.send("feedback:replay-reset"),
+      freezeReplay: () => betterIpcRenderer.invoke("feedback:freeze-replay"),
+      releaseReplay: () => betterIpcRenderer.send("feedback:replay-release"),
+      send: (request, token) => betterIpcRenderer.invoke("feedback:send", request, token),
+      progress: (feedbackId) => betterIpcRenderer.invoke("feedback:progress", feedbackId),
+      cancel: (feedbackId) => betterIpcRenderer.invoke("feedback:cancel", feedbackId),
+      discard: (feedbackId) => betterIpcRenderer.invoke("feedback:discard", feedbackId),
+    },
+
     downloader: {
       start: (dest, collationId, downloadId) =>
         betterIpcRenderer.invoke("download:start", dest, collationId, downloadId),
