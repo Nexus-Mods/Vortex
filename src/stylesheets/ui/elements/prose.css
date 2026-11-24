@@ -188,10 +188,8 @@
         margin-block: calc(var(--spacing) * 4);
     }
 
-    /* Our own UI set into prose, such as an image placeholder or a spoiler's button. It keeps the
-       app's font, not one the text around it sets, such as a [font], [b] or [i] left open. An
-       underline from a [u] left open can't be undone inside it, so a div is an inline block the
-       width of its line, which an underline doesn't reach; a button already is one. */
+    /* Our own UI in prose, such as an image placeholder: the app's font, whatever [font], [b] or
+       [i] is left open around it. A div is a full-width inline block, which [u] can't underline. */
     .nxm-prose-embed {
         font-family: var(--font-sans);
         font-weight: var(--font-weight-normal);
@@ -204,9 +202,8 @@
         vertical-align: top;
     }
 
-    /* A bbcode size, as one of the app's text sizes with its line height and spacing, so sizes left
-       open or inside each other don't multiply. Size 3 is body text. Its variables let small
-       prose, below, take each a step smaller. */
+    /* A bbcode size as one of the app's text sizes, so sizes left open don't compound. Size 3 is
+       body text; small prose sets the variables a step smaller. */
     .nxm-prose-size-1 {
         font-size: var(--nxm-prose-size-1, var(--text-body-xs));
         line-height: var(--nxm-prose-size-1--line-height, var(--text-body-xs--line-height));
@@ -261,7 +258,7 @@
         );
     }
 
-    /* Small prose, as in a popover, its bbcode sizes a step smaller. Where a size's headings
+    /* Small prose, as in a popover, with its bbcode sizes a step smaller. Where a size's headings
        should stand apart by size too, that's set here, per size. */
     .nxm-prose-sm {
         font-size: var(--text-body-sm);

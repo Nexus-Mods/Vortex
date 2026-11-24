@@ -51,10 +51,8 @@ export interface IBBCodeContext {
   /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
   externalImagePlaceholders?: IExternalImagePlaceholderOptions;
   /**
-   * Whether it's drawn as prose, a block of text with room to lay itself out, such as a mod's
-   * description, so `[youtube]` and `[video]` play in a player and `[size]` takes the app's text
-   * sizes. Otherwise it's inside other UI, such as a table row or a dialog's message, so videos are
-   * links and sizes keep to the text around them.
+   * Whether it's prose, a block with room such as a mod's description: videos play and sizes apply.
+   * Otherwise, as in a card or a dialog, videos are links and sizes are left out.
    */
   isProse?: boolean;
 }

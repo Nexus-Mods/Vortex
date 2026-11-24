@@ -12,9 +12,8 @@ const levelOf = (size: number | string) => {
 };
 
 /**
- * A size for bbcode we don't write ourselves, drawn by `.nxm-prose-size-<size>` as one of the app's
- * text sizes, so a size left open or inside another doesn't shrink or grow what follows, as on the
- * site, where the context's `isProse` says it's prose; otherwise at the size of the text around it.
+ * A size in bbcode we don't write ourselves, as one of the app's text sizes, so sizes left open
+ * don't compound. Only in prose (`isProse`); elsewhere the text keeps its size.
  */
 class SafeSizeTag extends SizeTag {
   public toReact(): React.ReactChild[] {

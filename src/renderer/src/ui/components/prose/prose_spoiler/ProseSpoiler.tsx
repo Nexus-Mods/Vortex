@@ -10,10 +10,7 @@ interface IProseSpoilerProps {
   children: ReactNode;
 }
 
-/**
- * Prose hidden behind a button until opened, as bbcode's `[spoiler]`, aligned as its text is. Its
- * button keeps the app's font, whatever the text around it sets.
- */
+/** Prose hidden behind a button until opened, as bbcode's `[spoiler]`, aligned as its text is. */
 export const ProseSpoiler = ({ label, children }: IProseSpoilerProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);

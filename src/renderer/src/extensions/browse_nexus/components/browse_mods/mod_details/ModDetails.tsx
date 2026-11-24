@@ -276,6 +276,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                       className="text-neutral-strong"
                       externalImagePlaceholders={externalImagePlaceholders}
                       isFromAdultContent={mod.adult}
+                      isProse
                     />
                   )}
                 </div>

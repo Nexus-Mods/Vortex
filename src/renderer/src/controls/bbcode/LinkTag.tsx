@@ -40,8 +40,7 @@ class LinkTag extends Tag {
     const title = linkUrl.startsWith("cb:") ? undefined : linkUrl;
 
     const { callbacks, allowLocal } = this.renderer.options;
-    // Worked out now: the renderer's options are only set while it renders, not when React does.
-    // So are the link's contents, whose tags read those options too.
+    // Worked out now, contents included: the renderer's options are only set while it renders.
     const href = this.href(linkUrl);
     const contents = this.getComponents();
 

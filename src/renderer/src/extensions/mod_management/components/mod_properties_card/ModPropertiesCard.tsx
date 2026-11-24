@@ -82,6 +82,7 @@ export const ModPropertiesCard = ({ card }: IModPropertiesCardProps) => {
                     card.pageUrl ? { websiteUrl: card.pageUrl } : undefined
                   }
                   isFromAdultContent={card.isAdult}
+                  isProse
                 />
               </div>
 

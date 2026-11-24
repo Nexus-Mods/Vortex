@@ -86,7 +86,7 @@ type IExternalImagePlaceholderProps = IExternalImagePlaceholderOptions & {
  * they're from, and their links, with a way to see them on the website and a Why? explaining it.
  * A run of them is one placeholder with a count. Only the images' hosts are read, never loaded.
  * Narrower than 28rem, its buttons go under the text rather than beside it. `.nxm-prose-embed`
- * keeps the text around it, such as a `[font]` or `[u]` left open, from styling it.
+ * keeps bbcode left open around it from styling it.
  */
 export const ExternalImagePlaceholder = ({
   images,
