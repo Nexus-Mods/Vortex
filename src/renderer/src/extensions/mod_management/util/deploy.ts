@@ -6,7 +6,7 @@ import {
 } from "@vortex/shared";
 import { generate as shortid } from "shortid";
 
-import { startActivity, stopActivity } from "../../../actions/session";
+import { setProgress, startActivity, stopActivity } from "../../../actions/session";
 import { log } from "../../../logging";
 import type {
   IDeployedFile,
@@ -255,15 +255,21 @@ async function purgeModsImpl(
   }
 
   const notificationId: string = shortid();
+  // The modern layout's Apply button shows the progress, so only the legacy one gets the notification.
+  const showNotification = !(state.settings.window?.useModernLayout ?? true);
 
   const onProgress = (progress: number, message: string) => {
-    api.sendNotification({
-      id: notificationId,
-      type: "activity",
-      title: "Purging",
-      message,
-      progress,
-    });
+    if (showNotification) {
+      api.sendNotification({
+        id: notificationId,
+        type: "activity",
+        title: "Purging",
+        message,
+        progress,
+      });
+    }
+    // Also in the store, so the menu's Apply button can show how far along it is.
+    api.store.dispatch(setProgress("mods", "purging", message, progress));
   };
 
   onProgress(0, "Waiting for other operations to complete");
@@ -352,8 +358,11 @@ async function purgeModsImpl(
       }
     }, true);
   } finally {
-    api.dismissNotification(notificationId);
+    if (showNotification) {
+      api.dismissNotification(notificationId);
+    }
     api.store.dispatch(stopActivity("mods", "purging"));
+    api.store.dispatch(setProgress("mods", "purging", undefined, 0));
   }
 }
 
