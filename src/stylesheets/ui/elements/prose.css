@@ -178,9 +178,14 @@
         }
     }
 
-    /* A code block in bbcode, clear of the lines around it. */
+    /* A code block in bbcode, clear of the lines around it. Its scrollbar shows while it's hovered,
+       not only while it scrolls, so lines cut off at its edge read as more to scroll to. */
     .nxm-prose-code {
         margin-block: calc(var(--spacing) * 4);
+
+        &:hover:not([data-scrollbar-hover]) {
+            --scrollbar-thumb: var(--color-surface-translucent-low);
+        }
     }
 
     /* A video, clear of the lines around it. */
