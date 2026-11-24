@@ -562,8 +562,12 @@ class PluginPersistor implements IPersistor {
       .filter((pluginId) => pluginId !== undefined)
       .map((pluginId) => this.mKnownPlugins[pluginId]);
 
+    // fixed now: the state may change while the write retries, and the failure check below must
+    // judge what this write tried to put on disk
+    const filtered = this.toPluginList(sorted);
+
     const pluginsFile = path.join(destPath, "plugins.txt");
-    return this.writeFiles(destPath, sorted)
+    return this.writeFiles(destPath, sorted, filtered)
       .then((writtenAt) => {
         this.mFailed = false;
         this.mLastWriteTime = writtenAt;
@@ -573,7 +577,7 @@ class PluginPersistor implements IPersistor {
         // next read must not pass for Vortex's own write and be passed over. A write that only
         // restated the files (the game holding them while it starts) changes nothing.
         if (
-          !this.holdsOurLastWrite(this.toPluginList(sorted), true) ||
+          !this.holdsOurLastWrite(filtered, true) ||
           (this.mPluginFormat === "original" && !this.holdsOurLastWrite(sorted, false))
         ) {
           this.mWritten = undefined;
@@ -600,9 +604,10 @@ class PluginPersistor implements IPersistor {
 
   /**
    * Writes both list files, then stamps the plugins so the game reads them in this order.
-   * Resolves with the time plugins.txt was written.
+   * sorted is the load order, filtered the plugins.txt entries made from it. Resolves with the
+   * time plugins.txt was written.
    */
-  private async writeFiles(destPath: string, sorted: string[]): Promise<Date> {
+  private async writeFiles(destPath: string, sorted: string[], filtered: string[]): Promise<Date> {
     const loadOrderFile = path.join(destPath, "loadorder.txt");
     const pluginsFile = path.join(destPath, "plugins.txt");
     // this mkdir should not be necessary
@@ -614,7 +619,6 @@ class PluginPersistor implements IPersistor {
         "utf8",
       ),
     );
-    const filtered: string[] = this.toPluginList(sorted);
     await withFileRetry(() =>
       replaceFile(
         pluginsFile,
@@ -811,8 +815,12 @@ class PluginPersistor implements IPersistor {
         ) {
           // the file says what Vortex last wrote, though maybe not where the inactive plugins
           // sit (the game moves them as it starts). Taking it in would only lose the positions
-          // Vortex gave them, which they load at once activated, so Vortex keeps its own.
-          this.adoptParsed(this.mPlugins);
+          // Vortex gave them, which they load at once activated, so Vortex keeps its own. Its
+          // state is unchanged, so the store is not hydrated again: that would replace changes
+          // still on their way to the persistor.
+          this.mLoaded = true;
+          this.mRetryCounter = retryCount;
+          this.mFailed = false;
           return Promise.resolve();
         }
         this.initFromKeyList(newPlugins, keys, true, offset);
@@ -940,7 +948,8 @@ class PluginPersistor implements IPersistor {
           PLUGIN_FILES.includes(fileName.toLowerCase()) &&
           this.mPluginPath !== undefined
         ) {
-          withFileRetry(() => stat(path.join(this.mPluginPath, fileName)))
+          // the file Vortex reads: where names keep their case, a separate Plugins.txt is not it
+          withFileRetry(() => stat(path.join(this.mPluginPath, fileName.toLowerCase())))
             .then((stats) => {
               if (stats.mtime > this.mLastWriteTime) {
                 this.scheduleRefresh(500);

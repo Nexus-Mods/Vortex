@@ -251,8 +251,6 @@ describe("PluginPersistor", () => {
     describe("Skyrim SE rewriting plugins.txt as it starts", () => {
       const GAME_NOTE = "# Please do not modify this file.";
       const OURS = `${VORTEX_HEADER}\r\n*Old.esp\r\nParked.esp\r\n*Main.esp\r\n`;
-      // the watcher's refresh waits 500ms before it reads the file
-      const REFRESH_MS = 800;
 
       // Vortex holds two active plugins and an inactive one between them
       beforeEach(async () => {
@@ -268,7 +266,7 @@ describe("PluginPersistor", () => {
 
       /**
        * Writes plugins.txt under the given name the way the game does (its own header, LF line
-       * ends) and raises the watcher's event for it.
+       * ends), raises the watcher's event for it and waits until the refresh has read the file.
        */
       const gameRewrite = async (fileName: string, ...entries: string[]) => {
         const content = [SKYRIM_HEADER, GAME_NOTE, ...entries, ""].join("\n");
@@ -276,8 +274,18 @@ describe("PluginPersistor", () => {
         // after Vortex's write, whatever the file system's time resolution
         const later = new Date(Date.now() + 10_000);
         nodeFs.utimesSync(pluginsFile(), later, later);
-        watched.listener?.("change", fileName);
-        await settle(REFRESH_MS);
+        const deserialize = vi.spyOn(
+          persistor as unknown as { deserialize: () => Promise<void> },
+          "deserialize",
+        );
+        try {
+          watched.listener?.("change", fileName);
+          await vi.waitFor(() => expect(deserialize).toHaveBeenCalled(), { timeout: 5000 });
+          await deserialize.mock.results[0].value;
+          await settle(SETTLE_MS);
+        } finally {
+          deserialize.mockRestore();
+        }
         return content;
       };
 
@@ -289,10 +297,13 @@ describe("PluginPersistor", () => {
 
       it("keeps Vortex's order when the game only moves an inactive plugin to the top", async () => {
         const onExternalChange = asked();
+        const hydrations = hydrateSpy.mock.calls.length;
 
         const content = await gameRewrite("plugins.txt", "Parked.esp", "*Old.esp", "*Main.esp");
 
         expect(onExternalChange).not.toHaveBeenCalled();
+        // Vortex's state is unchanged, so the store is not hydrated again
+        expect(hydrateSpy.mock.calls.length).toBe(hydrations);
         // the inactive plugin stays where Vortex put it, between the active ones
         expect(persistor.entry("parked.esp").enabled).toBe(false);
         expect(persistor.entry("old.esp").loadOrder).toBeLessThan(
