@@ -25,6 +25,10 @@ on:
         description: "Build and pack without publishing."
         type: boolean
         default: true
+      ref:
+        description: "Branch or commit to build instead of the tag, for dry runs of an unreleased branch. The tag still sets the version."
+        required: false
+        type: string
 
 concurrency:
   group: publish-vortex-api-${{ github.event.release.tag_name || inputs.tag }}
@@ -44,26 +48,24 @@ jobs:
       # The API bundle never loads Electron, so skip the native rebuild the app needs.
       VORTEX_ELECTRON_REBUILD: "skip"
     steps:
+      - name: Refuse to publish a ref other than the tag
+        if: ${{ inputs.ref != '' && env.DRY_RUN != 'true' }}
+        run: |
+          echo "::error::The ref input is for dry runs only. Publishing must build the release tag."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
-
-      - name: Read Node.js version from package.json
-        id: node-version
-        run: echo "NODE_VERSION=$(jq -r .engines.node package.json)" >> "$GITHUB_OUTPUT"
+          ref: ${{ github.event.release.tag_name || inputs.ref || inputs.tag }}
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: ./.github/actions/setup-pnpm
 
-      - name: Use Node.js
+      # Only writes the registry .npmrc; Node.js itself comes from setup-pnpm.
+      - name: Configure npm registry
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ steps.node-version.outputs.NODE_VERSION }}
-          cache: "pnpm"
           registry-url: "https://registry.npmjs.org"
-
-      - name: Fix pnpm node-gyp permissions
-        run: find "$PNPM_HOME" -path '*/node-gyp/gyp/gyp_main.py' -exec chmod +x {} \;
 
       # NOTE(erri120): fontconfig required by font-scanner required by theme-switcher
       - name: Install fontconfig

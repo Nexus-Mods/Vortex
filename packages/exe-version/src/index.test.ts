@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { createRequire } from "module";
 import * as path from "path";
 
 import { describe, it, expect } from "vitest";
@@ -98,25 +99,17 @@ describeOnWindows("public API", () => {
 });
 
 describeOnWindows("cross-validation with native module", () => {
-  let nativeGetInfo:
-    | ((filePath: string) => {
-        fileVersion: number[];
-        productVersion: number[];
-        fileVersionString: string;
-        productVersionString: string;
-      })
-    | undefined;
-
-  try {
-    const winapiPath = path.resolve(
-      __dirname,
-      "../../../node_modules/.pnpm/winapi-bindings@https+++cod_133dce9c747207ea117c57c1f8ca67ef/node_modules/winapi-bindings",
-    );
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    nativeGetInfo = require(winapiPath).GetFileVersionInfo;
-  } catch {
-    nativeGetInfo = undefined;
-  }
+  // Resolved through @vortex/main, which depends on winapi-bindings, rather than
+  // a hard-coded node_modules/.pnpm path: pnpm's store folder names are not
+  // stable across pnpm versions. A failed resolve fails the suite instead of
+  // skipping it.
+  const mainRequire = createRequire(
+    path.resolve(import.meta.dirname, "../../../src/main/package.json"),
+  );
+  const nativeGetInfo: (filePath: string) => {
+    fileVersion: number[];
+    productVersion: number[];
+  } = mainRequire("winapi-bindings").GetFileVersionInfo;
 
   const testFiles = [
     "C:\\Windows\\System32\\notepad.exe",
@@ -128,8 +121,6 @@ describeOnWindows("cross-validation with native module", () => {
     if (!fs.existsSync(file)) continue;
 
     it(`matches native output for ${path.basename(file)}`, () => {
-      if (nativeGetInfo === undefined) return; // skip if native not available
-
       const tsInfo = readVersionInfo(file)!;
       const native = nativeGetInfo(file);
 
