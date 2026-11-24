@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { type ReactChild } from "react";
 
 import SizeTag from "./SizeTag";
 
@@ -21,7 +21,7 @@ class SafeSizeTag extends SizeTag {
     return [this.getContent()];
   }
 
-  public toReact(): React.ReactChild[] {
+  public toReact(): ReactChild[] {
     const size = this.params.size;
 
     if (isNaN(size) || !this.renderer.options.isProse) {
