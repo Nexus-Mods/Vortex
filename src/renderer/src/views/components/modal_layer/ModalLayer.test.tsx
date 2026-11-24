@@ -235,6 +235,49 @@ describe("ModalLayer", () => {
 
       await settleTransitions();
     });
+
+    it("uses the large modal for a bbcode table", async () => {
+      renderLayer([
+        dialogWith("one", {
+          bbcode: "Missing:[table][tr][td]A.esp[/td][td]B.esm[/td][/tr][/table]",
+        }),
+      ]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-lg");
+
+      await settleTransitions();
+    });
+
+    it("sets a bbcode table apart from the text around it", async () => {
+      renderLayer([dialogWith("one", { bbcode: "Missing:[table][tr][td]A[/td][/tr][/table]" })]);
+
+      expect(proseOf(screen.getByRole("dialog"))).toHaveClass("[&_table]:my-2");
+
+      await settleTransitions();
+    });
+
+    it("uses the large modal for an html table", async () => {
+      renderLayer([dialogWith("one", { htmlText: "<table><tr><td>A</td></tr></table>" })]);
+
+      expect(screen.getByRole("dialog")).toHaveClass("nxm-modal-lg");
+
+      await settleTransitions();
+    });
+  });
+
+  describe("scrolling", () => {
+    it("scrolls the body on its own, so the buttons stay in view", async () => {
+      renderLayer([dialogWith("one", { text: "Some text", bbcode: "Rich" })]);
+
+      const body = screen.getByTestId("dialog-body");
+
+      expect(body).toHaveClass("overflow-y-auto");
+      expect(body).toHaveTextContent("Some text");
+      expect(body).toHaveTextContent("Rich");
+      expect(body).not.toContainElement(screen.getByTestId("dialog-action-Delete"));
+
+      await settleTransitions();
+    });
   });
   describe("destructive actions", () => {
     const removing = (): IDialog => ({

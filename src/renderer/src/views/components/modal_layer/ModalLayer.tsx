@@ -19,7 +19,7 @@ import { RadioGroupField } from "@/ui/components/form/radio_group_field/RadioGro
 import { TextAreaField } from "@/ui/components/form/text_area_field/TextAreaField";
 import { TextField } from "@/ui/components/form/text_field/TextField";
 import { MessageBox } from "@/ui/components/message_box/MessageBox";
-import { Modal } from "@/ui/components/modal/Modal";
+import { ModalPanel, ModalWrapper } from "@/ui/components/modal/Modal";
 import { BBCode } from "@/ui/components/prose/bbcode/BBCode";
 import { Html } from "@/ui/components/prose/html/Html";
 import { Markdown } from "@/ui/components/prose/markdown/Markdown";
@@ -58,6 +58,19 @@ const DISMISS_ACTIONS = new Set(["Close"]);
 // than three buttons, which then fit on one row as they did in the legacy dialog.
 const SMALL_MAX_TEXT_LENGTH = 200;
 const MAX_BUTTONS_IN_SMALL = 3;
+
+// A table squeezed into the medium modal wraps every cell onto several lines, so a dialog with one
+// gets the large modal. Markdown has no tables here, so only bbcode and HTML are looked at.
+const hasTable = (content: IDialogContent) =>
+  /\[table\b/i.test(content.bbcode ?? "") || /<table\b/i.test(content.htmlText ?? "");
+
+const modalSize = (content: IDialogContent, needsRoom: boolean, textLength: number) => {
+  if (hasTable(content)) {
+    return "lg";
+  }
+
+  return needsRoom || textLength > SMALL_MAX_TEXT_LENGTH ? "md" : "sm";
+};
 
 // bbcode is raw text, not a translation key, and i18next would split it on its key separators. So
 // the parameters are put in by hand, as in the legacy renderer.
@@ -263,6 +276,9 @@ export const ModalLayer = () => {
       node: (
         <BBCode
           bbcode={fillParameters(content.bbcode, content.parameters)}
+          // Bbcode has no gaps between its blocks, and a check's table follows its intro line
+          // straight on, so a table in a dialog gets room above and below it.
+          className="[&_table]:my-2"
           context={content.options?.bbcodeContext}
           size="sm"
         />
@@ -443,33 +459,42 @@ export const ModalLayer = () => {
   }
 
   return (
-    <Modal
+    <ModalWrapper
       initialFocusRef={inputs.length > 0 ? firstInputRef : defaultButtonRef}
       isOpen
       key={id}
-      showCloseButton={false}
-      size={needsRoom || text.length > SMALL_MAX_TEXT_LENGTH ? "md" : "sm"}
-      title={translate(title)}
+      size={modalSize(content, needsRoom, text.length)}
       onClose={ignoreClose}
     >
-      {orderedSections(sections, content.options?.order).map((section) => (
-        <React.Fragment key={section.id}>{section.node}</React.Fragment>
-      ))}
+      {/* Only the body scrolls, so a long list never pushes the buttons off the screen. */}
+      <ModalPanel className="flex flex-col" showCloseButton={false} title={translate(title)}>
+        {/* The padding, taken back by the margin, leaves room for the focus rings the scroll
+            area would otherwise cut off. The first part's top margin is dropped, as it used to
+            fold into the title's. */}
+        <div
+          className="-m-1 min-h-0 overflow-y-auto p-1 [&>:first-child]:mt-0"
+          data-testid="dialog-body"
+        >
+          {orderedSections(sections, content.options?.order).map((section) => (
+            <React.Fragment key={section.id}>{section.node}</React.Fragment>
+          ))}
+        </div>
 
-      <div className="mt-4 flex flex-wrap justify-end gap-2">
-        {actions.map((action) => (
-          <Button
-            data-testid={`dialog-action-${action}`}
-            disabled={isDisabled(action)}
-            key={action}
-            ref={action === defaultAction ? defaultButtonRef : undefined}
-            {...buttonColour(action)}
-            onClick={() => answer(action)}
-          >
-            {t(action)}
-          </Button>
-        ))}
-      </div>
-    </Modal>
+        <div className="mt-4 flex shrink-0 flex-wrap justify-end gap-2">
+          {actions.map((action) => (
+            <Button
+              data-testid={`dialog-action-${action}`}
+              disabled={isDisabled(action)}
+              key={action}
+              ref={action === defaultAction ? defaultButtonRef : undefined}
+              {...buttonColour(action)}
+              onClick={() => answer(action)}
+            >
+              {t(action)}
+            </Button>
+          ))}
+        </div>
+      </ModalPanel>
+    </ModalWrapper>
   );
 };
