@@ -16,7 +16,9 @@ import { activeGameId } from "@/util/selectors";
 import { getIcon } from "@/views/components/icon_map/iconMap";
 
 import { calculateModSize } from "../../util/calculate_mod_size/calculateModSize.util";
+import { isBeingRemoved, removableMods } from "../../util/confirm_remove_mods/confirmRemoveMods";
 import { useCheckModUpdate } from "../use_check_mod_update/useCheckModUpdate.hook";
+import { useRemoveMods } from "../use_remove_mods/useRemoveMods.hook";
 import { useUninstallMods } from "../use_uninstall_mods/useUninstallMods.hook";
 
 /** Where the rows' pins are stored, shared so an action pinned on one row shows on every row. */
@@ -180,6 +182,13 @@ const OTHER_SECTION = "other";
 /** The mod-content extension's, which also works out the mods' sizes again here. */
 const REFRESH_CONTENT = "Refresh Content";
 
+/**
+ * The legacy table's that act on a mod's files or its archive, none of which knows a row is
+ * being removed: Remove related removes straight away, and the others install from an archive
+ * a removal may be deleting, or into a mod it's taking away.
+ */
+const NOT_WHILE_REMOVING = new Set(["Remove related", "Install", "Unpack (as-is)", "Reinstall"]);
+
 type IMenuItems = Map<string, IRowMenuItem & { section: string; order: number }>;
 
 const menuItems = (menu: typeof ROW_MENU): IMenuItems =>
@@ -247,6 +256,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
   const store = useStore<IState>();
   const checkForUpdate = useCheckModUpdate();
   const uninstall = useUninstallMods();
+  const remove = useRemoveMods();
 
   // Titles are the ids pins are stored against, so the first of a title wins.
   const definitions = useMemo(() => {
@@ -258,14 +268,23 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
     };
 
     // Installed, and with the archive to install it again from: one without would be gone
-    // for good, which is Remove's to do, as it asks first.
+    // for good, which is Remove's to do, as it asks first. Not while it's being removed.
     const uninstallable = (modIds: string[]) => {
       const state = store.getState();
       const installed = state.persistent.mods?.[activeGameId(state)] ?? {};
       return modIds.filter((modId) => {
         const archiveId = installed[modId]?.archiveId;
-        return archiveId !== undefined && state.persistent.downloads.files[archiveId] !== undefined;
+        return (
+          archiveId !== undefined &&
+          state.persistent.downloads.files[archiveId] !== undefined &&
+          !isBeingRemoved(state, modId)
+        );
       });
+    };
+
+    const removable = (modIds: string[]) => {
+      const state = store.getState();
+      return removableMods(state, activeGameId(state), modIds);
     };
 
     // In place of the legacy table's, a component: offered for an installed mod, as that was.
@@ -280,6 +299,13 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
       title: "Uninstall",
       action: (modIds: string[]) => void uninstall(uninstallable(modIds)),
       condition: (modIds: string[]) => uninstallable(modIds).length > 0,
+    };
+
+    // In place of the legacy table's, so the rows being removed show it and can't be again.
+    const removeAction: IActionDefinition = {
+      title: "Remove",
+      action: (modIds: string[]) => void remove(modIds),
+      condition: (modIds: string[]) => removable(modIds).length > 0,
     };
 
     // The Mod size column can't be clicked to work a size out, as the legacy table's can,
@@ -298,13 +324,35 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
             },
           };
 
+    // So none of these starts on a mod that's being removed or uninstalled.
+    const notWhileBusy = (definition: IActionDefinition): IActionDefinition =>
+      !NOT_WHILE_REMOVING.has(definition.title)
+        ? definition
+        : {
+            ...definition,
+            condition: (...args: Parameters<NonNullable<IActionDefinition["condition"]>>) => {
+              const [instanceIds] = args;
+              const modIds = Array.isArray(instanceIds) ? instanceIds : [instanceIds];
+              const state = store.getState();
+              if (modIds.some((modId) => isBeingRemoved(state, modId))) {
+                return false;
+              }
+              return definition.condition?.(...args) ?? true;
+            },
+          };
+
     return [
       checkForUpdateAction,
       uninstallAction,
-      ...rowActions.filter(source.offers),
+      removeAction,
+      // The classic Remove comes first by position, so it's dropped rather than outranked.
+      ...rowActions.filter(
+        (definition) => definition.title !== removeAction.title && source.offers(definition),
+      ),
       ...registered,
     ]
       .map(withSizeRefresh)
+      .map(notWhileBusy)
       .filter(
         (definition) =>
           definition.title !== undefined &&
@@ -315,7 +363,7 @@ const useModActions = (rowActions: ITableRowAction[], source: IModActionsSource)
       .sort(byPosition)
       .sort((a, b) => menuOrder(source.menu, a) - menuOrder(source.menu, b))
       .filter((definition) => !seen.has(definition.title) && !!seen.add(definition.title));
-  }, [checkForUpdate, registered, rowActions, source, store, uninstall]);
+  }, [checkForUpdate, registered, remove, rowActions, source, store, uninstall]);
 
   const isPinned = useCallback(
     (title: string) => pins[title] ?? source.defaultPins.has(title),
