@@ -303,6 +303,54 @@ describe("BBCode", () => {
       expect(codes[1].previousElementSibling?.tagName).toBe("BR");
     });
 
+    it("shows tags inside code as written", () => {
+      const { container } = render(<BBCode bbcode="Set [code]a [b]b[/b] c[/code] here" />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("a [b]b[/b] c");
+      expect(code?.querySelector("b")).toBeNull();
+    });
+
+    it("ends code at its closing tag when a tag inside it is left open", () => {
+      const { container } = render(
+        <BBCode bbcode="Use [code]x = arr[i] + 1[/code] then [b]this[/b]" />,
+      );
+
+      expect(container.querySelector("code")?.textContent).toBe("x = arr[i] + 1");
+      expect(container.querySelector("i")).toBeNull();
+      expect(container.querySelector("code strong")).toBeNull();
+      expect(container.querySelector("strong")).not.toBeNull();
+    });
+
+    it("shows code starting a line as a block when a sentence follows it", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={'Add:<br />[code]"OpenMenuKey": "P"[/code][color=red]Then press P[/color]'}
+        />,
+      );
+
+      expect(container.querySelector("pre")?.textContent).toBe('"OpenMenuKey": "P"');
+    });
+
+    it("keeps the indent of a block's first line", () => {
+      const { container } = render(
+        <BBCode bbcode={"[code]<br />    if x:<br />        y()[/code]"} />,
+      );
+
+      expect(container.querySelector("pre > code")?.textContent).toBe("    if x:\n        y()");
+    });
+
+    it("shows code with a language as code is written", () => {
+      const { container } = render(
+        <BBCode bbcode={"Add:<br />\n<br />\n[code=ini]a<br />\nb[/code]<br />\n<br />\nThen"} />,
+      );
+
+      const block = container.querySelector("pre");
+      expect(block?.textContent).toBe("a\nb");
+      expect(block?.previousElementSibling).toBeNull();
+      expect(block?.nextElementSibling).toBeNull();
+    });
+
     it("keeps the spaces inside one-line code's tag between it and its sentence", () => {
       const { container } = render(<BBCode bbcode="the line[code] List2 [/code]in it" />);
 
