@@ -1,20 +1,21 @@
-// The bundler rewrites require() calls it can see into its own module loader.
 // Code that loads a module from a path only known at runtime (extensions, the
-// loot binding) needs Node's own require instead, so it goes through here.
-declare const __non_webpack_require__: NodeJS.Require;
+// loot binding) goes through here. The bundler only bundles require() calls
+// with a literal string it can resolve, so a require() with a runtime id is
+// left alone and reaches Node's own loader. Keeping those calls in one place
+// gives tests a single seam to mock and makes the intent explicit.
 
 export function nodeRequire(id: string): ReturnType<NodeJS.Require> {
-  return __non_webpack_require__(id);
+  return require(id);
 }
 
 /**
  * Get the real Node.js module resolution paths for a given directory.
- * Inside a bundle, `module.paths` and `__dirname` are synthetic values
- * that don't reflect the actual filesystem. This uses the real Node.js Module
- * API to compute correct resolution paths.
+ * Inside a bundle, `module.paths` reflects the bundle's location rather than
+ * the caller's. This uses the real Node.js Module API to compute correct
+ * resolution paths.
  */
 export function getRealNodeModulePaths(baseDir: string): string[] {
-  const Module = __non_webpack_require__("module") as {
+  const Module = require("module") as {
     _nodeModulePaths: (dir: string) => string[];
   };
   return Module._nodeModulePaths(baseDir);

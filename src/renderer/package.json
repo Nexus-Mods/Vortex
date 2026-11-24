@@ -5,7 +5,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm exec webpack --config ./webpack.config.cjs",
+    "build": "node ./build.mjs",
     "typecheck": "pnpm exec tsc -p tsconfig.json",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm exec eslint --concurrency auto .",

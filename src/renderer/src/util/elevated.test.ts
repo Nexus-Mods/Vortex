@@ -31,10 +31,6 @@ vi.mock("winapi-bindings", () => ({
   },
 }));
 
-// In webpack, __non_webpack_require__ is the real Node.js require.
-// In Jest (no webpack), we alias it to the normal require.
-globalThis.__non_webpack_require__ = require;
-
 let mockTmpFileCalls = 0;
 let mockTmpFileReportError: string | undefined = undefined;
 vi.mock("tmp", () => ({
