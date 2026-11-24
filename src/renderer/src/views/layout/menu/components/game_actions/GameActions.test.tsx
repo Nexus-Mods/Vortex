@@ -12,6 +12,8 @@ const context = vi.hoisted(() => ({
   isDeploying: false,
   deployProgress: 0,
   deployStep: undefined as string | undefined,
+  isPurging: false,
+  purgeProgress: 0,
   deploy: vi.fn(),
   emit: vi.fn(),
   handlePlay: vi.fn(),
@@ -51,6 +53,8 @@ vi.mock("@/extensions/mod_management/hooks/useDeployMods.hook", () => ({
     isDeploying: context.isDeploying,
     deployProgress: context.isDeploying ? context.deployProgress : undefined,
     deployStep: context.isDeploying ? context.deployStep : undefined,
+    isPurging: context.isPurging,
+    purgeProgress: context.isPurging ? context.purgeProgress : undefined,
     deploy: context.deploy,
   }),
 }));
@@ -71,6 +75,8 @@ describe("GameActions", () => {
     context.isPurged = false;
     context.isDeploying = false;
     context.deployStep = undefined;
+    context.isPurging = false;
+    context.purgeProgress = 0;
     context.deploy = vi.fn();
     context.emit = vi.fn();
     context.handlePlay = vi.fn();
@@ -285,5 +291,112 @@ describe("GameActions", () => {
     expect(screen.getByRole("progressbar", { name: "Applying" })).toBeInTheDocument();
 
     await settleTransitions();
+  });
+
+  describe("while a purge runs", () => {
+    it("shows it as a neutral Updating files bar that can't be pressed", async () => {
+      context.isPurging = true;
+      context.purgeProgress = 35;
+
+      render(<GameActions />);
+
+      const bar = screen.getByRole("progressbar", { name: "Updating files" });
+      expect(bar).toHaveAttribute("aria-valuenow", "35");
+      expect(bar).toHaveTextContent("Updating files");
+      expect(screen.queryByRole("button", { name: /Appl/ })).toBeNull();
+      // Orange is Apply's colour only.
+      for (const element of [bar, ...bar.querySelectorAll("*")]) {
+        expect(element.getAttribute("class") ?? "").not.toMatch(/primary/);
+      }
+
+      fireEvent.click(bar);
+      expect(context.deploy).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+
+    it("shows it with auto-apply on and off", async () => {
+      context.isPurging = true;
+      const { rerender } = render(<GameActions />);
+
+      expect(screen.getByRole("progressbar", { name: "Updating files" })).toBeInTheDocument();
+
+      context.autoDeploy = true;
+      rerender(<GameActions />);
+
+      expect(screen.getByRole("progressbar", { name: "Updating files" })).toBeInTheDocument();
+
+      await settleTransitions();
+    });
+
+    it("explains what it's doing in the tooltip", async () => {
+      context.isPurging = true;
+      render(<GameActions />);
+
+      await userEvent.hover(screen.getByRole("progressbar"));
+
+      expect(await screen.findByText("Updating mod files")).toBeInTheDocument();
+      expect(
+        screen.getByText("Vortex is updating which files are in the game after your last change."),
+      ).toBeInTheDocument();
+
+      await settleTransitions();
+    });
+
+    it("keeps it icon only when the menu is collapsed", async () => {
+      context.menuIsCollapsed = true;
+      context.isPurging = true;
+
+      render(<GameActions />);
+
+      expect(screen.getByRole("progressbar", { name: "Updating files" })).not.toHaveTextContent(
+        "Updating files",
+      );
+
+      await settleTransitions();
+    });
+
+    it("disables Play", async () => {
+      context.primaryStarter = { id: "tool-1", name: "Stardew Valley", exePath: "a.exe" };
+      context.isPurging = true;
+
+      render(<GameActions />);
+
+      const play = screen.getByRole("button", { name: /^Play/ });
+      expect(play).toHaveAttribute("aria-disabled", "true");
+
+      fireEvent.click(play);
+      expect(context.handlePlay).not.toHaveBeenCalled();
+
+      await settleTransitions();
+    });
+
+    it("goes back to Apply with changes waiting once it finishes", async () => {
+      context.isPurging = true;
+      const { rerender } = render(<GameActions />);
+
+      context.isPurging = false;
+      context.needToDeploy = true;
+      rerender(<GameActions />);
+
+      expect(screen.queryByRole("progressbar")).toBeNull();
+      fireEvent.click(screen.getByTestId("menu-apply"));
+      expect(context.deploy).toHaveBeenCalledOnce();
+
+      await settleTransitions();
+    });
+
+    it("goes away once it finishes with nothing to apply and auto-apply on", async () => {
+      context.autoDeploy = true;
+      context.isPurging = true;
+      const { rerender } = render(<GameActions />);
+
+      context.isPurging = false;
+      rerender(<GameActions />);
+
+      expect(screen.queryByTestId("menu-apply")).toBeNull();
+
+      await settleTransitions();
+    });
   });
 });

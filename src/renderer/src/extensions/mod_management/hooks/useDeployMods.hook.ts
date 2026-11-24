@@ -67,6 +67,10 @@ export const useDeployMods = (): {
   deployProgress: number | undefined;
   /** What the deploy is doing, e.g. the mod it's on; undefined when idle. */
   deployStep: string | undefined;
+  /** A purge is running, whether the user asked for it or Vortex started it. */
+  isPurging: boolean;
+  /** 0-100 while purging; undefined otherwise. */
+  purgeProgress: number | undefined;
   /** Deploys the active profile's mods, or warns when there's no deployment method. */
   deploy: () => void;
 } => {
@@ -86,6 +90,12 @@ export const useDeployMods = (): {
     (state: IState) => state.session.base.progress?.mods?.deployment?.percent,
   );
   const step = useSelector((state: IState) => state.session.base.progress?.mods?.deployment?.text);
+  const isPurging = useSelector((state: IState) =>
+    (state.session.base.activity?.mods ?? []).includes("purging"),
+  );
+  const purgePercent = useSelector(
+    (state: IState) => state.session.base.progress?.mods?.purging?.percent,
+  );
   const gameId = useSelector(selectors.activeGameId);
   const profileId = useSelector((state: IState) =>
     selectors.lastActiveProfileForGame(state, gameId),
@@ -134,6 +144,8 @@ export const useDeployMods = (): {
     isDeploying,
     deployProgress: isDeploying ? (percent ?? 0) : undefined,
     deployStep: isDeploying ? step || undefined : undefined,
+    isPurging,
+    purgeProgress: isPurging ? (purgePercent ?? 0) : undefined,
     deploy: activator !== undefined ? deploy : noMethod,
   };
 };

@@ -29,11 +29,20 @@ export const GameActions = () => {
     startTool,
     handlePlay,
   } = useToolsContext();
-  const { needToDeploy, autoDeploy, isPurged, isDeploying, deployProgress, deployStep, deploy } =
-    useDeployMods();
+  const {
+    needToDeploy,
+    autoDeploy,
+    isPurged,
+    isDeploying,
+    deployProgress,
+    deployStep,
+    isPurging,
+    purgeProgress,
+    deploy,
+  } = useDeployMods();
   // With auto deploy on, changes deploy on their own, so Apply only shows its progress, or
-  // after a purge, which auto deploy leaves alone.
-  const showApply = isDeploying || isPurged || (needToDeploy && !autoDeploy);
+  // after a purge, which auto deploy leaves alone. A running purge shows in Apply's place too.
+  const showApply = isDeploying || isPurging || isPurged || (needToDeploy && !autoDeploy);
 
   if (gameId === undefined || selection.type !== "game") {
     return null;
@@ -74,12 +83,14 @@ export const GameActions = () => {
 
       <div className={joinClasses("flex w-full gap-3", { "flex-wrap": menuIsCollapsed })}>
         <PlayButton
-          disabled={exclusiveRunning || isPrimaryRunning || isDeploying || !primaryStarter}
+          disabled={
+            exclusiveRunning || isPrimaryRunning || isDeploying || isPurging || !primaryStarter
+          }
           gameName={gameName}
           hideLabel={showApply}
           isCollapsed={menuIsCollapsed}
           isPrimaryRunning={isPrimaryRunning}
-          isWaitingForApply={isDeploying}
+          isWaitingForApply={isDeploying || isPurging}
           primaryStarter={primaryToolId ? primaryStarter : undefined}
           onClick={handlePlay}
         />
@@ -87,7 +98,9 @@ export const GameActions = () => {
         {showApply && (
           <ApplyButton
             isCollapsed={menuIsCollapsed}
-            progress={deployProgress}
+            isPurging={isPurging}
+            // A purge and a deploy never run at once, so the bar only ever shows one of them.
+            progress={isPurging ? purgeProgress : deployProgress}
             step={deployStep}
             onClick={() => {
               trackApplyClicked();
