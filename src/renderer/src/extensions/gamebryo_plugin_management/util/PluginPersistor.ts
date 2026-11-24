@@ -176,7 +176,8 @@ class PluginPersistor implements IPersistor {
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
   private mOnEmptyList: (() => void) | undefined;
-  // the entries of each plugin file as this persistor last wrote them
+  // the entries of each plugin file as Vortex last held them: its last write, or what it last
+  // took in from the files
   private mWritten: { loadorder: string[]; plugins: string[] } | undefined;
   private mRecord: typeof recordErrorSpan;
 
@@ -574,6 +575,8 @@ class PluginPersistor implements IPersistor {
         this.mLastWriteTime = writtenAt;
       })
       .catch((err: unknown) => {
+        // the files no longer hold what Vortex holds, so no later read may pass for its write
+        this.mWritten = undefined;
         const code = fileErrorCode(err);
         if (code === "EBUSY") {
           // the file is held by another process, quite possibly the game itself
@@ -760,6 +763,7 @@ class PluginPersistor implements IPersistor {
     const read: IFileRead = { foreign: false, ours: true };
 
     let offset = 0;
+    let loadOrderKeys: string[] | undefined;
 
     const pluginsFile = path.join(this.mPluginPath, "plugins.txt");
 
@@ -779,6 +783,7 @@ class PluginPersistor implements IPersistor {
       });
       phaseOne = withFileRetry(() => readFile(loadOrderFile)).then((data: Buffer) => {
         const keys: string[] = this.filterFileData(data.toString("utf-8"), false, read);
+        loadOrderKeys = keys;
         offset = this.initFromKeyList(newPlugins, keys, false, offset);
         return withFileRetry(() => readFile(pluginsFile));
       });
@@ -797,9 +802,13 @@ class PluginPersistor implements IPersistor {
           return delayed(RETRY_DELAY_MS).then(() => this.deserialize(true, adoptForeign));
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, read);
-        if (read.ours && !adoptForeign) {
-          // the files still say what Vortex last wrote; taking them in would only move inactive
-          // plugins to where the game put them, and write that back while the game starts
+        if (read.ours && !adoptForeign && this.mPluginFormat === "fallout4") {
+          // plugins.txt still says what Vortex last held; taking it in would only move inactive
+          // plugins to where the game put them, and write that back while the game starts. The
+          // original format re-reads as before: there the order can also come from file times.
+          // A good read still ends a streak of failed ones, as adopting it would.
+          this.mRetryCounter = retryCount;
+          this.mFailed = false;
           return Promise.resolve();
         }
         this.initFromKeyList(newPlugins, keys, true, offset);
@@ -814,6 +823,15 @@ class PluginPersistor implements IPersistor {
             // a foreign rewrite while Vortex holds state for this game: the user decides
             this.promptExternalChange(PluginFileConflict.ForeignChange);
             return Promise.resolve();
+          }
+          // what Vortex now holds is what the files say, so a later rewrite is judged against
+          // them, not against an older write: a tool putting that older list back is a change.
+          // A read that raced Vortex's own write may be older than it, and is not a baseline.
+          if (!this.mSerializing) {
+            this.mWritten = {
+              loadorder: loadOrderKeys ?? this.mWritten?.loadorder ?? [],
+              plugins: keys,
+            };
           }
           this.adoptParsed(newPlugins);
           return Promise.resolve();
