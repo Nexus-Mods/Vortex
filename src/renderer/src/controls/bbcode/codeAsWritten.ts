@@ -8,6 +8,10 @@ const LEADING_BLANK_LINES = /^(?:[ \t]*(?:\[br\]\[\/br\]\r?\n?|\r?\n))+/;
 /** Line breaks or blank space at either end. */
 const OUTER_BLANKS = /^(?:\s|\[br\]\[\/br\])+|(?:\s|\[br\]\[\/br\])+$/g;
 
+/** A line break at the start, or at the end, of code's text. */
+const LEADING_BREAK = /^\s*\[br\]\[\/br\]/;
+const TRAILING_BREAK = /\[br\]\[\/br\]\s*$/;
+
 /** Line breaks or blank space at the end. */
 const TRAILING_BLANKS = /(?:\s|\[br\]\[\/br\])+$/;
 
@@ -45,8 +49,11 @@ const codeTag = (
   const isInline = param === "inline" || (isOneLine && (!startsLine || endsSentence));
 
   if (isInline) {
-    const spaceBefore = /^\s/.test(content) ? " " : "";
-    const spaceAfter = /\s$/.test(content) ? " " : "";
+    const breaksBefore =
+      LEADING_BREAK.test(content) && !breakBefore && /\P{P}$/u.test(textOf(before));
+    const breaksAfter = TRAILING_BREAK.test(content) && !breakAfter && /^\P{P}/u.test(after);
+    const spaceBefore = /^\s/.test(content) || breaksBefore ? " " : "";
+    const spaceAfter = /\s$/.test(content) || breaksAfter ? " " : "";
     return tag.replace(
       /\[code(?:=[^\]]*)?\][\s\S]*\[\/code\]/i,
       () =>

@@ -41,7 +41,7 @@ export const BBCode = ({
       ...context,
       isFromAdultContent,
       externalImagePlaceholders,
-      isProse,
+      isProse: isProse ?? context?.isProse,
     })}
   </div>
 );

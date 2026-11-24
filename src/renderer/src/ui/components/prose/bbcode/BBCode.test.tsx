@@ -365,6 +365,14 @@ describe("BBCode", () => {
       ]);
     });
 
+    it("keeps a line break closing one-line code's tag as a space before the next word", () => {
+      const { container } = render(<BBCode bbcode={"change [code]A.bsa\n<br />[/code]then"} />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("A.bsa");
+      expect(code?.nextSibling?.textContent).toBe(" then");
+    });
+
     it("shows tags inside code as written", () => {
       const { container } = render(<BBCode bbcode="Set [code]a [b]b[/b] c[/code] here" />);
 
@@ -605,9 +613,15 @@ describe("BBCode", () => {
     });
 
     it("leaves sizes at the text's own where it isn't prose", () => {
-      render(<BBCode bbcode="[size=6]Big[/size]" />);
+      const { container } = render(<BBCode bbcode="[size=6]Big[/size]" />);
 
-      expect(screen.getByText("Big")).not.toHaveClass("nxm-prose-size-6");
+      expect(container.querySelector('[class*="nxm-prose-size-"]')).toBeNull();
+    });
+
+    it("takes prose from the context where the prop doesn't say", () => {
+      render(<BBCode bbcode="[size=6]Big[/size]" context={{ isProse: true }} />);
+
+      expect(screen.getByText("Big")).toHaveClass("nxm-prose-size-6");
     });
   });
 

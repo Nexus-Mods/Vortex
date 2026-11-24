@@ -16,6 +16,11 @@ const levelOf = (size: number | string) => {
  * don't compound. Only in prose (`isProse`); elsewhere the text keeps its size.
  */
 class SafeSizeTag extends SizeTag {
+  /** As HTML, such as inside a tag that reads its contents as text, the text without its size. */
+  public toHTML(): string[] {
+    return [this.getContent()];
+  }
+
   public toReact(): React.ReactChild[] {
     const size = this.params.size;
 
