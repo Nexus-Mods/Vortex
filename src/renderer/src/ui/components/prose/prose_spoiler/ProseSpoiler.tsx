@@ -10,7 +10,10 @@ interface IProseSpoilerProps {
   children: ReactNode;
 }
 
-/** Prose hidden behind a button until opened, as bbcode's `[spoiler]`, aligned as its text is. */
+/**
+ * Prose hidden behind a button until opened, as bbcode's `[spoiler]`, aligned as its text is. Its
+ * button keeps the app's font, whatever the text around it sets.
+ */
 export const ProseSpoiler = ({ label, children }: IProseSpoilerProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +26,7 @@ export const ProseSpoiler = ({ label, children }: IProseSpoilerProps) => {
         aria-controls={contentId}
         aria-expanded={isOpen}
         brand="neutral"
-        className="inline-flex"
+        className="nxm-prose-embed inline-flex"
         leftIcon={isOpen ? "keyboard_arrow_up" : "keyboard_arrow_down"}
         onClick={() => setIsOpen(!isOpen)}
       >
