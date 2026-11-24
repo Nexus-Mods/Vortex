@@ -9,9 +9,8 @@ import {
 import EmbedLinkTag from "./EmbedLinkTag";
 
 /**
- * `[youtube]`, or the site's `[video]`, as a video player where the context's `embedVideos` asks,
- * otherwise a link to the video. It takes a video id, with or without a start time, or a link to
- * the video. Anything else is a link or text, as `EmbedLinkTag` draws it, and as HTML, nothing.
+ * `[youtube]` or `[video]`: a player in prose (`isProse`), a link to the video elsewhere. Takes an
+ * id, with or without a start time, or a link to the video; anything else goes to `EmbedLinkTag`.
  */
 class YoutubeTag extends EmbedLinkTag {
   public toHTML(): string[] {
@@ -32,7 +31,7 @@ class YoutubeTag extends EmbedLinkTag {
       return super.toReact();
     }
 
-    if (!this.renderer.options.embedVideos) {
+    if (!this.renderer.options.isProse) {
       const href = youtubeWatchUrl(video);
       return <a href={href}>{href}</a>;
     }

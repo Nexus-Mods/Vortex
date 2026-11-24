@@ -222,6 +222,7 @@
       "byAuthor": "by {{author}}",
       "adult": "Adult",
       "showDescription": "Show description",
+      "closeDescription": "Close",
       "copy": "Copy {{label}}",
       "copied": "Copied to clipboard",
       "copyFailed": "Couldn't copy to the clipboard",

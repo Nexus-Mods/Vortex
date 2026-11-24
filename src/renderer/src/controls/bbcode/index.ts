@@ -50,8 +50,11 @@ export interface IBBCodeContext {
   isFromAdultContent?: boolean;
   /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
   externalImagePlaceholders?: IExternalImagePlaceholderOptions;
-  /** Plays `[youtube]` and `[video]` in a player; otherwise they're links, as where a player won't fit. */
-  embedVideos?: boolean;
+  /**
+   * Whether it's prose, a block with room such as a mod's description: videos play and sizes apply.
+   * Otherwise, as in a card or a dialog, videos are links and sizes are left out.
+   */
+  isProse?: boolean;
 }
 
 const createFullParser = (safe: boolean) => {

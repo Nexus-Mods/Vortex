@@ -244,8 +244,8 @@ describe("BBCode", () => {
       "[video] dQw4w9WgXcQ [/video]",
       "[youtube]https://youtu.be/dQw4w9WgXcQ[/youtube]",
       "[video]https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share[/video]",
-    ])("embeds %s as a video", (bbcode) => {
-      const { container } = render(<BBCode bbcode={bbcode} />);
+    ])("embeds %s as a video in prose", (bbcode) => {
+      const { container } = render(<BBCode bbcode={bbcode} isProse />);
 
       expect(screen.getByTestId("youtube-video")).toBeInTheDocument();
       expect(container.querySelector("iframe")).toHaveAttribute(
@@ -254,10 +254,8 @@ describe("BBCode", () => {
       );
     });
 
-    it("links a video where the context doesn't embed videos", () => {
-      const { container } = render(
-        <BBCode bbcode="[youtube]dQw4w9WgXcQ&t=30[/youtube]" context={{ embedVideos: false }} />,
-      );
+    it("links a video where it isn't prose", () => {
+      const { container } = render(<BBCode bbcode="[youtube]dQw4w9WgXcQ&t=30[/youtube]" />);
 
       expect(container.querySelector("iframe")).toBeNull();
       expect(screen.getByRole("link")).toHaveAttribute(
@@ -271,7 +269,7 @@ describe("BBCode", () => {
       '[youtube]dQw4w9WgXc" onload="alert(1)[/youtube]',
       "[youtube][b]dQw4w9WgXcQ[/b]x[/youtube]",
     ])("links %s rather than playing it", (bbcode) => {
-      const { container } = render(<BBCode bbcode={bbcode} />);
+      const { container } = render(<BBCode bbcode={bbcode} isProse />);
 
       expect(screen.queryByTestId("youtube-video")).toBeNull();
       expect(container.querySelector("iframe")).toBeNull();
@@ -353,6 +351,26 @@ describe("BBCode", () => {
         "Skyrim.ini",
       ]);
       expect(codes[1].previousElementSibling?.tagName).toBe("BR");
+    });
+
+    it("keeps one-line code in its sentence when a line break closes its tag", () => {
+      const { container } = render(
+        <BBCode bbcode={"change [code]A.bsa[/code] to [code]B.bsa\n<br />[/code]\n<br />Then"} />,
+      );
+
+      expect(container.querySelector("pre")).toBeNull();
+      expect([...container.querySelectorAll("code")].map((code) => code.textContent)).toEqual([
+        "A.bsa",
+        "B.bsa",
+      ]);
+    });
+
+    it("keeps a line break closing one-line code's tag as a space before the next word", () => {
+      const { container } = render(<BBCode bbcode={"change [code]A.bsa\n<br />[/code]then"} />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("A.bsa");
+      expect(code?.nextSibling?.textContent).toBe(" then");
     });
 
     it("shows tags inside code as written", () => {
@@ -568,16 +586,42 @@ describe("BBCode", () => {
 
   describe("size", () => {
     it.each([
-      ["draws size 3 as the text's own", "[size=3]", "1em"],
-      ["draws size 6 as the site does", "[size=6]", "2em"],
-      ["draws size 1 as the site does", "[size=1]", "0.625em"],
-      ["draws an older percentage as the size it stands for", "[size=150]", "1.125em"],
-      ["leaves a size the site doesn't have at the text's own", "[size=2000]", "1em"],
-      ["leaves a negative size at the text's own", "[size=-20]", "1em"],
-    ])("%s", (_name, tag, fontSize) => {
-      render(<BBCode bbcode={`${tag}Big[/size]`} />);
+      ["draws size 3 as the text's own", "[size=3]", 3],
+      ["draws size 6", "[size=6]", 6],
+      ["draws size 1", "[size=1]", 1],
+      ["draws an older percentage as the size it stands for", "[size=150]", 4],
+      ["leaves a size the site doesn't have at the text's own", "[size=2000]", 3],
+      ["leaves a negative size at the text's own", "[size=-20]", 3],
+    ])("%s", (_name, tag, level) => {
+      render(<BBCode bbcode={`${tag}Big[/size]`} isProse />);
 
-      expect(screen.getByText("Big").style.fontSize).toBe(fontSize);
+      expect(screen.getByText("Big")).toHaveClass(`nxm-prose-size-${level}`);
+    });
+
+    it("draws a size inside one left open as its own size, not of the size around it", () => {
+      render(<BBCode bbcode="[size=1][size=2]Small[/size] Left open" isProse />);
+
+      expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
+    });
+
+    it("draws a size inside a link", () => {
+      render(
+        <BBCode bbcode="[url=https://www.nexusmods.com/a][size=2]Small[/size][/url]" isProse />,
+      );
+
+      expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
+    });
+
+    it("leaves sizes at the text's own where it isn't prose", () => {
+      const { container } = render(<BBCode bbcode="[size=6]Big[/size]" />);
+
+      expect(container.querySelector('[class*="nxm-prose-size-"]')).toBeNull();
+    });
+
+    it("takes prose from the context where the prop doesn't say", () => {
+      render(<BBCode bbcode="[size=6]Big[/size]" context={{ isProse: true }} />);
+
+      expect(screen.getByText("Big")).toHaveClass("nxm-prose-size-6");
     });
   });
 

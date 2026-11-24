@@ -178,14 +178,70 @@
         }
     }
 
-    /* A code block in bbcode, clear of the lines around it. */
+    /* A code block in bbcode, clear of the lines around it. Its scrollbar shows while it's hovered,
+       not only while it scrolls, so lines cut off at its edge read as more to scroll to. */
     .nxm-prose-code {
         margin-block: calc(var(--spacing) * 4);
+
+        &:hover:not([data-scrollbar-hover]) {
+            --scrollbar-thumb: var(--color-surface-translucent-low);
+        }
     }
 
     /* A video, clear of the lines around it. */
     .nxm-prose-video {
         margin-block: calc(var(--spacing) * 4);
+    }
+
+    /* Our own UI in prose, such as an image placeholder: the app's font, whatever [font], [b] or
+       [i] is left open around it. A div is a full-width inline block, which [u] can't underline. */
+    .nxm-prose-embed {
+        font-family: var(--font-sans);
+        font-weight: var(--font-weight-normal);
+        font-style: normal;
+    }
+
+    .nxm-prose-embed:where(div) {
+        display: inline-block;
+        width: 100%;
+        vertical-align: top;
+    }
+
+    /* A bbcode size as one of the app's text sizes, so sizes left open don't compound. */
+    .nxm-prose-size-1 {
+        font-size: var(--text-body-xs);
+        line-height: var(--text-body-xs--line-height);
+        letter-spacing: var(--text-body-xs--letter-spacing);
+    }
+
+    .nxm-prose-size-2 {
+        font-size: var(--text-body-sm);
+        line-height: var(--text-body-sm--line-height);
+        letter-spacing: var(--text-body-sm--letter-spacing);
+    }
+
+    .nxm-prose-size-3 {
+        font-size: var(--text-body-md);
+        line-height: var(--text-body-md--line-height);
+        letter-spacing: var(--text-body-md--letter-spacing);
+    }
+
+    .nxm-prose-size-4 {
+        font-size: var(--text-body-lg);
+        line-height: var(--text-body-lg--line-height);
+        letter-spacing: var(--text-body-lg--letter-spacing);
+    }
+
+    .nxm-prose-size-5 {
+        font-size: var(--text-body-2xl);
+        line-height: var(--text-body-2xl--line-height);
+        letter-spacing: var(--text-body-2xl--letter-spacing);
+    }
+
+    .nxm-prose-size-6 {
+        font-size: var(--text-heading-sm);
+        line-height: var(--text-heading-sm--line-height);
+        letter-spacing: var(--text-heading-sm--letter-spacing);
     }
 
     /* Small prose, as in a popover. Where a size's headings should stand apart by size too,
