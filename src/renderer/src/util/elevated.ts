@@ -6,7 +6,7 @@ import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
 import { log } from "../logging";
-import { getRealNodeModulePaths } from "./webpack-hacks";
+import { getRealNodeModulePaths } from "./nodeRequire";
 
 declare const __non_webpack_require__: NodeJS.Require;
 

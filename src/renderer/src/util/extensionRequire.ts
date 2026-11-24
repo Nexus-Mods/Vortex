@@ -11,8 +11,8 @@ import type { IRegisteredExtension } from "../types/extensions";
 import type { IExtensionState } from "../types/IState";
 import { deprecatedApiGet, makeCallerReporter } from "./deprecatedApiUsage";
 import type { LogLevel } from "./log";
+import { nodeRequire } from "./nodeRequire";
 import { makeExtensionReactMarkdown } from "./react_markdown/ReactMarkdown";
-import { webpackRequireHack } from "./webpack-hacks";
 
 const identity = (input) => input;
 
@@ -154,7 +154,7 @@ function extensionRequire(
     if (extensionPaths.find((iter) => this.filename.startsWith(iter.path)) !== undefined) {
       let res;
       try {
-        res = webpackRequireHack(id);
+        res = nodeRequire(id);
       } catch (err) {
         // nop, leave res undefined so orig gets tried
       }

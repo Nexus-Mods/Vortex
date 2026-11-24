@@ -47,9 +47,9 @@ export const createLootMock = vi.fn<
     : Promise.resolve(seams.loot),
 );
 
-// ../../util/webpack-hacks: the raw-require seam autosort loads the loot binding through
-export const webpackHacksModule = {
-  webpackRequireHack: () => ({ LootAsync: { create: createLootMock } }),
+// ../../util/nodeRequire: the raw-require seam autosort loads the loot binding through
+export const nodeRequireModule = {
+  nodeRequire: () => ({ LootAsync: { create: createLootMock } }),
 };
 
 // ../../util/getVortexPath: every vortex path keyed under the per-test temp root

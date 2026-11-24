@@ -17,10 +17,7 @@ import { downloadMasterlistMock, downloadPreludeMock } from "./lootMocks";
 
 // the five seams the autosort suites share; each factory delegates to lootMocks so the
 // replacement behavior is arranged per test through makeLoot
-vi.mock(
-  "../../util/webpack-hacks",
-  async () => (await import("./lootMocks.js")).webpackHacksModule,
-);
+vi.mock("../../util/nodeRequire", async () => (await import("./lootMocks.js")).nodeRequireModule);
 vi.mock(
   "../../util/getVortexPath",
   async () => (await import("./lootMocks.js")).getVortexPathModule,
