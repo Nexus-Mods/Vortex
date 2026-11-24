@@ -179,7 +179,8 @@ export const ModRowActions = memo(
         />
       ) : (
         // On a wrapper, as a loading button is disabled and takes no hover. As wide as the switch
-        // it stands in for, from its start, so it lines up with theirs.
+        // it stands in for, with the button in its middle, so its icon lines up with the
+        // switches' centres, borderless spinner too.
         <Tooltip
           {...(busy === undefined
             ? {
@@ -192,7 +193,7 @@ export const ModRowActions = memo(
               }
             : { content: t(BUSY_LABEL[busy]) })}
         >
-          <span className="flex w-8 shrink-0">
+          <span className="flex w-8 shrink-0 justify-center">
             <Button
               {...{ [ROW_CONTROL]: true }}
               // a step lighter while loading, so it drops its border
