@@ -19,8 +19,9 @@ suite you ran. Run E2E only when asked.
 **Don't run `verify` while a dev session is live** — its `build` step writes
 production output into `src/main/build`, the directory the running app loads
 from. That overwrites the CSS `tailwind:watch` owns (watch only re-emits on a
-source change, so it never notices) and replaces the HMR renderer bundle,
-leaving the app with broken styles and dead HMR until dev is restarted.
+source change, so it never notices) and replaces the dev renderer bundle with a
+production one, leaving the app with broken styles and no reload on save until
+dev is restarted.
 
 You know a dev session is live if you started `pnpm run dev` or the "Debug
 Electron" profile yourself, or if the user has one running: they'll have said

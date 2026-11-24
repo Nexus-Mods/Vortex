@@ -37,16 +37,15 @@ ls src/main/build/main.cjs
 2. Press **F5** or select **Debug Electron**
 3. Vortex launches with debuggers attached to both main and renderer processes
 
-### Hot Reload (`pnpm run dev`)
+### Dev loop (`pnpm run dev`)
 
 When iterating on renderer/UI code, `pnpm run dev` avoids the rebuild/restart
-cycle entirely: it starts webpack and tailwind in watch mode and launches
-Electron with hot module replacement (see `CONTRIBUTING.md` → "Hot reload").
-DevTools debugging works as usual (`START_DEVTOOLS=true` in `.env`, or pass
-`--inspect=9229` through: `pnpm run dev --inspect=9229`). Console messages
-prefixed `[vortex-hmr]` report applied updates and fallback reloads. Note that
-hot-swapped code can make _line-based_ breakpoints go stale until the next
-full reload — reload the window (Ctrl+R) if breakpoints stop hitting.
+cycle: it starts rolldown, `tsc` and tailwind in watch mode, launches Electron,
+and reloads the window after each renderer rebuild (see `CONTRIBUTING.md` →
+"Dev loop"). DevTools debugging works as usual (`START_DEVTOOLS=true` in
+`.env`, or pass `--inspect=9229` through: `pnpm run dev --inspect=9229`).
+Messages prefixed `[vortex-dev]` report builds and reloads, and `[tsc]` lines
+report type errors.
 
 ### Set Breakpoints
 
@@ -475,11 +474,12 @@ This downloads required redistributables and creates an unsigned installer in `d
 
 ### Enable Source Maps
 
-Production builds use webpack which creates source maps. Ensure they're not excluded:
+Production builds write a source map next to each bundle (`sourcemap: true` in
+`rolldown.base.mjs`, which the main, preload and renderer builds share). Check
+the maps were built:
 
 ```bash
-# Check webpack config includes source maps
-cat src/main/webpack.config.cjs | grep "devtool"
+ls src/main/build/*.map
 ```
 
 ### Debug Production Build

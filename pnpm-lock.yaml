@@ -916,7 +916,7 @@ overrides:
   react-dnd: 14.0.5
   winapi-bindings: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788
 
-pnpmfileChecksum: sha256-bdL4ogROXKVAYYxS9RnAeUXqfjJrAPBFt9pC0w9e/Vs=
+pnpmfileChecksum: sha256-ZrojfM//88CeN8WRB0TBY8Zor4xU5scS4JHBB8JAfyo=
 
 importers:
 
