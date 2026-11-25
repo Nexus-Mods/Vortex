@@ -1,4 +1,4 @@
-import { unknownToError } from "@vortex/shared";
+import { redactUrlForLog, unknownToError } from "@vortex/shared";
 import * as _ from "lodash";
 import minimatch from "minimatch";
 import type { ILookupResult, IReference, IRule } from "modmeta-db";
@@ -45,6 +45,12 @@ export function selectedOptionalRules(rules: IModRule[], mods: Record<string, IM
 interface IBrowserResult {
   url: string | (() => PromiseLike<string>);
   referer?: string | (() => PromiseLike<string>);
+}
+
+/** A hint's URL for the log; one that is only resolved on demand has no value yet. */
+function loggableHintUrl(value: IBrowserResult["url"] | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return typeof value === "string" ? redactUrlForLog(value) : "<resolved on demand>";
 }
 
 function newerSort(lhs: IDownload, rhs: IDownload): number {
@@ -386,7 +392,8 @@ async function gatherDependenciesGraph(
       urlFromHint = await lookupDownloadHint(api, rule.downloadHint);
       if (urlFromHint) {
         log("info", "url from dependency", {
-          urlFromHint,
+          url: loggableHintUrl(urlFromHint.url),
+          referer: loggableHintUrl(urlFromHint.referer),
           md5: rule.reference.fileMD5,
         });
       }

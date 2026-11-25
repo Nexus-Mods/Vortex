@@ -28,7 +28,12 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
-import { DEBUG_PORT, getErrorMessageOrDefault, HTTP_HEADER_SIZE } from "@vortex/shared";
+import {
+  DEBUG_PORT,
+  getErrorMessageOrDefault,
+  HTTP_HEADER_SIZE,
+  redactArgvForLog,
+} from "@vortex/shared";
 import { app, crashReporter, dialog } from "electron";
 import i18next from "i18next";
 import * as sourceMapSupport from "source-map-support";
@@ -204,7 +209,7 @@ async function main(): Promise<void> {
     }
   };
 
-  traceElevation("main entry", { argv: process.argv });
+  traceElevation("main entry", { argv: redactArgvForLog(process.argv) });
 
   if (mainArgs.report) {
     return sendReportFile(mainArgs.report)

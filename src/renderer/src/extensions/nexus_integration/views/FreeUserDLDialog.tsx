@@ -1,6 +1,6 @@
 import type { IModFile, IModFileQuery } from "@nexusmods/nexus-api";
 import type Nexus from "@nexusmods/nexus-api";
-import { NexusGameDomain, getErrorMessageOrDefault } from "@vortex/shared";
+import { NexusGameDomain, getErrorMessageOrDefault, redactUrlForLog } from "@vortex/shared";
 import type { TFunction } from "i18next";
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
@@ -153,7 +153,7 @@ function FreeUserDLDialog(props: IFreeUserDLDialogProps) {
         }
       } catch (err) {
         log("error", "failed to fetch file information", {
-          url,
+          url: redactUrlForLog(urls[0]),
           error: getErrorMessageOrDefault(err),
         });
         setFileInfo(makeUnknown(t, url));

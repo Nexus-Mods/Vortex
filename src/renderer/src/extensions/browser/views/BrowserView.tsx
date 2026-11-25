@@ -1,6 +1,6 @@
 import * as nodeUrl from "url";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, redactUrlForLog } from "@vortex/shared";
 import PromiseBB from "bluebird";
 import * as _ from "lodash";
 import * as React from "react";
@@ -420,7 +420,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         this.mRef.loadURL(history[newPos]);
       } catch (err) {
         log("warn", "failed to navigate", {
-          url: history[newPos],
+          url: redactUrlForLog(history[newPos]),
           error: getErrorMessageOrDefault(err),
         });
       }
@@ -437,7 +437,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
         this.mRef.loadURL(history[newPos]);
       } catch (err) {
         log("warn", "failed to navigate", {
-          url: history[newPos],
+          url: redactUrlForLog(history[newPos]),
           error: getErrorMessageOrDefault(err),
         });
       }
@@ -466,7 +466,7 @@ class BrowserView extends ComponentEx<IProps, IComponentState> {
       this.mRef.loadURL(nextUrl);
     } catch (err) {
       log("warn", "failed to navigate", {
-        url: nextUrl,
+        url: redactUrlForLog(nextUrl),
         error: getErrorMessageOrDefault(err),
       });
     }

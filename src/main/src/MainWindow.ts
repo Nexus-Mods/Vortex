@@ -2,7 +2,7 @@ import { appendFileSync } from "node:fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
-import { getErrorMessageOrDefault } from "@vortex/shared";
+import { getErrorMessageOrDefault, redactUrlForLog } from "@vortex/shared";
 import type { IWindow } from "@vortex/shared/state";
 import { app, ipcMain, screen, webContents, BrowserWindow } from "electron";
 
@@ -299,7 +299,7 @@ class MainWindow {
         // fallback in tools/hmr-client.cjs); don't treat it as an external link
         return;
       }
-      log("debug", "navigating to page", url);
+      log("debug", "navigating to page", redactUrlForLog(url));
       openUrl(new URL(url));
       event.preventDefault();
     });
@@ -378,7 +378,7 @@ class MainWindow {
         this.mWindow.webContents.send("external-url", url, undefined, install);
       } catch (err) {
         log("error", "failed to send external url", {
-          url,
+          url: redactUrlForLog(url),
           error: getErrorMessageOrDefault(err),
         });
       }

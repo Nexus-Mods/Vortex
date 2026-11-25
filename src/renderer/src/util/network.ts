@@ -4,6 +4,8 @@ import { get as getHTTPS, request as requestHTTPS } from "https";
 import type { Readable } from "stream";
 import * as url from "url";
 
+import { redactUrlForLog } from "@vortex/shared";
+
 import { DataInvalid, TemporaryError } from "./CustomErrors";
 import { log } from "./log";
 
@@ -112,7 +114,7 @@ export function request(
 
 export function upload(targetUrl: string, dataStream: Readable, dataSize: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    log("debug", "uploading file", { targetUrl, dataSize });
+    log("debug", "uploading file", { targetUrl: redactUrlForLog(targetUrl), dataSize });
     const started = Date.now();
     const req = request(
       "PUT",
@@ -124,7 +126,7 @@ export function upload(targetUrl: string, dataStream: Readable, dataSize: number
       (res) => {
         const { statusCode } = res;
         log("debug", "upload complete", {
-          targetUrl,
+          targetUrl: redactUrlForLog(targetUrl),
           dataSize,
           statusCode,
           elapsed: Date.now() - started,

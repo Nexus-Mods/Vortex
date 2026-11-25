@@ -2,7 +2,7 @@ import type { IDownloadURL, IFileUpdate, IRevision, IRevisionQuery } from "@nexu
 import type NexusT from "@nexusmods/nexus-api";
 import { HTTPError as NexusHTTPError, NexusError } from "@nexusmods/nexus-api";
 import { type NexusGameDomain, getErrorMessageOrDefault } from "@vortex/shared";
-import { parseError } from "@vortex/shared";
+import { parseError, redactUrlForLog } from "@vortex/shared";
 import type { Action } from "redux";
 
 import { setDownloadModInfo } from "../../actions";
@@ -362,8 +362,8 @@ export class NxmProtocol {
     const queued = this.#freeQueue.find((iter) => iter.input === inputUrl);
     if (queued === undefined) {
       log("error", "failed to find queued download", {
-        inputUrl,
-        queued: this.#freeQueue.map((iter) => iter.input),
+        inputUrl: redactUrlForLog(inputUrl),
+        queued: this.#freeQueue.map((iter) => redactUrlForLog(iter.input)),
       });
     }
     return queued;

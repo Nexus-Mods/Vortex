@@ -131,8 +131,8 @@ function forceLogoutForOauth_1_9(store: Redux.Store<IState>): PromiseBB<void> {
   const loggedIn = apiKey !== undefined || oauthCred !== undefined;
 
   log("info", "forceLogoutForOauth_1_9() migration function for pre-oauth (1.9) versions", {
-    apiKey: apiKey,
-    oauthCred: oauthCred,
+    apiKey: apiKey !== undefined,
+    oauthCred: oauthCred !== undefined,
     loggedIn: loggedIn,
   });
 
