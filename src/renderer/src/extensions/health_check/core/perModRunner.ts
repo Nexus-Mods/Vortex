@@ -152,9 +152,10 @@ export async function runPerModCheck(
     }
   };
 
-  // ESM-only against a CommonJS renderer, so a static import fails typecheck (TS1479). webpack
-  // externalises this back to `require()`, which Node serves via require(esm): p-queue must stay
-  // free of top-level await.
+  // ESM-only against a CommonJS renderer, so a static import fails typecheck (TS1479). The
+  // renderer build turns this back into `require()` (vortex:lazy-externals in
+  // src/renderer/build.mjs), which Node serves via require(esm): p-queue must stay free of
+  // top-level await.
   const { default: PQueue } = await import("p-queue");
   const queue = new PQueue({ concurrency: MOD_WALK_CONCURRENCY });
 

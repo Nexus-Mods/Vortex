@@ -1,3 +1,4 @@
+import * as vm from "node:vm";
 import * as path from "path";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -98,6 +99,19 @@ describe("runElevated", () => {
       expect(mockWrites[0]).toContain("let moduleRoot =");
       expect(mockWrites[0]).toContain("let main = function dummy");
       expect(mockWrites[0]).toContain("DUMMY FUNCTION");
+    });
+  });
+
+  it("defines the bundlers' require names in the script header", () => {
+    return runElevated("ipcPath", dummy).then(() => {
+      const header = mockWrites[0].slice(0, mockWrites[0].indexOf("let main ="));
+      const fakeRequire = () => "required";
+      // Runs the generated header with only `require` in scope, as in the elevated process.
+      const resolved: unknown = vm.runInNewContext(
+        `${header}\n[__require, __webpack_require__, __non_webpack_require__];`,
+        { require: fakeRequire },
+      );
+      expect(resolved).toEqual([fakeRequire, fakeRequire, fakeRequire]);
     });
   });
 

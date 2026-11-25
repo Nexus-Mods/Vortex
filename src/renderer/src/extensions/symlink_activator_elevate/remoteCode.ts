@@ -1,5 +1,5 @@
 // This function is serialized via .toString() and run in an elevated process
-// outside of webpack. Module imports are NOT available — use only inline code.
+// outside of the renderer bundle. Module imports are NOT available — use only inline code.
 
 export function remoteCode(ipcClient, req) {
   const RETRY_ERRORS = new Set(["EPERM", "EBUSY", "EIO", "EBADF", "UNKNOWN"]);

@@ -160,12 +160,15 @@ export function runElevated(
       let mainBody = elevatedMain.toString();
       mainBody = mainBody.slice(mainBody.indexOf("{") + 1, mainBody.lastIndexOf("}"));
 
-      // The elevatedMain function body is serialized via .toString() and executed
-      // in a separate Node process. runElevated is part of the extension API, and
-      // extensions bundled with webpack pass callbacks whose require calls webpack
-      // rewrote to __webpack_require__ / __non_webpack_require__. Neither exists in
-      // plain Node, so both are aliased to require for those callbacks.
+      // The elevatedMain function body and the callback are serialized via
+      // .toString() and executed in a separate, plain Node process, so any name a
+      // bundler substituted for require has to exist there:
+      // - __require: rolldown's ESM dev bundle (pnpm run dev) rewrites require in
+      //   elevatedMain and in callbacks defined in the renderer.
+      // - __webpack_require__ / __non_webpack_require__: runElevated is part of the
+      //   extension API, and callbacks from webpack-bundled extensions use these.
       let prog = `
+        const __require = require;\n
         const __non_webpack_require__ = require;\n
         const __webpack_require__ = require;\n
         let moduleRoot = ${JSON.stringify(modulePaths)};\n

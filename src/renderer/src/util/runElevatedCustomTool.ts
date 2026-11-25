@@ -1,4 +1,4 @@
-// dummy declarations. Filled with random data to ensure webpack (-plugins) don't try to
+// dummy declarations. Filled with random data to ensure the bundler doesn't try to
 // optimize these away
 let toolPath: string = `${Math.random()}`;
 const toolCWD: string = `${Math.random()}`;
