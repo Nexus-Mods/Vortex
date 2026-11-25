@@ -118,9 +118,13 @@ async function prepareForModding(api: types.IExtensionApi, discovery) {
     showFullReleaseModFixerRecommendation(api);
   }
 
+  // The Script Extender folder only exists once BG3SE has run, but the bg3-se-config mod type
+  // deploys there and the hardlink, move and symlink methods are rejected while it's missing.
+  const sePath = scriptExtenderPath();
   return fs
     .statAsync(mp)
     .catch(() => fs.ensureDirWritableAsync(mp, () => Bluebird.resolve() as any))
+    .then(() => fs.statAsync(sePath).catch(() => fs.ensureDirWritableAsync(sePath)))
     .finally(() => ensureGlobalProfile(api, discovery));
 }
 
