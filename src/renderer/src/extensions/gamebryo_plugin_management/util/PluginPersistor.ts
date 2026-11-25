@@ -160,7 +160,7 @@ class PluginPersistor implements IPersistor {
   private mFailed: boolean = false;
   // whether the store agrees with mPlugins since loading began: it was hydrated from them, or there
   // was nothing to load. A load starts from an emptied store, so it must not pass the files over
-  private mHydrated: boolean = false;
+  private mStoreInSync: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
@@ -223,7 +223,7 @@ class PluginPersistor implements IPersistor {
       this.mPluginFormat = pluginFormat(gameMode);
       this.mNativePlugins = nativePlugins(gameMode);
       this.mGameId = gameMode;
-      this.mHydrated = false;
+      this.mStoreInSync = false;
       this.updateNative();
       // ensure that the native plugins are always included
       log("debug", "synching plugins", { pluginsPath: this.mPluginPath });
@@ -802,7 +802,7 @@ class PluginPersistor implements IPersistor {
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
         const unsettled = foreign.detected && !adoptForeign;
-        if (unsettled && this.mHydrated && this.matchesOurState(keys)) {
+        if (unsettled && this.mStoreInSync && this.matchesOurState(keys)) {
           // nothing to decide, and taking the file in would lose the positions Vortex gave the
           // inactive plugins, which they load at once activated
           this.mRetryCounter = retryCount;
@@ -825,7 +825,7 @@ class PluginPersistor implements IPersistor {
         if (getErrorCode(err) === "ENOENT") {
           this.mLoaded = true;
           // nothing to take in, so an emptied store agrees unless mPlugins are from an earlier load
-          this.mHydrated ||= Object.keys(this.mPlugins).length === 0;
+          this.mStoreInSync ||= Object.keys(this.mPlugins).length === 0;
           return;
         }
         log("warn", "failed to read plugin file", {
@@ -892,7 +892,7 @@ class PluginPersistor implements IPersistor {
     if (Object.keys(newPlugins).length === 0) {
       this.mLoaded = true;
       // neither file holds anything to take in, nor does mPlugins
-      this.mHydrated = true;
+      this.mStoreInSync = true;
       return;
     }
     this.adoptParsed(newPlugins);
@@ -984,7 +984,7 @@ class PluginPersistor implements IPersistor {
   private adoptParsed(newPlugins: IPluginMap) {
     this.mPlugins = newPlugins;
     this.mLoaded = true;
-    this.mHydrated = true;
+    this.mStoreInSync = true;
     if (this.mResetCallback) {
       // reset() owns the retry counter and reports hydration failures
       void this.reset();
