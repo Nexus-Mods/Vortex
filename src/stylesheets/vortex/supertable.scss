@@ -389,6 +389,24 @@
             color: inherit;
         }
     }
+
+    .menubar .btn {
+        justify-content: center;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        flex: 0 1 auto;
+        padding: 4px 10px;
+    }
+
+    .menubar .button-text {
+        display: block;
+        flex: none;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }
 
 // A footer the page has given a place of its own, rather than one filling the bottom
