@@ -33,14 +33,6 @@ export const PluginFileConflict = {
 
 export type PluginFileConflict = (typeof PluginFileConflict)[keyof typeof PluginFileConflict];
 
-/** The plugin files the persistor writes and watches, named as it writes them. */
-const PLUGIN_FILES = ["loadorder.txt", "plugins.txt"];
-
-/** Whether two lists hold the same entries in the same order. */
-function sameEntries(lhs: string[], rhs: string[]): boolean {
-  return lhs.length === rhs.length && lhs.every((entry, idx) => entry === rhs[idx]);
-}
-
 interface IPluginMap {
   [id: string]: IPluginLoadOrderEntry;
 }
@@ -171,10 +163,8 @@ class PluginPersistor implements IPersistor {
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
   private mExternalChoicePending: boolean = false;
   private mOnEmptyList: (() => void) | undefined;
-  // the entries of each plugin file as this persistor last wrote them, or as it last took them in
+  // the entries of each plugin file as this persistor last wrote them
   private mWritten: { loadorder: string[]; plugins: string[] } | undefined;
-  // how often the persistor has taken in the files, so a write can tell it was overtaken
-  private mAdoptions: number = 0;
   private mRecord: typeof recordErrorSpan;
 
   constructor(
@@ -533,6 +523,25 @@ class PluginPersistor implements IPersistor {
     return this.mPlugins[pluginId].loadOrder + this.mInstalledNative.length;
   }
 
+  /** The file names of all plugins Vortex would list, in load order. */
+  private sortedPlugins(): string[] {
+    // we need a list that includes all deployed plugins and only those,
+    // sorted by their load order
+    // this includes native plugins, which may be filtered out later, depending on the game
+    // Blueprint plugins (Starfield) are excluded entirely: the game manages them
+    // itself and strips any that appear in plugins.txt / loadorder.txt on launch.
+    // a plugin without a position goes last
+    const rank = (pluginId: string) => {
+      const pos = this.loadOrder(pluginId);
+      return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
+    };
+    return Object.keys(this.mKnownPlugins)
+      .filter((pluginId) => !this.mBlueprintPluginIds.has(pluginId))
+      .sort((lhs: string, rhs: string) => rank(lhs) - rank(rhs))
+      .filter((pluginId) => pluginId !== undefined)
+      .map((pluginId) => this.mKnownPlugins[pluginId]);
+  }
+
   private doSerialize(): Promise<void> {
     if (this.mPluginPath === undefined || this.mDataPath === undefined) {
       return Promise.resolve();
@@ -548,45 +557,15 @@ class PluginPersistor implements IPersistor {
     this.mSerializing = true;
     this.mSerializeScheduled = false;
 
-    // we need a list that includes all deployed plugins and only those,
-    // sorted by their load order
-    // this includes native plugins, which may be filtered out later, depending on the game
-    // Blueprint plugins (Starfield) are excluded entirely: the game manages them
-    // itself and strips any that appear in plugins.txt / loadorder.txt on launch.
-    // a plugin without a position goes last
-    const rank = (pluginId: string) => {
-      const pos = this.loadOrder(pluginId);
-      return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
-    };
-    const sorted: string[] = Object.keys(this.mKnownPlugins)
-      .filter((pluginId) => !this.mBlueprintPluginIds.has(pluginId))
-      .sort((lhs: string, rhs: string) => rank(lhs) - rank(rhs))
-      .filter((pluginId) => pluginId !== undefined)
-      .map((pluginId) => this.mKnownPlugins[pluginId]);
-
-    // fixed now: the state may change while the write retries, and the failure check below must
-    // judge what this write tried to put on disk
-    const filtered = this.toPluginList(sorted);
-    const adoptions = this.mAdoptions;
+    const sorted = this.sortedPlugins();
 
     const pluginsFile = path.join(destPath, "plugins.txt");
-    return this.writeFiles(destPath, sorted, filtered)
+    return this.writeFiles(destPath, sorted)
       .then((writtenAt) => {
         this.mFailed = false;
         this.mLastWriteTime = writtenAt;
       })
       .catch((err: unknown) => {
-        // a write that would have changed the files leaves them behind what Vortex holds, so the
-        // next read must not pass for Vortex's own write and be passed over. A write that only
-        // restated the files (the game holding them while it starts) changes nothing. Files
-        // taken in meanwhile may have been partly written over, so nothing is certain then.
-        if (
-          adoptions !== this.mAdoptions ||
-          !this.holdsOurLastWrite(filtered, true) ||
-          (this.mPluginFormat === "original" && !this.holdsOurLastWrite(sorted, false))
-        ) {
-          this.mWritten = undefined;
-        }
         const code = fileErrorCode(err);
         if (code === "EBUSY") {
           // the file is held by another process, quite possibly the game itself
@@ -609,11 +588,9 @@ class PluginPersistor implements IPersistor {
 
   /**
    * Writes both list files, then stamps the plugins so the game reads them in this order.
-   * sorted is the load order, filtered the plugins.txt entries made from it. Resolves with the
-   * time plugins.txt was written.
+   * Resolves with the time plugins.txt was written.
    */
-  private async writeFiles(destPath: string, sorted: string[], filtered: string[]): Promise<Date> {
-    const adoptions = this.mAdoptions;
+  private async writeFiles(destPath: string, sorted: string[]): Promise<Date> {
     const loadOrderFile = path.join(destPath, "loadorder.txt");
     const pluginsFile = path.join(destPath, "plugins.txt");
     // this mkdir should not be necessary
@@ -625,6 +602,7 @@ class PluginPersistor implements IPersistor {
         "utf8",
       ),
     );
+    const filtered: string[] = this.toPluginList(sorted);
     await withFileRetry(() =>
       replaceFile(
         pluginsFile,
@@ -632,10 +610,7 @@ class PluginPersistor implements IPersistor {
         "latin1",
       ),
     );
-    // files taken in while this write was under way hold a newer state than the one it wrote, so
-    // what is now on disk matches neither, and the next read must be judged as foreign
-    this.mWritten =
-      adoptions === this.mAdoptions ? { loadorder: sorted, plugins: filtered } : undefined;
+    this.mWritten = { loadorder: sorted, plugins: filtered };
 
     if (this.mPluginFormat === "original" && this.mControlOrder()) {
       const offset = 946684800;
@@ -656,27 +631,33 @@ class PluginPersistor implements IPersistor {
     return (await withFileRetry(() => stat(pluginsFile))).mtime;
   }
 
-  /**
-   * Whether a file still holds what this persistor last wrote into it, as far as the game reads
-   * it. Where plugins.txt marks the active plugins (the fallout4 format), the game ignores where
-   * the inactive ones sit, and Skyrim SE moves them about each time it starts; so there only the
-   * plugins listed, which of them are active and the order of the active ones count.
-   */
+  /** Whether a file still holds exactly the entries this persistor last wrote into it. */
   private holdsOurLastWrite(entries: string[], plugins: boolean): boolean {
     const ours = this.mWritten?.[plugins ? "plugins" : "loadorder"];
-    if (ours === undefined || ours.length === 0 || entries.length !== ours.length) {
+    return (
+      ours !== undefined &&
+      ours.length > 0 &&
+      entries.length === ours.length &&
+      entries.every((entry, idx) => entry.toLowerCase() === ours[idx].toLowerCase())
+    );
+  }
+
+  /**
+   * Whether plugins.txt means the same to the game as what Vortex holds now: the same plugins,
+   * with the same ones active in the same order. Only for the format that marks active plugins,
+   * where the game ignores the position of inactive ones and Skyrim SE moves them as it starts.
+   */
+  private matchesOurState(entries: string[]): boolean {
+    if (this.mPluginFormat !== "fallout4" || entries.length === 0) {
       return false;
     }
-    const theirs = entries.map((entry) => entry.toLowerCase());
-    const mine = ours.map((entry) => entry.toLowerCase());
-    if (!plugins || this.mPluginFormat !== "fallout4") {
-      // the load order itself, or a plugins.txt that lists only the active plugins
-      return sameEntries(theirs, mine);
-    }
-    const active = (list: string[]) => list.filter((entry) => entry.startsWith("*"));
-    return (
-      sameEntries(active(theirs), active(mine)) && sameEntries([...theirs].sort(), [...mine].sort())
-    );
+    const normalize = (list: string[]) => {
+      const lower = list.map((entry) => entry.toLowerCase());
+      const active = lower.filter((entry) => entry.startsWith("*"));
+      const inactive = lower.filter((entry) => !entry.startsWith("*")).sort();
+      return [...active, ...inactive].join("\n");
+    };
+    return normalize(entries) === normalize(this.toPluginList(this.sortedPlugins()));
   }
 
   private filterFileData(
@@ -784,8 +765,6 @@ class PluginPersistor implements IPersistor {
     const pluginsFile = path.join(this.mPluginPath, "plugins.txt");
 
     const newPlugins: IPluginMap = {};
-    // the entries of loadorder.txt as read, in the original format
-    let loadOrderKeys: string[] | undefined;
 
     let phaseOne: Promise<Buffer>;
     // for games with the old format we use the loadorder.txt file as reference for the
@@ -801,7 +780,6 @@ class PluginPersistor implements IPersistor {
       });
       phaseOne = withFileRetry(() => readFile(loadOrderFile)).then((data: Buffer) => {
         const keys: string[] = this.filterFileData(data.toString("utf-8"), false, foreign);
-        loadOrderKeys = keys;
         offset = this.initFromKeyList(newPlugins, keys, false, offset);
         return withFileRetry(() => readFile(pluginsFile));
       });
@@ -820,17 +798,9 @@ class PluginPersistor implements IPersistor {
           return delayed(RETRY_DELAY_MS).then(() => this.deserialize(true, adoptForeign));
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
-        if (
-          !adoptForeign &&
-          this.mPluginFormat === "fallout4" &&
-          this.holdsOurLastWrite(keys, true)
-        ) {
-          // the file says what Vortex last wrote, though maybe not where the inactive plugins
-          // sit (the game moves them as it starts). Taking it in would only lose the positions
-          // Vortex gave them, which they load at once activated, so Vortex keeps its own. Its
-          // state is unchanged, so the store is not hydrated again: that would replace changes
-          // still on their way to the persistor.
-          this.mLoaded = true;
+        if (foreign.detected && !adoptForeign && this.mLoaded && this.matchesOurState(keys)) {
+          // nothing to decide, and taking the file in would lose the positions Vortex gave the
+          // inactive plugins, which they load at once activated
           this.mRetryCounter = retryCount;
           this.mFailed = false;
           return Promise.resolve();
@@ -849,14 +819,6 @@ class PluginPersistor implements IPersistor {
             return Promise.resolve();
           }
           this.adoptParsed(newPlugins);
-          // what Vortex now holds is what the files say, so a later read is judged against them
-          // rather than against a write Vortex made before. A write still in flight is older
-          // than this, and gives up its claim when it lands (see writeFiles).
-          this.mWritten = {
-            loadorder: loadOrderKeys ?? this.mWritten?.loadorder ?? [],
-            plugins: keys,
-          };
-          this.mAdoptions += 1;
           return Promise.resolve();
         });
       })
@@ -964,12 +926,10 @@ class PluginPersistor implements IPersistor {
         if (
           !this.mSerializing &&
           fileName !== null &&
-          // the game names it Plugins.txt, which a file written in place keeps
-          PLUGIN_FILES.includes(fileName.toLowerCase()) &&
+          ["loadorder.txt", "plugins.txt"].includes(fileName) &&
           this.mPluginPath !== undefined
         ) {
-          // the file Vortex reads: where names keep their case, a separate Plugins.txt is not it
-          withFileRetry(() => stat(path.join(this.mPluginPath, fileName.toLowerCase())))
+          withFileRetry(() => stat(path.join(this.mPluginPath, fileName)))
             .then((stats) => {
               if (stats.mtime > this.mLastWriteTime) {
                 this.scheduleRefresh(500);
