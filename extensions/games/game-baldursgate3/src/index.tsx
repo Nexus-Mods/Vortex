@@ -124,11 +124,7 @@ async function prepareForModding(api: types.IExtensionApi, discovery) {
   return fs
     .statAsync(mp)
     .catch(() => fs.ensureDirWritableAsync(mp, () => Bluebird.resolve() as any))
-    .then(() =>
-      fs
-        .statAsync(sePath)
-        .catch(() => fs.ensureDirWritableAsync(sePath, () => Bluebird.resolve() as any)),
-    )
+    .then(() => fs.statAsync(sePath).catch(() => fs.ensureDirWritableAsync(sePath)))
     .finally(() => ensureGlobalProfile(api, discovery));
 }
 
