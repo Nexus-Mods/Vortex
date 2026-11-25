@@ -158,8 +158,8 @@ class PluginPersistor implements IPersistor {
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  // whether the store was hydrated from mPlugins since loading began; a load starts from a store
-  // that was emptied, so it must not pass the files over
+  // whether the store agrees with mPlugins since loading began: it was hydrated from them, or there
+  // was nothing to load. A load starts from an emptied store, so it must not pass the files over
   private mHydrated: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
@@ -824,6 +824,8 @@ class PluginPersistor implements IPersistor {
       .catch((err: unknown) => {
         if (getErrorCode(err) === "ENOENT") {
           this.mLoaded = true;
+          // nothing to take in, so an emptied store agrees unless mPlugins are from an earlier load
+          this.mHydrated ||= Object.keys(this.mPlugins).length === 0;
           return;
         }
         log("warn", "failed to read plugin file", {
@@ -889,6 +891,8 @@ class PluginPersistor implements IPersistor {
     }
     if (Object.keys(newPlugins).length === 0) {
       this.mLoaded = true;
+      // neither file holds anything to take in, nor does mPlugins
+      this.mHydrated = true;
       return;
     }
     this.adoptParsed(newPlugins);

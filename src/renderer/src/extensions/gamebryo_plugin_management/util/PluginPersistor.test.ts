@@ -357,6 +357,43 @@ describe("PluginPersistor", () => {
         expect(persistor.entry("spare.esp").enabled).toBe(false);
       });
 
+      it.each(["missing", "empty"])(
+        "passes the game's rewrite over once Vortex has replaced a %s plugins.txt",
+        async (state) => {
+          const onExternalChange = asked();
+          await persistor.disable();
+          nodeFs.rmSync(path.join(paths.pluginDir, "loadorder.txt"));
+          nodeFs.rmSync(pluginsFile());
+          if (state === "empty") {
+            nodeFs.writeFileSync(pluginsFile(), "");
+          }
+          await persistor.loadFiles("skyrimse");
+          await persistor.syncFromState("skyrimse", {
+            "old.esp": { enabled: true, loadOrder: 0 },
+            "parked.esp": { enabled: false, loadOrder: 1 },
+            "main.esp": { enabled: true, loadOrder: 2 },
+            "spare.esp": { enabled: false, loadOrder: 3 },
+          });
+          await settleWrites();
+          expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(OURS);
+
+          await gameRewrite("Spare.esp", "Parked.esp", "*Old.esp", "*Main.esp");
+
+          expect(onExternalChange).not.toHaveBeenCalled();
+        },
+      );
+
+      it("asks when plugins.txt was missing as the files were loaded again", async () => {
+        const onExternalChange = asked();
+        nodeFs.rmSync(pluginsFile());
+        // the store is emptied but Vortex still holds its list, so the two do not agree
+        hive = {};
+        await persistor.loadFiles("skyrimse");
+        await settleWrites();
+        await gameRewrite("Spare.esp", "Parked.esp", "*Old.esp", "*Main.esp");
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
       it("takes the file in on Keep even where only inactive plugins moved", async () => {
         let choose: (choice: "keep" | "revert") => void = () => undefined;
         persistor.setExternalChangeCallback(
