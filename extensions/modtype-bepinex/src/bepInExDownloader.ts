@@ -36,7 +36,7 @@
  */
 import path from "path";
 
-import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
+import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 import semver from "semver";
 
 import { getDownload, getSupportMap, MODTYPE_BIX_INJECTOR } from "./common";
@@ -71,7 +71,7 @@ function updateSupportedGames(api: types.IExtensionApi, downloadId: string) {
 
 async function install(
   api: types.IExtensionApi,
-  downloadInfo: INexusDownloadInfo,
+  downloadInfo: Pick<INexusDownloadInfo, "gameId" | "allowAutoInstall">,
   downloadId: string,
   force?: boolean,
 ): Promise<string> {
@@ -95,6 +95,24 @@ async function install(
       return Promise.resolve(undefined);
     }
   }
+}
+
+function importCustomPack(api: types.IExtensionApi, archivePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    api.events.emit(
+      "import-downloads",
+      [archivePath],
+      (downloadIds: string[]) => {
+        const downloadId = downloadIds[0];
+        if (downloadId === undefined) {
+          reject(new util.DataInvalid("Failed to import custom BepInEx archive"));
+        } else {
+          resolve(downloadId);
+        }
+      },
+      true,
+    );
+  });
 }
 
 /**
@@ -204,7 +222,6 @@ function getLatestInstalledVersion(
 
 async function runCustomPackDownloader(
   api: types.IExtensionApi,
-  state: types.IState,
   gameId: string,
   gameConf: IBepInExGameConfig,
   force?: boolean,
@@ -212,19 +229,21 @@ async function runCustomPackDownloader(
   let downloadRes: string | INexusDownloadInfo;
   try {
     downloadRes = await gameConf.customPackDownloader!(util.getVortexPath("temp"));
-    if ((downloadRes as INexusDownloadInfo) !== undefined) {
-      await download(api, downloadRes as INexusDownloadInfo, force);
-    } else if (typeof downloadRes === "string") {
+    if (typeof downloadRes === "string") {
       if (!path.isAbsolute(downloadRes)) {
-        log("error", "failed to download custom pack", "expected absolute path");
+        throw new util.DataInvalid("Custom BepInEx archive path must be absolute");
       }
-      const downloadsPath = selectors.downloadPathForGame(state, gameId);
-      await fs.copyAsync(downloadRes, path.join(downloadsPath, path.basename(downloadRes)));
+      const downloadId =
+        genDownloadProps(api, path.basename(downloadRes)).downloadId ??
+        (await importCustomPack(api, downloadRes));
+      updateSupportedGames(api, downloadId);
+      await install(api, { gameId, allowAutoInstall: true }, downloadId, force);
     } else {
-      log("error", "failed to download custom pack", { downloadRes });
+      await download(api, downloadRes, force);
     }
   } catch (err) {
     log("error", "failed to download custom pack", err);
+    api.showErrorNotification("Failed to download BepInEx dependency", err);
   }
 }
 
@@ -289,9 +308,8 @@ export async function ensureBepInExPack(
   if (!force && injectorModIds.length > 0) {
     return;
   }
-
   if (gameConf.customPackDownloader != null) {
-    return runCustomPackDownloader(api, state, gameId, gameConf, force);
+    return runCustomPackDownloader(api, gameId, gameConf, force);
   }
   if (gameConf.forceGithubDownload === true) {
     return downloadFromGithub(api, gameConf);
