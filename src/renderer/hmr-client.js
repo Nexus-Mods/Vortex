@@ -11,6 +11,8 @@
 //   <clientId>/<seq>.json        dev.mjs -> client: a patch or a full reload
 //   <clientId>/<seq>.mjs         the patch, imported with import()
 //   <clientId>/delivered.log     client -> dev.mjs: patches that ran
+//   bundle.json                  dev.mjs -> client: renderer.mjs is being rebuilt;
+//                                a reload waits until it's done
 //
 // A patch registers new module factories with the runtime. The client walks up
 // from the changed modules to the nearest self-accepting modules (boundaries),
@@ -160,13 +162,34 @@ function runtime() {
   return devRuntime;
 }
 
+function bundlePending() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(hmrDir, "bundle.json"), "utf8")).pending === true;
+  } catch {
+    return false;
+  }
+}
+
 let reloading = false;
-/** @param {string} reason */
+/**
+ * Reloads once dev.mjs has finished rewriting renderer.mjs. The update that
+ * leads here arrives before its rebuild, and a window reloaded in between would
+ * load the previous bundle and then have nothing left to receive.
+ * @param {string} reason
+ */
 function fullReload(reason) {
   if (reloading) return;
   reloading = true;
   console.log(`${LOG_PREFIX} ${reason}, reloading window`);
-  window.location.reload();
+  const started = Date.now();
+  const reloadWhenBuilt = () => {
+    if (bundlePending() && Date.now() - started < 10_000) {
+      setTimeout(reloadWhenBuilt, 25);
+    } else {
+      window.location.reload();
+    }
+  };
+  reloadWhenBuilt();
 }
 
 /**

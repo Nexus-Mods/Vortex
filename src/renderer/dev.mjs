@@ -158,6 +158,7 @@ const engine = await dev(
     // Keep renderer.mjs on disk current, so a reload gets the latest code.
     rebuildStrategy: "always",
     onOutput(result) {
+      markBundlePending(false);
       if (result instanceof Error) {
         // The same error already came through onHmrUpdates, after the first build.
         if (!startedElectron)
@@ -177,14 +178,32 @@ const engine = await dev(
     },
     onHmrUpdates(result) {
       buildStarted = Date.now();
+      // Every update is followed by a rebuild of renderer.mjs (rebuildStrategy
+      // "always"). A window that reloads because of this update must wait for
+      // it, or it loads the previous bundle and then has nothing left to get.
+      markBundlePending(true);
       if (result instanceof Error) {
         console.error(
           `${LOG_PREFIX} build failed, the window keeps the last good code\n${result.message}`,
         );
         return;
       }
+      if (result.updates.length === 0) {
+        console.log(
+          `${LOG_PREFIX} change in ${result.changedFiles.join(", ")}: no window to update`,
+        );
+      }
       for (const { clientId: target, update } of result.updates) {
-        if (target !== clientId) continue; // a window that has gone
+        if (target !== clientId) {
+          console.log(`${LOG_PREFIX} skipped ${update.type} for a closed window (${target})`);
+          continue;
+        }
+        if (update.type === "Noop") {
+          console.log(
+            `${LOG_PREFIX} change in ${result.changedFiles.join(", ")}: nothing to update`,
+          );
+          continue;
+        }
         const dir = path.join(HMR_DIR, target);
         if (update.type === "Patch") {
           const seq = noticeSeq++;
@@ -214,6 +233,17 @@ abortController.signal.addEventListener("abort", () => void engine.close());
 function writeNotice(dir, seq, notice) {
   const target = path.join(dir, `${seq}.json`);
   fs.writeFileSync(`${target}.tmp`, JSON.stringify(notice));
+  fs.renameSync(`${target}.tmp`, target);
+}
+
+/**
+ * hmr/bundle.json says whether renderer.mjs is being rebuilt. The HMR client
+ * waits for `pending: false` before it reloads the window (see hmr-client.js).
+ * @param {boolean} pending
+ */
+function markBundlePending(pending) {
+  const target = path.join(HMR_DIR, "bundle.json");
+  fs.writeFileSync(`${target}.tmp`, JSON.stringify({ pending }));
   fs.renameSync(`${target}.tmp`, target);
 }
 
