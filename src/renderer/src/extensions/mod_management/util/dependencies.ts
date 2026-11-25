@@ -42,6 +42,26 @@ export function selectedOptionalRules(rules: IModRule[], mods: Record<string, IM
   );
 }
 
+/**
+ * The optional (recommends) members the user explicitly selected (ignored:false) whose mod is
+ * already installed with the wanted install spec, each paired with that mod. The counterpart of
+ * selectedOptionalRules: those still need installing, these only need enabling in the profile the
+ * collection is installed to. An undecided optional (ignored undefined) is not included: only the
+ * player's choice may enable a mod.
+ */
+export function installedSelectedOptionals(
+  rules: IModRule[],
+  mods: Record<string, IMod>,
+): Array<{ rule: IModRule; mod: IMod }> {
+  return (rules ?? []).flatMap((rule) => {
+    if (!isOptionalRule(rule) || rule.ignored !== false) {
+      return [];
+    }
+    const mod = findModByRef(rule.reference, mods, undefined, ruleInstallSpec(rule));
+    return mod === undefined ? [] : [{ rule, mod }];
+  });
+}
+
 interface IBrowserResult {
   url: string | (() => PromiseLike<string>);
   referer?: string | (() => PromiseLike<string>);

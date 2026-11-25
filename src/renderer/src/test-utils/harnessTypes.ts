@@ -329,6 +329,13 @@ export interface IManagerInternals {
     phase: number,
   ) => { phaseComplete: boolean; needsRequeue: boolean; allMods: unknown[] };
   driveSelectedOptionals: (api: unknown, sourceModId: string) => void;
+  enableInstalledSelectedOptionals: (
+    api: unknown,
+    profile: unknown,
+    gameId: string,
+    collection: unknown,
+  ) => void;
+  installDependenciesImpl: (...args: unknown[]) => Promise<void>;
   admitSettledOptionalPhase: (sourceModId: string, api: unknown) => void;
   pollAllPhasesComplete: (api: unknown, sourceModId: string) => Promise<void>;
   doInstallDependencies: (
