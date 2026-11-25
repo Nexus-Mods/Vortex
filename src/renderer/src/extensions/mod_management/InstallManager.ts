@@ -193,6 +193,7 @@ import { isUsedByOtherCollection } from "./util/collection_membership/collection
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
   findDownloadByRef,
+  installedSelectedOptionals,
   lookupFromDownload,
   selectedOptionalRules,
 } from "./util/dependencies";
@@ -2293,6 +2294,7 @@ class InstallManager {
     }
 
     this.repairRules(api, mod, gameId);
+    this.enableInstalledSelectedOptionals(api, profile, gameId, mod);
 
     const installPath = this.mGetInstallPath(gameId);
     log("info", "start installing dependencies", { modId });
@@ -2375,6 +2377,63 @@ class InstallManager {
           }),
       ),
     );
+  }
+
+  /**
+   * Enable, in the profile a collection is installed to, the selected optional members whose mod is
+   * already installed. Nothing else does: the dependency gather only covers required rules, and
+   * driveSelectedOptionals only drives members that still need a download. Without this, an optional
+   * installed by another profile or an earlier revision counts as installed but stays disabled here.
+   *
+   * Superseded variants of the same archive are disabled in that profile, as settleInstalledDependency
+   * does for required members. Everything goes out in one batch: a collection can have hundreds of
+   * such members, and enabling them one at a time re-renders and persists once per mod.
+   */
+  private enableInstalledSelectedOptionals(
+    api: IExtensionApi,
+    profile: IProfile,
+    gameId: string,
+    collection: IMod,
+  ): void {
+    if (collection.type !== "collection") {
+      return;
+    }
+    const state = api.getState();
+    const mods = state.persistent.mods[gameId] ?? {};
+    const modState = state.persistent.profiles[profile.id]?.modState ?? {};
+
+    const toEnable = new Set<string>();
+    const toDisable = new Set<string>();
+    for (const { mod } of installedSelectedOptionals(collection.rules ?? [], mods)) {
+      if (modState[mod.id]?.enabled) {
+        continue;
+      }
+      toEnable.add(mod.id);
+      for (const variantId of this.checkModVariantsExist(api, gameId, mod.archiveId)) {
+        if (variantId !== mod.id && modState[variantId]?.enabled) {
+          toDisable.add(variantId);
+        }
+      }
+    }
+    // a variant that is itself a selected optional stays enabled
+    toEnable.forEach((id) => toDisable.delete(id));
+
+    if (toEnable.size === 0) {
+      return;
+    }
+    log("info", "enabling installed optional collection members", {
+      collectionId: collection.id,
+      profileId: profile.id,
+      count: toEnable.size,
+      supersededVariants: toDisable.size,
+    });
+    batchDispatch(api.store, [
+      ...Array.from(toDisable).map((id) => setModEnabled(profile.id, id, false)),
+      ...Array.from(toEnable).map((id) => setModEnabled(profile.id, id, true)),
+    ]);
+    // disabling superseded variants bypasses the mods-enabled event; emit directly, as
+    // settleInstalledDependency does
+    toDisable.forEach((id) => emitModStateChanged(api, gameId, id, "disabled", "variant_replace"));
   }
 
   private augmentRules(api: IExtensionApi, gameId: string, mod: IMod): Promise<IRule[]> {
