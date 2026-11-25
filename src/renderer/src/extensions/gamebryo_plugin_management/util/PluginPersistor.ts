@@ -158,6 +158,9 @@ class PluginPersistor implements IPersistor {
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
+  // whether the store was hydrated from mPlugins since loading began; a load starts from a store
+  // that was emptied, so it must not pass the files over
+  private mHydrated: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
@@ -220,6 +223,7 @@ class PluginPersistor implements IPersistor {
       this.mPluginFormat = pluginFormat(gameMode);
       this.mNativePlugins = nativePlugins(gameMode);
       this.mGameId = gameMode;
+      this.mHydrated = false;
       this.updateNative();
       // ensure that the native plugins are always included
       log("debug", "synching plugins", { pluginsPath: this.mPluginPath });
@@ -523,14 +527,13 @@ class PluginPersistor implements IPersistor {
     return this.mPlugins[pluginId].loadOrder + this.mInstalledNative.length;
   }
 
-  /** The file names of all plugins Vortex would list, in load order. */
+  /**
+   * The file names of all deployed plugins and only those, in load order; one without a position
+   * goes last. Includes native plugins, which may be filtered out later, depending on the game.
+   * Blueprint plugins (Starfield) are excluded entirely: the game manages them itself and strips
+   * any that appear in plugins.txt / loadorder.txt on launch.
+   */
   private sortedPlugins(): string[] {
-    // we need a list that includes all deployed plugins and only those,
-    // sorted by their load order
-    // this includes native plugins, which may be filtered out later, depending on the game
-    // Blueprint plugins (Starfield) are excluded entirely: the game manages them
-    // itself and strips any that appear in plugins.txt / loadorder.txt on launch.
-    // a plugin without a position goes last
     const rank = (pluginId: string) => {
       const pos = this.loadOrder(pluginId);
       return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
@@ -798,7 +801,8 @@ class PluginPersistor implements IPersistor {
           return delayed(RETRY_DELAY_MS).then(() => this.deserialize(true, adoptForeign));
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
-        if (foreign.detected && !adoptForeign && this.mLoaded && this.matchesOurState(keys)) {
+        const unsettled = foreign.detected && !adoptForeign;
+        if (unsettled && this.mHydrated && this.matchesOurState(keys)) {
           // nothing to decide, and taking the file in would lose the positions Vortex gave the
           // inactive plugins, which they load at once activated
           this.mRetryCounter = retryCount;
@@ -808,12 +812,7 @@ class PluginPersistor implements IPersistor {
         this.initFromKeyList(newPlugins, keys, true, offset);
 
         return this.orderByFileTime(newPlugins).then(() => {
-          if (
-            foreign.detected &&
-            !adoptForeign &&
-            this.mLoaded &&
-            this.mOnExternalChange !== undefined
-          ) {
+          if (unsettled && this.mLoaded && this.mOnExternalChange !== undefined) {
             // a foreign rewrite while Vortex holds state for this game: the user decides
             this.promptExternalChange(PluginFileConflict.ForeignChange);
             return Promise.resolve();
@@ -981,6 +980,7 @@ class PluginPersistor implements IPersistor {
   private adoptParsed(newPlugins: IPluginMap) {
     this.mPlugins = newPlugins;
     this.mLoaded = true;
+    this.mHydrated = true;
     if (this.mResetCallback) {
       // reset() owns the retry counter and reports hydration failures
       void this.reset();
