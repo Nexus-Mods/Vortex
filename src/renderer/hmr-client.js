@@ -53,7 +53,6 @@ class HotContext {
     this.id = id;
     this.data = data;
     this.selfAccepted = false;
-    this.registeredComponents = 0;
     /** @type {Array<(data: Record<string, unknown>) => void>} */
     this.disposeCallbacks = [];
   }
@@ -88,21 +87,35 @@ class HotContext {
   // the next module starts; there is no end-of-module hook to reset them.
   beginRefreshRegistration() {
     const id = this.id;
-    window.$RefreshReg$ = (type, name) => {
-      this.registeredComponents += 1;
-      RefreshRuntime.register(type, `${id} ${name}`);
-    };
+    window.$RefreshReg$ = (type, name) => RefreshRuntime.register(type, `${id} ${name}`);
     window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
   }
 
   /**
-   * React refresh can swap a module in place when it registered function
-   * components (the transform doesn't register class components) and exports
-   * nothing but components. Decided when an update arrives, after the module
-   * body and its registrations have run.
+   * React refresh can swap a module in place when it exports nothing but
+   * components. Decided when an update arrives, after the module body has run.
    */
   isRefreshBoundary() {
-    return this.registeredComponents > 0 && isRefreshBoundary(runtime().loadExports(this.id));
+    return isRefreshBoundary(runtime().loadExports(this.id));
+  }
+
+  /**
+   * Registers the module's exported components with React refresh, as
+   * webpack's and Vite's react-refresh integrations do. The JSX transform only
+   * registers function components it can see declared, so this is what covers
+   * class components and HOC-wrapped exports (`translate()(connect()(Foo))`):
+   * React remounts those in place, resetting their local state, instead of the
+   * window reloading. Called for the old exports before an update and the new
+   * ones after, so React sees them as one family that changed.
+   */
+  registerExports() {
+    const exports = runtime().loadExports(this.id);
+    for (const name of Object.keys(exports)) {
+      const value = exports[name];
+      if (RefreshRuntime.isLikelyComponentType(value)) {
+        RefreshRuntime.register(value, `${this.id} %exports% ${name}`);
+      }
+    }
   }
 
   accepts() {
@@ -192,6 +205,10 @@ function applyUpdate(changedIds) {
     }
   }
 
+  // The components React has mounted are the boundaries' current exports;
+  // register them first so the re-run versions land in the same families.
+  for (const id of boundaries) rt.hotContexts.get(id)?.registerExports();
+
   for (const id of invalidated) {
     const context = rt.hotContexts.get(id);
     if (context === undefined) continue;
@@ -210,10 +227,12 @@ function applyUpdate(changedIds) {
   // A boundary has to accept its own new version too. A component module that
   // gained a non-component export can't be swapped in place any more.
   for (const id of boundaries) {
-    if (!rt.hotContexts.get(id)?.accepts()) {
+    const context = rt.hotContexts.get(id);
+    if (context === undefined || !context.accepts()) {
       fullReload(`${id} can no longer be updated in place`);
       return false;
     }
+    context.registerExports();
   }
 
   RefreshRuntime.performReactRefresh();
