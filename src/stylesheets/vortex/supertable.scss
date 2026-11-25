@@ -394,12 +394,16 @@
         justify-content: center;
         width: auto;
         max-width: none;
+        height: 100%;
         flex: 0 1 auto;
-        padding: 4px 10px;
+        padding: 4px 8px;
     }
 
     .menubar .button-text {
         flex: none;
+        justify-content: center;
+        min-width: 40px;
+        text-align: center;
     }
 }
 
