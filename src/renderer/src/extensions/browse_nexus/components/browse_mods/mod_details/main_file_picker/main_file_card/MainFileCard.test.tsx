@@ -191,6 +191,13 @@ describe("MainFileCard", () => {
     );
   });
 
+  it("links a video in its description rather than playing it in the card", () => {
+    const { container } = renderCards(file(42, { description: "[youtube]dQw4w9WgXcQ[/youtube]" }));
+
+    expect(container.querySelector("iframe")).toBeNull();
+    expect(screen.queryByTestId("youtube-video")).toBeNull();
+  });
+
   it("says the file's exact size, on hover", async () => {
     renderCards(file(42));
 

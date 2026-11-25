@@ -85,7 +85,8 @@ type IExternalImagePlaceholderProps = IExternalImagePlaceholderOptions & {
  * Stands in for images from outside Nexus Mods, which prose doesn't load: what they were, where
  * they're from, and their links, with a way to see them on the website and a Why? explaining it.
  * A run of them is one placeholder with a count. Only the images' hosts are read, never loaded.
- * Narrower than 28rem, its buttons go under the text rather than beside it.
+ * Narrower than 28rem, its buttons go under the text rather than beside it. `.nxm-prose-embed`
+ * keeps bbcode left open around it from styling it.
  */
 export const ExternalImagePlaceholder = ({
   images,
@@ -113,7 +114,7 @@ export const ExternalImagePlaceholder = ({
   };
 
   return (
-    <div className="@container my-3" data-testid="external-image-placeholder">
+    <div className="nxm-prose-embed @container my-3" data-testid="external-image-placeholder">
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 rounded-sm border border-dashed border-stroke-weak bg-translucent-dark-200 p-4 text-left @md:grid-cols-[auto_minmax(0,1fr)_auto]">
         <span className="flex items-center">
           <span className="flex rounded-full bg-surface-translucent-low p-2 text-neutral-subdued">

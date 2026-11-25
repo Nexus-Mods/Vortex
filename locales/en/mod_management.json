@@ -155,6 +155,7 @@
       "installDescription": "Installs the mod into your game, where it can be enabled or disabled.",
       "installing": "Installing…",
       "uninstalling": "Uninstalling…",
+      "removing": "Removing…",
       "installMod": "Install {{name}}",
       "enabled": "{{name}} enabled",
       "menu": "{{name}} actions"
@@ -221,6 +222,7 @@
       "byAuthor": "by {{author}}",
       "adult": "Adult",
       "showDescription": "Show description",
+      "closeDescription": "Close",
       "copy": "Copy {{label}}",
       "copied": "Copied to clipboard",
       "copyFailed": "Couldn't copy to the clipboard",

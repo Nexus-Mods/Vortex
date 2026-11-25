@@ -102,7 +102,7 @@ export const ProseDemo = () => (
       description="BBCode, as mod descriptions are written. With externalImagePlaceholders, images from outside Nexus Mods show as placeholders; without it they're left out."
       title="BBCode"
     >
-      <BBCode bbcode={BBCODE} externalImagePlaceholders={{ websiteUrl: WEBSITE_URL }} />
+      <BBCode bbcode={BBCODE} externalImagePlaceholders={{ websiteUrl: WEBSITE_URL }} isProse />
     </Section>
 
     <Section

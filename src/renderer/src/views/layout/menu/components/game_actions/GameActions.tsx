@@ -29,11 +29,23 @@ export const GameActions = () => {
     startTool,
     handlePlay,
   } = useToolsContext();
-  const { needToDeploy, autoDeploy, isPurged, isDeploying, deployProgress, deployStep, deploy } =
-    useDeployMods();
+  const {
+    needToDeploy,
+    autoDeploy,
+    isPurged,
+    isDeploying,
+    deployProgress,
+    deployStep,
+    isPurging,
+    purgeProgress,
+    deploy,
+  } = useDeployMods();
   // With auto deploy on, changes deploy on their own, so Apply only shows its progress, or
-  // after a purge, which auto deploy leaves alone.
-  const showApply = isDeploying || isPurged || (needToDeploy && !autoDeploy);
+  // after a purge, which auto deploy leaves alone. A running purge shows in Apply's place too.
+  const showApply = isDeploying || isPurging || isPurged || (needToDeploy && !autoDeploy);
+  // A deploy queued behind a purge can start a moment before the purge has cleared, so the
+  // deploy wins when both are set.
+  const showPurge = isPurging && !isDeploying;
 
   if (gameId === undefined || selection.type !== "game") {
     return null;
@@ -74,12 +86,14 @@ export const GameActions = () => {
 
       <div className={joinClasses("flex w-full gap-3", { "flex-wrap": menuIsCollapsed })}>
         <PlayButton
-          disabled={exclusiveRunning || isPrimaryRunning || isDeploying || !primaryStarter}
+          disabled={
+            exclusiveRunning || isPrimaryRunning || isDeploying || isPurging || !primaryStarter
+          }
           gameName={gameName}
           hideLabel={showApply}
           isCollapsed={menuIsCollapsed}
           isPrimaryRunning={isPrimaryRunning}
-          isWaitingForApply={isDeploying}
+          isWaitingForApply={isDeploying || isPurging}
           primaryStarter={primaryToolId ? primaryStarter : undefined}
           onClick={handlePlay}
         />
@@ -87,7 +101,8 @@ export const GameActions = () => {
         {showApply && (
           <ApplyButton
             isCollapsed={menuIsCollapsed}
-            progress={deployProgress}
+            isPurging={showPurge}
+            progress={showPurge ? purgeProgress : deployProgress}
             step={deployStep}
             onClick={() => {
               trackApplyClicked();

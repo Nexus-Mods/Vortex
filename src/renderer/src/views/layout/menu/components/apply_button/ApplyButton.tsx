@@ -9,7 +9,12 @@ import { joinClasses } from "@/ui/utils/joinClasses";
 
 interface IApplyButtonProps {
   isCollapsed: boolean;
-  /** 0-100 while a deployment runs; undefined when idle. */
+  /**
+   * A purge is running. Shown in Apply's place in its own neutral colours, so it doesn't look
+   * like an apply started without the user; `progress` is then the purge's.
+   */
+  isPurging?: boolean;
+  /** 0-100 while a deployment or purge runs; undefined when idle, or a purge has no progress yet. */
   progress?: number;
   /** What the deploy is doing, e.g. the mod it's on, shown under the tooltip while applying. */
   step?: string;
@@ -17,31 +22,35 @@ interface IApplyButtonProps {
 }
 
 const Content = ({
-  isApplying = false,
+  isBusy = false,
   isCollapsed,
+  isPurging = false,
   label,
 }: {
-  isApplying?: boolean;
+  isBusy?: boolean;
   isCollapsed: boolean;
+  isPurging?: boolean;
   label: string;
 }) => (
   <>
     <Icon
       className={joinClasses([
         "nxm-button-icon",
-        { "animate-spin reduce-motion:animate-none": isApplying },
+        { "animate-spin reduce-motion:animate-none": isBusy },
       ])}
       name="autorenew"
-      size="lg"
+      // The purge's label is longer, so its icon and text are a size smaller to fit on one line.
+      size={isPurging ? "md" : "lg"}
     />
 
     {!isCollapsed && (
       <Typography
-        // While applying the bar sets the colour, so the text picks it up from there.
-        {...(isApplying ? { brand: "none" as const } : { appearance: "inverted" as const })}
+        // While busy the bar sets the colour, so the text picks it up from there.
+        {...(isBusy ? { brand: "none" as const } : { appearance: "inverted" as const })}
         as="span"
-        className="font-medium"
-        typographyType="body-lg"
+        className={joinClasses(["font-medium", { "whitespace-nowrap": isPurging }])}
+        data-testid="menu-apply-label"
+        typographyType={isPurging ? "body-md" : "body-lg"}
       >
         {label}
       </Typography>
@@ -52,20 +61,30 @@ const Content = ({
 /**
  * Deploys pending mod changes. Shown beside Play only while there is something to deploy.
  * While it deploys, the whole button becomes a progress bar: not a button at all, so it has
- * no hover or press state and can't start a second deployment.
+ * no hover or press state and can't start a second deployment. A running purge shows the same
+ * way, in neutral colours.
  */
-export const ApplyButton = ({ isCollapsed, progress, step, onClick }: IApplyButtonProps) => {
+export const ApplyButton = ({
+  isCollapsed,
+  isPurging = false,
+  progress,
+  step,
+  onClick,
+}: IApplyButtonProps) => {
   const { t } = useTranslation();
-  const isApplying = progress !== undefined;
-  const label = isApplying ? t("Applying") : t("Apply");
+  const isBusy = isPurging || progress !== undefined;
+  const isApplying = isBusy && !isPurging;
+  const label = isPurging ? t("Updating files") : isApplying ? t("Applying") : t("Apply");
   const showStep = isApplying && !!step;
   const height = isCollapsed ? "h-10" : "h-12";
 
-  const headline = !isApplying
-    ? t("Apply your mod changes to the game")
-    : showStep
-      ? t("Applying mod changes")
-      : t("Applying mod changes…");
+  const headline = isPurging
+    ? t("Updating mod files")
+    : !isApplying
+      ? t("Apply your mod changes to the game")
+      : showStep
+        ? t("Applying mod changes")
+        : t("Applying mod changes…");
 
   return (
     <div className={joinClasses(["relative", isCollapsed ? "w-full" : "min-w-0 flex-1"])}>
@@ -75,31 +94,47 @@ export const ApplyButton = ({ isCollapsed, progress, step, onClick }: IApplyButt
           <div className="nxm-tooltip-content space-y-0.5">
             <p>{headline}</p>
 
+            {isPurging && (
+              <p className="text-neutral-subdued" data-testid="menu-apply-purge-help">
+                {t("Vortex is updating which files are in the game after your last change.")}
+              </p>
+            )}
+
             {showStep && <p className="truncate text-neutral-subdued">{step}</p>}
           </div>
         }
         placement="right"
       >
-        {isApplying ? (
+        {isBusy ? (
           <div
             aria-label={label}
             aria-valuemax={100}
             aria-valuemin={0}
-            aria-valuenow={progress}
+            aria-valuenow={progress ?? 0}
             className={joinClasses([
-              "relative flex w-full cursor-progress items-center justify-center gap-x-2 overflow-hidden rounded-sm bg-primary-600/80 px-2 text-primary-950",
+              "relative flex w-full cursor-progress items-center justify-center gap-x-2 overflow-hidden rounded-sm px-2",
+              // Fixed ramp steps, as in the design, so the bar reads the same in either theme.
+              isPurging ? "bg-neutral-500 text-neutral-900" : "bg-primary-600/80 text-primary-950",
               height,
             ])}
             data-testid="menu-apply"
             role="progressbar"
           >
             <div
-              className="absolute inset-y-0 left-0 bg-primary-moderate transition-[width] duration-300 reduce-motion:duration-0"
-              style={{ width: `${progress}%` }}
+              className={joinClasses([
+                "absolute inset-y-0 left-0 transition-[width] duration-300 reduce-motion:duration-0",
+                isPurging ? "bg-neutral-300" : "bg-primary-moderate",
+              ])}
+              style={{ width: `${progress ?? 0}%` }}
             />
 
-            <span className="relative flex items-center gap-x-2">
-              <Content isApplying isCollapsed={isCollapsed} label={label} />
+            <span
+              className={joinClasses([
+                "relative flex items-center",
+                isPurging ? "gap-x-1" : "gap-x-2",
+              ])}
+            >
+              <Content isBusy isCollapsed={isCollapsed} isPurging={isPurging} label={label} />
             </span>
           </div>
         ) : (

@@ -63,6 +63,15 @@ describe("ModPropertiesCard", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("closes the description's modal from the button under it", async () => {
+    renderCard({ name: "SkyUI", isAdult: false, description: "An interface" });
+    await userEvent.click(screen.getByTestId("mod-properties-description-toggle"));
+
+    await userEvent.click(screen.getByTestId("mod-properties-description-close"));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("stands in for images from outside Nexus Mods where the mod has a page", async () => {
     renderCard({
       name: "SkyUI",

@@ -19,6 +19,7 @@ import { INSTALLING_ACTIVITY } from "../../hooks/use_install_mods/useInstallMods
 import { MOD_ROW_PINNING_ID } from "../../hooks/use_mod_actions/useModActions.hook";
 import { MODS_TABLE_TOOLBARS } from "../../hooks/use_mods_table_analytics/useModsTableAnalytics.hook";
 import type { IModWithState } from "../../types/IModProps";
+import { REMOVING_ACTIVITY } from "../../util/confirm_remove_mods/confirmRemoveMods";
 import { UNINSTALLING_ACTIVITY } from "../../util/uninstall_mods/uninstallMods";
 
 const storedMods = (state: IState) => state.persistent.mods?.[activeGameId(state)];
@@ -29,19 +30,30 @@ const storedArchiveIds = createSelector(
   (stored) => new Set(Object.values(stored ?? {}).map((mod) => mod.archiveId)),
 );
 
-/** A mod being installed or uninstalled, which its row shows on the install button. */
-type RowBusy = "installing" | "uninstalling";
+/** A mod being installed, uninstalled or removed, which its row shows on the install button. */
+type RowBusy = "installing" | "uninstalling" | "removing";
+
+const BUSY_LABEL: Record<RowBusy, string> = {
+  installing: "modsTable::rowActions::installing",
+  uninstalling: "modsTable::rowActions::uninstalling",
+  removing: "modsTable::rowActions::removing",
+};
+
+/** A mod gone from the store whose row the list hasn't dropped yet, for a moment. */
+type RowGone = "gone";
 
 /**
  * What a row's mod is under way with, if anything, as a plain value, so a row re-renders
  * only when its own answer changes, not on every write to the store.
  *
  * The list catches up with the store after a debounce, so a row can outlive what it shows:
- * an archive a mod in the store now comes from has just been installed, and a mod gone from
- * the store has just been uninstalled. Either stays loading until its new row takes over.
+ * an archive a mod in the store now comes from has just been installed, and an archive gone
+ * from the downloads has just been removed. Each stays loading until the list catches up.
+ * A mod gone from the store could have been uninstalled or removed, which the store no longer
+ * says, so the row keeps what it last showed, uninstalling if it showed nothing.
  */
-const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined =>
-  useSelector((state: IState) => {
+const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | undefined => {
+  const busy = useSelector((state: IState): RowBusy | RowGone | undefined => {
     const activity = state.session?.base?.activity;
     const justInstalled = modState === "downloaded" && storedArchiveIds(state).has(modId);
     if (
@@ -52,14 +64,27 @@ const useRowBusy = (modId: string, modState: IModWithState["state"]): RowBusy | 
       return "installing";
     }
 
-    const stored = storedMods(state);
-    const removed = modState === "installed" && stored !== undefined && !stored[modId];
-    if (activity?.[UNINSTALLING_ACTIVITY]?.includes(modId) || removed) {
+    const archiveGone =
+      modState === "downloaded" && state.persistent.downloads?.files?.[modId] === undefined;
+    if (activity?.[REMOVING_ACTIVITY]?.includes(modId) || archiveGone) {
+      return "removing";
+    }
+
+    if (activity?.[UNINSTALLING_ACTIVITY]?.includes(modId)) {
       return "uninstalling";
     }
 
-    return undefined;
+    const stored = storedMods(state);
+    return modState === "installed" && stored !== undefined && !stored[modId] ? "gone" : undefined;
   });
+
+  // What the row showed before its mod was gone, kept while it's gone.
+  const before = useRef<RowBusy | undefined>(undefined);
+  if (busy !== "gone") {
+    before.current = busy;
+  }
+  return busy === "gone" ? (before.current ?? "uninstalling") : busy;
+};
 
 // The switch and the menu's button; each pinned action adds a 28px button and an 8px gap.
 const ACTIONS_WIDTH = 78;
@@ -109,8 +134,8 @@ const ROW_CONTROL = "data-row-control";
  *
  * While several rows are selected, only the switch shows, in the same place, as at rest.
  *
- * A mod that's only downloaded has an Install button in the switch's place; one being installed
- * or uninstalled has it loading.
+ * A mod that's only downloaded has an Install button in the switch's place; one being installed,
+ * uninstalled or removed has it loading.
  */
 export const ModRowActions = memo(
   ({
@@ -154,7 +179,8 @@ export const ModRowActions = memo(
         />
       ) : (
         // On a wrapper, as a loading button is disabled and takes no hover. As wide as the switch
-        // it stands in for, from its start, so it lines up with theirs.
+        // it stands in for, with the button in its middle, so its icon lines up with the
+        // switches' centres, borderless spinner too.
         <Tooltip
           {...(busy === undefined
             ? {
@@ -165,14 +191,9 @@ export const ModRowActions = memo(
                   />
                 ),
               }
-            : {
-                content:
-                  busy === "installing"
-                    ? t("modsTable::rowActions::installing")
-                    : t("modsTable::rowActions::uninstalling"),
-              })}
+            : { content: t(BUSY_LABEL[busy]) })}
         >
-          <span className="flex w-8 shrink-0">
+          <span className="flex w-8 shrink-0 justify-center">
             <Button
               {...{ [ROW_CONTROL]: true }}
               // a step lighter while loading, so it drops its border
