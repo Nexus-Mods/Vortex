@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `StatePath`, `StateSlice<TState, P>` and `ReducerSpecFor<P>`, the types `registerReducer` uses to match a spec to the state at its path
 - `util.actionsToReducerSpec` and `util.actionsToPartialReducerSpec`, which build a reducer spec from your action creators with each handler's payload typed from its action, so a spec needs no `as any` keys - see the [reducer section of the migration guide](./docs/MIGRATION.md#vortex-2x-typed-registerreducer)
 - `util.setField`, which sets one field of a slice and keeps the same state when the value is unchanged
+- `IActionOptions`: `panel` property, for an action that opens a panel instead of running. It's given the ids the action is for, plus `close` and `dismiss` to put the panel (and the menu it opened from) away. Only the new UI's toolbars show it, so set `isModernOnly` too
 
 ### Removed
 

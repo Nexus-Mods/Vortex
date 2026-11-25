@@ -32,7 +32,7 @@ import { log } from "../util/log";
 import { getSafe, setSafe } from "../util/storeHelper";
 import { makeUnique, sanitizeCSSId, truthy } from "../util/util";
 import { ComponentEx, connect, extend, translate } from "./ComponentEx";
-import IconBar from "./IconBar";
+import IconBar, { notModernOnly } from "./IconBar";
 import {
   columnsOf,
   emitTableColumnsViewed,
@@ -59,9 +59,6 @@ export interface ITableRowAction extends IActionDefinition {
   hotKey?: { code: number; shift?: boolean; alt?: boolean; ctrl?: boolean };
   subMenus?: ITableRowAction[];
 }
-
-/** This is the classic table, so it leaves out what's registered for the new UI only. */
-const notModernOnly = (action: IActionDefinition) => !action.options?.isModernOnly;
 
 export interface IBaseProps {
   tableId: string;

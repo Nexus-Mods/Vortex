@@ -4,7 +4,7 @@
  * scrolls it, so the rows have to be observed against, and brought into view by, that
  * page scroll, not the pane.
  */
-import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
 import * as React from "react";
 import { Provider } from "react-redux";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -400,7 +400,9 @@ describe("SuperTable scroll retry", () => {
 
 describe("SuperTable selected rows' bar", () => {
   it("leaves out an action meant for the new UI only", async () => {
-    const action = { singleRowAction: false, multiRowAction: true, action: vi.fn() };
+    const classic = vi.fn();
+    const modern = vi.fn();
+    const action = { singleRowAction: false, multiRowAction: true };
     let tableInstance: any;
     const { container } = render(
       <AppContext>
@@ -413,8 +415,14 @@ describe("SuperTable selected rows' bar", () => {
           data={data}
           objects={attributes}
           actions={[
-            { ...action, icon: "add", title: "Classic action" },
-            { ...action, icon: "add", title: "Modern action", options: { isModernOnly: true } },
+            { ...action, icon: "add", title: "Classic action", action: classic },
+            {
+              ...action,
+              icon: "add",
+              title: "Modern action",
+              action: modern,
+              options: { isModernOnly: true },
+            },
           ]}
           attributeState={{}}
           language="en"
@@ -438,9 +446,15 @@ describe("SuperTable selected rows' bar", () => {
     const footer = await waitFor(() => {
       const element = container.querySelector(".table-footer");
       expect(element).not.toBeNull();
-      return element as Element;
+      return element as HTMLElement;
     });
-    expect(footer.textContent).toContain("Classic action");
-    expect(footer.textContent).not.toContain("Modern action");
+    // The bar of actions, not the selection count's own Deselect All beside it.
+    const bar = footer.querySelector(".btn-group") as HTMLElement;
+    const buttons = within(bar).getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+
+    fireEvent.click(buttons[0]);
+    expect(classic).toHaveBeenCalled();
+    expect(modern).not.toHaveBeenCalled();
   });
 });

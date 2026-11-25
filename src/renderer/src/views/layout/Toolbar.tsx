@@ -1,4 +1,4 @@
-import React, { type FC, useCallback } from "react";
+import React, { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import * as semver from "semver";
@@ -7,7 +7,7 @@ import Banner from "../../controls/Banner";
 import DynDiv from "../../controls/DynDiv";
 import FlexLayout from "../../controls/FlexLayout";
 import Icon from "../../controls/Icon";
-import IconBar from "../../controls/IconBar";
+import IconBar, { notModernOnly } from "../../controls/IconBar";
 import { useSwitchingProfile } from "../../hooks";
 import type { IActionDefinition } from "../../types/IActionDefinition";
 import type { IState } from "../../types/IState";
@@ -30,12 +30,6 @@ export const Toolbar: FC<React.PropsWithChildren<unknown>> = () => {
   const updateChannelClassName = "toolbar-version-container toolbar-version-" + prerelease;
 
   const className = customTitlebar ? "toolbar-app-region" : "toolbar-default";
-
-  // Filter out modernOnly actions (Classic UI should only show classicOnly or neutral actions)
-  const filterGlobalIcons = useCallback(
-    (action: IActionDefinition) => !action.options?.isModernOnly,
-    [],
-  );
 
   if (switchingProfile) {
     return <div className={className} />;
@@ -81,7 +75,7 @@ export const Toolbar: FC<React.PropsWithChildren<unknown>> = () => {
           <IconBar
             className="global-icons"
             collapse={true}
-            filter={filterGlobalIcons}
+            filter={notModernOnly}
             group="global-icons"
             id="global-icons"
             orientation="vertical"
