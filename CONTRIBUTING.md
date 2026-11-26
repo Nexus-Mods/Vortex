@@ -98,10 +98,15 @@ commit sometimes takes about 30 seconds and prints install output.
 For iterating on renderer (UI) code, `pnpm run dev` starts Vortex with hot
 module replacement instead of the build/start cycle:
 
-- Component (`.tsx`) edits hot-swap in place via react-refresh — React and
-  Redux state are preserved, no reload.
-- Edits that can't be hot-applied (reducers, utils, extension `index.ts` init
-  code) automatically trigger a clean window reload.
+- Edits to function components swap in place via react-refresh, usually in
+  well under a second. React and Redux state are preserved; no reload.
+- Edits that can't be hot-applied (class components, reducers, utils,
+  extension `index.ts` init code) reload the window. You stay on the same page;
+  other UI state, such as open dialogs and form input, is lost.
+- A save with a syntax error is reported in the terminal and the window keeps
+  running the last good code.
+- `tsc --watch` runs alongside and prints type errors prefixed `[tsc]`. They
+  never block an update.
 - Tailwind class changes rebuild `tailwind-v4.css` and swap the stylesheet in
   place, without a reload.
 - **Not covered:** main-process (`src/main`), preload, and `@vortex/shared`

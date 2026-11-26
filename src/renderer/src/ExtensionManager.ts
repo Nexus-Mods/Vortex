@@ -111,6 +111,7 @@ import type { i18n } from "./util/i18n";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
 import { MAX_TOAST_MS, showError } from "./util/message";
+import { nodeRequire } from "./util/nodeRequire";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
 import { savePathFromDialogResult } from "./util/savePathFromDialogResult";
@@ -126,7 +127,6 @@ import {
   wrapExtCBAsync,
   wrapExtCBSync,
 } from "./util/util";
-import { webpackRequireHack } from "./util/webpack-hacks";
 import { isToastSystemDisabled } from "./views/layout/ToastContainer";
 
 const modmeta = lazyRequire<typeof modmetaT>(() => require("modmeta-db"));
@@ -2891,10 +2891,9 @@ class ExtensionManager {
   }
 
   private static loadExternalExtension(id: string): ExtensionInit | undefined {
-    // NOTE(erri120): Hack for dynamically importing extensions.
-    // Webpack normally rewrites all requires to a custom __webpack__require
-    // but here we don't want that. We want the raw "normal" require.
-    const mod = webpackRequireHack(id);
+    // Extensions live at runtime paths outside the bundle, so they load
+    // through Node's own require rather than the bundler's.
+    const mod = nodeRequire(id);
     return this.getExtensionInitFunc(mod);
   }
 

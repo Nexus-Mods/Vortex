@@ -300,8 +300,8 @@ class MainWindow {
 
     this.mWindow.webContents.on("will-navigate", (event, url) => {
       if (url === this.mWindow?.webContents.getURL()) {
-        // page-initiated reload of the current page (e.g. the dev HMR
-        // fallback in tools/hmr-client.cjs); don't treat it as an external link
+        // page-initiated reload of the current page (e.g. the dev reload
+        // in src/renderer/hmr-client.js); don't treat it as an external link
         return;
       }
       log("debug", "navigating to page", url);

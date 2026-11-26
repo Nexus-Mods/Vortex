@@ -7,7 +7,7 @@ interface InternalModule extends Module {
   _load(request: string, parent?: Module | null, isMain?: boolean): unknown;
 }
 
-// when spawning a binary, the code doing the spawning will be baked by webpack
+// when spawning a binary, the code doing the spawning will be bundled
 // in release builds and thus reside in the app.asar file.
 // The binaries being spawned however have to be unpacked, so if the path being spawned
 // includes something like __dirname we have to update that path to work.

@@ -233,9 +233,9 @@ start a second run on top.
 How the app picks up each swap depends on what the change touches:
 
 - **Only files under `src/renderer`:** leave the app running. Give the watcher time to rebuild
-  (the dev output prints `[vortex-hmr] finished`; allow ten seconds when you can't see it), then
-  reload the window yourself and attach again. HMR alone isn't enough: it applies most edits in
-  place, which keeps state from the other version and never drops the handle.
+  (the dev output prints `[vortex-dev] built renderer.mjs`; allow ten seconds when you can't see
+  it), then reload the window yourself and attach again. HMR alone isn't enough: it applies most
+  edits in place, which keeps state from the other version and never drops the handle.
 
     ```sh
     node .claude/skills/live-test/scripts/mcp-call.mjs "js:() => { window.location.reload(); return true; }" \

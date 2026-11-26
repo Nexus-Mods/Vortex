@@ -33,18 +33,16 @@ TS 7:
 
 TS 6, through the hook:
 
-- `ts-loader` and `fork-ts-checker-webpack-plugin` in `src/renderer/webpack.config.cjs`.
-  These go away with the move from webpack to rolldown/vite (APP-565).
 - typescript-eslint's type-aware rules. These go away with the move from ESLint
   to oxlint.
 - Declaration (`.d.ts`) bundling: tsdown's `dts` option in each package's
   `tsdown.config.ts`, and `rolldown-plugin-dts` in `src/renderer/api-build.mjs`.
 
 To check which TypeScript a tool gets, resolve it from the tool's own folder. Run
-this in the package that depends on the tool (here `src/renderer`, for ts-loader):
+this in the package that depends on the tool (here the repo root, for tsdown):
 
 ```sh
-node -e "const r=require('module').createRequire(require.resolve('ts-loader/package.json'));console.log(r('typescript/package.json').version)"
+node -e "const r=require('module').createRequire(require.resolve('tsdown/package.json'));console.log(r('typescript/package.json').version)"
 ```
 
 `6.0.x` is TS 6 (the version of the `@typescript/typescript6` package);
@@ -63,12 +61,10 @@ gives it TS 6, with a comment saying why.
 
 TS 6 and the hook can go once every tool above works on TS 7. As of November 2026:
 
-| Tool                           | TS 7 status                                                                                                                                                                                                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| typescript-eslint              | No release supports TS 7. Its TS 7 backend is experimental. Tracked in [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940). This is the blocker.                                                                                                 |
-| fork-ts-checker-webpack-plugin | Not released. In progress in [fork-ts-checker-webpack-plugin#899](https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/pull/899).                                                                                                                                                   |
-| ts-loader                      | `10.0.0-beta.0` targets TS 7.1 only. It's a rewrite with breaking changes ([release notes](https://github.com/TypeStrong/ts-loader/releases/tag/v10.0.0-beta.0), [ts-loader#1671](https://github.com/TypeStrong/ts-loader/issues/1671)). Not worth adopting before APP-565 removes webpack. |
-| rolldown-plugin-dts, tsdown    | Support TS 7.1 through the `tsgo` generator from rolldown-plugin-dts 0.29 ([release notes](https://github.com/sxzz/rolldown-plugin-dts/releases/tag/v0.29.0)). The repo is on 0.28, and the upgrade has breaking option changes.                                                            |
+| Tool                        | TS 7 status                                                                                                                                                                                                                      |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| typescript-eslint           | No release supports TS 7. Its TS 7 backend is experimental. Tracked in [typescript-eslint#10940](https://github.com/typescript-eslint/typescript-eslint/issues/10940). This is the blocker.                                      |
+| rolldown-plugin-dts, tsdown | Support TS 7.1 through the `tsgo` generator from rolldown-plugin-dts 0.29 ([release notes](https://github.com/sxzz/rolldown-plugin-dts/releases/tag/v0.29.0)). The repo is on 0.28, and the upgrade has breaking option changes. |
 
 ## Editor setup
 

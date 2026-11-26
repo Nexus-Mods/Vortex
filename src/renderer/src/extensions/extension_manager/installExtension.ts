@@ -20,8 +20,8 @@ import type { IExtensionState, IState } from "../../types/IState";
 import { DataInvalid } from "../../util/CustomErrors";
 import { withTrackedActivity } from "../../util/errorHandling";
 import getVortexPath from "../../util/getVortexPath";
+import { nodeRequire } from "../../util/nodeRequire";
 import { INVALID_FILENAME_RE } from "../../util/util";
-import { webpackRequireHack } from "../../util/webpack-hacks";
 import {
   emitExtensionInstalled,
   type ExtensionInstallSource,
@@ -71,7 +71,7 @@ async function installExtensionDependencies(api: IExtensionApi, extPath: string)
   const context = new Proxy<IExtensionContext>({} as IExtensionContext, handler);
 
   try {
-    const extension: unknown = webpackRequireHack(path.join(extPath, "index.js"));
+    const extension: unknown = nodeRequire(path.join(extPath, "index.js"));
     const initFunc = ExtensionManager.getExtensionInitFunc(extension);
     if (initFunc === undefined) {
       log("warn", "extension has no init function, skipping dependency scan", {

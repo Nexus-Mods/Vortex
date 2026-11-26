@@ -92,11 +92,10 @@ if (process.env.NODE_ENV === "development") {
   const sourceMapSupport = require("source-map-support");
   sourceMapSupport.install();
 } else {
-  // webpack will replace every occurrence of process.env.NODE_ENV in its endeavour to eliminate
-  // dead code. It doesn't however set the environment variable itself for externals and the
-  // replacement means I can't set the actual environment variable directly anymore because
-  // "process.env.NODE_ENV = 'production'" would be converted to 'production' = 'production' at
-  // build time. So FU very much webpack
+  // The bundler replaces every occurrence of process.env.NODE_ENV at build time to eliminate
+  // dead code. It doesn't set the environment variable itself for externals, and the
+  // replacement means the variable can't be set directly either, because
+  // "process.env.NODE_ENV = 'production'" would become 'production' = 'production'.
   const key = "NODE_ENV";
   process.env[key] = "production";
 }

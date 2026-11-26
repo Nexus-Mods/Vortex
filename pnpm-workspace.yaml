@@ -18,12 +18,6 @@ catalog:
   7z-bin: github:Nexus-Mods/7z-bin#3298c42e69e3220dc39694bc2f610c077c3e213a
   "@actions/core": 1.11.1
   "@actions/github": 6.0.1
-  "@babel/core": 7.29.7
-  "@babel/polyfill": 7.12.1
-  "@babel/preset-env": 7.29.2
-  "@babel/preset-react": 7.28.5
-  "@babel/preset-typescript": 7.16.7
-  "@babel/register": 7.16.8
   "@clickhouse/client": 1.18.3
   "@cyclonedx/cyclonedx-library": 10.0.0
   "@duckdb/node-api": 1.5.1-r.1
@@ -48,7 +42,6 @@ catalog:
   "@opentelemetry/sdk-trace-base": 2.8.0
   "@opentelemetry/semantic-conventions": 1.40.0
   "@playwright/test": 1.61.1
-  "@pmmmwh/react-refresh-webpack-plugin": 0.6.2
   "@stylistic/eslint-plugin": 5.10.0
   "@tailwindcss/cli": 4.3.2
   "@tanstack/react-query": 5.104.5
@@ -58,8 +51,6 @@ catalog:
   "@testing-library/jest-dom": 6.9.1
   "@testing-library/react": 16.3.0
   "@testing-library/user-event": 14.6.1
-  "@types/babel__preset-env": 7.10.0
-  "@types/babel__register": 7.17.3
   "@types/bbcode-to-react": 0.2.4
   "@types/big.js": 6.2.2
   "@types/bluebird": 3.5.20
@@ -106,7 +97,6 @@ catalog:
   "@types/tmp": 0.1.0
   "@types/universal-analytics": 0.4.8
   "@types/uuid": 3.4.13
-  "@types/webpack-node-externals": 3.0.4
   "@types/which": 1.3.2
   "@types/write-file-atomic": 3.0.3
   "@types/ws": 7.4.7
@@ -117,7 +107,6 @@ catalog:
   "@vitest/ui": 4.1.9
   "@welldone-software/why-did-you-render": 7.0.1
   ajv: 8.18.0
-  babel-loader: 10.1.1
   bbcode-to-react: github:TanninOne/bbcode-to-react#c67356006470e5066ea447e04a3968dca367339d
   big.js: 5.2.2
   bluebird: 3.7.2
@@ -156,7 +145,6 @@ catalog:
   eslint-plugin-perfectionist: 5.9.1
   feedparser: 2.3.0
   font-scanner: 0.2.1
-  fork-ts-checker-webpack-plugin: 9.1.0
   fs-extra: 9.1.0
   fuzzball: 1.4.0
   glob: 11.1.0
@@ -235,23 +223,19 @@ catalog:
   reselect: 4.1.8
   resolve: 1.22.11
   rimraf: github:TanninOne/rimraf#7b8b70d4e8783cd233fca3283cf1f930af4e39c2
-  rolldown: 1.1.4
+  rolldown: 1.3.3
   rolldown-plugin-dts: 0.28.0
   sass: 1.101.0
   semver: 7.7.4
   shortid: 2.2.17
   simple-vdf: github:Nexus-Mods/vdf-parser#df279ff89cb480597544d3029e12f90cb8c79464
-  source-map-loader: 5.0.0
   source-map-support: 0.5.21
   string-template: 1.0.0
   tailwindcss: 4.3.2
   temporal-polyfill: 1.0.4
-  terser-webpack-plugin: 5.6.1
   tmp: 0.1.0
   tough-cookie: 6.0.1
-  ts-loader: 9.6.2
   ts-v-gen: 1.0.3
-  tsconfig-paths-webpack-plugin: 4.2.0
   tsdown: 0.22.3
   tsx: 4.23.0
   turbowalk: github:Nexus-Mods/node-turbowalk#c8d9be07cc658aecdca63af2508df929990cd583
@@ -266,9 +250,6 @@ catalog:
   vitest-fetch-mock: 0.4.5
   vitest: 4.1.9
   vortex-parse-ini: github:Nexus-Mods/vortex-parse-ini#2425af99d1cff2331ccf3aacfa892c314e99e18d
-  webpack: 5.108.4
-  webpack-cli: 7.2.1
-  webpack-node-externals: 3.0.0
   which: 1.3.1
   wholocks: github:Nexus-Mods/node-wholocks#28da3bcf312312e577d7c636799a59011998b4af
   winapi-bindings: github:Nexus-Mods/node-winapi-bindings#c4acf3b84185ef357ef77e7c724174d52ccd1788

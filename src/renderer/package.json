@@ -5,7 +5,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "build": "pnpm exec webpack --config ./webpack.config.cjs",
+    "build": "node ./build.mjs",
     "typecheck": "pnpm exec tsc -p tsconfig.json",
     "lint": "pnpm exec eslint --quiet --concurrency auto .",
     "lint:verbose": "pnpm exec eslint --concurrency auto .",
@@ -18,7 +18,8 @@
       "build": {
         "outputs": [
           "{workspaceRoot}/src/main/build/renderer.js",
-          "{workspaceRoot}/src/main/build/renderer.js.map",
+          "{workspaceRoot}/src/main/build/renderer.mjs",
+          "{workspaceRoot}/src/main/build/renderer.mjs.map",
           "{workspaceRoot}/src/main/build/splash.js",
           "{workspaceRoot}/src/main/build/splash.js.map"
         ]
@@ -55,12 +56,6 @@
     }
   },
   "devDependencies": {
-    "@babel/core": "catalog:",
-    "@babel/polyfill": "catalog:",
-    "@babel/preset-env": "catalog:",
-    "@babel/preset-react": "catalog:",
-    "@babel/preset-typescript": "catalog:",
-    "@babel/register": "catalog:",
     "@electron/remote": "catalog:",
     "@floating-ui/react": "catalog:",
     "@headlessui/react": "catalog:",
@@ -78,7 +73,6 @@
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/semantic-conventions": "catalog:",
-    "@pmmmwh/react-refresh-webpack-plugin": "catalog:",
     "@tailwindcss/cli": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-query-devtools": "catalog:",
@@ -87,8 +81,6 @@
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@testing-library/user-event": "catalog:",
-    "@types/babel__preset-env": "catalog:",
-    "@types/babel__register": "catalog:",
     "@types/bbcode-to-react": "catalog:",
     "@types/big.js": "catalog:",
     "@types/bluebird": "catalog:",
@@ -134,7 +126,6 @@
     "@vortex/shared": "workspace:*",
     "@welldone-software/why-did-you-render": "catalog:",
     "ajv": "catalog:",
-    "babel-loader": "catalog:",
     "bbcode-to-react": "catalog:",
     "big.js": "catalog:",
     "bluebird": "catalog:",
@@ -172,7 +163,6 @@
     "immutability-helper": "catalog:",
     "interweave": "catalog:",
     "is-admin": "catalog:",
-    "json-loader": "catalog:",
     "json-socket": "catalog:",
     "js-yaml": "catalog:",
     "jsonwebtoken": "catalog:",
@@ -205,7 +195,6 @@
     "react-markdown": "catalog:",
     "react-overlays": "catalog:",
     "react-redux": "catalog:",
-    "react-refresh": "catalog:",
     "react-select": "catalog:",
     "recharts": "catalog:",
     "redux": "catalog:",

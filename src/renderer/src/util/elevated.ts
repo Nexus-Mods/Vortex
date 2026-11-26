@@ -6,9 +6,7 @@ import * as tmp from "tmp";
 import * as winapi from "winapi-bindings";
 
 import { log } from "../logging";
-import { getRealNodeModulePaths } from "./webpack-hacks";
-
-declare const __non_webpack_require__: NodeJS.Require;
+import { getRealNodeModulePaths } from "./nodeRequire";
 
 export interface IElevatedIpc {
   sendMessage(data: unknown): void;
@@ -18,11 +16,9 @@ export interface IElevatedIpc {
 }
 
 /* eslint-disable -- elevatedMain is serialized as text into a temp file and executed
-   in a separate elevated Node process. All require() calls must use
-   __non_webpack_require__ so webpack doesn't transform them into
-   __webpack_require__ with internal module IDs. Similarly, imported bindings
-   (like unknownToError) can't be used here because webpack mangles their
-   references. */
+   in a separate elevated Node process. It may only use globals that plain Node
+   provides (require, module, process): imported bindings (like unknownToError)
+   don't exist there, and the bundler renames their references anyway. */
 function elevatedMain(
   moduleRoot: string[],
   ipcPath: string,
@@ -36,8 +32,8 @@ function elevatedMain(
   // spawning this inner Node child.
   const logError = (message: string, error: unknown) => {
     try {
-      const fs = __non_webpack_require__("fs");
-      const path = __non_webpack_require__("path");
+      const fs = require("fs");
+      const path = require("path");
       const userData = process.env.ELECTRON_USERDATA;
       if (!userData) return;
       const detail =
@@ -81,16 +77,16 @@ function elevatedMain(
   process.on("uncaughtException", handleError);
   process.on("unhandledRejection", handleError);
   (module as NodeJS.Module).paths.push(...moduleRoot);
-  const JsonSocket = __non_webpack_require__("json-socket");
-  const net = __non_webpack_require__("net");
-  const path = __non_webpack_require__("path");
+  const JsonSocket = require("json-socket");
+  const net = require("net");
+  const path = require("path");
 
   client = new JsonSocket(new net.Socket());
   client.connect(path.join("\\\\?\\pipe", ipcPath));
 
   client
     .on("connect", () => {
-      Promise.resolve(main(client, __non_webpack_require__))
+      Promise.resolve(main(client, require))
         .catch((error) => {
           const err = error instanceof Error ? error : new Error(String(error));
           client.sendError(err);
@@ -164,12 +160,15 @@ export function runElevated(
       let mainBody = elevatedMain.toString();
       mainBody = mainBody.slice(mainBody.indexOf("{") + 1, mainBody.lastIndexOf("}"));
 
-      // The elevatedMain function body is serialized via .toString() and executed
-      // in a separate Node process. We use __non_webpack_require__ in the function
-      // so webpack doesn't transform the calls, but that global doesn't exist in
-      // plain Node — so we alias it here. __webpack_require__ is also aliased in
-      // case the caller's serialized func callback contains webpack-transformed requires.
+      // The elevatedMain function body and the callback are serialized via
+      // .toString() and executed in a separate, plain Node process, so any name a
+      // bundler substituted for require has to exist there:
+      // - __require: rolldown's ESM dev bundle (pnpm run dev) rewrites require in
+      //   elevatedMain and in callbacks defined in the renderer.
+      // - __webpack_require__ / __non_webpack_require__: runElevated is part of the
+      //   extension API, and callbacks from webpack-bundled extensions use these.
       let prog = `
+        const __require = require;\n
         const __non_webpack_require__ = require;\n
         const __webpack_require__ = require;\n
         let moduleRoot = ${JSON.stringify(modulePaths)};\n

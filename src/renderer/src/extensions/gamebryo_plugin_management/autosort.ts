@@ -17,9 +17,9 @@ import { fileMD5 } from "../../util/checksum";
 import { recordErrorSpan } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
+import { nodeRequire } from "../../util/nodeRequire";
 import { getSafe } from "../../util/storeHelper";
 import { batchDispatch } from "../../util/util";
-import { webpackRequireHack } from "../../util/webpack-hacks";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import { clearPendingPluginSort } from "../mod_management/actions/transactions";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
@@ -82,7 +82,7 @@ declare module "../../types/IExtensionContext" {
 let LootAsyncClass: typeof LootAsync | undefined;
 function getLootAsync(): typeof LootAsync {
   if (LootAsyncClass === undefined) {
-    const lootModule = webpackRequireHack(
+    const lootModule = nodeRequire(
       path.join(getVortexPath("assets_unpacked"), "loot", "index.js"),
     ) as typeof import("loot");
     LootAsyncClass = lootModule.LootAsync;

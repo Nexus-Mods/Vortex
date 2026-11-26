@@ -5,7 +5,10 @@ import { getApplication } from "./application";
 
 // remove the file names from stack lines because they contain local paths
 function removeFileNames(input: string): string {
-  return input.replace(/(at [^\(]*)\(.*\)$/, "$1").replace(/at [A-Z]:\\.*\\([^\\]*)/, "at $1");
+  // A frame from the renderer bundle (an ES module) has a file URL rather than a path.
+  return input
+    .replace(/(at [^\(]*)\(.*\)$/, "$1")
+    .replace(/at (?:file:\/\/\/)?[A-Z]:[\\/].*[\\/]([^\\/]*)/, "at $1");
 }
 
 // remove everything in quotes to get file names and such out of the error message
