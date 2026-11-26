@@ -540,8 +540,8 @@ catalogs:
       specifier: github:TanninOne/drivelist#720d1890db11482ec05fc0f6aa176cfa6e6844dd
       version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd
     electron:
-      specifier: 45.4.1
-      version: 45.4.1
+      specifier: 45.5.0
+      version: 45.5.0
     electron-builder:
       specifier: 24.13.3
       version: 24.13.3
@@ -2347,7 +2347,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       modmeta-db:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/modmeta-db/tar.gz/daa8935b6e38e255ec192c908adfce35d47c0336(commander@6.2.1)(encoding-down@6.3.0)(express@4.22.1)(leveldown@5.6.0)(levelup@4.4.0)(supports-color@10.2.2)
@@ -3018,7 +3018,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       turbowalk:
         specifier: 'catalog:'
         version: https://codeload.github.com/Nexus-Mods/node-turbowalk/tar.gz/c8d9be07cc658aecdca63af2508df929990cd583
@@ -3522,7 +3522,7 @@ importers:
         version: 2.4.1
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       exe-version:
         specifier: workspace:*
         version: link:../../packages/exe-version
@@ -3744,7 +3744,7 @@ importers:
         version: 24.12.2
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       enquirer:
         specifier: 'catalog:'
         version: 2.4.1
@@ -3923,7 +3923,7 @@ importers:
         version: 3.6.0
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       i18next:
         specifier: 'catalog:'
         version: 21.10.0
@@ -3956,7 +3956,7 @@ importers:
         version: 1.5.1-r.1
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@45.4.1)
+        version: 2.1.3(electron@45.5.0)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4455,13 +4455,13 @@ importers:
         version: 10.1.0
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       electron-builder:
         specifier: 'catalog:'
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3)(supports-color@10.2.2)
       electron-extension-installer:
         specifier: 'catalog:'
-        version: 2.0.1(electron@45.4.1)
+        version: 2.0.1(electron@45.5.0)
       openapi-typescript:
         specifier: 'catalog:'
         version: 7.13.0
@@ -4482,7 +4482,7 @@ importers:
         version: link:../shared
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
 
   src/renderer:
     dependencies:
@@ -4492,7 +4492,7 @@ importers:
     devDependencies:
       '@electron/remote':
         specifier: 'catalog:'
-        version: 2.1.3(electron@45.4.1)
+        version: 2.1.3(electron@45.5.0)
       '@floating-ui/react':
         specifier: 'catalog:'
         version: 0.27.20(react-dom@18.3.1)(react@18.3.1)
@@ -4759,7 +4759,7 @@ importers:
         version: https://codeload.github.com/TanninOne/drivelist/tar.gz/720d1890db11482ec05fc0f6aa176cfa6e6844dd(supports-color@10.2.2)
       electron:
         specifier: 'catalog:'
-        version: 45.4.1(supports-color@10.2.2)
+        version: 45.5.0(supports-color@10.2.2)
       electron-context-menu:
         specifier: 'catalog:'
         version: 3.6.1
@@ -8780,8 +8780,8 @@ packages:
   electron-updater@6.8.9:
     resolution: {integrity: sha512-ZhVxM9iGONUpZGI1FxdMRgJjUFXi7AYGVa5PwKlO1tV1/4zDxQmfKpXOHVztKrd6L9rLcFjERvi1Mf2vxyTkig==}
 
-  electron@45.4.1:
-    resolution: {integrity: sha512-DjsJ/eQhovkjf1vYFFyh5GB8NMx+L5bdYaonvGOlWselg3DQ0fwIF0N/+2hrPsoS4whmmNswh21ym/8dgt1y5Q==}
+  electron@45.5.0:
+    resolution: {integrity: sha512-rBQ0Czu1Qrtrs6Fygq7Qtfcgkhpt79SylMkaFb1AhtXItdxh0Wq3ERQoPfBYECYf+FxptAiXKCZ7p+H/39CWIA==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -12441,7 +12441,7 @@ snapshots:
       env-paths: 3.0.0
       graceful-fs: 4.2.11
       progress: 2.0.3
-      semver: 7.8.5
+      semver: 7.7.4
       sumchecker: 3.0.1(supports-color@10.2.2)
     optionalDependencies:
       undici: 7.29.0
@@ -12478,9 +12478,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@45.4.1)':
+  '@electron/remote@2.1.3(electron@45.5.0)':
     dependencies:
-      electron: 45.4.1(supports-color@10.2.2)
+      electron: 45.5.0(supports-color@10.2.2)
 
   '@electron/universal@1.5.1(supports-color@10.2.2)':
     dependencies:
@@ -15777,9 +15777,9 @@ snapshots:
       pupa: 2.1.1
       unused-filename: 2.1.0
 
-  electron-extension-installer@2.0.1(electron@45.4.1):
+  electron-extension-installer@2.0.1(electron@45.5.0):
     dependencies:
-      electron: 45.4.1(supports-color@10.2.2)
+      electron: 45.5.0(supports-color@10.2.2)
       jszip: 3.10.1
 
   electron-is-dev@2.0.0: {}
@@ -15817,7 +15817,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@45.4.1(supports-color@10.2.2):
+  electron@45.5.0(supports-color@10.2.2):
     dependencies:
       '@electron-internal/extract-zip': 1.0.4
       '@electron/get': 5.0.0(supports-color@10.2.2)
