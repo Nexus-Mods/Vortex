@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { setDialogVisible, setOpenMainPage, setSettingsPage } from "@/actions/session";
+import { setOpenMainPage, setSettingsPage } from "@/actions/session";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
 import { PremiumBadge } from "@/ui/components/badges/premium_badge/PremiumBadge";
@@ -16,8 +16,8 @@ import { Toolbar } from "@/ui/components/toolbar/Toolbar";
 import type { IToolbarAction } from "@/ui/components/toolbar/ToolbarGroup";
 import { ToolbarGroup } from "@/ui/components/toolbar/ToolbarGroup";
 import { Typography } from "@/ui/components/typography/Typography";
-import { UserCanceled } from "@/util/CustomErrors";
 import { useRelativeTime } from "@/util/useRelativeTime";
+import { useNexusLogin } from "@/views/components/Header/premium/useNexusLogin.hook";
 import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
@@ -111,6 +111,9 @@ const collectInstallAllItems = (
 const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheckPageProps) => {
   const { t } = useTranslation(["health_check", "common"]);
   const dispatch = useDispatch();
+  // Logging in is a prerequisite for the Nexus-backed checks rather than a fix for an
+  // issue, so it goes through the same OAuth flow as the header's login button.
+  const requestLogin = useNexusLogin();
   const [selected, setSelected] = useState<IListedEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("active");
 
@@ -374,21 +377,6 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
       })}
     </div>
   );
-
-  // Logging in is a prerequisite for the Nexus-backed checks rather than a fix for an
-  // issue, so it goes through the same OAuth flow as the header's profile button.
-  const requestLogin = () => {
-    dispatch(setDialogVisible("login-dialog"));
-
-    api.events.emit("request-nexus-login", (err: Error) => {
-      if (err != null && !(err instanceof UserCanceled)) {
-        api.showErrorNotification?.("Login Failed", err, {
-          id: "failed-get-nexus-key",
-          allowReport: false,
-        });
-      }
-    });
-  };
 
   const loggedOutState = (
     <NoResults

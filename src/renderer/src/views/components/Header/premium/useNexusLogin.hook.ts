@@ -3,13 +3,14 @@ import { useDispatch } from "react-redux";
 
 import { setDialogVisible } from "@/actions";
 import { useExtensionContext } from "@/ExtensionProvider";
+import { fixLoginPromptCohort } from "@/extensions/nexus_integration/experiments/loginPromptExperiment";
 
 import { UserCanceled } from "../../../../util/CustomErrors";
 
 /**
- * Starts the Nexus Mods login flow: shows the login dialog and asks the nexus
- * integration to authenticate. Cancelling is a choice rather than a fault, so only
- * a real failure is reported.
+ * Starts the Nexus Mods login flow. The login dialog opens on its own once the login is waiting on
+ * the website, so it goes straight to the progress view. Cancelling is a choice rather than a
+ * fault, so only a real failure is reported.
  */
 export const useNexusLogin = (): (() => void) => {
   const dispatch = useDispatch();
@@ -17,7 +18,11 @@ export const useNexusLogin = (): (() => void) => {
   const api = extensions.getApi();
 
   return useCallback(() => {
-    dispatch(setDialogVisible("login-dialog"));
+    // STA-574: `control` keeps the old flow, which opens the old dialog first.
+    if (fixLoginPromptCohort() === "control") {
+      dispatch(setDialogVisible("login-dialog"));
+    }
+
     api.events.emit("request-nexus-login", (err: Error) => {
       if (err != null && !(err instanceof UserCanceled)) {
         api.showErrorNotification?.("Login Failed", err, {

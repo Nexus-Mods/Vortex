@@ -4,10 +4,15 @@ import React from "react";
 import type * as ReactReduxTypes from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { dispatch, emit, openUrl } = vi.hoisted(() => ({
+const { dispatch, emit, openUrl, experiment } = vi.hoisted(() => ({
   dispatch: vi.fn(),
   emit: vi.fn(),
   openUrl: vi.fn(),
+  experiment: { cohort: "test" as "test" | "control" },
+}));
+
+vi.mock("@/extensions/nexus_integration/experiments/loginPromptExperiment", () => ({
+  fixLoginPromptCohort: () => experiment.cohort,
 }));
 
 vi.mock("@/ExtensionProvider", () => ({
@@ -35,6 +40,8 @@ vi.mock("react-redux", async () => {
     useSelector: (selector: (state: unknown) => unknown) => selector(store.state),
   };
 });
+
+import { setDialogVisible } from "@/actions";
 
 import { PremiumIndicator } from "./PremiumIndicator";
 
@@ -73,10 +80,21 @@ describe("PremiumIndicator", () => {
     });
 
     it("starts the login flow when pressed", async () => {
+      experiment.cohort = "test";
       render(<PremiumIndicator />);
       await userEvent.click(screen.getByRole("button", { name: "Log in" }));
 
-      expect(dispatch).toHaveBeenCalled();
+      // The new login dialog opens on its own once the login is under way, so nothing opens it here.
+      expect(dispatch).not.toHaveBeenCalled();
+      expect(emit).toHaveBeenCalledWith("request-nexus-login", expect.any(Function));
+    });
+
+    it("opens the old login dialog first for the experiment's control cohort", async () => {
+      experiment.cohort = "control";
+      render(<PremiumIndicator />);
+      await userEvent.click(screen.getByRole("button", { name: "Log in" }));
+
+      expect(dispatch).toHaveBeenCalledWith(setDialogVisible("login-dialog"));
       expect(emit).toHaveBeenCalledWith("request-nexus-login", expect.any(Function));
     });
   });

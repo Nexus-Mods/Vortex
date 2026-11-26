@@ -41,6 +41,8 @@ export const flagVariantSchemas = {
         }),
       ) as z.ZodType<IGameFolderCheckFlagConfig>,
   },
+  // STA-574 experiment: on is the `test` cohort (login prompt and new login dialog).
+  "vortex-sta-574-login-prompt": {},
 };
 
 /** Overrides for the check limits sent to main, plus the renderer-side settings. */
