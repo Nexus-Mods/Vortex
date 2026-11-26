@@ -167,9 +167,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         onComplete: queueResolve,
       };
       lastDeployment.forEach((file) => {
-        const outputPath = [file.target || null, file.relPath]
-          .filter((i) => i !== null)
-          .join(path.sep);
+        const outputPath = path.join(file.target || "", file.relPath);
         const key = this.mNormalize(outputPath);
         this.mContext.previousDeployment[key] = file;
         if (!clean) {
@@ -807,13 +805,11 @@ abstract class LinkingActivator implements IDeploymentMethod {
       this.mContext.newDeployment[key].source,
       this.mContext.newDeployment[key].relPath,
     );
-    const fullOutputPath = [
+    const fullOutputPath = path.join(
       dataPath,
-      this.mContext.newDeployment[key].target || null,
+      this.mContext.newDeployment[key].target || "",
       this.mContext.newDeployment[key].relPath,
-    ]
-      .filter((i) => i !== null)
-      .join(path.sep);
+    );
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve()
