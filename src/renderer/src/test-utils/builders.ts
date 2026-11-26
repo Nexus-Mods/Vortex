@@ -138,6 +138,7 @@ import type { IDiscoveredTool } from "../types/IDiscoveredTool";
 import type {
   IExtensionApi,
   IExtensionContext,
+  IModTypeOptions,
   IRunOptions,
   IStateVerifier,
 } from "../types/IExtensionContext";
@@ -373,13 +374,18 @@ export function registerTestDeploymentMethod(method: IDeploymentMethod): void {
 }
 
 /** Registers a mod type deploying to `deployPath` for the current test. */
-export function registerTestModType(typeId: string, deployPath: string): void {
+export function registerTestModType(
+  typeId: string,
+  deployPath: string,
+  options?: IModTypeOptions,
+): void {
   registerModType(
     typeId,
     50,
     () => true,
     () => deployPath,
     vi.fn(),
+    options,
   );
   const registered = getModTypeExtensions();
   const modType = registered[registered.length - 1];

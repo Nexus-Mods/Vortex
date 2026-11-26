@@ -27,6 +27,7 @@ import {
   profileById,
 } from "../../../util/selectors";
 import { setdefault, truthy } from "../../../util/util";
+import { getModType } from "../../gamemode_management/util/modTypeExtensions";
 import { showExternalChanges } from "../actions/session";
 import { MERGED_PATH } from "../modMerging";
 import { modsForGame } from "../selectors";
@@ -201,7 +202,8 @@ export type ExternalChangeBucket = "merged" | "autoResolved" | "rest";
  *   - autoResolved: change is expected because Vortex just touched the source
  *                   mod (collection install, or installationPath in
  *                   recentChanges); resolved silently.
- *   - rest:         surfaced to the user via the external-changes dialog.
+ *   - rest:         surfaced to the user via the external-changes dialog, unless
+ *                   the change's mod type resolves it (resolveExternalChange).
  */
 export function classifyExternalChange(
   change: IFileChange,
@@ -262,6 +264,50 @@ function defaultInternalAction(typeId: string, input: IFileChange): IFileEntry {
   }[input.changeType] as FileAction;
 
   return fileEntry(typeId, input, action);
+}
+
+// the actions the external changes dialog offers for each change type
+const allowedActions: { [type in IFileChange["changeType"]]: readonly FileAction[] } = {
+  refchange: ["drop", "import", "newest"],
+  valchange: ["nop"],
+  deleted: ["restore", "delete"],
+  srcdeleted: ["import", "drop"],
+};
+
+/**
+ * The action a mod type picks for one of its external changes through its
+ * resolveExternalChange option. Undefined leaves the change to the user: the mod type
+ * has no resolver, leaves the change undecided, throws, or picks an action the dialog
+ * doesn't offer for that change type.
+ */
+function modTypeAction(
+  typeId: string,
+  gameId: string,
+  change: IFileChange,
+): FileAction | undefined {
+  const resolve = getModType(typeId)?.options.resolveExternalChange;
+  if (resolve === undefined) {
+    return undefined;
+  }
+  try {
+    const action = resolve(change, gameId);
+    if (action === undefined || allowedActions[change.changeType].includes(action)) {
+      return action;
+    }
+    log("warn", "mod type picked an invalid action for an external change", {
+      modType: typeId,
+      filePath: change.filePath,
+      changeType: change.changeType,
+      action,
+    });
+  } catch (err) {
+    log("warn", "mod type failed to resolve an external change", {
+      modType: typeId,
+      filePath: change.filePath,
+      error: unknownToError(err).message,
+    });
+  }
+  return undefined;
 }
 
 async function checkForExternalChanges(
@@ -342,19 +388,31 @@ export function dealWithExternalChanges(
       const automaticActions: IFileEntry[] = [];
       const userChanges: { [typeId: string]: IFileChange[] } = {};
       let count = 0;
+      let resolvedByModType = 0;
       const state = api.store.getState() as IState;
+      const gameId = profileById(state, profileId)?.gameId ?? activeGameId(state);
       const isInstallingCollection = getCollectionActiveSession(state) !== undefined;
       const context = { isInstallingCollection, recentChanges };
 
       for (const typeId of Object.keys(changes)) {
         for (const change of changes[typeId]) {
-          if (classifyExternalChange(change, context) === "rest") {
+          if (classifyExternalChange(change, context) !== "rest") {
+            automaticActions.push(defaultInternalAction(typeId, change));
+            continue;
+          }
+          const action = modTypeAction(typeId, gameId, change);
+          if (action !== undefined) {
+            automaticActions.push(fileEntry(typeId, change, action));
+            resolvedByModType++;
+          } else {
             (userChanges[typeId] ??= []).push(change);
             count++;
-          } else {
-            automaticActions.push(defaultInternalAction(typeId, change));
           }
         }
+      }
+
+      if (resolvedByModType > 0) {
+        log("info", "external changes resolved by their mod type", { count: resolvedByModType });
       }
 
       if (count > 0) {

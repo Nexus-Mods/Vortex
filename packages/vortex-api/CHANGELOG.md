@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `IModTypeOptions.resolveExternalChange`: a mod type can resolve external changes to its deployed files itself (for example save games the game rewrites) instead of showing them in the External Changes dialog. Return the action to apply, or `undefined` to show the change as usual. The action has to be one the dialog offers for the change type; anything else, or an exception, shows the change in the dialog. Older Vortex versions ignore the option
 - A JSON Schema for `info.json`, published as `@nexusmods/vortex-api/schemas/info.schema.json`, and an [`info.json` reference](./docs/INFO-JSON.md) covering every field, including `contributes`. Add `"$schema": "https://unpkg.com/@nexusmods/vortex-api/schemas/info.schema.json"` to your `info.json` for editor completion
 - `GameUid`, the id of a game in the Nexus Mods game catalogue, with its brander
 - `IMainPageOptions`: `menuIcon` property, a Material Symbol by name (such as `"settings"`) or an SVG path as `{ path }`, for the page's icon in the menu. A misspelled symbol name fails the typecheck
