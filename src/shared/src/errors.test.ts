@@ -77,6 +77,20 @@ describe("sanitizeFramePath", () => {
         `at f (app.asar/renderer.js:1:2)`,
       );
     });
+
+    it("strips a Windows file URL prefix before app.asar/", () => {
+      expect(
+        sanitizeFramePath(
+          `at f (file:///C:/Program%20Files/Vortex/resources/app.asar/renderer.mjs:1:2)`,
+        ),
+      ).toBe(`at f (app.asar/renderer.mjs:1:2)`);
+    });
+
+    it("strips a Unix file URL prefix before app.asar/", () => {
+      expect(
+        sanitizeFramePath(`at f (file:///usr/lib/vortex/resources/app.asar/renderer.mjs:1:2)`),
+      ).toBe(`at f (app.asar/renderer.mjs:1:2)`);
+    });
   });
 
   describe("plugins/ anchor", () => {

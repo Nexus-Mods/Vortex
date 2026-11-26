@@ -50,10 +50,11 @@ and `[tsc]` lines report type errors. Note that hot-swapped code can make
 _line-based_ breakpoints go stale until the next full reload — reload the
 window (Ctrl+R) if breakpoints stop hitting.
 
-In dev the renderer is an ES module (`renderer.mjs`, loaded by a small
-`renderer.js`), because rolldown's dev engine only produces ESM; production
-builds are CommonJS. Updates travel as files under `src/main/build/hmr/`; see
-`src/renderer/hmr-client.js` for how they're applied.
+The renderer is an ES module (`renderer.mjs`, loaded by a small `renderer.js`)
+in dev and production alike, because rolldown's dev engine only produces ESM
+and the two should behave the same. Updates travel as files under
+`src/main/build/hmr/`; see `src/renderer/hmr-client.js` for how they're
+applied.
 
 ### Set Breakpoints
 

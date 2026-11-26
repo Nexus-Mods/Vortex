@@ -175,13 +175,23 @@ export function isErrorWithSystemCode(err: unknown): err is ErrorWithSystemCode 
  *   "at f (D:\Dev\Vortex\src\foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
  *   "at f (/home/user/Vortex/src/foo.ts:1:2)" → "at f (src/foo.ts:1:2)"
  *   "at f (C:\Program Files\Vortex\resources\app.asar\renderer.js:1:2)" → "at f (app.asar/renderer.js:1:2)"
+ *   "at f (file:///C:/Program%20Files/Vortex/resources/app.asar/renderer.mjs:1:2)" → "at f (app.asar/renderer.mjs:1:2)"
  *   "at f (D:\Program Files\Vortex\resources\app.asar.unpacked\bundledPlugins\x\index.js:1:2)" → "at f (app.asar.unpacked/bundledPlugins/x/index.js:1:2)"
  *   "at f (C:\Users\user\AppData\Roaming\Vortex\plugins\x\index.js:1:2)" → "at f (plugins/x/index.js:1:2)"
  *   "ENOENT ... 'C:\Users\bob\AppData\Local\Larian\Mods\foo.pak'" → "ENOENT ... 'C:/Users/<USER>/AppData/Local/Larian/Mods/foo.pak'"
  *   "at f (chrome-extension://id/page.js:1:2)" → unchanged
  */
 export const sanitizeFramePath = (frame: string): string =>
-  frame.replace(INSTALL_PATH_RE, "").replace(/\\/g, "/").replace(USER_HOME_RE, "$1<USER>");
+  frame
+    .replace(FILE_URL_SCHEME_RE, "")
+    .replace(INSTALL_PATH_RE, "")
+    .replace(/\\/g, "/")
+    .replace(USER_HOME_RE, "$1<USER>");
+
+/** Matches the scheme of a `file:` URL, as in frames from an ES module (the renderer bundle), so
+ * the path is sanitized like a plain one: `file:///C:/x` becomes `C:/x` and `file:///usr/x`
+ * becomes `/usr/x`. */
+const FILE_URL_SCHEME_RE = /file:\/\/(?:\/(?=[A-Za-z]:))?/g;
 
 const SEP = String.raw`[/\\]`;
 const WIN = String.raw`[A-Za-z]:${SEP}`; // C:\ or C:/

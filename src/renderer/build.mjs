@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { rolldown } from "rolldown";
@@ -81,13 +82,16 @@ const minify =
 /**
  * @param {string} name the bundle name
  * @param {string} entry the entry file under src/
- * @param {import("rolldown").Plugin[]} [plugins] extra plugins, e.g. for the dev loop
+ * @param {object} [options]
+ * @param {"cjs" | "esm"} [options.format] the output format; an ES module is written as `<name>.mjs`
+ * @param {import("rolldown").Plugin[]} [options.plugins] extra plugins, e.g. for the dev loop
  */
-export function rendererConfig(name, entry, plugins = []) {
+export function rendererConfig(name, entry, { format = "cjs", plugins = [] } = {}) {
+  const esm = format === "esm";
   const config = createConfig(
     path.resolve(import.meta.dirname, "src", entry),
-    path.join(mainOutputDirectory, `${name}.js`),
-    "cjs",
+    path.join(mainOutputDirectory, `${name}.${esm ? "mjs" : "js"}`),
+    format,
     [lazyExternals(), ...plugins],
   );
 
@@ -98,18 +102,47 @@ export function rendererConfig(name, entry, plugins = []) {
 
   return {
     ...config,
+    // An ES module renderer can't import packages or node: built-ins as ES
+    // modules (Chromium's loader, CSP). The browser platform keeps every
+    // external a require() call, which Node integration provides.
+    ...(esm ? { platform: "browser" } : {}),
     tsconfig: path.resolve(import.meta.dirname, "tsconfig.json"),
     // One file per entry, as webpack produced: dynamic import() stays inline.
-    output: { ...output, minify, strictExecutionOrder: true, codeSplitting: false },
+    // CommonJS output only gets "use strict" when told to, and the sources
+    // carry no directive; an ES module is always strict.
+    output: { ...output, minify, strictExecutionOrder: true, codeSplitting: false, strict: true },
   };
 }
 
+/**
+ * The renderer is an ES module in dev and production alike. Rolldown's dev
+ * engine (dev.mjs) only outputs ESM, and building production the same way keeps
+ * the two environments the same: strict mode, how require() and the bundle
+ * load, and the paths in stack traces. index.html requires renderer.js, so
+ * renderer.js is a loader that adds renderer.mjs as a module script.
+ */
+export function writeRendererLoader() {
+  fs.writeFileSync(
+    path.join(mainOutputDirectory, "renderer.js"),
+    [
+      "// The renderer is an ES module (see src/renderer/build.mjs).",
+      'const script = document.createElement("script");',
+      'script.type = "module";',
+      'script.src = "./renderer.mjs";',
+      "document.body.appendChild(script);",
+      "",
+    ].join("\n"),
+  );
+}
+
 export const configs = [
-  rendererConfig("renderer", "renderer.tsx"),
+  rendererConfig("renderer", "renderer.tsx", { format: "esm" }),
+  // The splash screen has no dev engine: plain rolldown builds it the same way in dev.
   rendererConfig("splash", "splash.ts"),
 ];
 
 if (import.meta.main) {
+  writeRendererLoader();
   await Promise.all(
     configs.map(async (config) => {
       const bundle = await rolldown(config);

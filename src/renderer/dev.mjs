@@ -2,10 +2,9 @@
 // `watch` target (`pnpm run dev`).
 //
 // - The renderer builds with rolldown's dev engine (rolldown/experimental) into
-//   renderer.mjs. The engine only supports ESM output, so the dev renderer is
-//   an ES module; production builds (build.mjs) stay CommonJS. renderer.js
-//   becomes a loader that adds renderer.mjs as a module script, so index.html
-//   is the same in dev and production.
+//   renderer.mjs, from the same config as production (build.mjs). Both are ES
+//   modules loaded by the same renderer.js, so they differ only in the HMR
+//   runtime, minification and the React refresh transform.
 // - Each change produces a patch. It's written to src/main/build/hmr/ and the
 //   HMR client (hmr-client.js, built into renderer.mjs) imports and applies it.
 //   See hmr-client.js for the file protocol and the update rules.
@@ -25,7 +24,7 @@ import { watch } from "rolldown";
 import { dev } from "rolldown/experimental";
 
 import { mainOutputDirectory } from "../../rolldown.base.mjs";
-import { rendererConfig } from "./build.mjs";
+import { rendererConfig, writeRendererLoader } from "./build.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "..", "..");
 const SRC_DIR = path.resolve(import.meta.dirname, "src");
@@ -119,19 +118,12 @@ splashWatcher.on("event", (event) => {
 
 fs.rmSync(HMR_DIR, { recursive: true, force: true });
 fs.mkdirSync(HMR_DIR, { recursive: true });
-fs.writeFileSync(
-  path.join(mainOutputDirectory, "renderer.js"),
-  [
-    "// Dev build: the renderer is an ES module (see src/renderer/dev.mjs).",
-    'const script = document.createElement("script");',
-    'script.type = "module";',
-    'script.src = "./renderer.mjs";',
-    "document.body.appendChild(script);",
-    "",
-  ].join("\n"),
-);
+writeRendererLoader();
 
-const { output, ...input } = rendererConfig("renderer", "renderer.tsx", [reactRefreshWrapper()]);
+const { output, ...input } = rendererConfig("renderer", "renderer.tsx", {
+  format: "esm",
+  plugins: [reactRefreshWrapper()],
+});
 let startedElectron = false;
 let buildStarted = Date.now();
 /** @type {string | undefined} */
@@ -140,18 +132,14 @@ let clientId;
 const engine = await dev(
   {
     ...input,
-    // The renderer can't import packages or node: built-ins as ES modules
-    // (Chromium's loader, CSP); the browser platform keeps every external a
-    // require() call, which Node integration provides.
-    platform: "browser",
+    // The classic runtime matches tsconfig's "jsx": "react", which production uses.
     transform: { ...input.transform, jsx: { runtime: "classic", refresh: true } },
     experimental: { ...input.experimental, devMode: { implement: hmrImplementation() } },
   },
   {
     ...output,
-    file: path.join(mainOutputDirectory, "renderer.mjs"),
-    format: "esm",
     minify: false,
+    // The dev engine runs modules through its own runtime.
     strictExecutionOrder: undefined,
   },
   {
