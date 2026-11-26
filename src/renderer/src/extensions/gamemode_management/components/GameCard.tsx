@@ -1,3 +1,4 @@
+import { VortexGameId } from "@vortex/shared";
 import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -110,27 +111,15 @@ export const GameCard = ({ detectedStore, game, onRefreshGameInfo, section }: IG
 
   const action = actions[section];
 
-  // Activate is conditioned away for the game already in play, so its tile opens the
-  // game's mods rather than leading with nothing.
-  const openMods = useCallback(() => api.events.emit("show-main-page", "Mods"), [api]);
+  // Open on an added game is a click on that game in the spine: the layout activates the
+  // game when it has to and shows the page the game was last on. The tile only asks, since
+  // the profile switch takes the Games page down with it, this tile included.
+  const openGame = useCallback(
+    () => api.events.emit("open-game", VortexGameId(game.id)),
+    [api, game.id],
+  );
 
-  // An added game that isn't in play has to be activated before its mods can show. The
-  // profile switch takes the Games page down with it, this tile included, so the wait
-  // is a listener on the api rather than anything the tile holds. The next profile
-  // change ends it either way: the mods open if it put this game in play, and a switch
-  // that failed or went to another game lets it go.
-  const activateAndOpen =
-    primary &&
-    (() => {
-      api.events.once("profile-did-change", () => {
-        if (activeGameId(api.getState()) === game.id) {
-          openMods();
-        }
-      });
-      primary.onClick();
-    });
-
-  const runPrimary = isActive ? openMods : section === "added" ? activateAndOpen : primary?.onClick;
+  const runPrimary = section === "added" ? openGame : primary?.onClick;
   const onPrimary =
     runPrimary &&
     (() => {

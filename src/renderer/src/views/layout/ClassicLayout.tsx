@@ -8,6 +8,7 @@ import { WindowControls } from "../WindowControls";
 import { DialogLayer } from "./DialogLayer";
 import { LayoutContainer } from "./LayoutContainer";
 import { MainLayout } from "./MainLayout";
+import { useOpenGame } from "./open_game/useOpenGame.hook";
 import { ProfileSwitcher } from "./ProfileSwitcher";
 import { ToastContainer } from "./ToastContainer";
 import { Toolbar } from "./Toolbar";
@@ -16,6 +17,9 @@ import { UIBlocker } from "./UIBlocker";
 export const ClassicLayout: FC<React.PropsWithChildren<unknown>> = () => {
   const customTitlebar = useSelector((state: IState) => state.settings.window.customTitlebar);
   const switchingProfile = useSwitchingProfile();
+
+  // The modern layout answers "open-game" from its spine; this one has no spine.
+  useOpenGame();
 
   return (
     <>

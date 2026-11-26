@@ -27,6 +27,7 @@ import {
   activeProfileId as activeProfileIdSelector,
   lastActiveProfiles as lastActiveProfilesSelector,
   mainPage as mainPageSelector,
+  nextProfileId as nextProfileIdSelector,
   profileById as profileByIdSelector,
 } from "../../../util/selectors";
 import { deriveSpineSelection, type SpineSelection } from "./spine_selection/spineSelection.util";
@@ -42,13 +43,22 @@ interface IStateWithPlugins extends IState {
   };
 }
 
+/** How a game is opened, by a pick in the spine or an "open-game" event. */
+export interface ISelectGameOptions {
+  /**
+   * The page to open, in place of the one the game was last on. The game's first page
+   * opens where it has no such page.
+   */
+  page?: string;
+}
+
 interface ISpineContext {
   selection: SpineSelection;
   visiblePages: IMainPage[];
   /** When selection is "downloads", the game to filter by (null = all) */
   downloadGameFilter: string | null;
   selectHome: () => void;
-  selectGame: (gameId: VortexGameId) => void;
+  selectGame: (gameId: VortexGameId, options?: ISelectGameOptions) => void;
   selectDownloads: (gameId?: string) => void;
   setDownloadGameFilter: (gameId: string | null) => void;
   selectGlobalPage: (pageId: string) => void;
@@ -298,15 +308,31 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
   );
 
   const selectGame = useCallback(
-    (gameId: VortexGameId) => {
+    (gameId: VortexGameId, options?: ISelectGameOptions) => {
+      const state = api.getState();
+      // A page asked for wins over where the game was, which is what a game that was just
+      // added wants: a page left over from managing it before isn't a place to come back
+      // to. It opens as a page of the game's own, so it is remembered in that one's place.
+      const page = options?.page ?? storedPage(state, gameId);
+
+      // Whoever added the game has already started the switch to its new profile. That
+      // profile was never active, so asking for one below would raise the profile picker.
+      const nextProfileId = nextProfileIdSelector(state);
+      const switchingToGame =
+        nextProfileId !== undefined && profileByIdSelector(state, nextProfileId)?.gameId === gameId;
+      if (switchingToGame && gameId !== activeGameId) {
+        pendingGameRef.current = { gameId, page };
+        return;
+      }
+
       const profileId = lastActiveProfile[gameId];
       const profileExists =
-        profileId !== undefined && profileByIdSelector(api.getState(), profileId) !== undefined;
+        profileId !== undefined && profileByIdSelector(state, profileId) !== undefined;
 
       if (!profileExists) {
         // No usable last-active profile for this game — ask the
         // profile_management extension to show the profile picker dialog.
-        pendingGameRef.current = { gameId, page: storedPage(api.getState(), gameId) };
+        pendingGameRef.current = { gameId, page };
         api?.events.emit("activate-game", gameId);
         return;
       }
@@ -316,12 +342,12 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       }
 
       if (gameId !== activeGameId) {
-        pendingGameRef.current = { gameId, page: storedPage(api.getState(), gameId) };
+        pendingGameRef.current = { gameId, page };
         return;
       }
 
       pendingGameRef.current = undefined;
-      const remembered = rememberedPage(gamePages, gameId);
+      const remembered = gamePages.some((p) => p.id === page) ? page : undefined;
       if (remembered !== undefined || defaultGamePage !== undefined) {
         openPage(remembered ?? defaultGamePage, remembered === undefined);
       }
@@ -332,12 +358,21 @@ export const SpineProvider: FC<React.PropsWithChildren<unknown>> = ({
       activeGameId,
       dispatch,
       api,
-      rememberedPage,
       gamePages,
       defaultGamePage,
       openPage,
     ],
   );
+
+  // Anything outside the spine that opens a game asks through this event and gets what a
+  // click on the game's spine button does: the Games page's tiles, and adding a game,
+  // which names the page it opens on.
+  useEffect(() => {
+    api.events.on("open-game", selectGame);
+    return () => {
+      api.events.removeListener("open-game", selectGame);
+    };
+  }, [api, selectGame]);
 
   const selectGlobalPage = useCallback(
     (pageId: string) => {
