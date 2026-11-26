@@ -10,12 +10,14 @@ const store = vi.hoisted(() => ({
     mainPage: string;
     activeGameId: string | undefined;
     activeProfileId: string | undefined;
+    nextProfileId?: string;
     lastActiveProfiles: Record<string, string>;
     settings: { interface: ISettingsInterface };
     session: { base: object };
   },
   dispatch: vi.fn(),
   emit: vi.fn(),
+  on: vi.fn<(event: string, listener: (...args: unknown[]) => void) => void>(),
 }));
 
 vi.mock("react-redux", () => ({
@@ -28,7 +30,9 @@ vi.mock("../../../util/selectors", () => ({
   activeProfileId: (s: typeof store.state) => s.activeProfileId,
   lastActiveProfiles: (s: typeof store.state) => s.lastActiveProfiles,
   mainPage: (s: typeof store.state) => s.mainPage,
-  profileById: (_s: unknown, id: string) => ({ id }),
+  nextProfileId: (s: typeof store.state) => s.nextProfileId,
+  // Profiles here are named after their game: "stardew-profile".
+  profileById: (_s: unknown, id: string) => ({ id, gameId: id.replace(/-profile$/, "") }),
 }));
 
 const pages = vi.hoisted(() =>
@@ -37,6 +41,7 @@ const pages = vi.hoisted(() =>
     ["Games", "global"],
     ["application_settings", "global"],
     ["Mods", "per-game"],
+    ["Browse", "per-game"],
     ["health", "per-game"],
     ["Downloads", "global"],
     ["collection-view", "hidden"],
@@ -46,7 +51,7 @@ const pages = vi.hoisted(() =>
 vi.mock("../../../contexts", () => ({
   useMainContext: () => ({
     api: {
-      events: { emit: store.emit, on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      events: { emit: store.emit, on: store.on, once: vi.fn(), removeListener: vi.fn() },
       getState: () => store.state,
     },
   }),
@@ -122,6 +127,7 @@ describe("SpineProvider", () => {
       }
     });
     store.emit = vi.fn();
+    store.on = vi.fn();
   });
 
   it("starts in the active game whatever is open, then opens one of its pages", () => {
@@ -199,6 +205,52 @@ describe("SpineProvider", () => {
     activate("stardew");
 
     expect(navigations().at(-1)).toEqual(setOpenMainPage("health", false));
+  });
+
+  // What the Games page's Open asks for. It has to be the spine's own pick, so the two
+  // can't come to open a game differently.
+  it("opens a game asked for by event the way a pick in the spine does", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("stardew")]: "health" } };
+    const { navigate, activate } = renderSpine();
+    navigate("Games");
+
+    // The listener of the latest render, as an emit would reach it.
+    const openGame = store.on.mock.calls.findLast(([event]) => event === "open-game")?.[1];
+    act(() => openGame?.(VortexGameId("stardew")));
+
+    expect(store.dispatch).toHaveBeenCalledWith(setNextProfile("stardew-profile"));
+    expect(navigations()).toEqual([]);
+
+    activate("stardew");
+
+    expect(navigations()).toEqual([setOpenMainPage("health", false)]);
+  });
+
+  // Adding a game starts the switch to its new profile, then asks for the game. The
+  // profile was never active, so going on to activate it would raise the profile picker.
+  it("opens a game that was just added on the page asked for, and doesn't ask for a profile", () => {
+    // Left behind by managing the game before.
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("terraria")]: "health" } };
+    const { navigate, activate } = renderSpine();
+    navigate("Games");
+    store.state.nextProfileId = "terraria-profile";
+
+    const openGame = store.on.mock.calls.findLast(([event]) => event === "open-game")?.[1];
+    act(() => openGame?.(VortexGameId("terraria"), { page: "Browse" }));
+
+    expect(store.emit).not.toHaveBeenCalledWith("activate-game", expect.anything());
+    expect(store.dispatch).not.toHaveBeenCalledWith(setNextProfile(expect.anything()));
+
+    activate("terraria");
+
+    expect(navigations()).toEqual([setOpenMainPage("Browse", false)]);
+
+    navigate("Browse");
+
+    // Remembered in place of the page left behind, so the next pick in the spine agrees.
+    expect(store.state.settings.interface.lastPages?.games?.[VortexGameId("terraria")]).toBe(
+      "Browse",
+    );
   });
 
   it("remembers the page open in a game and on Home", () => {

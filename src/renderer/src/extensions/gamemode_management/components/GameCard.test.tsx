@@ -25,7 +25,7 @@ const { cardActions, emit, state } = vi.hoisted(() => ({
 
 vi.mock("@/contexts", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMainContext: () => ({ api: { events: { emit } } }),
+  useMainContext: () => ({ api: { events: { emit }, getState: () => state.current } }),
 }));
 
 vi.mock("react-redux", async () => {
@@ -111,6 +111,46 @@ describe("GameCard", () => {
     expect(screen.getByTestId("game-tile")).not.toHaveAttribute("data-store");
   });
 
+  describe("opening an added game", () => {
+    const gamesOpened = () => emit.mock.calls.filter(([event]) => event === "open-game");
+
+    // The layout owns what opening a game does, so the tile asks it and does nothing
+    // more: no activating and no page of its own choosing.
+    it("asks the layout to open the game, and leaves activating and the page to it", async () => {
+      const onClick = vi.fn();
+      cardActions.primary = { label: "Activate", onClick };
+      render(<GameCard game={skyrim} section="added" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      expect(gamesOpened()).toEqual([["open-game", "skyrimse"]]);
+      expect(onClick).not.toHaveBeenCalled();
+      expect(emit).not.toHaveBeenCalledWith("show-main-page", expect.anything());
+    });
+
+    // Activate is conditioned away for the game in play, which leaves it no lead action.
+    it("asks the same for the game already in play", async () => {
+      state.current.persistent.profiles = { p1: { gameId: "skyrimse" } };
+      state.current.settings.profiles.activeProfileId = "p1";
+      render(<GameCard game={skyrim} section="added" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Open" }));
+
+      expect(gamesOpened()).toEqual([["open-game", "skyrimse"]]);
+    });
+
+    it("doesn't open a game that is only being added", async () => {
+      const onClick = vi.fn();
+      cardActions.primary = { label: "Manage", onClick };
+      render(<GameCard game={skyrim} section="detected" />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Add game" }));
+
+      expect(onClick).toHaveBeenCalledOnce();
+      expect(gamesOpened()).toEqual([]);
+    });
+  });
+
   describe("tracking", () => {
     const tracked = () =>
       emit.mock.calls
@@ -132,7 +172,8 @@ describe("GameCard", () => {
 
         await userEvent.click(screen.getByRole("button", { name: label }));
 
-        expect(onClick).toHaveBeenCalledOnce();
+        // An added tile's lead is the tile's own Open, not a registered action.
+        expect(onClick).toHaveBeenCalledTimes(section === "added" ? 0 : 1);
         expect(tracked()).toEqual([
           {
             eventName: "app_game_tile_action_clicked",
@@ -156,7 +197,6 @@ describe("GameCard", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Open" }));
 
-      expect(emit).toHaveBeenCalledWith("show-main-page", "Mods");
       expect(tracked()).toEqual([
         expect.objectContaining({
           properties: expect.objectContaining({ placement: "primary", action: "open_mods" }),
