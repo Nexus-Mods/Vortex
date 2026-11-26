@@ -152,3 +152,27 @@ test("links to the staged file without a doubled separator when the staging path
     symlink.mockRestore();
   }
 });
+
+test("creates the link in the game folder without a doubled separator when the game path ends in one", async ({
+  makeDeployment,
+}) => {
+  const modName = "SomeMod";
+  const h = makeDeployment({ files: { "mod.ini": "[General]" }, method: "symlink", modName });
+  const symlink = vi.spyOn(fs, "symlinkAsync").mockResolvedValue(undefined);
+
+  try {
+    await h.method.prepare(h.gameDir, false, [], h.normalize);
+    await h.method.activate(
+      path.join(h.stagingDir, modName),
+      modName,
+      "",
+      new BlacklistSet([], { details: {} } as IGame, h.normalize),
+    );
+    await h.method.finalize("skyrimse", h.gameDir + path.sep, h.stagingDir);
+
+    expect(symlink).toHaveBeenCalledTimes(1);
+    expect(symlink.mock.calls[0][1]).toBe(path.join(h.gameDir, "mod.ini"));
+  } finally {
+    symlink.mockRestore();
+  }
+});
