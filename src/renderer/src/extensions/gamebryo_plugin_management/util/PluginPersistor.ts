@@ -158,6 +158,10 @@ class PluginPersistor implements IPersistor {
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
+  // whether the store should agree with mPlugins since loading began: their hydration was started
+  // (not awaited, and its failures are not reported back here), or there was nothing to load.
+  // A load starts from an emptied store, so it must not pass the files over
+  private mStoreInSync: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;
   private mOnExternalChange: (reason: PluginFileConflict) => PromiseLike<"keep" | "revert">;
@@ -220,6 +224,7 @@ class PluginPersistor implements IPersistor {
       this.mPluginFormat = pluginFormat(gameMode);
       this.mNativePlugins = nativePlugins(gameMode);
       this.mGameId = gameMode;
+      this.mStoreInSync = false;
       this.updateNative();
       // ensure that the native plugins are always included
       log("debug", "synching plugins", { pluginsPath: this.mPluginPath });
@@ -523,6 +528,24 @@ class PluginPersistor implements IPersistor {
     return this.mPlugins[pluginId].loadOrder + this.mInstalledNative.length;
   }
 
+  /**
+   * The file names of all deployed plugins and only those, in load order; one without a position
+   * goes last. Includes native plugins, which may be filtered out later, depending on the game.
+   * Blueprint plugins (Starfield) are excluded entirely: the game manages them itself and strips
+   * any that appear in plugins.txt / loadorder.txt on launch.
+   */
+  private sortedPlugins(): string[] {
+    const rank = (pluginId: string) => {
+      const pos = this.loadOrder(pluginId);
+      return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
+    };
+    return Object.keys(this.mKnownPlugins)
+      .filter((pluginId) => !this.mBlueprintPluginIds.has(pluginId))
+      .sort((lhs: string, rhs: string) => rank(lhs) - rank(rhs))
+      .filter((pluginId) => pluginId !== undefined)
+      .map((pluginId) => this.mKnownPlugins[pluginId]);
+  }
+
   private doSerialize(): Promise<void> {
     if (this.mPluginPath === undefined || this.mDataPath === undefined) {
       return Promise.resolve();
@@ -538,21 +561,7 @@ class PluginPersistor implements IPersistor {
     this.mSerializing = true;
     this.mSerializeScheduled = false;
 
-    // we need a list that includes all deployed plugins and only those,
-    // sorted by their load order
-    // this includes native plugins, which may be filtered out later, depending on the game
-    // Blueprint plugins (Starfield) are excluded entirely: the game manages them
-    // itself and strips any that appear in plugins.txt / loadorder.txt on launch.
-    // a plugin without a position goes last
-    const rank = (pluginId: string) => {
-      const pos = this.loadOrder(pluginId);
-      return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
-    };
-    const sorted: string[] = Object.keys(this.mKnownPlugins)
-      .filter((pluginId) => !this.mBlueprintPluginIds.has(pluginId))
-      .sort((lhs: string, rhs: string) => rank(lhs) - rank(rhs))
-      .filter((pluginId) => pluginId !== undefined)
-      .map((pluginId) => this.mKnownPlugins[pluginId]);
+    const sorted = this.sortedPlugins();
 
     const pluginsFile = path.join(destPath, "plugins.txt");
     return this.writeFiles(destPath, sorted)
@@ -635,6 +644,24 @@ class PluginPersistor implements IPersistor {
       entries.length === ours.length &&
       entries.every((entry, idx) => entry.toLowerCase() === ours[idx].toLowerCase())
     );
+  }
+
+  /**
+   * Whether plugins.txt means the same to the game as what Vortex holds now: the same plugins,
+   * with the same ones active in the same order. Only for the format that marks active plugins,
+   * where the game ignores the position of inactive ones and Skyrim SE moves them as it starts.
+   */
+  private matchesOurState(entries: string[]): boolean {
+    if (this.mPluginFormat !== "fallout4" || entries.length === 0) {
+      return false;
+    }
+    const normalize = (list: string[]) => {
+      const lower = list.map((entry) => entry.toLowerCase());
+      const active = lower.filter((entry) => entry.startsWith("*"));
+      const inactive = lower.filter((entry) => !entry.startsWith("*")).sort();
+      return [...active, ...inactive].join("\n");
+    };
+    return normalize(entries) === normalize(this.toPluginList(this.sortedPlugins()));
   }
 
   private filterFileData(
@@ -775,15 +802,18 @@ class PluginPersistor implements IPersistor {
           return delayed(RETRY_DELAY_MS).then(() => this.deserialize(true, adoptForeign));
         }
         const keys: string[] = this.filterFileData(data.toString("latin1"), true, foreign);
+        const unsettled = foreign.detected && !adoptForeign;
+        if (unsettled && this.mStoreInSync && this.matchesOurState(keys)) {
+          // nothing to decide, and taking the file in would lose the positions Vortex gave the
+          // inactive plugins, which they load at once activated
+          this.mRetryCounter = retryCount;
+          this.mFailed = false;
+          return Promise.resolve();
+        }
         this.initFromKeyList(newPlugins, keys, true, offset);
 
         return this.orderByFileTime(newPlugins).then(() => {
-          if (
-            foreign.detected &&
-            !adoptForeign &&
-            this.mLoaded &&
-            this.mOnExternalChange !== undefined
-          ) {
+          if (unsettled && this.mLoaded && this.mOnExternalChange !== undefined) {
             // a foreign rewrite while Vortex holds state for this game: the user decides
             this.promptExternalChange(PluginFileConflict.ForeignChange);
             return Promise.resolve();
@@ -795,6 +825,8 @@ class PluginPersistor implements IPersistor {
       .catch((err: unknown) => {
         if (getErrorCode(err) === "ENOENT") {
           this.mLoaded = true;
+          // nothing to take in, so an emptied store agrees unless mPlugins are from an earlier load
+          this.mStoreInSync ||= Object.keys(this.mPlugins).length === 0;
           return;
         }
         log("warn", "failed to read plugin file", {
@@ -860,6 +892,8 @@ class PluginPersistor implements IPersistor {
     }
     if (Object.keys(newPlugins).length === 0) {
       this.mLoaded = true;
+      // neither file holds anything to take in, nor does mPlugins
+      this.mStoreInSync = true;
       return;
     }
     this.adoptParsed(newPlugins);
@@ -951,6 +985,7 @@ class PluginPersistor implements IPersistor {
   private adoptParsed(newPlugins: IPluginMap) {
     this.mPlugins = newPlugins;
     this.mLoaded = true;
+    this.mStoreInSync = true;
     if (this.mResetCallback) {
       // reset() owns the retry counter and reports hydration failures
       void this.reset();
