@@ -11,4 +11,5 @@ export interface IToolStored {
   onStart?: "hide" | "hide_recover" | "close";
   exclusive?: boolean;
   defaultPrimary?: boolean;
+  startWithGame?: boolean;
 }
