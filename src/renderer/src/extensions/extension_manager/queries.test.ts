@@ -689,4 +689,43 @@ describe("findUpdatableExtensions", () => {
     const result = findUpdatableExtensions(installed, []);
     expect(result).toEqual([]);
   });
+
+  // Portal 2 Support's 1.2.1 file declares 1.2.0 in its info.json
+  it("ignores a version mismatch when the catalog lists the installed file", () => {
+    const installed = {
+      "ext-1": makeExtensionState({ modId: 109, fileId: 12542, version: "1.2.0" }),
+    };
+    const catalog = [makeAvailableExtension({ modId: 109, fileId: 12542, version: "1.2.1" })];
+    expect(findUpdatableExtensions(installed, catalog)).toEqual([]);
+  });
+
+  it("finds a catalog file with a higher file id, whatever its version says", () => {
+    const installed = {
+      "ext-1": makeExtensionState({ modId: 123, fileId: 100, version: "2.0.0" }),
+    };
+    const catalog = [makeAvailableExtension({ modId: 123, fileId: 200, version: "1.0.0" })];
+    const result = findUpdatableExtensions(installed, catalog);
+    expect(result.map(({ available }) => available.fileId)).toEqual([200]);
+  });
+
+  it("ignores a catalog file with a lower file id, whatever its version says", () => {
+    const installed = {
+      "ext-1": makeExtensionState({ modId: 123, fileId: 200, version: "1.0.0" }),
+    };
+    const catalog = [makeAvailableExtension({ modId: 123, fileId: 100, version: "2.0.0" })];
+    expect(findUpdatableExtensions(installed, catalog)).toEqual([]);
+  });
+
+  it("compares versions when no file id is stored", () => {
+    const installed = {
+      "ext-1": makeExtensionState({ modId: 123, version: "1.0.0" }),
+      "ext-2": makeExtensionState({ modId: 456, version: "2.0.0" }),
+    };
+    const catalog = [
+      makeAvailableExtension({ modId: 123, fileId: 200, version: "2.0.0" }),
+      makeAvailableExtension({ modId: 456, fileId: 300, version: "2.0.0" }),
+    ];
+    const result = findUpdatableExtensions(installed, catalog);
+    expect(result.map(({ key }) => key)).toEqual(["ext-1"]);
+  });
 });

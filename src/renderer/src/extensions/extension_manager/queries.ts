@@ -178,6 +178,12 @@ export function getMissingOptionalExtensions(
 type ExtensionUpdate = { key: string; installed: IExtensionState; available: IAvailableExtension };
 
 function isNewer(installed: IExtensionState, available: IAvailableExtension): boolean {
+  // the stored version is reset to info.json's on start, which can differ from the catalog's for
+  // the same file, so file ids decide where both are known: a higher one is a newer upload
+  if (Number.isFinite(installed.fileId) && Number.isFinite(available.fileId)) {
+    return available.fileId > installed.fileId;
+  }
+
   const installedVersion = semver.coerce(installed.version);
   const availableVersion = semver.coerce(available.version);
   if (installedVersion === null || availableVersion === null) return false;
