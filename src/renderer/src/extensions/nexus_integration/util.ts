@@ -38,6 +38,7 @@ import type { TFunction } from "i18next";
 import jwt from "jsonwebtoken";
 import * as _ from "lodash";
 import type * as Redux from "redux";
+import { batch } from "redux-act";
 
 import {
   addNotification,
@@ -66,7 +67,7 @@ import { jsonRequest } from "../../util/network";
 import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { activeGameId } from "../../util/selectors";
 import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, toPromise, truthy } from "../../util/util";
+import { batchDispatch, calculateChunkSize, toPromise, truthy } from "../../util/util";
 import type { RedownloadMode } from "../download_management/types/IDownload";
 import { SITE_ID } from "../gamemode_management/constants";
 import { gameById, knownGames } from "../gamemode_management/selectors";
@@ -1401,6 +1402,8 @@ function nexusLink(state: IState, mod: IMod, gameMode: string) {
 
 export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
   return BluebirdPromise.resolve(nexus.getEndorsements()).then((endorsements) => {
+    const games = knownGames(store.getState());
+    const gameIdByDomain = new Map<string, string>();
     const endorseMap: {
       [gameId: string]: { [modId: string]: EndorsedStatus };
     } = endorsements.reduce((prev, endorsement: IEndorsement) => {
@@ -1413,7 +1416,13 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
         return prev;
       }
 
-      const gameId = convertGameIdReverse(knownGames(store.getState()), endorsement.domain_name);
+      if (!gameIdByDomain.has(endorsement.domain_name)) {
+        gameIdByDomain.set(
+          endorsement.domain_name,
+          convertGameIdReverse(games, endorsement.domain_name),
+        );
+      }
+      const gameId = gameIdByDomain.get(endorsement.domain_name);
       const modId = endorsement.mod_id;
       if (prev[gameId] === undefined) {
         prev[gameId] = {};
@@ -1422,13 +1431,19 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
       return prev;
     }, {});
     const state: IState = store.getState();
+    // Collected and sent as one batch, skipping values that haven't changed: every change to
+    // app.extensions or a mod re-renders the pages that select them (the Games page among
+    // them), so one dispatch per extension froze the app for as many renders.
+    const actions: Redux.Action[] = [];
     const extState = state.app.extensions ?? {};
     Object.keys(extState).forEach((extId) => {
       const modId = extState[extId].modId;
 
       if (modId !== undefined) {
         const endorsed = getSafe(endorseMap, [SITE_ID, modId], "Undecided");
-        store.dispatch(setExtensionEndorsed(extId, endorsed));
+        if (endorsed !== extState[extId].endorsed) {
+          actions.push(setExtensionEndorsed(extId, endorsed));
+        }
       }
     });
     const allMods = state.persistent.mods;
@@ -1443,10 +1458,34 @@ export function refreshEndorsements(store: Redux.Store<any>, nexus: Nexus) {
         );
         const endorsed = getSafe(endorseMap, [dlGame, nexModId], "Undecided");
         if (endorsed !== oldEndorsed) {
-          store.dispatch(setModAttribute(gameId, modId, "endorsed", endorsed));
+          actions.push(setModAttribute(gameId, modId, "endorsed", endorsed));
         }
       });
     });
+    // Dispatched here and now rather than through batchDispatch, which defers large batches: the
+    // update check that follows reads these values, and a deferred batch built from this snapshot
+    // could overwrite an endorsement the user changes in the meantime. The chunks are sized the
+    // way batchDispatch sizes them.
+    const chunkSize = calculateChunkSize(actions);
+    for (let i = 0; i < actions.length; i += chunkSize) {
+      const chunk = actions.slice(i, i + chunkSize);
+      try {
+        store.dispatch(batch(chunk));
+      } catch {
+        // one bad entry fails its whole batch, so apply the batch one action at a time and skip
+        // only the actions that fail
+        chunk.forEach((action) => {
+          try {
+            store.dispatch(action);
+          } catch (err) {
+            log("warn", "failed to update endorsement", {
+              action: action.type,
+              message: getErrorMessageOrDefault(err),
+            });
+          }
+        });
+      }
+    }
   });
 }
 

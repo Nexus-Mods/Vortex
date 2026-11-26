@@ -798,7 +798,7 @@ const chunkSizeCache = new Map<string, number>();
  * Electron IPC has practical limits around 10-20MB of JSON payload
  * We target ~6MB chunks to be conservative and allow for JSON overhead
  */
-function calculateChunkSize(actions: Redux.Action[]): number {
+export function calculateChunkSize(actions: Redux.Action[]): number {
   if (actions.length === 0) {
     return 100;
   }
