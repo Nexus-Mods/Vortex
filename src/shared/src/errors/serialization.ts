@@ -191,6 +191,35 @@ function revive(
 }
 
 /**
+ * Rebuild the concrete class for a cancel error that was constructed as a plain
+ * VortexError, keeping its message, payload, cause and stack. An error thrown by
+ * an extension in this process never crosses IPC, so {@link deserializeVortexError}
+ * never gets to revive it. Anything else is returned unchanged.
+ *
+ * @deprecated Transitional, same as {@link reviveClass}.
+ */
+export function reviveCancelClass(err: unknown): unknown {
+  if (
+    !(err instanceof VortexError) ||
+    Object.getPrototypeOf(err) !== VortexError.prototype ||
+    (err.data.kind !== "user-canceled" && err.data.kind !== "process-canceled")
+  ) {
+    return err;
+  }
+  const revived = reviveClass(err.message, err.data);
+  if (revived === undefined) {
+    return err;
+  }
+  return Object.assign(revived, {
+    message: err.message,
+    data: err.data,
+    isTransient: err.isTransient,
+    cause: err.cause,
+    stack: err.stack,
+  });
+}
+
+/**
  * Single boundary entry point for the IPC envelope. Takes any thrown value,
  * coerces non-VortexError values through {@link parseError}, and returns the
  * serialized form.

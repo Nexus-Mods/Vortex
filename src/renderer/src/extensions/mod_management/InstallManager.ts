@@ -13,7 +13,7 @@ import {
   unknownToError,
 } from "@vortex/shared";
 import { parseError, VortexModStagingFolder } from "@vortex/shared";
-import { AlreadyDownloaded, InsufficientDiskSpace } from "@vortex/shared/errors";
+import { AlreadyDownloaded, InsufficientDiskSpace, reviveCancelClass } from "@vortex/shared/errors";
 import * as _ from "lodash";
 import type { IHashResult, ILookupResult, IRule } from "modmeta-db";
 import Zip from "node-7z";
@@ -1089,7 +1089,16 @@ class InstallManager {
     testSupported: TestSupported,
     install: InstallFunc,
   ) {
-    this.mInstallers.push({ id, priority, testSupported, install });
+    // An installer throws in this process, so give its cancel errors the classes the
+    // install pipeline checks for (see reviveCancelClass)
+    const revivingInstall: InstallFunc = async (...args) => {
+      try {
+        return await install(...args);
+      } catch (err) {
+        throw reviveCancelClass(err);
+      }
+    };
+    this.mInstallers.push({ id, priority, testSupported, install: revivingInstall });
     this.mInstallers.sort((lhs: IModInstaller, rhs: IModInstaller): number => {
       return lhs.priority - rhs.priority;
     });
@@ -1975,8 +1984,9 @@ class InstallManager {
                   return null;
                 })
                 .catch((err) => {
-                  // TODO: make this nicer. especially: The first check doesn't recognize UserCanceled
-                  //   exceptions from extensions, hence we have to do the string check (last one)
+                  // TODO: make this nicer. A plain VortexError cancel from an installer arrives here
+                  //   as UserCanceled / ProcessCanceled (see addInstaller); the string checks (last
+                  //   two) catch extensions that throw Error("Canceled") or their own UserCanceled
                   const errObj = unknownToError(err);
                   const canceled =
                     err instanceof UserCanceled ||
