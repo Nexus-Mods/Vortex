@@ -2,13 +2,17 @@ import { QualifiedPath } from "@vortex/shared/filesystem";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { installInMemoryFS } from "../test-utils/fsApi";
-import { EpicGamesLauncher, findEpicDataPath } from "./EpicGamesLauncher";
+import type { IExtensionApi } from "../types/IExtensionContext";
+import { EpicGamesLauncher, findEpicDataPath, setLaunchArguments } from "./EpicGamesLauncher";
 
 // registry keys mapped to the AppDataPath value they hold; any other key throws,
 // as RegGetValue does for a key that doesn't exist
 const registry = vi.hoisted(() => new Map<string, string>());
+// exe names GetProcessList reports as running
+const processes = vi.hoisted(() => [] as string[]);
 
 vi.mock("winapi-bindings", () => ({
+  GetProcessList: () => processes.map((exeFile) => ({ exeFile })),
   RegGetValue: (_hive: string, key: string, _value: string) => {
     const value = registry.get(key);
     if (value === undefined) {
@@ -111,5 +115,161 @@ describe("EpicGamesLauncher.reloadGames", () => {
     );
 
     expect(games.map((game) => game.name)).toEqual(["Abzu"]);
+  });
+});
+
+const GAME_KEY = "Abzu-namespace:Abzu-item:AbzuApp";
+const ME = "0123456789abcdef0123456789abcdef";
+const OTHER = "fedcba9876543210fedcba9876543210";
+
+/** A GameUserSettings.ini shaped like the launcher's: CRLF, blank line between sections. */
+const settingsIni = (...sections: string[][]): string =>
+  sections.map((lines) => lines.join("\r\n")).join("\r\n\r\n") + "\r\n";
+
+describe("setLaunchArguments", () => {
+  it("adds both keys to the section that has the game, keeping CRLF and the blank line", () => {
+    const ini = settingsIni(
+      ["[Launcher]", "LastActiveVersion=1"],
+      [`[${OTHER}_Settings]`, "fn:x:Fortnite_AutoUpdate=True"],
+      [`[${ME}_Settings]`, `${GAME_KEY}_AutoUpdate=True`],
+      [`[${ME}_Launcher]`, "LastPlayedGame=x"],
+    );
+
+    expect(setLaunchArguments(ini, GAME_KEY, ["-offline"])).toBe(
+      settingsIni(
+        ["[Launcher]", "LastActiveVersion=1"],
+        [`[${OTHER}_Settings]`, "fn:x:Fortnite_AutoUpdate=True"],
+        [
+          `[${ME}_Settings]`,
+          `${GAME_KEY}_AutoUpdate=True`,
+          `${GAME_KEY}_AdditionalCommandsEnabled=True`,
+          `${GAME_KEY}_AdditionalCommands=-offline`,
+        ],
+        [`[${ME}_Launcher]`, "LastPlayedGame=x"],
+      ),
+    );
+  });
+
+  it("uses the only settings section when none has the game yet", () => {
+    const ini = settingsIni([`[${ME}_Settings]`, "Allow_RetryCanceledUpdates=False"]);
+
+    expect(setLaunchArguments(ini, GAME_KEY, ["-offline"])).toContain(
+      `Allow_RetryCanceledUpdates=False\r\n${GAME_KEY}_AdditionalCommandsEnabled=True\r\n` +
+        `${GAME_KEY}_AdditionalCommands=-offline\r\n`,
+    );
+  });
+
+  it("gives up when several accounts exist and none has the game", () => {
+    const ini = settingsIni([`[${ME}_Settings]`], [`[${OTHER}_Settings]`]);
+
+    expect(setLaunchArguments(ini, GAME_KEY, ["-offline"])).toBeUndefined();
+  });
+
+  it("keeps the user's own enabled arguments and adds only the missing ones", () => {
+    const ini = settingsIni([
+      `[${ME}_Settings]`,
+      `${GAME_KEY}_AdditionalCommandsEnabled=True`,
+      `${GAME_KEY}_AdditionalCommands=-windowed -offline`,
+    ]);
+
+    const once = setLaunchArguments(ini, GAME_KEY, ["-offline", "+set fov 90"]);
+    expect(once).toContain(`${GAME_KEY}_AdditionalCommands=-windowed -offline +set fov 90\r\n`);
+    // launching again doesn't add them a second time
+    expect(setLaunchArguments(once!, GAME_KEY, ["-offline", "+set fov 90"])).toBe(once);
+  });
+
+  it("replaces a disabled setting's value and enables it", () => {
+    const ini = settingsIni([
+      `[${ME}_Settings]`,
+      `${GAME_KEY}_AdditionalCommandsEnabled=False`,
+      `${GAME_KEY}_AdditionalCommands=-old`,
+    ]);
+
+    expect(setLaunchArguments(ini, GAME_KEY, ["-offline"])).toBe(
+      settingsIni([
+        `[${ME}_Settings]`,
+        `${GAME_KEY}_AdditionalCommandsEnabled=True`,
+        `${GAME_KEY}_AdditionalCommands=-offline`,
+      ]),
+    );
+  });
+});
+
+describe("EpicGamesLauncher.launchGame", () => {
+  const SETTINGS_PATH = "C:\\Users\\Me\\AppData\\Local\\EpicGamesLauncher\\GameUserSettings.ini";
+  const INI = settingsIni([`[${ME}_Settings]`, `${GAME_KEY}_AutoUpdate=True`]);
+  const URI = "com.epicgames.launcher://apps/AbzuApp?action=launch&silent=true";
+
+  let openUrl: ReturnType<typeof vi.fn>;
+  let sendNotification: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    processes.length = 0;
+    openUrl = vi.fn();
+    sendNotification = vi.fn();
+  });
+
+  /** Launches Abzu with `appInfo` and returns the settings file afterwards (undefined if
+   * it doesn't exist). */
+  async function launch(appInfo: unknown, ini: string | undefined = INI) {
+    const settingsFile = QualifiedPath.fromNative(SETTINGS_PATH);
+    const { restore } = installInMemoryFS((builder) => {
+      builder.file(QualifiedPath.fromNative(DATA_PATH).join("Manifests").join("A.item"), {
+        type: "text",
+        data: manifest("Abzu", "C:\\Games\\Abzu"),
+      });
+      builder.file(QualifiedPath.fromNative("C:\\Games\\Abzu").join("Game.exe"), {
+        type: "text",
+        data: "",
+      });
+      if (ini !== undefined) {
+        builder.file(settingsFile, { type: "text", data: ini });
+      }
+    });
+    const previousShell = window.api.shell;
+    window.api.shell = { ...previousShell, openUrl } as typeof window.api.shell;
+
+    try {
+      const store = new EpicGamesLauncher(DATA_PATH, SETTINGS_PATH);
+      await store.reloadGames();
+      await store.launchGame(appInfo, { sendNotification } as unknown as IExtensionApi);
+      return ini === undefined
+        ? undefined
+        : new TextDecoder().decode(await window.api.fs.readFile(settingsFile));
+    } finally {
+      window.api.shell = previousShell;
+      restore();
+    }
+  }
+
+  it("leaves the settings file alone when there are no arguments", async () => {
+    expect(await launch({ appId: "AbzuApp" })).toBe(INI);
+    expect(await launch({ appId: "AbzuApp", parameters: ["", "  "] })).toBe(INI);
+    expect(openUrl).toHaveBeenCalledWith(URI);
+  });
+
+  it("writes the arguments into the launcher's setting before opening the launch URI", async () => {
+    const ini = await launch({ appId: "AbzuApp", parameters: ["-offline", "-skipintro"] });
+
+    expect(ini).toContain(`${GAME_KEY}_AdditionalCommandsEnabled=True\r\n`);
+    expect(ini).toContain(`${GAME_KEY}_AdditionalCommands=-offline -skipintro\r\n`);
+    expect(openUrl).toHaveBeenCalledWith(URI);
+    expect(sendNotification).not.toHaveBeenCalled();
+  });
+
+  it("skips the write and tells the user when the launcher is already running", async () => {
+    processes.push("EpicGamesLauncher.exe");
+
+    expect(await launch({ appId: "AbzuApp", parameters: ["-offline"] })).toBe(INI);
+    expect(sendNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "epic-launch-arguments-skipped", type: "info" }),
+    );
+    expect(openUrl).toHaveBeenCalledWith(URI);
+  });
+
+  it("still launches when the settings file doesn't exist", async () => {
+    await launch({ appId: "AbzuApp", parameters: ["-offline"] }, undefined);
+
+    expect(openUrl).toHaveBeenCalledWith(URI);
   });
 });

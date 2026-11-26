@@ -93,6 +93,10 @@ export interface IGame extends ITool {
    * addInfo is required and what it needs to contain depends on the store.
    * For steam you can leave addInfo undefined, for the epic game store it has to be a string with
    * the application id (same id used to discover the game)
+   * For epic it can also be { appId: <application id>, parameters: ["-arg1", "-arg2"] }. The
+   * strings are added to the game's "Additional command line arguments" setting in the Epic Games
+   * Launcher, which only works while the launcher is closed; if it's running, the game starts
+   * without them and the user is told why.
    *
    * For the windows store it has to be an object with this structure:
    * {
