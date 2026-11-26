@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/unbound-method */
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -6,7 +5,7 @@ import FormInput from "../../../controls/FormInput";
 
 interface IProps {
   currentFilterValue: string;
-  setFilter(value: string): void;
+  setFilter: (value: string) => void;
 }
 
 const FilterBox: React.FC<React.PropsWithChildren<IProps>> = ({

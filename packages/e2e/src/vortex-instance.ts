@@ -22,8 +22,8 @@ export function resolveMainDir(): string {
 }
 
 export function resolveElectronBinary(): string {
-  // oxlint-disable-next-line typescript/no-unsafe-return
-  return require("electron");
+  // In Node, the electron package exports the path to the Electron binary.
+  return require("electron") as string;
 }
 
 /**

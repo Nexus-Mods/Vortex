@@ -1,11 +1,11 @@
-/* oxlint-disable typescript/consistent-type-imports */
 import path from "path";
 
 import memoizeOne from "memoize-one";
 
 import * as fs from "../../../util/fs";
 import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscoveryResult";
-import { gameDataPath, IGameSupport, pluginExtensions } from "./gameSupport";
+import type { IGameSupport } from "./gameSupport";
+import { gameDataPath, pluginExtensions } from "./gameSupport";
 
 export const patternMatchNativePlugins = memoizeOne(
   async (
