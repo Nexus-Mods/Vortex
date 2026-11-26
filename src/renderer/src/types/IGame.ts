@@ -104,6 +104,8 @@ export interface IGame extends ITool {
    * The starter id can be found by looking at the appxmanifest.xml file found in
    * the game directory. Look for the Id attribute in the <Application> tag.
    * If there are multiple <Application> tags, pick the one you actually want Vortex to start.
+   * Any strings in the parameters array are passed to the game as command line arguments,
+   * joined with spaces, e.g. parameters: [{ appExecName: <starter id> }, "-arg1", "-arg2"].
    *
    * @param gamePath path where the game is installed.
    * @param store id of the store the game was detected through

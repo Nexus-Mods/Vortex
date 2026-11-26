@@ -85,33 +85,51 @@ export class XboxLauncher implements IGameStore {
   //  - PunlisherId
   //  - The game/app "executable"
   // e.g. explorer.exe shell:appsFolder\\SystemEraSoftworks.29415440E1269_ftk5pbg2rayv2!ASTRONEER
+  //
+  // appInfo.parameters may hold, in any order, one { appExecName } object (the
+  //  Application Id to start) and any number of strings, which are passed to the
+  //  game as command line arguments.
   public async launchGame(appInfo: any, api?: IExtensionApi): Promise<void> {
     if (!appInfo) {
       throw new ArgumentInvalid("appInfo is undefined/null");
     }
 
-    const isCustomExecObject = () => {
-      return typeof appInfo === "object" && "appId" in appInfo;
-    };
+    const isCustomExecObject = typeof appInfo === "object" && "appId" in appInfo;
+    const parameters: unknown[] =
+      isCustomExecObject && Array.isArray(appInfo.parameters) ? appInfo.parameters : [];
+    const nameArg = parameters.find(
+      (arg): arg is { appExecName: string } =>
+        typeof arg === "object" && arg !== null && "appExecName" in arg,
+    );
+    const args = parameters.filter(
+      (arg): arg is string => typeof arg === "string" && arg.trim().length > 0,
+    );
 
-    const findExecName = (entry: IXboxEntry) => {
-      let appExecName: string;
-      if (isCustomExecObject()) {
-        const nameArg = appInfo.parameters.find((arg) => "appExecName" in arg);
-        appExecName = !!nameArg ? nameArg.appExecName : entry.executionName;
-      } else {
-        appExecName = entry.executionName;
-      }
-
-      return appExecName;
-    };
-
-    const appId = isCustomExecObject() ? appInfo.appId : appInfo.toString();
+    const appId = isCustomExecObject ? appInfo.appId : appInfo.toString();
     const entry = await this.findByAppId(appId);
+    const appExecName = nameArg !== undefined ? nameArg.appExecName : entry.executionName;
 
-    const launchCommand = `shell:appsFolder\\${(entry as any).appid}_${entry.publisherId}!${findExecName(entry)}`;
-    log("debug", "launching game through xbox store", launchCommand);
-    await this.oneShotLaunch(launchCommand);
+    const launchCommand = `shell:appsFolder\\${(entry as any).appid}_${entry.publisherId}!${appExecName}`;
+    if (args.length === 0) {
+      log("debug", "launching game through xbox store", launchCommand);
+      await this.oneShotLaunch(launchCommand);
+      return;
+    }
+
+    const argString = args.join(" ");
+    log("debug", "launching game through xbox store", { launchCommand, args: argString });
+    try {
+      // explorer.exe drops any arguments after the shell:appsFolder target, but
+      //  ShellExecuteEx hands them to the package's entry point (usually
+      //  GameLaunchHelper.exe, which forwards them to the game executable)
+      winapi.ShellExecuteEx({ file: launchCommand, parameters: argString, show: "shownormal" });
+    } catch (err) {
+      log("warn", "failed to launch xbox game with arguments, launching without them", {
+        launchCommand,
+        error: parseError(err).message,
+      });
+      await this.oneShotLaunch(launchCommand);
+    }
   }
 
   public async findByName(appName: string): Promise<IXboxEntry> {
