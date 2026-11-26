@@ -158,8 +158,9 @@ class PluginPersistor implements IPersistor {
   private mRetryCounter: number = retryCount;
   private mLoaded: boolean = false;
   private mFailed: boolean = false;
-  // whether the store agrees with mPlugins since loading began: it was hydrated from them, or there
-  // was nothing to load. A load starts from an emptied store, so it must not pass the files over
+  // whether the store should agree with mPlugins since loading began: their hydration was started
+  // (not awaited, and its failures are not reported back here), or there was nothing to load.
+  // A load starts from an emptied store, so it must not pass the files over
   private mStoreInSync: boolean = false;
   private mOnError: (message: string, details: Error, options?: IErrorOptions) => void;
   private mControlOrder: () => boolean;

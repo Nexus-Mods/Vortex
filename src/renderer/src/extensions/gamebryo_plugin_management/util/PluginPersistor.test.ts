@@ -394,6 +394,33 @@ describe("PluginPersistor", () => {
         expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
       });
 
+      it("leaves out the game's own plugins, which the game does not list either", async () => {
+        const onExternalChange = asked();
+        paths.native = ["skyrim.esm"];
+        await persistor.loadFiles("skyrimse");
+        persistor.setKnownPlugins({
+          "skyrim.esm": "Skyrim.esm",
+          "old.esp": "Old.esp",
+          "parked.esp": "Parked.esp",
+          "main.esp": "Main.esp",
+          "spare.esp": "Spare.esp",
+        });
+        await settleWrites();
+        expect(nodeFs.readFileSync(pluginsFile(), "latin1")).toBe(OURS);
+
+        await gameRewrite("Spare.esp", "Parked.esp", "*Old.esp", "*Main.esp");
+
+        expect(onExternalChange).not.toHaveBeenCalled();
+      });
+
+      // the old format lists only active plugins, without a marker, so their order is all it says
+      it("asks when the game reorders the plugins of the old format", async () => {
+        const onExternalChange = asked();
+        (persistor as unknown as { mPluginFormat: string }).mPluginFormat = "original";
+        await gameRewrite("Main.esp", "Old.esp");
+        expect(onExternalChange).toHaveBeenCalledWith(PluginFileConflict.ForeignChange);
+      });
+
       it("takes the file in on Keep even where only inactive plugins moved", async () => {
         let choose: (choice: "keep" | "revert") => void = () => undefined;
         persistor.setExternalChangeCallback(
