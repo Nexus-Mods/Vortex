@@ -13,6 +13,7 @@
 
 import * as path from "path";
 
+import { escapeDesktopExecFilePath, escapeDesktopFilePath } from "@vortex/shared";
 import * as fs from "fs-extra";
 
 import { log } from "../../log";
@@ -22,7 +23,6 @@ import {
   refreshDesktopDatabase,
   setDefaultUrlSchemeHandler,
 } from "./common";
-import { escapeDesktopExecFilePath, escapeDesktopFilePath } from "./desktopFileEscaping";
 
 const NXM_PROTOCOL = "nxm";
 const PACKAGE_DESKTOP_ID = "com.nexusmods.vortex.desktop";
