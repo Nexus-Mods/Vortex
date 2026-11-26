@@ -7,12 +7,12 @@ import type { WithTranslation } from "react-i18next";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-import { setDialogVisible } from "../../../actions/session";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
 import Icon from "../../../controls/Icon";
 import Image from "../../../controls/Image";
 import * as tooltip from "../../../controls/TooltipControls";
 import type { IState } from "../../../types/IState";
+import { UserCanceled } from "../../../util/CustomErrors";
 import getVortexPath from "../../../util/getVortexPath";
 import { showError } from "../../../util/message";
 import { truthy } from "../../../util/util";
@@ -37,7 +37,6 @@ interface IActionProps {
   onSetAPIKey: (APIKey: string) => void;
   onClearOAuthCredentials: () => void;
   onClearUserInfo: () => void;
-  onShowDialog: () => void;
   onShowError: (title: string, err: Error) => void;
 }
 
@@ -147,7 +146,7 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
     if (!this.isLoggedIn()) {
       this.context.api.events.emit("analytics-track-click-event", "Profile", "Site profile");
-      this.setDialogVisible(true);
+      // The login dialog opens on its own once the login is under way.
       this.launchNexusOauth();
     } else {
       window.api.shell.openUrl(`${NEXUS_BASE_URL}/users/${userInfo.userId}`);
@@ -156,9 +155,8 @@ class LoginIcon extends ComponentEx<IProps, {}> {
 
   private launchNexusOauth = () => {
     this.context.api.events.emit("request-nexus-login", (err: Error) => {
-      if (err !== null) {
+      if (err !== null && !(err instanceof UserCanceled)) {
         this.props.onShowError("Login Failed", err);
-        this.hideLoginLayer();
       }
     });
   };
@@ -167,14 +165,6 @@ class LoginIcon extends ComponentEx<IProps, {}> {
     const { isLoggedIn, userInfo } = this.props;
     //return isLoggedIn;
     return isLoggedIn && userInfo !== undefined && userInfo !== null;
-  };
-
-  private hideLoginLayer = () => {
-    this.setDialogVisible(false);
-  };
-
-  private setDialogVisible = (visible: boolean): void => {
-    this.props.onShowDialog();
   };
 }
 
@@ -191,7 +181,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch<any, null, Redux.Action>): I
     onSetAPIKey: (APIKey: string) => dispatch(setUserAPIKey(APIKey)),
     onClearOAuthCredentials: () => dispatch(clearOAuthCredentials(null)),
     onClearUserInfo: () => dispatch(setUserInfo(undefined)),
-    onShowDialog: () => dispatch(setDialogVisible("login-dialog")),
     onShowError: (title: string, err: Error) =>
       showError(dispatch, title, err, { allowReport: false }),
   };
