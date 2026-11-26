@@ -193,6 +193,13 @@ export function parseCommandline(argv: string[], electronIsShitHack: boolean): I
     argv = electronIsShitArgumentSort(argv);
   }
 
+  if (process.platform === "linux") {
+    const nxmArg = argv.findIndex((arg) => arg.startsWith("nxm://"));
+    if (nxmArg !== -1 && !(nxmArg > 1 && argv[nxmArg - 1] === "-d")) {
+      argv.splice(nxmArg, 0, "-d");
+    }
+  }
+
   let version: string = "1.0.0";
   try {
     // won't happen in regular operation but lets us test this function outside vortex
