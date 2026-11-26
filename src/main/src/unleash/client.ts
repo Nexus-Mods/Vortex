@@ -23,6 +23,7 @@ type UnleashContext = {
     appVersion: string;
     os: ReturnType<typeof platform>;
     channel: "beta" | "stable";
+    experimentCohortHash?: string;
   };
 };
 
@@ -61,6 +62,7 @@ export class UnleashClient {
 
   #flags: FeatureFlag[] = [];
   #context: FlagContext = {};
+  #experimentCohortHash: string | undefined;
 
   constructor(appVersion: string, options?: UnleashClientOptions) {
     this.#sessionId = randomUUID();
@@ -146,6 +148,11 @@ export class UnleashClient {
 
   setContext(context: FlagContext): void {
     this.#context = context;
+  }
+
+  /** See experimentCohort.ts. */
+  setExperimentCohortHash(hash: string): void {
+    this.#experimentCohortHash = hash;
   }
 
   async postMetrics(bucket: FlagMetricsBucket): Promise<void> {
@@ -256,6 +263,9 @@ export class UnleashClient {
         appVersion: this.#appVersion,
         os: platform(),
         channel: this.#channel,
+        ...(this.#experimentCohortHash !== undefined && {
+          experimentCohortHash: this.#experimentCohortHash,
+        }),
       },
     };
   }
@@ -279,7 +289,7 @@ function serializeContext(context: UnleashContext): string {
   if (context.userId) params.set("userId", context.userId);
 
   for (const [key, value] of Object.entries(context.properties)) {
-    params.set(`properties[${key}]`, value);
+    if (value !== undefined) params.set(`properties[${key}]`, value);
   }
 
   return params.toString();

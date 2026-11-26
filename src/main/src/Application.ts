@@ -53,6 +53,7 @@ import SubPersistor from "./store/SubPersistor";
 import { isTelemetryEnabled, setTelemetryEnabled, setTelemetryInstanceId } from "./telemetry/state";
 import TrayIcon from "./TrayIcon";
 import { UnleashClient } from "./unleash/client";
+import { experimentCohortHash } from "./unleash/experimentCohort";
 import { synchronizeFeatureFlags } from "./unleash/ipc";
 
 /** test if the running version is a major downgrade (downgrading by a major or minor version,
@@ -520,6 +521,11 @@ class Application {
 
     if (storedUserId !== undefined) {
       unleashClient.setContext({ userId: String(storedUserId) });
+    }
+
+    // Experiment cohorts. Needs Trust & Safety sign-off before release: see unleash/experimentCohort.ts.
+    if (this.mAppMetadata?.instanceId !== undefined) {
+      unleashClient.setExperimentCohortHash(experimentCohortHash(this.mAppMetadata.instanceId));
     }
 
     synchronizeFeatureFlags(unleashClient);

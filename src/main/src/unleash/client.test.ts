@@ -187,6 +187,33 @@ describe("UnleashClient", () => {
       const params = await fetchedParams("1.0.0");
       expect(params.has("userId")).toBe(false);
     });
+
+    it("omits the experiment-cohort hash when not set", async () => {
+      const params = await fetchedParams("1.0.0");
+      expect(params.has("properties[experimentCohortHash]")).toBe(false);
+    });
+
+    it("sends the experiment-cohort hash under properties once set", async () => {
+      fetchMocker.mockResponseOnce(toggleBody([]));
+      const client = new UnleashClient("1.0.0");
+      client.setExperimentCohortHash("abc123");
+      await client.fetchFeatureFlags();
+
+      const params = new URLSearchParams(new URL(fetchMocker.requests()[0]!.url).search);
+      expect(params.get("properties[experimentCohortHash]")).toBe("abc123");
+    });
+
+    it("keeps the experiment-cohort hash when the renderer sets the context", async () => {
+      fetchMocker.mockResponseOnce(toggleBody([]));
+      const client = new UnleashClient("1.0.0");
+      client.setExperimentCohortHash("abc123");
+      client.setContext({ userId: "42" });
+      await client.fetchFeatureFlags();
+
+      const params = new URLSearchParams(new URL(fetchMocker.requests()[0]!.url).search);
+      expect(params.get("userId")).toBe("42");
+      expect(params.get("properties[experimentCohortHash]")).toBe("abc123");
+    });
   });
 
   // ============================================================
