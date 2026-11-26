@@ -17,6 +17,15 @@ export interface IActionOptions {
    * toolbar lets them choose. Ignored by one that doesn't.
    */
   pinned?: boolean;
+  /**
+   * What the action opens in place of running, given the ids it's for, where its toolbar can
+   * open a panel: `close` puts the panel away, `dismiss` the menu it was opened from as well.
+   * Ignored by one that can't, so pair it with `isModernOnly`.
+   */
+  panel?: (
+    instanceIds: string[],
+    controls: { close: () => void; dismiss: () => void },
+  ) => React.ReactNode;
 }
 
 export type ActionFunc = (instanceId: string | string[]) => IActionDefinition[];

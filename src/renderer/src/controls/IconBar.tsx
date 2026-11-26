@@ -41,6 +41,12 @@ type IProps = IBaseProps & {
   actions?: IActionDefinitionEx[];
 } & React.HTMLAttributes<any>;
 
+/**
+ * A `filter` for an icon bar in the classic UI: it leaves out an action registered for the
+ * new UI only, which the new UI shows in its own way.
+ */
+export const notModernOnly = (action: IActionDefinition) => !action.options?.isModernOnly;
+
 function genTooltip(t: TFunction, show: boolean | string, ns?: string): string {
   return typeof show === "string" ? t(show, { ns }) : undefined;
 }

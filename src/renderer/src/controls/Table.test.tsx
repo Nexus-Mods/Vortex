@@ -4,7 +4,7 @@
  * scrolls it, so the rows have to be observed against, and brought into view by, that
  * page scroll, not the pane.
  */
-import { act, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
 import * as React from "react";
 import { Provider } from "react-redux";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -25,6 +25,12 @@ vi.mock("./ComponentEx", async (importOriginal) => {
     translate: identity,
   };
 });
+
+// The selected rows' bar draws icons, whose icon set would load after the test is torn down.
+vi.mock("./Icon", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  default: () => null,
+}));
 
 const observedRoots = new Map<Element, Element | null>();
 
@@ -389,5 +395,66 @@ describe("SuperTable scroll retry", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("SuperTable selected rows' bar", () => {
+  it("leaves out an action meant for the new UI only", async () => {
+    const classic = vi.fn();
+    const modern = vi.fn();
+    const action = { singleRowAction: false, multiRowAction: true };
+    let tableInstance: any;
+    const { container } = render(
+      <AppContext>
+        <Table
+          ref={(instance: any) => {
+            if (instance) tableInstance = instance;
+          }}
+          t={(key: string) => key}
+          tableId="test"
+          data={data}
+          objects={attributes}
+          actions={[
+            { ...action, icon: "add", title: "Classic action", action: classic },
+            {
+              ...action,
+              icon: "add",
+              title: "Modern action",
+              action: modern,
+              options: { isModernOnly: true },
+            },
+          ]}
+          attributeState={{}}
+          language="en"
+          collapsedGroups={[]}
+          hasActions={false}
+          onChangeSelection={vi.fn()}
+          showDetails={false}
+          onSetAttributeVisible={vi.fn()}
+          onSetAttributeSort={vi.fn()}
+          onSetAttributeFilter={vi.fn()}
+          onSetGroupingAttribute={vi.fn()}
+          onCollapseGroup={vi.fn()}
+          onSetCollapsedGroups={vi.fn()}
+        />
+      </AppContext>,
+    );
+    await rowsOf(container);
+
+    act(() => tableInstance.selectAll());
+
+    const footer = await waitFor(() => {
+      const element = container.querySelector(".table-footer");
+      expect(element).not.toBeNull();
+      return element as HTMLElement;
+    });
+    // The bar of actions, not the selection count's own Deselect All beside it.
+    const bar = footer.querySelector(".btn-group") as HTMLElement;
+    const buttons = within(bar).getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+
+    fireEvent.click(buttons[0]);
+    expect(classic).toHaveBeenCalled();
+    expect(modern).not.toHaveBeenCalled();
   });
 });

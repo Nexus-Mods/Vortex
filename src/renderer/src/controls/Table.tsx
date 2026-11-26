@@ -32,7 +32,7 @@ import { log } from "../util/log";
 import { getSafe, setSafe } from "../util/storeHelper";
 import { makeUnique, sanitizeCSSId, truthy } from "../util/util";
 import { ComponentEx, connect, extend, translate } from "./ComponentEx";
-import IconBar from "./IconBar";
+import IconBar, { notModernOnly } from "./IconBar";
 import {
   columnsOf,
   emitTableColumnsViewed,
@@ -543,6 +543,7 @@ class SuperTable extends ComponentEx<IProps, IComponentState> {
       <div className="table-footer">
         <IconBar
           className="menubar"
+          filter={notModernOnly}
           group={`${tableId}-multirow-actions`}
           groupByIcon={false}
           instanceId={selected}

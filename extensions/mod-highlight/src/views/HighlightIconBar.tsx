@@ -60,15 +60,14 @@ class HighlightIconBar extends HighlightBase<IProps, {}> {
     );
   }
 
-  private toggleIcon = (evt) => {
+  private toggleIcon = (icon: string) => {
     const { gameMode, selectedMods, onSetModAttributes } = this.props;
-
-    onSetModAttributes(gameMode, selectedMods, "icon", evt.currentTarget.id);
+    onSetModAttributes(gameMode, selectedMods, "icon", icon);
   };
 
-  private toggleColors = (color) => {
+  private toggleColors = (color: string) => {
     const { gameMode, selectedMods, onSetModAttributes } = this.props;
-    onSetModAttributes(gameMode, selectedMods, "color", color.currentTarget.value);
+    onSetModAttributes(gameMode, selectedMods, "color", color);
   };
 
   private toggleOverlay = () => {

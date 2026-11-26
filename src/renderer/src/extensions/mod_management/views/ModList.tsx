@@ -26,7 +26,7 @@ import Dropzone from "../../../controls/Dropzone";
 import EmptyPlaceholder from "../../../controls/EmptyPlaceholder";
 import FlexLayout from "../../../controls/FlexLayout";
 import Icon from "../../../controls/Icon";
-import IconBar from "../../../controls/IconBar";
+import IconBar, { notModernOnly } from "../../../controls/IconBar";
 import type { ITableRowAction } from "../../../controls/Table";
 import SuperTable from "../../../controls/Table";
 import OptionsFilter from "../../../controls/table/OptionsFilter";
@@ -184,15 +184,6 @@ interface IComponentState {
 }
 
 const nop = () => null;
-
-/**
- * Keeps an action meant for the new toolbar off the classic one. Manage Rules is
- * registered once for each — a flashing button here, a plain action with a count there —
- * and this is the half of that arrangement the classic bar is responsible for; the new
- * toolbar drops the classic-only half itself. The classic global-icons bar filters the
- * same way, see `views/layout/Toolbar.tsx`.
- */
-const filterModernActions = (action: IActionDefinition) => !action.options?.isModernOnly;
 
 /**
  * displays the list of mods installed for the current game.
@@ -525,9 +516,11 @@ class ModList extends ComponentEx<IProps, IComponentState> {
     return (
       <MainPage domRef={this.setBoundsRef}>
         <MainPage.Header>
+          {/* Manage Rules is registered once for each toolbar: a flashing button here, a
+              plain action with a count on the new one. This bar drops the new one's half. */}
           <IconBar
             className="menubar"
-            filter={filterModernActions}
+            filter={notModernOnly}
             group="mod-icons"
             staticElements={this.staticButtons}
             t={t}
