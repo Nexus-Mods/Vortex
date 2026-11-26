@@ -43,13 +43,14 @@ export const AuthorNotesModal = ({ isOpen, items, onClose, onInstall }: IAuthorN
     }
   }
 
+  // oxlint-disable react/exhaustive-deps -- only on open; a rescan must not reset the user's choices
   useEffect(() => {
     if (isOpen) {
       trackAuthorNotesModalShown({ mod_count: noted.length });
     }
     // Only on open: a rescan changing the list shouldn't reset the user's choices.
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, [isOpen]);
+  // oxlint-enable react/exhaustive-deps
 
   const toInstall = noted.filter((item) => !unchecked.has(item.key));
 

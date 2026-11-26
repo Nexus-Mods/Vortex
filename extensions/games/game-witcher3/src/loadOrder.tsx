@@ -1,7 +1,6 @@
 import path from "path";
 
 import { actions, fs, log, selectors, types, util } from "@nexusmods/vortex-api";
-/* eslint-disable */
 import React from "react";
 
 import { withPositionPrefix } from "./collectionLoadOrder";

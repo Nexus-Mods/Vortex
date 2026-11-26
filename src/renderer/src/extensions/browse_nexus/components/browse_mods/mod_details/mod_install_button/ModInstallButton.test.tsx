@@ -193,7 +193,7 @@ describe("ModInstallButton", () => {
     await userEvent.click(screen.getByTestId("premium-upsell-fallback"));
 
     expect(openUrl).toHaveBeenCalledWith(
-      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files",
+      "https://www.nexusmods.com/skyrimspecialedition/mods/1?tab=files&source=vortex_browse",
     );
     expect(upsellEvents()).toContainEqual([
       "browse_mods_premium_modal_fallback_clicked",
@@ -299,6 +299,7 @@ describe("ModInstallButton", () => {
       modId: "1",
       fileId: "42",
       name: "SkyUI",
+      downloadSource: "browse",
     });
     expect(mocks.download).not.toHaveBeenCalled();
     expect(mocks.fetchFiles).not.toHaveBeenCalled();
@@ -343,6 +344,7 @@ describe("ModInstallButton", () => {
       modId: "1",
       fileId: "42",
       name: "SkyUI",
+      downloadSource: "browse",
     });
     expect(mocks.install).not.toHaveBeenCalled();
     expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([
@@ -644,6 +646,7 @@ describe("ModInstallButton", () => {
           modId: "1",
           fileId: "11",
           name: "SkyUI",
+          downloadSource: "browse",
         }),
       );
       expect(tracking.tracked("browse_mods_one_click_clicked").map((e) => e.properties)).toEqual([

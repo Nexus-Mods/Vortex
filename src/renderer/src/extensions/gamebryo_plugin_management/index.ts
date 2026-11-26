@@ -32,7 +32,7 @@ import {
   profileById,
 } from "../profile_management/selectors";
 import { profilePath } from "../profile_management/util/manage";
-/* eslint-disable */
+/* oxlint-disable no-underscore-dangle, no-unused-vars, prefer-const, promise/always-return, typescript/consistent-return, typescript/consistent-type-imports, typescript/no-explicit-any, typescript/no-floating-promises, typescript/no-misused-promises, typescript/no-unnecessary-type-arguments, typescript/no-unnecessary-type-assertion, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion, typescript/restrict-plus-operands, unicorn/consistent-function-scoping */
 import { setPluginEnabled } from "./actions/loadOrder";
 import { clearNewPluginCounter, setPluginFilePath, setPluginList } from "./actions/plugins";
 import { clearUserlist, setGroup } from "./actions/userlist";

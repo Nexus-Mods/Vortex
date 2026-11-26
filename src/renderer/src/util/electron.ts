@@ -1,7 +1,7 @@
 // This module provides a shimmed electron module for the renderer process.
 // Extensions that use `require('electron')` will get this shimmed version,
 // which provides app.getPath() using the preload API.
-// eslint-disable-next-line no-restricted-imports -- this is the renderer's electron shim
+// oxlint-disable-next-line no-restricted-imports -- this is the renderer's electron shim
 import * as electron from "electron";
 
 import type { AppPath } from "./getVortexPath";

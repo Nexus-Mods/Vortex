@@ -1,5 +1,6 @@
 import type { Tier } from "../../gamemode_management/tiered/types";
 import type { GameSource } from "../../gamemode_management/types/GameSource";
+import type { DownloadSource } from "./download_source/downloadSource";
 import type { ExtensionInstallSource } from "./extensionInstallAnalytics";
 
 /**
@@ -737,6 +738,12 @@ export interface ModAnalyticsIdentity {
 }
 
 /**
+ * The identity of a mod's download, and of the install from it: the shared identity plus where the
+ * download started, null when not in a Vortex feature or on the website one sent the user to.
+ */
+export type ModDownloadIdentity = ModAnalyticsIdentity & { download_source: DownloadSource | null };
+
+/**
  * Event sent when a mod download is started from the client. Complements the
  * server-side mods_download_started event to enable success-rate calculations by
  * matching with _completed or _failed.
@@ -745,7 +752,7 @@ export interface ModAnalyticsIdentity {
 export class ModsDownloadStartedClientEvent implements MixpanelEvent {
   readonly eventName = "mods_download_started_client";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity) {
+  constructor(props: ModDownloadIdentity) {
     this.properties = { ...props };
   }
 }
@@ -764,7 +771,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_completed";
   readonly properties: Record<string, any>;
   constructor(
-    props: ModAnalyticsIdentity & { file_size: number; duration_ms: number } & DownloadResumeInfo,
+    props: ModDownloadIdentity & { file_size: number; duration_ms: number } & DownloadResumeInfo,
   ) {
     this.properties = { ...props };
   }
@@ -774,7 +781,7 @@ export class ModsDownloadCompletedEvent implements MixpanelEvent {
 export class ModsDownloadCancelledEvent implements MixpanelEvent {
   readonly eventName = "mods_download_cancelled";
   readonly properties: Record<string, any>;
-  constructor(props: ModAnalyticsIdentity) {
+  constructor(props: ModDownloadIdentity) {
     this.properties = { ...props };
   }
 }
@@ -784,7 +791,7 @@ export class ModsDownloadFailedEvent implements MixpanelEvent {
   readonly eventName = "mods_download_failed";
   readonly properties: Record<string, any>;
   constructor(
-    props: ModAnalyticsIdentity & {
+    props: ModDownloadIdentity & {
       error_code: string;
       error_message: string;
     } & DownloadResumeInfo,
@@ -809,8 +816,8 @@ export type ModInstallKind =
   | "variant"
   | "profile_replace";
 
-/** Fields shared by every per-mod install event: identity + how the install came about. */
-type ModInstallProps = ModAnalyticsIdentity & { install_kind: ModInstallKind };
+/** Fields shared by every per-mod install event: its download's identity + how the install came about. */
+type ModInstallProps = ModDownloadIdentity & { install_kind: ModInstallKind };
 
 /** Event sent when mod installation is started. Not sent for the collection bundle/manifest mod. */
 export class ModsInstallationStartedEvent implements MixpanelEvent {

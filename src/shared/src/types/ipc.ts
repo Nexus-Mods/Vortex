@@ -477,7 +477,7 @@ export interface InvokeChannels {
   // Redux state transfer
   // NOTE: Redux state is a complex nested object that is serializable but too complex to type precisely. The actual data is always serializable.
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  // oxlint-disable-next-line typescript/no-empty-object-type
   "redux:getState": () => Promise<{}>;
   // Returns a base64-encoded msgpack chunk of the Redux state
   "redux:getStateMsgpack": (idx?: number) => Promise<string | undefined>;

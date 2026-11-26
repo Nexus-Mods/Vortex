@@ -28,7 +28,7 @@ function traceWritesEnabled(): boolean {
 declare module "@vortex/shared/errors" {
   interface VortexErrorKindMap {
     /** Another process holds the database lock (usually a second Vortex instance). */
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kinds without payload use {} like the core catalog
+    // oxlint-disable-next-line typescript/no-empty-object-type -- kinds without payload use {} like the core catalog
     "database:locked": {};
     /** Opening the database failed for a reason other than lock contention. */
     "database:open-failed": { path: string };

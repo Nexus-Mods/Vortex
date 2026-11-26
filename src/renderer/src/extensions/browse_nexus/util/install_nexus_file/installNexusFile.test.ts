@@ -34,6 +34,7 @@ const nexusFile = {
   modId: "12604",
   fileId: "42",
   name: "SkyUI",
+  downloadSource: "browse",
 };
 
 describe("installNexusFile", () => {

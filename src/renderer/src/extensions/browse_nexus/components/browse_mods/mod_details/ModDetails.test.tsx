@@ -287,7 +287,9 @@ describe("ModDetails", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Open mod page" }));
 
-    expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/1");
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/1?source=vortex_browse",
+    );
     expect(propertiesOf("browse_mods_mod_page_opened")).toEqual([{ mod_uid: "1704-1" }]);
   });
 

@@ -6,6 +6,7 @@ import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_sear
 import {
   downloadAndInstallNexusFile,
   downloadNexusFile,
+  type INexusFile,
 } from "@/extensions/nexus_integration/util/download_and_install/downloadAndInstall";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { IState } from "@/types/IState";
@@ -33,12 +34,13 @@ export const installNexusFile = (
   api: IExtensionApi,
   { mod, fileId, gameId, shouldInstall }: IInstallNexusFileArgs,
 ) => {
-  const nexusFile = {
+  const nexusFile: INexusFile = {
     gameDomain: NexusGameDomain(mod.game.domain_name),
     gameId,
     modId: mod.game_scoped_id,
     fileId,
     name: mod.name,
+    downloadSource: "browse",
   };
 
   return shouldInstall

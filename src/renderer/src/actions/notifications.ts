@@ -130,7 +130,10 @@ export function addNotification(
     if (noti.createdTime === undefined) {
       noti.createdTime = Math.floor(Date.now() / 1000) * 1000;
     }
-    noti.updatedTime = Math.floor(Date.now() / 1000) * 1000;
+    // Exact, not rounded to the second like createdTime: the bell hides a timed
+    // notification at updatedTime + displayMS, so rounding would cut up to 999ms
+    // off a short one.
+    noti.updatedTime = Date.now();
 
     notificationActions[noti.id] =
       noti.actions == null ? [] : noti.actions.map((action) => action.action);

@@ -17,7 +17,6 @@ export const test = harnessTest.extend<IProfileSwitchFixtures>({
   makeProfileSwitch: async ({ task: _task }, use) => {
     const harnesses: IProfileSwitchHarness[] = [];
     // `use` is the vitest fixture callback, not React's use() hook.
-    // eslint-disable-next-line @eslint-react/rules-of-hooks
     await use(async (opts) => {
       const harness = await makeProfileSwitchHarness(init, opts);
       harnesses.push(harness);

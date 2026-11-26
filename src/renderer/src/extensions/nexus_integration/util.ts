@@ -61,7 +61,7 @@ import { contextify } from "../../util/errorHandling";
 import * as fs from "../../util/fs";
 import getVortexPath from "../../util/getVortexPath";
 import { RateLimitExceeded } from "../../util/github";
-import { calcDuration, showError } from "../../util/message";
+import { showError } from "../../util/message";
 import { jsonRequest } from "../../util/network";
 import { getPreloadApi, getWindowId } from "../../util/preloadAccess";
 import { activeGameId } from "../../util/selectors";
@@ -1202,7 +1202,8 @@ function reportEndorseError(
       type: "error",
       title: "Timeout",
       message,
-      displayMS: calcDuration(message.length),
+      // No displayMS: an error goes to the notification bell and stays there until
+      // dismissed. A short one would be shown as a toast and gone in a few seconds.
     });
   } else if (
     IGNORE_ERRORS.includes(err["code"]) ||

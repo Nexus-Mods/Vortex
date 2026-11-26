@@ -28,6 +28,11 @@ const YOUTUBE_HEADER_FILTER = {
   urls: ["*://www.youtube-nocookie.com/*", "*://www.youtube.com/*", "*://*.ytimg.com/*"],
 };
 
+/** Whether the embedded YouTube player asks to open anything but a web page, which it never needs. */
+const isPlayerOpeningNonWebPage = ({ url, referrer }: Electron.HandlerDetails) =>
+  referrer.url.startsWith("https://www.youtube-nocookie.com/") &&
+  !["https:", "http:"].includes(new URL(url).protocol);
+
 interface IRect {
   x1: number;
   y1: number;
@@ -285,7 +290,7 @@ class MainWindow {
     });
 
     this.mWindow.webContents.setWindowOpenHandler((details) => {
-      if (details.disposition === "background-tab") {
+      if (details.disposition === "background-tab" || isPlayerOpeningNonWebPage(details)) {
         return { action: "deny" };
       }
       // Open in external browser (for links with target="_blank")

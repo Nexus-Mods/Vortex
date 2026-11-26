@@ -123,12 +123,12 @@ describe("ReduxPersistorIPC: run grouping", () => {
     // Record the dispatch order via a shared call log rather than reading
     // it back out of two separate mock-call lists.
     const callLog: Array<"set" | "remove"> = [];
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    // oxlint-disable-next-line typescript/no-misused-promises
     persistor.bulkSetItem.mockImplementation((): Promise<void> => {
       callLog.push("set");
       return Promise.resolve();
     });
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    // oxlint-disable-next-line typescript/no-misused-promises
     persistor.bulkRemoveItem.mockImplementation((): Promise<void> => {
       callLog.push("remove");
       return Promise.resolve();
@@ -371,7 +371,7 @@ describe("ReduxPersistorIPC: atomicity under partial failure (force-close simula
     const blocker = new Promise<void>((resolve) => {
       release = resolve;
     });
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    // oxlint-disable-next-line typescript/no-misused-promises
     persistor.bulkSetItem.mockImplementationOnce(() => blocker);
 
     const { ipc } = await setupIPC(persistor);

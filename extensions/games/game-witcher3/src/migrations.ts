@@ -1,5 +1,4 @@
 import { selectors, types, util } from "@nexusmods/vortex-api";
-/* eslint-disable */
 import semver from "semver";
 
 import { withPositionPrefix } from "./collectionLoadOrder";

@@ -47,7 +47,7 @@ import type { IDownload, IMod, IModTable, IState } from "@/types/IState";
 import { DataInvalid, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
 import Debouncer from "@/util/Debouncer";
 import * as fs from "@/util/fs";
-import { calcDuration, showError } from "@/util/message";
+import { showError } from "@/util/message";
 import {
   activeGameId,
   currentGame,
@@ -791,7 +791,8 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       type: "error",
       title: "Timeout",
       message,
-      displayMS: calcDuration(message.length),
+      // No displayMS: an error goes to the notification bell and stays there until
+      // dismissed. A short one would be shown as a toast and gone in a few seconds.
     });
   } else if (err["code"] === "NOT_FOUND") {
     api.showErrorNotification("Collection not found, it might have been removed.", err, {

@@ -104,17 +104,19 @@ import {
 } from "./util/CustomErrors";
 import { runElevated } from "./util/elevated";
 import { disableErrorReport, isOutdated, recordErrorSpan } from "./util/errorHandling";
+import { fillPlaceholders } from "./util/fill_placeholders/fillPlaceholders";
 import * as fsVortex from "./util/fs";
 import getVortexPath from "./util/getVortexPath";
 import type { i18n } from "./util/i18n";
 import { TString } from "./util/i18n";
 import lazyRequire from "./util/lazyRequire";
-import { showError } from "./util/message";
+import { MAX_TOAST_MS, showError } from "./util/message";
 import { deregisterProtocolHandler, registerProtocolHandler } from "./util/protocolRegistration";
 import runElevatedCustomTool from "./util/runElevatedCustomTool";
 import { savePathFromDialogResult } from "./util/savePathFromDialogResult";
 import { activeGameId } from "./util/selectors";
 import { getSafe } from "./util/storeHelper";
+import { toastMessage } from "./util/toast_message/toastMessage";
 import {
   filteredEnvironment,
   isFunction,
@@ -794,7 +796,10 @@ class ExtensionManager {
       events: this.mEventEmitter,
       translate: (input, options?) => {
         if (this.mTranslator == null) {
-          return Array.isArray(input) ? input[0].toString() : input.toString();
+          // i18n hasn't loaded yet (e.g. a notification sent during startup). Show the
+          // English text, but still fill in its placeholders.
+          const text = Array.isArray(input) ? input[0].toString() : input.toString();
+          return fillPlaceholders(text, options?.replace);
         }
         if (options == null) {
           options = {};
@@ -1042,15 +1047,15 @@ class ExtensionManager {
       }
       if (this.canBeToast(noti)) {
         try {
-          const toastFunc = noti.type === "error" ? toast.error : toast.success;
+          // Only an error or a success gets the red or green style and icon; anything
+          // else (info, global) gets a neutral toast so it doesn't read as a success.
+          const toastFunc =
+            noti.type === "error" ? toast.error : noti.type === "success" ? toast.success : toast;
           const toastOptions: ToastOptions = {
             id: noti.id,
             duration: noti.displayMS,
           };
-          const message =
-            noti.title !== undefined
-              ? `${noti.title}:\n${noti.message ?? ""}`
-              : (noti.message ?? "");
+          const message = toastMessage(noti, this.mApi.translate);
           if (message.length > 0) {
             toastFunc(message, toastOptions);
             return noti.id;
@@ -1685,7 +1690,7 @@ class ExtensionManager {
     const invalidToastTypes = ["activity", "warning"];
     if (
       notif.displayMS != null &&
-      notif.displayMS <= 5000 &&
+      notif.displayMS <= MAX_TOAST_MS &&
       notif.noToast !== true &&
       (notif.actions == null || notif.actions.length === 0) &&
       !invalidToastTypes.includes(notif.type)

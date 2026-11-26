@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* oxlint-disable no-shadow, typescript/no-explicit-any, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, unicorn/no-array-sort */
 import React, { useCallback, useRef } from "react";
 import { type DragSourceMonitor, useDrag, useDrop } from "react-dnd";
 

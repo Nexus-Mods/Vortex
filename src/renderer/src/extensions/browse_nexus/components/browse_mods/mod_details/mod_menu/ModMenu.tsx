@@ -10,7 +10,7 @@ import { DropdownButton } from "@/ui/components/dropdown/DropdownButton";
 import { DropdownItem } from "@/ui/components/dropdown/DropdownItem";
 import { DropdownItems } from "@/ui/components/dropdown/DropdownItems";
 import { Tooltip } from "@/ui/components/tooltip/Tooltip";
-import { calcDuration } from "@/util/message";
+import { toastDuration } from "@/util/message";
 
 import { useBrowseModsTracker } from "../../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
 
@@ -63,7 +63,9 @@ export const ModMenu = ({ api, mod, modPageUrl }: IModMenuProps) => {
               id: "browse-mods-mod-link-copied",
               type: "success",
               message,
-              displayMS: calcDuration(message.length),
+              displayMS: toastDuration(message.length),
+              // Already translated, so the toast mustn't translate it again.
+              localize: { message: false },
             });
           }}
         >

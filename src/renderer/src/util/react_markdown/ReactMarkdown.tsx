@@ -12,7 +12,6 @@ import { mailHref, WebLink } from "@/ui/components/prose/web_link/WebLink";
 import { webHref } from "@/ui/utils/webHref";
 import { log } from "@/util/log";
 
-// eslint-disable-next-line no-restricted-syntax -- this is the one place react-markdown is loaded
 const reactMarkdown = require("react-markdown") as typeof ReactMarkdownModule;
 
 export type ReactMarkdownProps = ReactMarkdownModule.Options;
@@ -243,7 +242,6 @@ export const makeExtensionReactMarkdown = (
   };
 
   // Built once per extension (extensionRequire caches it), so it's a stable component type.
-  // eslint-disable-next-line @eslint-react/component-hook-factories
   const ExtensionReactMarkdown = (props: ReactMarkdownProps & Record<string, unknown>) => {
     const kept: ReactMarkdownProps & Record<string, unknown> = {};
     for (const [name, value] of Object.entries(props)) {

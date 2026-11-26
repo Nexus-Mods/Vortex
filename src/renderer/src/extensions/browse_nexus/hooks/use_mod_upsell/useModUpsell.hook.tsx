@@ -4,6 +4,7 @@ import React, { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useBrowseWebsiteLink } from "@/extensions/browse_nexus/hooks/use_browse_website_link/useBrowseWebsiteLink.hook";
 import { PremiumUpsellModal } from "@/extensions/nexus_integration/components/premium_upsell_modal/PremiumUpsellModal";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
 import { nexusModFilesUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
@@ -77,6 +78,7 @@ export const useModUpsell = (
 ): { oneClickLabel: string; open: (source: UpsellSource) => void; modal: ReactNode } => {
   const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
+  const websiteLink = useBrowseWebsiteLink();
   const [source, setSource] = useState<UpsellSource>();
   const { button: oneClickLabel, ...text } = oneClickText(t, hasUpdate);
   const isMenu = source === "menu";
@@ -99,7 +101,7 @@ export const useModUpsell = (
         setSource(undefined);
 
         window.api.shell.openUrl(
-          nexusModFilesUrl(NexusGameDomain(mod.game.domain_name), mod.game_scoped_id),
+          websiteLink(nexusModFilesUrl(NexusGameDomain(mod.game.domain_name), mod.game_scoped_id)),
         );
       }}
       onPremiumUnlocked={() => onUnlocked(source)}

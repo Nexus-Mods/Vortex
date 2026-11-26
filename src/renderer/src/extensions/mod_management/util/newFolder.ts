@@ -1,7 +1,7 @@
 import { relativePath, type RelativePath } from "@nexusmods/paths";
 
 // Characters no file system we install to takes in a name, or that would make it a path.
-// eslint-disable-next-line no-control-regex
+// oxlint-disable-next-line no-control-regex
 const INVALID_CHARACTERS = /[\\/:*?"<>|\u0000-\u001f]/;
 
 /**

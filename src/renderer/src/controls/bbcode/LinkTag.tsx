@@ -40,11 +40,12 @@ class LinkTag extends Tag {
     const title = linkUrl.startsWith("cb:") ? undefined : linkUrl;
 
     const { callbacks, allowLocal } = this.renderer.options;
-    // Worked out now: the renderer's options are only set while it renders, not when React does.
+    // Worked out now, contents included: the renderer's options are only set while it renders.
     const href = this.href(linkUrl);
+    const contents = this.getComponents();
 
     if (href === undefined) {
-      return this.getComponents();
+      return contents;
     }
 
     return (
@@ -59,7 +60,7 @@ class LinkTag extends Tag {
             )}
             title={title}
           >
-            {this.getComponents()}
+            {contents}
           </a>
         )}
       </ErrorContext.Consumer>

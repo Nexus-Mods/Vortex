@@ -11,7 +11,7 @@ precedent.
   concurrent features, or `StrictMode` yet; the createRoot flip is a separate,
   later release. Class components, legacy context and `findDOMNode` remain
   functional but deprecated. Don't introduce new usages.
-- **TypeScript** (type-checked ESLint). `import type { ... }` for types
+- **TypeScript** (type-aware oxlint, see [linting.md](linting.md)). `import type { ... }` for types
   (`consistent-type-imports` is an error).
 - **Tailwind v4** for styling, **react-redux** for state, **react-i18next** for
   copy, Electron renderer process.

@@ -247,7 +247,6 @@ export const Tooltip = ({
   if (disabled || !isValidElement(children) || !body) {
     // Kept as the reference so a tooltip re-enabled mid-close has somewhere to be placed.
     // cloneElement is the only way to put a ref on a caller's element before React 19.
-    // eslint-disable-next-line @eslint-react/no-clone-element
     return isValidElement(children) ? cloneElement(trigger, { ref: triggerRef }) : children;
   }
 
@@ -270,7 +269,6 @@ export const Tooltip = ({
   return (
     <>
       {/* Floating UI's documented trigger pattern, for the reason given above. */}
-      {/* eslint-disable-next-line @eslint-react/no-clone-element */}
       {cloneElement(trigger, { ...referenceProps, onPointerDown: handlePointerDown })}
 
       {isMounted && (

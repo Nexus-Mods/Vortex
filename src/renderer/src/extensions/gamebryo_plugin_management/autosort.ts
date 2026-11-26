@@ -23,7 +23,7 @@ import { webpackRequireHack } from "../../util/webpack-hacks";
 import { discoveryByGame } from "../gamemode_management/selectors";
 import { clearPendingPluginSort } from "../mod_management/actions/transactions";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
-/* eslint-disable */
+/* oxlint-disable no-shadow, no-unused-vars, promise/always-return, promise/no-callback-in-promise, promise/valid-params, typescript/consistent-return, typescript/consistent-type-imports, typescript/no-explicit-any, typescript/no-floating-promises, typescript/no-misused-promises, typescript/no-unnecessary-boolean-literal-compare, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-enum-comparison, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion, typescript/prefer-promise-reject-errors, unicorn/consistent-function-scoping, unicorn/no-array-sort */
 import { updatePluginOrder } from "./actions/loadOrder";
 import { removeGroupRule, removeRule, setGroup } from "./actions/userlist";
 import { NAMESPACE } from "./statics";

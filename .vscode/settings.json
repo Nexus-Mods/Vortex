@@ -1,7 +1,6 @@
 {
-  "eslint.enable": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.oxc": "explicit"
   },
   "typescript.preferences.quoteStyle": "single",
   "tailwindCSS.experimental.configFile": "./src/stylesheets/tailwind-v4.css",

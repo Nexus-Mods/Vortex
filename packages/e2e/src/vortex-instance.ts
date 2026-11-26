@@ -22,7 +22,7 @@ export function resolveMainDir(): string {
 }
 
 export function resolveElectronBinary(): string {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  // oxlint-disable-next-line typescript/no-unsafe-return
   return require("electron");
 }
 

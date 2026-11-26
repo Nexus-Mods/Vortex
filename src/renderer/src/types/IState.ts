@@ -83,6 +83,16 @@ export interface IUIBlocker {
   mayCancel: boolean;
 }
 
+/** A purge under way, and how far along it is. */
+export interface IPurgeProgress {
+  /** The game whose mods are being purged, which need not be the active one. */
+  gameId: VortexGameId;
+  /** 0-100. */
+  percent: number;
+  /** What the purge is doing, e.g. "Removing links". */
+  text: string;
+}
+
 export interface IProgressWithProfile {
   profile?: IProgressProfile;
 }
@@ -113,6 +123,8 @@ export interface ISession {
   progress: {
     [group: string]: { [id: string]: IProgress };
   } & IProgressWithProfile;
+  /** Purges under way, by an id each purge makes for itself. */
+  purges: { [purgeId: string]: IPurgeProgress };
   settingsPage: string;
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   toolsRunning: { [exeId: string]: IRunningTool };
