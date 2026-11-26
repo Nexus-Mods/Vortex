@@ -72,20 +72,11 @@ standard.
 
 ## Restricted imports
 
-`no-restricted-imports` blocks a few imports in the renderer:
-
-- `clipboard` from `electron`, which doesn't work in the renderer. Use
-  `window.api.clipboard`.
-- `util/opn`, which only backs the deprecated `util.opn` extension API. Use
-  `window.api.shell.openUrl` or `window.api.shell.openFile`.
-- Value imports of `react-markdown`. Use `Markdown` from
-  `ui/components/prose/markdown`, or `ReactMarkdown` from `util/react_markdown`
-  for older call sites. The rule doesn't see `import()` or `require()`, so those
-  rely on review.
-- `bluebird`, in every project. Bluebird is being removed, and the rule keeps it
-  from coming back. Renderer files that still use it are listed in the
-  `overrides` block of `src/renderer/.oxlintrc.strict.json`. When a file stops
-  importing Bluebird, remove it from that list.
+`no-restricted-imports` in each project's `.oxlintrc.strict.json` lists the
+blocked imports, and each entry's `message` says what to use instead. Bluebird
+is blocked everywhere; renderer files that still import it are exempted in that
+config's `overrides` block, and when a file stops importing it, remove it from
+the list.
 
 ## Disable comments
 
