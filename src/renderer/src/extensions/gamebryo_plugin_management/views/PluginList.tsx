@@ -47,7 +47,7 @@ import type { IMod } from "../../mod_management/types/IMod";
 import { isMovingModFiles } from "../../mod_management/util/modActivity";
 import renderModName from "../../mod_management/util/modName";
 import { activeProfile } from "../../profile_management/selectors";
-/* eslint-disable */
+/* oxlint-disable no-shadow, no-unused-vars, no-useless-escape, promise/always-return, promise/valid-params, typescript/consistent-return, typescript/consistent-type-imports, typescript/no-explicit-any, typescript/no-misused-promises, typescript/no-unnecessary-boolean-literal-compare, typescript/no-unnecessary-type-assertion, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion, unicorn/consistent-function-scoping, unicorn/no-array-sort */
 import { setPluginEnabled } from "../actions/loadOrder";
 import { clearNewPluginCounter, setPluginInfo, updatePluginWarnings } from "../actions/plugins";
 import { setAutoSortEnabled } from "../actions/settings";

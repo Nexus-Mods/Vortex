@@ -16,7 +16,6 @@ export interface IModChangeFixtures {
 export const test = harnessTest.extend<IModChangeFixtures>({
   makeModChange: async ({ task: _task }, use) => {
     // `use` is the vitest fixture callback, not React's use() hook.
-    // eslint-disable-next-line @eslint-react/rules-of-hooks
     await use((overrides) => makeModChangeHarness(overrides));
   },
 });

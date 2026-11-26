@@ -1,4 +1,3 @@
-/* eslint-disable */
 import path from "path";
 
 import { selectors, types, util } from "@nexusmods/vortex-api";

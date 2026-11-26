@@ -1,4 +1,3 @@
-/* eslint-disable */
 import https from "https";
 import path from "path";
 import url from "url";

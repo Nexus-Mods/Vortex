@@ -6,9 +6,7 @@ import { describe, it, expect, vi } from "vitest";
 import CategoryListItem from "./CategoryListItem";
 
 vi.mock("react-dnd", () => ({
-  // eslint-disable-next-line @eslint-react/component-hook-factories
   useDrag: () => [{ isDragging: false }, vi.fn()],
-  // eslint-disable-next-line @eslint-react/component-hook-factories
   useDrop: () => [{ isOver: false, canDrop: false }, vi.fn()],
 }));
 

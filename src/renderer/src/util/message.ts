@@ -5,7 +5,6 @@ import * as _ from "lodash";
 import type * as Redux from "redux";
 import type { ThunkDispatch } from "redux-thunk";
 
-/* disable-eslint */
 import type { IDialogAction, IDialogContent } from "../actions/notifications";
 import { addNotification, showDialog } from "../actions/notifications";
 import { NoDeployment } from "../extensions/mod_management/util/exceptions";

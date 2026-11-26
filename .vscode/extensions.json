@@ -1,9 +1,9 @@
 {
   "recommendations": [
-    "esbenp.prettier-vscode",
     "oxc.oxc-vscode",
     "mermaidchart.vscode-mermaid-chart",
     "inlang.vs-code-extension",
     "TypeScriptTeam.native-preview"
-  ]
+  ],
+  "unwantedRecommendations": ["dbaeumer.vscode-eslint"]
 }

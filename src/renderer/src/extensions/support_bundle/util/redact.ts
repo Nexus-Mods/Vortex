@@ -52,6 +52,6 @@ export function redactSensitiveText(text: string): string {
  * a known trigger for native module and path handling failures. Reported as a flag instead.
  */
 export function hasNonAscii(text: string): boolean {
-  // eslint-disable-next-line no-control-regex
+  // oxlint-disable-next-line no-control-regex
   return /[^\x00-\x7f]/.test(text);
 }

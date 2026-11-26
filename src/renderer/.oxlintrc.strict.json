@@ -1,0 +1,180 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../oxlint.base.config.json", "../../oxlint.strict.config.json"],
+  "plugins": ["react"],
+  "rules": {
+    "react/no-danger-with-children": "error",
+    "react/no-namespace": "error",
+    "react/no-redundant-should-component-update": "error",
+    "react/no-render-return-value": "error",
+    "react/no-unsafe": [
+      "error",
+      {
+        "checkAliases": true
+      }
+    ],
+    "react/no-unstable-nested-components": "error",
+    "react/self-closing-comp": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "electron",
+            "importNames": ["clipboard"],
+            "message": "Electron's clipboard module is unavailable in the renderer. Use window.api.clipboard instead."
+          },
+          {
+            "name": "bluebird",
+            "message": "Bluebird is being removed. Use native promises."
+          },
+          {
+            "name": "react-markdown",
+            "allowTypeImports": true,
+            "message": "Render markdown with Markdown (ui/components/prose/markdown). Older call sites styled by their own SCSS use ReactMarkdown from util/react_markdown, which keeps links safe."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["**/util/opn", "./opn"],
+            "message": "util/opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead."
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/ExtensionManager.ts",
+        "src/actions/notifications.ts",
+        "src/api.ts",
+        "src/controls/Dropzone.tsx",
+        "src/controls/Table.tsx",
+        "src/extensions/browser/index.ts",
+        "src/extensions/browser/views/BrowserView.tsx",
+        "src/extensions/category_management/util/CategoryFilter.tsx",
+        "src/extensions/collections/collectionExport.ts",
+        "src/extensions/collections/eventHandlers.ts",
+        "src/extensions/collections/index.ts",
+        "src/extensions/collections/util/InstallDriver.ts",
+        "src/extensions/collections/util/binaryPatching.ts",
+        "src/extensions/collections/util/checksumMatcher.ts",
+        "src/extensions/collections/util/util.ts",
+        "src/extensions/collections/views/CollectionPageView/index.tsx",
+        "src/extensions/diagnostics_files/util/loadVortexLogs.ts",
+        "src/extensions/diagnostics_files/views/DiagnosticsFilesDialog.tsx",
+        "src/extensions/download_management/downloadAttributes.tsx",
+        "src/extensions/download_management/index.ts",
+        "src/extensions/download_management/types/IChunk.ts",
+        "src/extensions/download_management/types/IDownloadJob.ts",
+        "src/extensions/download_management/types/ProtocolHandlers.ts",
+        "src/extensions/download_management/util/downloadDirectory.ts",
+        "src/extensions/download_management/util/queryDLInfo.test.ts",
+        "src/extensions/download_management/util/queryDLInfo.ts",
+        "src/extensions/download_management/views/DownloadGameList.tsx",
+        "src/extensions/download_management/views/DownloadView.tsx",
+        "src/extensions/download_management/views/Settings.tsx",
+        "src/extensions/file_preview/index.ts",
+        "src/extensions/gamebryo_plugin_management/autosort.ts",
+        "src/extensions/gamebryo_plugin_management/index.ts",
+        "src/extensions/gamebryo_plugin_management/util/UserlistPersistor.ts",
+        "src/extensions/gamebryo_plugin_management/util/gameSupport.ts",
+        "src/extensions/gamebryo_plugin_management/views/PluginList.tsx",
+        "src/extensions/gamemode_management/GameModeManager.ts",
+        "src/extensions/gamemode_management/index.ts",
+        "src/extensions/gamemode_management/tiered/tierZero.ts",
+        "src/extensions/gamemode_management/types/IModType.ts",
+        "src/extensions/gamemode_management/util/discovery.ts",
+        "src/extensions/gamemode_management/util/modTypeExtensions.ts",
+        "src/extensions/gamemode_management/views/RecentlyManagedDashlet.tsx",
+        "src/extensions/hardlink_activator/index.ts",
+        "src/extensions/ini_prep/TweakList.tsx",
+        "src/extensions/ini_prep/index.ts",
+        "src/extensions/installer_dotnet/index.ts",
+        "src/extensions/installer_fomod_ipc/index.ts",
+        "src/extensions/installer_fomod_native/index.ts",
+        "src/extensions/installer_nested_fomod/index.ts",
+        "src/extensions/mod_load_order/types/types.ts",
+        "src/extensions/mod_load_order/views/DraggableList.tsx",
+        "src/extensions/move_activator/index.ts",
+        "src/extensions/nexus_integration/eventHandlers.ts",
+        "src/extensions/nexus_integration/index.tsx",
+        "src/extensions/nexus_integration/nxmProtocol.linkCallback.test.ts",
+        "src/extensions/nexus_integration/nxmProtocol.test.ts",
+        "src/extensions/nexus_integration/util.endorse.test.ts",
+        "src/extensions/nexus_integration/util.ts",
+        "src/extensions/nexus_integration/util/checkModsVersion.ts",
+        "src/extensions/nexus_integration/util/chromeAllowScheme.ts",
+        "src/extensions/nexus_integration/util/chromePath.ts",
+        "src/extensions/nexus_integration/util/endorseMod.ts",
+        "src/extensions/nexus_integration/util/guessModID.ts",
+        "src/extensions/nexus_integration/util/submitFeedback.ts",
+        "src/extensions/null_activator/index.ts",
+        "src/extensions/profile_management/actions/profiles.ts",
+        "src/extensions/profile_management/index.ts",
+        "src/extensions/profile_management/sync.ts",
+        "src/extensions/profile_management/util/manage.ts",
+        "src/extensions/recovery/Workarounds.tsx",
+        "src/extensions/starter_dashlet/Tools.tsx",
+        "src/extensions/starter_dashlet/index.ts",
+        "src/extensions/starter_dashlet/util.ts",
+        "src/extensions/symlink_activator/index.ts",
+        "src/extensions/symlink_activator_elevate/Settings.tsx",
+        "src/extensions/symlink_activator_elevate/index.ts",
+        "src/extensions/symlink_activator_elevate/walk.ts",
+        "src/extensions/test_runner/index.ts",
+        "src/renderer.tsx",
+        "src/telemetry/bluebird-patch.ts",
+        "src/types/IExtensionContext.ts",
+        "src/types/IGame.ts",
+        "src/types/ITool.ts",
+        "src/util/GameStoreHelper.ts",
+        "src/util/archives.ts",
+        "src/util/copyRecursive.ts",
+        "src/util/errorHandling.ts",
+        "src/util/fs.test.ts",
+        "src/util/fs.ts",
+        "src/util/fsAtomic.ts",
+        "src/util/getNormalizeFunc.ts",
+        "src/util/github.ts",
+        "src/util/migrate.ts",
+        "src/util/storeHelper.ts",
+        "src/util/storeLookup.test.ts",
+        "src/util/storeLookup.ts",
+        "src/util/transferPath.ts",
+        "src/util/util.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "electron",
+                "importNames": ["clipboard"],
+                "message": "Electron's clipboard module is unavailable in the renderer. Use window.api.clipboard instead."
+              },
+              {
+                "name": "react-markdown",
+                "allowTypeImports": true,
+                "message": "Render markdown with Markdown (ui/components/prose/markdown). Older call sites styled by their own SCSS use ReactMarkdown from util/react_markdown, which keeps links safe."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/util/opn", "./opn"],
+                "message": "util/opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

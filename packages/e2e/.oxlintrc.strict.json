@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../../oxlint.base.config.json", "../../oxlint.strict.config.json"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "bluebird",
+            "message": "Bluebird is being removed. Use native promises."
+          }
+        ]
+      }
+    ]
+  }
+}

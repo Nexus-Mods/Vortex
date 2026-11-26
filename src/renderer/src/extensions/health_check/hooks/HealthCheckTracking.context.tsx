@@ -96,7 +96,7 @@ export const IssueProvider = ({
   // value is built from rather than the object.
   const value = useMemo(
     () => issueFor(entry),
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
     [entry.id, entry.issueId, entry.sourceModUID, entry.checkId, entry.resolutionType],
   );
 
@@ -157,7 +157,7 @@ export const useIssueTracking = (): IssueTracker => {
               // it isn't callable as-is. no-unnecessary-type-assertion misreads this — remove
               // the cast and tsc fails.
               (props: Record<string, unknown> = {}) =>
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
                 (emit as (p: Record<string, unknown>) => void)({ ...issue.identity, ...props }),
             ]),
           ) as IssueTracker),

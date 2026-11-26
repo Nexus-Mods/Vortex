@@ -32,7 +32,7 @@ interface IFont {
 
 // Get available system fonts - runs directly in renderer process
 export function getAvailableFonts(): Promise<string[]> {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // oxlint-disable-next-line typescript/no-require-imports -- font-scanner is loaded lazily, on first use
   const fontScanner = require("font-scanner");
   return fontScanner
     .getAvailableFonts()

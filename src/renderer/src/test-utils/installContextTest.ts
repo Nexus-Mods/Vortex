@@ -21,7 +21,6 @@ export const test = harnessTest.extend<IInstallContextFixtures>({
   // `task` is destructured + ignored only to satisfy vitest's object-pattern requirement
   makeInstallContext: async ({ task: _task }, use) => {
     // `use` is the vitest fixture callback, not React's use() hook.
-    // eslint-disable-next-line @eslint-react/rules-of-hooks
     await use((overrides, opts) => makeInstallContextHarness(InstallContext, overrides, opts));
   },
 });

@@ -114,7 +114,6 @@ export function extend(
     ComponentToWrap: React.ComponentType<React.PropsWithChildren<P>>,
   ): React.ComponentType<React.PropsWithChildren<Omit<P, keyof IExtendedProps>>> => {
     type PropsT = Omit<P, keyof IExtendedProps> & IExtensibleProps;
-    // eslint-disable-next-line @eslint-react/component-hook-factories
     return class __ExtendedComponent extends React.Component<PropsT, S> {
       public static contextType = ExtensionContext;
 

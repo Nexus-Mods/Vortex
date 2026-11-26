@@ -1,4 +1,3 @@
-/* eslint-disable */
 import path from "path";
 
 import { util, VortexGameId } from "@nexusmods/vortex-api";

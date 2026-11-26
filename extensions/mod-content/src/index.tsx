@@ -55,7 +55,6 @@ function capitalize(input: string): string {
   return input.charAt(0).toUpperCase() + input.slice(1);
 }
 
-// eslint-disable-next-line max-lines-per-function
 function main(context: types.IExtensionContext) {
   context.requireVersion(">=0.19.0");
 

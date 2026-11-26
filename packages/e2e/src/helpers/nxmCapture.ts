@@ -67,11 +67,11 @@ export async function waitForNxmUrl(page: Page, timeoutMs: number): Promise<stri
       () => {
         const hooked = (globalThis as { __capturedNxm?: string }).__capturedNxm;
         if (typeof hooked === "string" && hooked.startsWith("nxm:")) return hooked;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+        // oxlint-disable-next-line typescript/no-explicit-any, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access
         const m = (globalThis as any).document.documentElement.outerHTML.match(
           /nxm:\/\/[^"'\s<>]+/i,
         );
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+        // oxlint-disable-next-line typescript/no-unsafe-return, typescript/no-unsafe-member-access
         return m?.[0] ?? null;
       },
       { timeout: timeoutMs },

@@ -15,7 +15,6 @@ const dialogContext: IComponentContext = {
 };
 
 /** Reads MainContext the way ComponentEx does. */
-// eslint-disable-next-line @eslint-react/no-class-component
 class Reader extends Component<{ onContext: (context: IComponentContext) => void }> {
   public static contextType = MainContext;
   declare public context: IComponentContext;

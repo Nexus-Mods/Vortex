@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { selectors, types, util } from "@nexusmods/vortex-api";
 
 import { GAME_ID, SCRIPT_MERGER_ID } from "../common";

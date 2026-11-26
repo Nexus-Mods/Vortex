@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { rename } from "node:fs/promises";
 import path from "path";
 

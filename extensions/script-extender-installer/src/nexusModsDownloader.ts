@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { IFileInfo } from "@nexusmods/nexus-api";
 import { actions, log, selectors, types, util } from "@nexusmods/vortex-api";
 

@@ -46,7 +46,7 @@ export const FlagsProvider: FC<React.PropsWithChildren<IFlagsProviderProps>> = (
       FlagService.instance?.getFlag(name),
     // flags is listed so getFlag referential identity changes when flags do,
     // ensuring consumers that memoize on getFlag re-evaluate after a push.
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
     [flags],
   );
 
