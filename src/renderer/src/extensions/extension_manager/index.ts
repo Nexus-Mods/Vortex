@@ -174,11 +174,15 @@ async function updateExtensions(
   api.dismissNotification("extension-updates");
   localState.reloadNecessary = true;
 
-  if (success.find((iter) => iter === true)) {
+  const updated = updateable.filter((_, idx) => success[idx] === true);
+  if (updated.length > 0) {
     api.sendNotification({
       id: "extension-updates",
       type: "success",
-      message: "Extensions updated, please restart to apply them",
+      title: "Extensions updated, please restart to apply them",
+      // names the extensions, so it's clear which one keeps updating if one does
+      message: updated.map(({ available }) => available.name).join(", "),
+      localize: { message: false },
       actions: [
         {
           title: "Restart now",
