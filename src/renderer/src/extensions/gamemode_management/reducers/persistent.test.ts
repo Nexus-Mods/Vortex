@@ -1,9 +1,12 @@
-import { NexusGameDomain, NexusGameId } from "@vortex/shared";
-import { describe, it, expect } from "vitest";
+import { GameUid, NexusGameDomain, NexusGameId } from "@vortex/shared";
+import { describe, it, expect, vi } from "vitest";
 
-import type { ITierZeroGame, IStateGameMode } from "@/types/IState";
+import { log } from "@/logging";
+import type { IGameUidRetirement, ITierZeroGame, IStateGameMode } from "@/types/IState";
 
 import { persistentReducer } from "./persistent";
+
+vi.mock("@/logging", () => ({ log: vi.fn() }));
 
 function makeEntry(overrides: Partial<ITierZeroGame> = {}): ITierZeroGame {
   return {
@@ -20,8 +23,50 @@ function makeState(entries: Record<number, ITierZeroGame>): IStateGameMode {
   for (const [key, entry] of Object.entries(entries)) {
     tier0[NexusGameId(Number(key))] = entry;
   }
-  return { gameInfo: {}, tier0 };
+  return { gameInfo: {}, gameUidHistory: [], tier0 };
 }
+
+function retirement(retired: string, current: string): IGameUidRetirement {
+  return { retired: GameUid(retired), current: GameUid(current), recordedAt: 1 };
+}
+
+describe("appendGameUidRetirements", () => {
+  const append = persistentReducer.reducers.APPEND_GAME_UID_RETIREMENTS;
+
+  it("appends the entry and changes nothing else", () => {
+    const before = makeState({ 1234: makeEntry() });
+    const result = append(before, { entries: [retirement("x", "y")] });
+    expect(result.gameUidHistory).toEqual([retirement("x", "y")]);
+    expect(result.tier0).toBe(before.tier0);
+    expect(result.gameInfo).toBe(before.gameInfo);
+  });
+
+  it("appends after existing entries, oldest first", () => {
+    const first = append(makeState({}), { entries: [retirement("x", "y")] });
+    const second = append(first, { entries: [retirement("y", "z")] });
+    expect(second.gameUidHistory).toEqual([retirement("x", "y"), retirement("y", "z")]);
+    expect(first.gameUidHistory).toEqual([retirement("x", "y")]);
+  });
+
+  it.each([
+    ["maps a uid to itself", retirement("x", "x")],
+    ["has an uppercase retired uid", retirement("X", "y")],
+    ["has an uppercase current uid", retirement("x", "Y")],
+  ])("drops an entry that %s, keeping the history as it was", (_name, entry) => {
+    const before = append(makeState({}), { entries: [retirement("a", "b")] });
+    vi.mocked(log).mockClear();
+    const result = append(before, { entries: [entry] });
+    expect(result).toBe(before);
+    expect(log).toHaveBeenCalledWith("error", expect.any(String), expect.anything());
+  });
+
+  it("keeps the valid entries of a batch", () => {
+    const result = append(makeState({}), {
+      entries: [retirement("x", "x"), retirement("x", "y")],
+    });
+    expect(result.gameUidHistory).toEqual([retirement("x", "y")]);
+  });
+});
 
 function getEntry(state: IStateGameMode, gameId: number): ITierZeroGame | undefined {
   return state.tier0[NexusGameId(gameId)];

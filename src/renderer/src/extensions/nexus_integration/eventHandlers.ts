@@ -35,28 +35,29 @@ import { AlreadyDownloaded } from "@vortex/shared/errors";
 import Bluebird from "bluebird";
 import * as semver from "semver";
 
-import { setDownloadModInfo } from "../../actions";
-import { log } from "../../logging";
-import type { IExtensionApi, StateChangeCallback } from "../../types/IExtensionContext";
-import type { IDownload, IMod, IModTable, IState } from "../../types/IState";
-import { DataInvalid, ProcessCanceled, UserCanceled } from "../../util/CustomErrors";
-import Debouncer from "../../util/Debouncer";
-import * as fs from "../../util/fs";
-import { calcDuration, showError } from "../../util/message";
+import { setDownloadModInfo } from "@/actions";
+import { resolveCategoryName } from "@/extensions/category_management";
+import { SITE_ID } from "@/extensions/gamemode_management/constants";
+import type { IGameStoredExt } from "@/extensions/gamemode_management/types/IGameStored";
+import { setUpdatingMods } from "@/extensions/mod_management/actions/session";
+import type { IModListItem } from "@/extensions/news_dashlet/types";
+import { log } from "@/logging";
+import type { IExtensionApi, StateChangeCallback } from "@/types/IExtensionContext";
+import type { IDownload, IMod, IModTable, IState } from "@/types/IState";
+import { DataInvalid, ProcessCanceled, UserCanceled } from "@/util/CustomErrors";
+import Debouncer from "@/util/Debouncer";
+import * as fs from "@/util/fs";
+import { showError } from "@/util/message";
 import {
   activeGameId,
   currentGame,
   downloadPathForGame,
   gameById,
   knownGames,
-} from "../../util/selectors";
-import { getSafe } from "../../util/storeHelper";
-import { batchDispatch, truthy } from "../../util/util";
-import { resolveCategoryName } from "../category_management";
-import { SITE_ID } from "../gamemode_management/constants";
-import type { IGameStoredExt } from "../gamemode_management/types/IGameStored";
-import { setUpdatingMods } from "../mod_management/actions/session";
-import type { IModListItem } from "../news_dashlet/types";
+} from "@/util/selectors";
+import { getSafe } from "@/util/storeHelper";
+import { batchDispatch, truthy } from "@/util/util";
+
 import { setUserInfo } from "./actions/persistent";
 import { NEXUS_GAMES_URL } from "./constants";
 import { ensureFreshMembership, refreshMembership } from "./membership";
@@ -790,7 +791,8 @@ function reportRateError(api: IExtensionApi, err: Error, revisionId: number) {
       type: "error",
       title: "Timeout",
       message,
-      displayMS: calcDuration(message.length),
+      // No displayMS: an error goes to the notification bell and stays there until
+      // dismissed. A short one would be shown as a toast and gone in a few seconds.
     });
   } else if (err["code"] === "NOT_FOUND") {
     api.showErrorNotification("Collection not found, it might have been removed.", err, {
@@ -858,6 +860,13 @@ export function onGetModFiles(
         }),
       );
   };
+}
+
+/** Like `onGetModFiles`, but rejects when the files can't be fetched. */
+export function onFetchModFiles(
+  nexus: Nexus,
+): (domain: NexusGameDomain, modId: number) => Promise<IFileInfo[]> {
+  return async (domain, modId) => (await nexus.getModFiles(modId, domain)).files;
 }
 
 export function onModFileContents(

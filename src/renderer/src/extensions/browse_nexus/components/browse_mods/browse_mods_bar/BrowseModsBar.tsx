@@ -139,7 +139,7 @@ export const BrowseModsBar = ({ search, viewPicker, panelRefs, feedback }: IBrow
 
         <div className="flex shrink-0 items-center gap-x-4">
           <Typography appearance="subdued" brand="neutral-translucent" typographyType="body-sm">
-            {t("{{total}} results", {
+            {t("{{total}} result", {
               count: search.totalCount,
               total: numeral(search.totalCount).format("0,0"),
             })}

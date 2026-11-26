@@ -12,6 +12,7 @@ import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { ListingStatus } from "@/ui/components/listing/listing_status/listingStatus";
 import { queryClient } from "@/util/queryClient";
 
+import { ShownModPositionContext } from "../../hooks/use_browse_website_link/useBrowseWebsiteLink.hook";
 import type { IModSearch } from "../../hooks/use_mod_search/useModSearch.hook";
 import { NO_FILTERS } from "../../util/mod_views/modViews";
 import { websiteModSearchUrl } from "../../util/website_mod_search_url/websiteModSearchUrl";
@@ -60,6 +61,7 @@ vi.mock("./mod_details/ModDetails", () => ({
     return (
       <div aria-label={`Details of ${mod.name}`} ref={ref} role="region" tabIndex={-1}>
         <p data-testid="details">{mod.name}</p>
+        <p data-testid="details-position">{React.useContext(ShownModPositionContext)}</p>
         {gallery.map(({ large_thumbnail_url }) => (
           <p data-testid="gallery-image" key={large_thumbnail_url}>
             {large_thumbnail_url}
@@ -349,6 +351,14 @@ describe("BrowseMods", () => {
     expect(propertiesOf("browse_mods_mod_selected")).toEqual([
       { mod_uid: "2", view: "trending", position: 2, input: "pointer" },
     ]);
+  });
+
+  it("gives the shown mod's details its place in the list, for the website links they open", () => {
+    renderComponent(search([mod("1"), mod("2"), mod("3")]));
+
+    fireEvent.click(screen.getByRole("button", { name: "Mod 2" }));
+
+    expect(screen.getByTestId("details-position")).toHaveTextContent("2");
   });
 
   it("shows and counts only the mod that moving through the list from the keyboard stops on", () => {

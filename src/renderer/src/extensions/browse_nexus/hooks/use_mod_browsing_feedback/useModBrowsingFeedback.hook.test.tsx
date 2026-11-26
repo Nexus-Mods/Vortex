@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 import { browseModsTracking } from "@/test-utils/browseModsTracking";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import type { FeedbackSentiment } from "@/ui/components/feedback_modal/FeedbackModal";
+import { toastDuration } from "@/util/message";
 
 import { modBrowsingReducer } from "../../reducers/mod_browsing/modBrowsing";
 import { useModBrowsingFeedback } from "./useModBrowsingFeedback.hook";
@@ -86,9 +87,11 @@ describe("useModBrowsingFeedback", () => {
       expect.objectContaining({
         id: "browse-mods-feedback-sent",
         type: "success",
-        displayMS: 3000,
+        localize: { message: false },
       }),
     );
+    const [sent] = sendNotification.mock.calls[0];
+    expect(sent.displayMS).toBe(toastDuration(sent.message.length));
   });
 
   it("counts a Load more vote without a toast", async () => {

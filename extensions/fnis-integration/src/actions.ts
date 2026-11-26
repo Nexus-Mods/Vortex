@@ -1,6 +1,6 @@
 import { createAction } from "redux-act";
 
-export const setAutoRun = createAction("SET_AUTO_FNIS", (enabled) => enabled);
+export const setAutoRun = createAction("SET_AUTO_FNIS", (enabled: boolean) => enabled);
 export const setPatches = createAction(
   "SET_FNIS_PATCHES",
   (profileId: string, patches: string[]) => ({ profileId, patches }),

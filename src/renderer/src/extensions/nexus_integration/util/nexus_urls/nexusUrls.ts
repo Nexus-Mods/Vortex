@@ -1,5 +1,12 @@
 import type { NexusGameDomain } from "@vortex/shared";
 
+import {
+  SOURCE_PARAM,
+  SOURCE_POSITION_PARAM,
+  type VortexFeature,
+  vortexLinkSource,
+} from "@/extensions/analytics/mixpanel/download_source/downloadSource";
+
 import { NEXUS_BASE_URL } from "../../constants";
 
 /** A mod's page on Nexus Mods. */
@@ -27,3 +34,42 @@ export const nexusFilePageUrl = (
 /** A mod's Files tab, where a free user picks a file to download. */
 export const nexusModFilesUrl = (domain: NexusGameDomain, modId: number | string) =>
   `${nexusModPageUrl(domain, modId)}?tab=files`;
+
+/** A mod's Posts tab, where its comments are. */
+export const nexusModCommentsUrl = (domain: NexusGameDomain, modId: number | string) =>
+  `${nexusModPageUrl(domain, modId)}?tab=posts`;
+
+/** A website link, and the Vortex feature sending the user to it. */
+interface IVortexSourceLink {
+  /** The website link. */
+  url: string;
+  /** The feature sending the user. */
+  feature: VortexFeature;
+  /** The mod's position in the feature's list, counting from 1, when it has one. */
+  position?: number;
+}
+
+/** Whether a link is to Nexus Mods, where the site reads the source. */
+const isNexusModsLink = ({ hostname }: URL) =>
+  hostname === "nexusmods.com" || hostname.endsWith(".nexusmods.com");
+
+/**
+ * A website link saying which Vortex feature sent the user, and the mod's position in its list,
+ * for the site to attribute the download it leads to. A link elsewhere, or one that can't be
+ * parsed, such as a mod author's own link without a scheme, is left as it is.
+ */
+export const withVortexSource = ({ url, feature, position }: IVortexSourceLink) => {
+  const withSource = URL.canParse(url) ? new URL(url) : undefined;
+
+  if (!withSource || !isNexusModsLink(withSource)) {
+    return url;
+  }
+
+  withSource.searchParams.set(SOURCE_PARAM, vortexLinkSource(feature));
+
+  if (position) {
+    withSource.searchParams.set(SOURCE_POSITION_PARAM, String(position));
+  }
+
+  return withSource.toString();
+};

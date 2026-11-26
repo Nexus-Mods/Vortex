@@ -4,6 +4,8 @@ import type * as React from "react";
 import type { IExternalImagePlaceholderOptions } from "@/ui/components/prose/external_image_placeholder/ExternalImagePlaceholder";
 
 import BrTag from "./BrTag";
+import { codeAsWritten } from "./codeAsWritten";
+import CodeTag from "./CodeTag";
 import CompareTag from "./CompareTag";
 import EmbedLinkTag from "./EmbedLinkTag";
 import FontTag from "./FontTag";
@@ -48,6 +50,11 @@ export interface IBBCodeContext {
   isFromAdultContent?: boolean;
   /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
   externalImagePlaceholders?: IExternalImagePlaceholderOptions;
+  /**
+   * Whether it's prose, a block with room such as a mod's description: videos play and sizes apply.
+   * Otherwise, as in a card or a dialog, videos are links and sizes are left out.
+   */
+  isProse?: boolean;
 }
 
 const createFullParser = (safe: boolean) => {
@@ -57,12 +64,13 @@ const createFullParser = (safe: boolean) => {
 
   parser.registerTag("size", safe ? SafeSizeTag : SizeTag);
   parser.registerTag("br", BrTag);
+  parser.registerTag("code", CodeTag);
   parser.registerTag("email", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("link", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("url", safe ? SafeLinkTag : LinkTag);
   parser.registerTag("spoiler", safe ? SafeSpoilerTag : SpoilerTag);
   parser.registerTag("font", FontTag);
-  parser.registerTag("youtube", safe ? EmbedLinkTag : YoutubeTag);
+  parser.registerTag("youtube", YoutubeTag);
   parser.registerTag("line", LineTag);
   parser.registerTag("heading", HeadingTag);
   parser.registerTag("svg", SvgTag);
@@ -75,7 +83,8 @@ const createFullParser = (safe: boolean) => {
   if (safe) {
     parser.registerTag("img", SafeImageTag);
     parser.registerTag("compare", CompareTag);
-    ["video", "twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
+    parser.registerTag("video", YoutubeTag);
+    ["twitter", "soundcloud"].forEach((tag) => parser.registerTag(tag, EmbedLinkTag));
     Object.entries(SAFE_SIMPLE_TAGS).forEach(([name, tag]) => parser.registerTag(name, tag));
   }
 
@@ -84,8 +93,8 @@ const createFullParser = (safe: boolean) => {
 
 const fullParser = createFullParser(false);
 
-// For bbcode we don't write ourselves: images only from Nexus Mods, embeds as links, and links only
-// to places they are allowed to go.
+// For bbcode we don't write ourselves: images only from Nexus Mods, videos in a sandboxed player
+// where asked, other embeds as links, and links only to places they are allowed to go.
 const safeParser = createFullParser(true);
 
 const stripParser = new bbcode.Parser();
@@ -128,9 +137,11 @@ const LEGACY_TAGS: Array<[RegExp, string]> = [
 ];
 
 export function preProcess(input: string): string {
-  return LEGACY_TAGS.reduce(
-    (text, [legacy, tag]) => text.replace(legacy, tag),
-    input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol),
+  return codeAsWritten(
+    LEGACY_TAGS.reduce(
+      (text, [legacy, tag]) => text.replace(legacy, tag),
+      input.replace(/<br *\/?>/g, "[br][/br]").replace(/(&[^;]+;)/g, transformSymbol),
+    ),
   );
 }
 
@@ -150,7 +161,7 @@ function renderBBCode(input: string, context?: unknown): React.ReactChild[] {
   return render(fullParser, input, context);
 }
 
-/** As `renderBBCode`, for bbcode we don't write ourselves: Nexus images, embeds as links, safe links. */
+/** As `renderBBCode`, for bbcode we don't write ourselves: Nexus images, sandboxed videos, safe links. */
 export function renderSafeBBCode(input: string, context?: unknown): React.ReactChild[] {
   return render(safeParser, input, context);
 }

@@ -225,14 +225,16 @@ describe("Nexus pages", () => {
   test("opens the mod's page", () => {
     openModPage(makeApi(), CANDIDATE);
 
-    expect(openUrl).toHaveBeenCalledWith("https://www.nexusmods.com/skyrimspecialedition/mods/42");
+    expect(openUrl).toHaveBeenCalledWith(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/42?source=vortex_health_check",
+    );
   });
 
   test("opens the file on its mod's Files tab", () => {
     openFilePage(makeApi(), CANDIDATE);
 
     expect(openUrl).toHaveBeenCalledWith(
-      "https://www.nexusmods.com/skyrimspecialedition/mods/42?tab=files&file_id=9001&nmm=1",
+      "https://www.nexusmods.com/skyrimspecialedition/mods/42?tab=files&file_id=9001&nmm=1&source=vortex_health_check",
     );
   });
 

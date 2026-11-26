@@ -34,7 +34,7 @@ import { normalizeStoreQuery } from "../../util/storeQuery";
 import { findInstalled } from "../extension_manager/queries";
 import { setPrimaryTool } from "../starter_dashlet/actions";
 import { discoveryFinished, discoveryProgress, setPhaseCount } from "./actions/discovery";
-import { clearGameDisabled, setGameDisabled, setKnownGames } from "./actions/session";
+import { setKnownGames } from "./actions/session";
 import { addDiscoveredGame, addDiscoveredTool, clearDiscoveredGame } from "./actions/settings";
 import { gameData } from "./gameData";
 import { nexusGameData } from "./queries";
@@ -358,7 +358,6 @@ export class GameModeManager {
         return [];
       }
 
-      this.postDiscovery();
       // Detection runs last, and is forced so a scan always asks the endpoint afresh.
       await requestDetectedGames(this.mApi, { force: true });
       return results;
@@ -471,7 +470,6 @@ export class GameModeManager {
       .finally(() => {
         this.mStore.dispatch(discoveryFinished());
         this.mActiveSearch = null;
-        return this.postDiscovery();
       });
   }
 
@@ -486,42 +484,6 @@ export class GameModeManager {
       this.mActiveSearch.cancel();
       this.mActiveSearch = null;
     }
-  }
-
-  private postDiscovery() {
-    const { discovered } = this.mStore.getState().settings.gameMode;
-    this.mStore.dispatch(clearGameDisabled());
-    PromiseBB.map(Object.keys(discovered), (gameId) => {
-      if (discovered[gameId].path === undefined) {
-        return PromiseBB.resolve();
-      }
-
-      return getNormalizeFunc(discovered[gameId].path)
-        .then((normalize) => {
-          const discovery = discovered[gameId];
-          const game = getGame(gameId);
-          // game may be uninstalled here so game being undefined is fine
-          if (game?.overrides !== undefined) {
-            game.overrides.forEach((override) => {
-              if (
-                discovered[override]?.path !== undefined &&
-                normalize(discovered[override].path) === normalize(discovery.path)
-              ) {
-                this.mStore.dispatch(setGameDisabled(override, gameId));
-              }
-            });
-          }
-        })
-        .catch((err) => {
-          // error is probably that normalization failed. Considering how rarely this
-          // mechanism will be used, showing a notification feels like overkill
-          log("error", "failed to check if game should be overridden", {
-            gameId,
-            error: err.message,
-          });
-          return PromiseBB.resolve();
-        });
-    });
   }
 
   private ensureWritable(modPath: string): PromiseBB<void> {

@@ -1,18 +1,14 @@
 import { types, util } from "@nexusmods/vortex-api";
-import update from "immutability-helper";
 
 import * as actions from "../actions/settings";
+import type { ISettingsSavegame } from "../types/IStateSavegame";
 
 /**
  * reducer for changes to ephemeral session state
  */
-export const settingsReducer: types.IReducerSpec = {
-  reducers: {
-    [actions.enableMonitor as any]: (state, payload) => {
-      return util.setSafe(state, ["monitorEnabled"], payload);
-    },
-  },
-  defaults: {
-    monitorEnabled: true,
-  },
-};
+export const settingsReducer: types.IReducerSpec<ISettingsSavegame> = util.actionsToReducerSpec<
+  ISettingsSavegame,
+  typeof actions
+>({ monitorEnabled: true }, actions, {
+  enableMonitor: (state, payload) => util.setSafe(state, ["monitorEnabled"], payload),
+});

@@ -54,8 +54,12 @@ interface IMenuActionBase {
   };
   /** Makes the row one of a choice, checked while it's the one chosen; others keep the room. */
   checked?: boolean;
+  /** Makes the row a checkbox, ticked while true, that toggles without closing the menu. */
+  selected?: boolean;
   /** Marks it with a dot, such as while a filter it opens is on. */
   hasPip?: boolean;
+  /** A `data-testid` for its row. */
+  testId?: string;
 }
 
 /**

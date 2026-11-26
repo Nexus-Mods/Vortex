@@ -141,6 +141,7 @@ export const ViewPicker = ({
             appearance="weak"
             aria-label={t("Add view")}
             brand="neutral"
+            data-testid="view-picker-add"
             leftIcon="add"
             onClick={onAddView}
           />

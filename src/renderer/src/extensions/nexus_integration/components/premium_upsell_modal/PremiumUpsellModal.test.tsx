@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Content } from "@/util/util";
 
@@ -53,12 +54,14 @@ describe("PremiumUpsellModal", () => {
     mocks.refresh.mockReset();
   });
 
-  it("says what Premium skips, why, and what else it brings", () => {
+  it("says what Premium skips, why, and what else it brings", async () => {
     renderModal();
 
     expect(screen.getByText("Skip the website")).toBeInTheDocument();
     expect(screen.getByText("It's a Premium feature.")).toBeInTheDocument();
     expect(screen.getByText("premium_upsell::benefits::downloads")).toBeInTheDocument();
+
+    await settleTransitions();
   });
 
   it("counts each opening once, however often it re-renders", () => {
@@ -85,10 +88,12 @@ describe("PremiumUpsellModal", () => {
     expect(p.onFallback).toHaveBeenCalledTimes(1);
   });
 
-  it("labels its Premium button as it's told, or as unlocking 1-click installs", () => {
+  it("labels its Premium button as it's told, or as unlocking 1-click installs", async () => {
     renderModal({ unlockLabel: "Unlock 1-click updates" });
 
     expect(screen.getByRole("button", { name: "Unlock 1-click updates" })).toBeInTheDocument();
+
+    await settleTransitions();
   });
 
   it("opens the Premium page for its campaign, staying open to see the purchase land", async () => {
@@ -110,7 +115,7 @@ describe("PremiumUpsellModal", () => {
     expect(p.onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("closes and runs the gated action once when the user turns Premium", () => {
+  it("closes and runs the gated action once when the user turns Premium", async () => {
     const { p, rerender } = renderModal();
 
     mocks.isPremium = true;
@@ -120,5 +125,7 @@ describe("PremiumUpsellModal", () => {
     expect(p.onClose).toHaveBeenCalledTimes(1);
     expect(p.onPremiumUnlocked).toHaveBeenCalledTimes(1);
     expect(p.onDismissed).not.toHaveBeenCalled();
+
+    await settleTransitions();
   });
 });

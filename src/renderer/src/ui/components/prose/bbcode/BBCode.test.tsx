@@ -94,13 +94,39 @@ describe("BBCode", () => {
       expect(wrapper.style.getPropertyValue("--prose-image-ratio")).toBe(ratio);
     });
 
-    it("shows both images of a comparison", () => {
+    it("shows a comparison as an unframed slider, no wider than it asks", () => {
       const { container } = render(
-        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png width=846]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
       );
+      const slider = screen.getByRole("slider");
 
       expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
+        "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
         "https://staticdelivery.nexusmods.com/mods/1704/images/before.png",
+      ]);
+      expect(slider.closest<HTMLElement>(".nxm-prose-compare-slider")?.style.maxWidth).toBe(
+        "846px",
+      );
+      expect(container.querySelector(".nxm-image-styled")).toBeNull();
+    });
+
+    it("caps a comparison's width as an image's", () => {
+      render(
+        <BBCode bbcode="[compare before=https://staticdelivery.nexusmods.com/mods/1704/images/before.png width=999999]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+      );
+
+      const wrapper = screen.getByRole("slider").closest<HTMLElement>(".nxm-prose-compare-slider");
+
+      expect(wrapper?.style.maxWidth).toBe("3600px");
+    });
+
+    it("shows a comparison with an image from elsewhere as its Nexus Mods image alone", () => {
+      const { container } = render(
+        <BBCode bbcode="[compare before=https://i.imgur.com/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]" />,
+      );
+
+      expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+      expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
         "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
       ]);
     });
@@ -138,6 +164,26 @@ describe("BBCode", () => {
       expect(screen.getByText("Cell").tagName).toBe("TD");
       expect(container.querySelector("[background]")).toBeNull();
     });
+  });
+
+  // The browser puts rows written straight in a table into a <tbody> of its own, so they're
+  // drawn in one, or React's tree wouldn't match the page.
+  it("puts a table's rows in a tbody", () => {
+    const { container } = render(
+      <BBCode bbcode="[table][tr][td]A[/td][/tr][tr][td]B[/td][/tr][/table]" />,
+    );
+
+    expect(container.querySelectorAll("table > tbody > tr")).toHaveLength(2);
+  });
+
+  it("keeps a table's own thead and tbody", () => {
+    const { container } = render(
+      <BBCode bbcode="[table][thead][tr][th]H[/th][/tr][/thead][tbody][tr][td]A[/td][/tr][/tbody][/table]" />,
+    );
+
+    expect(container.querySelectorAll("table > thead > tr")).toHaveLength(1);
+    expect(container.querySelectorAll("table > tbody > tr")).toHaveLength(1);
+    expect(container.querySelectorAll("tbody tbody")).toHaveLength(0);
   });
 
   it("keeps how far a table cell spans and where its text sits", () => {
@@ -193,6 +239,56 @@ describe("BBCode", () => {
       expect(container.querySelector("iframe")).toBeNull();
     });
 
+    it.each([
+      "[youtube]dQw4w9WgXcQ[/youtube]",
+      "[video] dQw4w9WgXcQ [/video]",
+      "[youtube]https://youtu.be/dQw4w9WgXcQ[/youtube]",
+      "[video]https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=share[/video]",
+    ])("embeds %s as a video in prose", (bbcode) => {
+      const { container } = render(<BBCode bbcode={bbcode} isProse />);
+
+      expect(screen.getByTestId("youtube-video")).toBeInTheDocument();
+      expect(container.querySelector("iframe")).toHaveAttribute(
+        "src",
+        "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      );
+    });
+
+    it("links a video where it isn't prose", () => {
+      const { container } = render(<BBCode bbcode="[youtube]dQw4w9WgXcQ&t=30[/youtube]" />);
+
+      expect(container.querySelector("iframe")).toBeNull();
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30s",
+      );
+    });
+
+    it.each([
+      "[youtube]https://example.com/watch?v=dQw4w9WgXcQ[/youtube]",
+      '[youtube]dQw4w9WgXc" onload="alert(1)[/youtube]',
+      "[youtube][b]dQw4w9WgXcQ[/b]x[/youtube]",
+    ])("links %s rather than playing it", (bbcode) => {
+      const { container } = render(<BBCode bbcode={bbcode} isProse />);
+
+      expect(screen.queryByTestId("youtube-video")).toBeNull();
+      expect(container.querySelector("iframe")).toBeNull();
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^https:\/\/www\.youtube\.com\/watch\?v=/),
+      );
+    });
+
+    it("links what isn't a video as it's written", () => {
+      render(<BBCode bbcode="[youtube]a&b[/youtube]" />);
+
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://www.youtube.com/watch?v=a%26b",
+      );
+      expect(screen.getByRole("link").textContent).toBe("https://www.youtube.com/watch?v=a&b");
+    });
+
     it("links a twitter handle", () => {
       render(<BBCode bbcode="[twitter]NexusSites[/twitter]" />);
 
@@ -207,6 +303,153 @@ describe("BBCode", () => {
 
       expect(screen.queryByRole("link")).toBeNull();
       expect(screen.getByText("file:///C:/a.mp3")).toBeInTheDocument();
+    });
+  });
+
+  describe("code", () => {
+    it("shows a block's text as written, a line at a time", () => {
+      const { container } = render(
+        <BBCode bbcode={'[code]&quot;OpenMenuKey&quot;: "P",<br />\n"Other": 1 & 2[/code]'} />,
+      );
+
+      expect(container.querySelector("pre > code")?.textContent).toBe(
+        '"OpenMenuKey": "P",\n"Other": 1 & 2',
+      );
+    });
+
+    it("drops the blank lines a block starts and ends with", () => {
+      const { container } = render(
+        <BBCode bbcode={"[code]<br />\n<br />a\n<br />b<br />\n[/code]"} />,
+      );
+
+      expect(container.querySelector("pre > code")?.textContent).toBe("a\nb");
+    });
+
+    it("spaces a block itself, without the line breaks written around it", () => {
+      const { container } = render(
+        <BBCode bbcode={"Add:<br />\n<br />\n[code]a<br />b[/code]<br />\n<br />\nThen"} />,
+      );
+
+      const block = container.querySelector("pre");
+      expect(block?.previousElementSibling).toBeNull();
+      expect(block?.nextElementSibling).toBeNull();
+    });
+
+    it("keeps one-line code in its sentence, with the line breaks around it", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={
+            "Add [code]sResourceArchiveList2[/code] in<br />[code]<br />Skyrim.ini<br />[/code]:"
+          }
+        />,
+      );
+
+      const codes = container.querySelectorAll("code");
+      expect(container.querySelector("pre")).toBeNull();
+      expect([...codes].map((code) => code.textContent)).toEqual([
+        "sResourceArchiveList2",
+        "Skyrim.ini",
+      ]);
+      expect(codes[1].previousElementSibling?.tagName).toBe("BR");
+    });
+
+    it("keeps one-line code in its sentence when a line break closes its tag", () => {
+      const { container } = render(
+        <BBCode bbcode={"change [code]A.bsa[/code] to [code]B.bsa\n<br />[/code]\n<br />Then"} />,
+      );
+
+      expect(container.querySelector("pre")).toBeNull();
+      expect([...container.querySelectorAll("code")].map((code) => code.textContent)).toEqual([
+        "A.bsa",
+        "B.bsa",
+      ]);
+    });
+
+    it("keeps a line break closing one-line code's tag as a space before the next word", () => {
+      const { container } = render(<BBCode bbcode={"change [code]A.bsa\n<br />[/code]then"} />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("A.bsa");
+      expect(code?.nextSibling?.textContent).toBe(" then");
+    });
+
+    it("shows tags inside code as written", () => {
+      const { container } = render(<BBCode bbcode="Set [code]a [b]b[/b] c[/code] here" />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("a [b]b[/b] c");
+      expect(code?.querySelector("b")).toBeNull();
+    });
+
+    it("ends code at its closing tag when a tag inside it is left open", () => {
+      const { container } = render(
+        <BBCode bbcode="Use [code]x = arr[i] + 1[/code] then [b]this[/b]" />,
+      );
+
+      expect(container.querySelector("code")?.textContent).toBe("x = arr[i] + 1");
+      expect(container.querySelector("i")).toBeNull();
+      expect(container.querySelector("code strong")).toBeNull();
+      expect(container.querySelector("strong")).not.toBeNull();
+    });
+
+    it("shows code starting a line as a block when a sentence follows it", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={'Add:<br />[code]"OpenMenuKey": "P"[/code][color=red]Then press P[/color]'}
+        />,
+      );
+
+      expect(container.querySelector("pre")?.textContent).toBe('"OpenMenuKey": "P"');
+    });
+
+    it("keeps the indent of a block's first line", () => {
+      const { container } = render(
+        <BBCode bbcode={"[code]<br />    if x:<br />        y()[/code]"} />,
+      );
+
+      expect(container.querySelector("pre > code")?.textContent).toBe("    if x:\n        y()");
+    });
+
+    it("shows code with a language as code is written", () => {
+      const { container } = render(
+        <BBCode bbcode={"Add:<br />\n<br />\n[code=ini]a<br />\nb[/code]<br />\n<br />\nThen"} />,
+      );
+
+      const block = container.querySelector("pre");
+      expect(block?.textContent).toBe("a\nb");
+      expect(block?.previousElementSibling).toBeNull();
+      expect(block?.nextElementSibling).toBeNull();
+    });
+
+    it("keeps the spaces inside one-line code's tag between it and its sentence", () => {
+      const { container } = render(<BBCode bbcode="the line[code] List2 [/code]in it" />);
+
+      const code = container.querySelector("code");
+      expect(code?.textContent).toBe("List2");
+      expect(code?.previousSibling?.textContent).toBe("the line ");
+      expect(code?.nextSibling?.textContent).toBe(" in it");
+    });
+
+    it("shows one-line code on a line of its own as a block", () => {
+      const { container } = render(
+        <BBCode
+          bbcode={
+            "[i]English:[/i]<br />\n[code]UHDAP - MusicHQ.bsa[/code]<br />\n[*][code]a[/code]"
+          }
+        />,
+      );
+
+      expect([...container.querySelectorAll("pre")].map((block) => block.textContent)).toEqual([
+        "UHDAP - MusicHQ.bsa",
+        "a",
+      ]);
+    });
+
+    it("shows inline code in the line", () => {
+      const { container } = render(<BBCode bbcode='Set [code=inline]"P"[/code] to open it' />);
+
+      expect(container.querySelector("pre")).toBeNull();
+      expect(container.querySelector("code")?.textContent).toBe('"P"');
     });
   });
 
@@ -343,16 +586,42 @@ describe("BBCode", () => {
 
   describe("size", () => {
     it.each([
-      ["draws size 3 as the text's own", "[size=3]", "1em"],
-      ["draws size 6 as the site does", "[size=6]", "2em"],
-      ["draws size 1 as the site does", "[size=1]", "0.625em"],
-      ["draws an older percentage as the size it stands for", "[size=150]", "1.125em"],
-      ["leaves a size the site doesn't have at the text's own", "[size=2000]", "1em"],
-      ["leaves a negative size at the text's own", "[size=-20]", "1em"],
-    ])("%s", (_name, tag, fontSize) => {
-      render(<BBCode bbcode={`${tag}Big[/size]`} />);
+      ["draws size 3 as the text's own", "[size=3]", 3],
+      ["draws size 6", "[size=6]", 6],
+      ["draws size 1", "[size=1]", 1],
+      ["draws an older percentage as the size it stands for", "[size=150]", 4],
+      ["leaves a size the site doesn't have at the text's own", "[size=2000]", 3],
+      ["leaves a negative size at the text's own", "[size=-20]", 3],
+    ])("%s", (_name, tag, level) => {
+      render(<BBCode bbcode={`${tag}Big[/size]`} isProse />);
 
-      expect(screen.getByText("Big").style.fontSize).toBe(fontSize);
+      expect(screen.getByText("Big")).toHaveClass(`nxm-prose-size-${level}`);
+    });
+
+    it("draws a size inside one left open as its own size, not of the size around it", () => {
+      render(<BBCode bbcode="[size=1][size=2]Small[/size] Left open" isProse />);
+
+      expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
+    });
+
+    it("draws a size inside a link", () => {
+      render(
+        <BBCode bbcode="[url=https://www.nexusmods.com/a][size=2]Small[/size][/url]" isProse />,
+      );
+
+      expect(screen.getByText("Small")).toHaveClass("nxm-prose-size-2");
+    });
+
+    it("leaves sizes at the text's own where it isn't prose", () => {
+      const { container } = render(<BBCode bbcode="[size=6]Big[/size]" />);
+
+      expect(container.querySelector('[class*="nxm-prose-size-"]')).toBeNull();
+    });
+
+    it("takes prose from the context where the prop doesn't say", () => {
+      render(<BBCode bbcode="[size=6]Big[/size]" context={{ isProse: true }} />);
+
+      expect(screen.getByText("Big")).toHaveClass("nxm-prose-size-6");
     });
   });
 
@@ -398,6 +667,20 @@ describe("BBCode", () => {
       expect(placeholders()).toHaveLength(1);
       expect(screen.getByText("External image")).toBeInTheDocument();
       expect(container.querySelector("img")).toBeNull();
+    });
+
+    it("stands in for a comparison's image from elsewhere, showing its Nexus Mods one", () => {
+      const { container } = render(
+        <BBCode
+          bbcode="[compare before=https://i.imgur.com/before.png]https://staticdelivery.nexusmods.com/mods/1704/images/after.png[/compare]"
+          externalImagePlaceholders={externalImagePlaceholders}
+        />,
+      );
+
+      expect(placeholders()).toHaveLength(1);
+      expect([...container.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
+        "https://staticdelivery.nexusmods.com/mods/1704/images/after.png",
+      ]);
     });
 
     it("leaves images from Nexus Mods as they are", () => {

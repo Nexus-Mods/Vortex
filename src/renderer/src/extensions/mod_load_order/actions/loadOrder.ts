@@ -9,4 +9,4 @@ export const setLoadOrderEntry = createAction(
     modId,
     loEntry,
   }),
-) as any;
+);

@@ -1,4 +1,7 @@
 import { renderHook } from "@testing-library/react";
+import { VortexGameId } from "@vortex/shared";
+import type { AnyAction } from "redux";
+import { batch } from "redux-act";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { startActivity, stopActivity } from "@/actions/session";
@@ -15,10 +18,21 @@ const { api, removeMods } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/contexts", () => ({ useMainContext: () => ({ api }) }));
-vi.mock("@/util/selectors", () => ({ activeGameId: () => "game" }));
+vi.mock("@/util/selectors", async () => {
+  const shared = await import("@vortex/shared");
+  return { activeGameId: () => shared.VortexGameId("game") };
+});
 vi.mock("../../util/removeMods", () => ({ removeMods }));
 
 import { useUninstallMods } from "./useUninstallMods.hook";
+
+const GAME = VortexGameId("game");
+
+// What was dispatched, each batch as the actions in it, in order.
+const dispatched = () =>
+  api.store.dispatch.mock.calls.flatMap(([action]: [AnyAction]) =>
+    action.type === batch.getType() ? action.payload : [action],
+  );
 
 const uninstall = (modIds: string[]) => renderHook(() => useUninstallMods()).result.current(modIds);
 
@@ -30,16 +44,15 @@ describe("useUninstallMods", () => {
   it("removes the mods from the active game, keeping their archives", async () => {
     removeMods.mockResolvedValue(undefined);
 
-    await uninstall(["a", "b"]);
-
-    expect(removeMods).toHaveBeenCalledWith(api, "game", ["a", "b"]);
+    expect(await uninstall(["a", "b"])).toBe(true);
+    expect(removeMods).toHaveBeenCalledWith(api, GAME, ["a", "b"]);
     expect(api.showErrorNotification).not.toHaveBeenCalled();
   });
 
   it("lists each mod as uninstalling while it is, and not once done, even on failure", async () => {
     let listed: unknown[] = [];
     removeMods.mockImplementation(async () => {
-      listed = api.store.dispatch.mock.calls.map(([action]) => action);
+      listed = dispatched();
       throw new Error("boom");
     });
 
@@ -49,14 +62,25 @@ describe("useUninstallMods", () => {
       startActivity("mods-uninstalling", "a"),
       startActivity("mods-uninstalling", "b"),
     ]);
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity("mods-uninstalling", "a"));
-    expect(api.store.dispatch).toHaveBeenCalledWith(stopActivity("mods-uninstalling", "b"));
+    expect(dispatched().slice(2)).toEqual([
+      stopActivity("mods-uninstalling", "a"),
+      stopActivity("mods-uninstalling", "b"),
+    ]);
+  });
+
+  // One store update each way however many mods, so the rows don't each work theirs out again.
+  it("lists and unlists the mods in one batch each", async () => {
+    removeMods.mockResolvedValue(undefined);
+
+    await uninstall(["a", "b", "c"]);
+
+    expect(api.store.dispatch).toHaveBeenCalledTimes(2);
   });
 
   it("says nothing when the user cancels", async () => {
     removeMods.mockRejectedValue(new UserCanceled());
 
-    await uninstall(["a"]);
+    expect(await uninstall(["a"])).toBe(false);
 
     expect(api.sendNotification).not.toHaveBeenCalled();
     expect(api.showErrorNotification).not.toHaveBeenCalled();

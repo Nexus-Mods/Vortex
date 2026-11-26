@@ -2,42 +2,48 @@ import { describe, it, expect } from "vitest";
 
 import { verify } from "../../../reducers/verify";
 import { makeMod, makeRule } from "../../../test-utils/builders";
+import type { IModTable } from "../../../types/IState";
 import type { IMod, IModRule } from "../types/IMod";
 import { modsReducer } from "./mods";
 
 const noEmit = (): void => undefined;
 
+// The fixtures give each mod only the fields its test reads. The reducer copies every other
+// field through untouched, so a partial mod exercises the same code as a complete one.
+type ModFixture = { [gameId: string]: { [modId: string]: Partial<IMod> } };
+const modTable = (games: ModFixture): IModTable => games as IModTable;
+
 describe("removeMod", () => {
   it("removes the mod", () => {
-    const input = { gameId1: { modId1: "id" } };
-    const result = modsReducer.reducers.REMOVE_MOD(input, {
+    const input = { gameId1: { modId1: { id: "id" } } };
+    const result = modsReducer.reducers.REMOVE_MOD(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
     });
     expect(result).toEqual({ gameId1: {} });
   });
   it("does nothing if the game doesn't exist", () => {
-    const input = { gameId1: { modId1: "id" } };
-    const result = modsReducer.reducers.REMOVE_MOD(input, {
+    const input = { gameId1: { modId1: { id: "id" } } };
+    const result = modsReducer.reducers.REMOVE_MOD(modTable(input), {
       gameId: "gameId2",
       modId: "modId1",
     });
-    expect(result).toEqual({ gameId1: { modId1: "id" } });
+    expect(result).toEqual({ gameId1: { modId1: { id: "id" } } });
   });
   it("affects only the right game", () => {
-    const input = { gameId1: { modId1: "id" }, gameId2: { modId1: "id" } };
-    const result = modsReducer.reducers.REMOVE_MOD(input, {
+    const input = { gameId1: { modId1: { id: "id" } }, gameId2: { modId1: { id: "id" } } };
+    const result = modsReducer.reducers.REMOVE_MOD(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
     });
-    expect(result).toEqual({ gameId1: {}, gameId2: { modId1: "id" } });
+    expect(result).toEqual({ gameId1: {}, gameId2: { modId1: { id: "id" } } });
   });
 });
 
 describe("setModInstallationPath", () => {
   it("sets the mod installation path", () => {
     const input = { gameId1: { modId1: { installationPath: "installPath" } } };
-    const result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, {
+    const result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       installPath: "New installPath",
@@ -48,7 +54,7 @@ describe("setModInstallationPath", () => {
   });
   it("does nothing if the game doesn't exist", () => {
     const input = { gameId1: { modId1: { installationPath: "installPath" } } };
-    const result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, {
+    const result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(modTable(input), {
       gameId: "gameId2",
       modId: "modId1",
       installPath: "New installPath",
@@ -62,7 +68,7 @@ describe("setModInstallationPath", () => {
       gameId1: { modId1: { installationPath: "installPath" } },
       gameId2: { modId1: { installationPath: "installPath" } },
     };
-    const result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(input, {
+    const result = modsReducer.reducers.SET_MOD_INSTALLATION_PATH(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       installPath: "New installPath",
@@ -79,7 +85,7 @@ describe("setModAttribute", () => {
     const input = {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attribute: "attribute1",
@@ -91,7 +97,7 @@ describe("setModAttribute", () => {
   });
   it("works if there were no attributes before", () => {
     const input = { gameId1: { modId1: {} } };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attribute: "attribute1",
@@ -105,7 +111,7 @@ describe("setModAttribute", () => {
     const input = {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(modTable(input), {
       gameId: "gameId2",
       modId: "modId1",
       attribute: "attribute1",
@@ -120,7 +126,7 @@ describe("setModAttribute", () => {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
       gameId2: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTE(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attribute: "attribute1",
@@ -138,7 +144,7 @@ describe("setModAttributes", () => {
     const input = {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attributes: {
@@ -151,7 +157,7 @@ describe("setModAttributes", () => {
   });
   it("works if there were no attributes before", () => {
     const input = { gameId1: { modId1: {} } };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attributes: {
@@ -166,7 +172,7 @@ describe("setModAttributes", () => {
     const input = {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(modTable(input), {
       gameId: "gameId2",
       modId: "modId1",
       attributes: {
@@ -182,7 +188,7 @@ describe("setModAttributes", () => {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
       gameId2: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attributes: {
@@ -198,7 +204,7 @@ describe("setModAttributes", () => {
     const input = {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attributes: {
@@ -218,7 +224,7 @@ describe("setModAttributes", () => {
     const input = {
       gameId1: { modId1: { attributes: { attribute1: "value" } } },
     };
-    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(input, {
+    const result = modsReducer.reducers.SET_MOD_ATTRIBUTES(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       attributes: {
@@ -242,78 +248,78 @@ describe("setModAttributes", () => {
 
 describe("setModState", () => {
   it("sets the mod state", () => {
-    const input = { gameId1: { modId1: { state: "value" } } };
-    const result = modsReducer.reducers.SET_MOD_STATE(input, {
+    const input: ModFixture = { gameId1: { modId1: { state: "installing" } } };
+    const result = modsReducer.reducers.SET_MOD_STATE(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
-      modState: "new value",
+      modState: "installed",
     });
-    expect(result).toEqual({ gameId1: { modId1: { state: "new value" } } });
+    expect(result).toEqual({ gameId1: { modId1: { state: "installed" } } });
   });
   it("does nothing if the game doesn't exist", () => {
-    const input = { gameId1: { modId1: { state: "value" } } };
-    const result = modsReducer.reducers.SET_MOD_STATE(input, {
+    const input: ModFixture = { gameId1: { modId1: { state: "installing" } } };
+    const result = modsReducer.reducers.SET_MOD_STATE(modTable(input), {
       gameId: "gameId2",
       modId: "modId1",
-      modState: "new value",
+      modState: "installed",
     });
-    expect(result).toEqual({ gameId1: { modId1: { state: "value" } } });
+    expect(result).toEqual({ gameId1: { modId1: { state: "installing" } } });
   });
   it("affects only the right game", () => {
-    const input = {
-      gameId1: { modId1: { state: "value" } },
-      gameId2: { modId1: { state: "value" } },
+    const input: ModFixture = {
+      gameId1: { modId1: { state: "installing" } },
+      gameId2: { modId1: { state: "installing" } },
     };
-    const result = modsReducer.reducers.SET_MOD_STATE(input, {
+    const result = modsReducer.reducers.SET_MOD_STATE(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
-      modState: "new value",
+      modState: "installed",
     });
     expect(result).toEqual({
-      gameId1: { modId1: { state: "new value" } },
-      gameId2: { modId1: { state: "value" } },
+      gameId1: { modId1: { state: "installed" } },
+      gameId2: { modId1: { state: "installing" } },
     });
   });
 });
 
 describe("addMod", () => {
   it("adds a new mod", () => {
-    const input = {
+    const input: ModFixture = {
       gameId1: {
-        modId1: { state: "", id: "", installationPath: "", attributes: {} },
+        modId1: { state: "installed", id: "", installationPath: "", attributes: {} },
       },
     };
-    const mod = {
+    const mod: Partial<IMod> = {
       state: "installing",
       id: "modId1",
       installationPath: "path",
       attributes: {},
     };
-    const result = modsReducer.reducers.ADD_MOD(input, {
+    const result = modsReducer.reducers.ADD_MOD(modTable(input), {
       gameId: "gameId1",
       mod: mod,
     });
     expect(result).toEqual({ gameId1: { modId1: mod } });
   });
   it("creates a new game and add the new mod under if the game doesn't exist", () => {
-    const input = {
+    const input: ModFixture = {
       gameId1: {
-        modId1: { state: "", id: "", installationPath: "", attributes: {} },
+        modId1: { state: "installed", id: "", installationPath: "", attributes: {} },
       },
     };
-    const mod = {
+    const mod: Partial<IMod> = {
       state: "installing",
       id: "modId1",
       installationPath: "path",
       attributes: {},
     };
     const oldMod = {
-      state: "",
+      state: "installed",
       id: "",
       installationPath: "",
       attributes: {},
     };
-    const result = modsReducer.reducers.ADD_MOD(input, {
+    const result = modsReducer.reducers.ADD_MOD(modTable(input), {
       gameId: "gameId2",
       mod: mod,
     });
@@ -323,27 +329,27 @@ describe("addMod", () => {
     });
   });
   it("affects only the right game", () => {
-    const input = {
+    const input: ModFixture = {
       gameId1: {
-        modId1: { state: "", id: "", installationPath: "", attributes: {} },
+        modId1: { state: "installed", id: "", installationPath: "", attributes: {} },
       },
       gameId2: {
-        modId1: { state: "", id: "", installationPath: "", attributes: {} },
+        modId1: { state: "installed", id: "", installationPath: "", attributes: {} },
       },
     };
-    const mod = {
+    const mod: Partial<IMod> = {
       state: "installing",
       id: "modId1",
       installationPath: "path",
       attributes: {},
     };
     const oldMod = {
-      state: "",
+      state: "installed",
       id: "",
       installationPath: "",
       attributes: {},
     };
-    const result = modsReducer.reducers.ADD_MOD(input, {
+    const result = modsReducer.reducers.ADD_MOD(modTable(input), {
       gameId: "gameId1",
       mod: mod,
     });
@@ -528,7 +534,7 @@ describe("verifiers: installationPath self-heal (GH#23363/#23355)", () => {
 describe("setModArchiveId", () => {
   it("rebinds the archive of a known mod", () => {
     const input = { gameId1: { modId1: { installationPath: "modId1", archiveId: "old" } } };
-    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(input, {
+    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(modTable(input), {
       gameId: "gameId1",
       modId: "modId1",
       archiveId: "new",
@@ -550,7 +556,7 @@ describe("setModArchiveId", () => {
 
   it("does nothing if the game doesn't exist", () => {
     const input = { gameId1: { modId1: { installationPath: "modId1" } } };
-    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(input, {
+    const result = modsReducer.reducers.SET_MOD_ARCHIVEID(modTable(input), {
       gameId: "gameId2",
       modId: "modId1",
       archiveId: "new",
@@ -560,7 +566,9 @@ describe("setModArchiveId", () => {
 
   it("does not resurrect a mod that was just removed", () => {
     const removed = modsReducer.reducers.REMOVE_MOD(
-      { gameId1: { modId1: { installationPath: "modId1", archiveId: "old", state: "installed" } } },
+      modTable({
+        gameId1: { modId1: { installationPath: "modId1", archiveId: "old", state: "installed" } },
+      }),
       { gameId: "gameId1", modId: "modId1" },
     );
     const result = modsReducer.reducers.SET_MOD_ARCHIVEID(removed, {

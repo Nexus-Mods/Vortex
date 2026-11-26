@@ -60,7 +60,6 @@ import {
 import { emitModsDeployed } from "../analytics/mixpanel/deployAnalytics";
 import { emitModStateChanged } from "../analytics/mixpanel/modChangeAnalytics";
 import { emitModListSnapshot } from "../analytics/utils/modListSnapshot";
-import { setDownloadModInfo } from "../download_management/actions/state";
 import { getGame } from "../gamemode_management/util/getGame";
 import { getModType } from "../gamemode_management/util/modTypeExtensions";
 import { convertGameIdReverse } from "../nexus_integration/util/convertGameId";
@@ -76,7 +75,7 @@ import {
 import type { IProfile } from "../profile_management/types/IProfile";
 import { setAutoDeployment } from "../settings_interface/actions/automation";
 import { setDeploymentNecessary, setDeploymentPurged } from "./actions/deployment";
-import { cacheModReference, removeMod, setModAttribute } from "./actions/mods";
+import { cacheModReference, removeMod } from "./actions/mods";
 import { setDeploymentProblem } from "./actions/session";
 import { setTransferMods } from "./actions/transactions";
 import { CollectionUpdateWarning } from "./components/collection_update_warning/CollectionUpdateWarning";
@@ -129,6 +128,7 @@ import {
   withActivationLock,
 } from "./util/activationStore";
 import allTypesSupported from "./util/allTypesSupported";
+import { availableModSources } from "./util/available_mod_sources/availableModSources";
 import * as basicInstaller from "./util/basicInstaller";
 import BlacklistSet from "./util/BlacklistSet";
 import {
@@ -156,6 +156,7 @@ import { dealWithExternalChanges } from "./util/externalChanges";
 import { attributeExtractor, upgradeExtractor } from "./util/extractors";
 import { registerAttributeExtractor } from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
+import { modAttributeActions } from "./util/mod_attribute_actions/modAttributeActions";
 import ModHistory from "./util/ModHistory";
 import renderModName from "./util/modName";
 import { getModSources, registerModSource } from "./util/modSource";
@@ -1072,31 +1073,16 @@ function genModsSourceAttribute(api: IExtensionApi): ITableAttribute<IMod> {
     },
     edit: {
       choices: () =>
-        getModSources()
-          .filter((source) => {
-            if (source.options === undefined || source.options.condition === undefined) {
-              return true;
-            }
-            return source.options.condition();
-          })
-          .map((source) => {
-            const icon =
-              source.options !== undefined && source.options.icon !== undefined
-                ? source.options.icon
-                : undefined;
-            return { key: source.id, text: source.name, icon };
-          }),
+        availableModSources().map((source) => ({
+          key: source.id,
+          text: source.name,
+          icon: source.options?.icon,
+        })),
       onChangeValue: (mods: IMod[], newValue: string) => {
-        const store = api.store;
-        const state = store.getState();
-        const gameMode = activeGameId(state);
-        mods.forEach((mod) => {
-          if (mod.state === "downloaded") {
-            store.dispatch(setDownloadModInfo(mod.id, "source", newValue));
-          } else {
-            store.dispatch(setModAttribute(gameMode, mod.id, "source", newValue));
-          }
-        });
+        const gameMode = activeGameId(api.getState());
+        modAttributeActions(gameMode, mods, "source", newValue).forEach((action) =>
+          api.store.dispatch(action),
+        );
       },
     },
   };

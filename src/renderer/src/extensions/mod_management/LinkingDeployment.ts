@@ -1,7 +1,14 @@
 import { lstat } from "node:fs/promises";
 import * as path from "path";
 
-import { getErrorCode, getErrorMessageOrDefault, VortexModStagingFolder } from "@vortex/shared";
+import {
+  FOLDER_TAG_NAME,
+  FOLDER_TAG_NAME_HIDDEN,
+  getErrorCode,
+  getErrorMessageOrDefault,
+  OLD_FOLDER_TAG_NAME,
+  VortexModStagingFolder,
+} from "@vortex/shared";
 import type { TFunction } from "i18next";
 import * as _ from "lodash";
 import type { IEntry } from "turbowalk";
@@ -87,16 +94,12 @@ export async function mapWithConcurrency<T, R>(
  * base class for mod activators that use some form of file-based linking
  * (which is probably all of them)
  */
-abstract class LinkingActivator implements IDeploymentMethod {
-  public static OLD_TAG_NAME = "__delete_if_empty";
-  public static NEW_TAG_NAME =
-    process.platform === "win32" ? "__folder_managed_by_vortex" : ".__folder_managed_by_vortex";
+/** the folder marker this platform writes */
+const TAG_NAME = process.platform === "win32" ? FOLDER_TAG_NAME : FOLDER_TAG_NAME_HIDDEN;
 
+abstract class LinkingActivator implements IDeploymentMethod {
   private static isTagName(name: string) {
-    return (
-      path.basename(name) === LinkingActivator.OLD_TAG_NAME ||
-      path.basename(name) === LinkingActivator.NEW_TAG_NAME
-    );
+    return path.basename(name) === OLD_FOLDER_TAG_NAME || path.basename(name) === TAG_NAME;
   }
 
   public id: string;
@@ -167,9 +170,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
         onComplete: queueResolve,
       };
       lastDeployment.forEach((file) => {
-        const outputPath = [file.target || null, file.relPath]
-          .filter((i) => i !== null)
-          .join(path.sep);
+        const outputPath = path.join(file.target || "", file.relPath);
         const key = this.mNormalize(outputPath);
         this.mContext.previousDeployment[key] = file;
         if (!clean) {
@@ -510,7 +511,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       activation ?? [],
       (fileEntry) => {
         const fileDataPath = deployedFilePath(dataPath, fileEntry.target, fileEntry.relPath);
-        const fileModPath = [installPath, fileEntry.source, fileEntry.relPath].join(path.sep);
+        const fileModPath = path.join(installPath, fileEntry.source, fileEntry.relPath);
         let sourceDeleted: boolean = false;
         let destDeleted: boolean = false;
         let sourceTime: Date;
@@ -670,7 +671,7 @@ abstract class LinkingActivator implements IDeploymentMethod {
       if (dirTags !== false) {
         log("debug", "created directory", createdPath);
         return fs.writeFileAsync(
-          path.join(createdPath, LinkingActivator.NEW_TAG_NAME),
+          path.join(createdPath, TAG_NAME),
           "This directory was created by Vortex deployment and will be removed " +
             "during purging if it's empty",
         );
@@ -802,18 +803,16 @@ abstract class LinkingActivator implements IDeploymentMethod {
     replace: boolean,
     dirTags: boolean,
   ): Promise<IDeployedFile> {
-    const fullPath = [
+    const fullPath = path.join(
       installPathStr,
       this.mContext.newDeployment[key].source,
       this.mContext.newDeployment[key].relPath,
-    ].join(path.sep);
-    const fullOutputPath = [
+    );
+    const fullOutputPath = path.join(
       dataPath,
-      this.mContext.newDeployment[key].target || null,
+      this.mContext.newDeployment[key].target || "",
       this.mContext.newDeployment[key].relPath,
-    ]
-      .filter((i) => i !== null)
-      .join(path.sep);
+    );
 
     const backupProm: Promise<void> = replace
       ? Promise.resolve()
@@ -948,9 +947,9 @@ abstract class LinkingActivator implements IDeploymentMethod {
       .then(() =>
         empty && doRemove
           ? fs
-              .statAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME))
-              .then(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.NEW_TAG_NAME)))
-              .catch(() => fs.unlinkAsync(path.join(baseDir, LinkingActivator.OLD_TAG_NAME)))
+              .statAsync(path.join(baseDir, TAG_NAME))
+              .then(() => fs.unlinkAsync(path.join(baseDir, TAG_NAME)))
+              .catch(() => fs.unlinkAsync(path.join(baseDir, OLD_FOLDER_TAG_NAME)))
               .catch((err: unknown) => {
                 const code = getErrorCode(err);
                 if (code === "ENOENT") {

@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   nexusFilePageUrl,
+  nexusModCommentsUrl,
   nexusModFilesUrl,
   nexusModReportUrl,
   nexusModPageUrl,
   nexusSiteModPageUrl,
+  withVortexSource,
 } from "./nexusUrls";
 
 const SKYRIM = NexusGameDomain("skyrimspecialedition");
@@ -45,6 +47,47 @@ describe("nexusModReportUrl", () => {
   it("is the mod's page, asking for its report dialog", () => {
     expect(nexusModReportUrl(SKYRIM, 12604)).toBe(
       "https://www.nexusmods.com/skyrimspecialedition/mods/12604?report=1",
+    );
+  });
+});
+
+describe("nexusModCommentsUrl", () => {
+  it("is the mod's Posts tab", () => {
+    expect(nexusModCommentsUrl(SKYRIM, 12604)).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?tab=posts",
+    );
+  });
+});
+
+describe("withVortexSource", () => {
+  it("adds the feature that sent the user, and the mod's position", () => {
+    expect(
+      withVortexSource({ url: nexusModPageUrl(SKYRIM, 12604), feature: "browse", position: 23 }),
+    ).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?source=vortex_browse&source_position=23",
+    );
+  });
+
+  it("leaves a link it can't parse as it is", () => {
+    expect(
+      withVortexSource({
+        url: "www.nexusmods.com/skyrimspecialedition/mods/12604",
+        feature: "browse",
+      }),
+    ).toBe("www.nexusmods.com/skyrimspecialedition/mods/12604");
+  });
+
+  it("leaves a link to another site as it is", () => {
+    expect(
+      withVortexSource({ url: "https://github.com/someone/mod", feature: "health_check" }),
+    ).toBe("https://github.com/someone/mod");
+  });
+
+  it("keeps the link's own parameters", () => {
+    expect(
+      withVortexSource({ url: nexusFilePageUrl(SKYRIM, 12604, "42"), feature: "health_check" }),
+    ).toBe(
+      "https://www.nexusmods.com/skyrimspecialedition/mods/12604?tab=files&file_id=42&nmm=1&source=vortex_health_check",
     );
   });
 });

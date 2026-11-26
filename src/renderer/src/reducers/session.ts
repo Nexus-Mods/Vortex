@@ -49,6 +49,7 @@ export const defaultState: ISession = {
   secondaryPage: "",
   activity: {},
   progress: {},
+  purges: {},
   settingsPage: undefined,
   extLoadFailures: {},
   toolsRunning: {},
@@ -97,6 +98,24 @@ export const sessionReducer = actionsToReducerSpec(defaultState, actions, {
       },
     },
   }),
+  setPurgeProgress: (state, payload) => ({
+    ...state,
+    purges: {
+      ...state.purges,
+      [payload.purgeId]: {
+        gameId: payload.gameId,
+        text: payload.text,
+        percent: Math.round(payload.percent),
+      },
+    },
+  }),
+  clearPurgeProgress: (state, payload) => {
+    if (state.purges[payload.purgeId] === undefined) {
+      return state;
+    }
+    const { [payload.purgeId]: _cleared, ...purges } = state.purges;
+    return { ...state, purges };
+  },
   setOpenMainPage: (state, payload) =>
     payload.secondary
       ? { ...state, secondaryPage: payload.page }

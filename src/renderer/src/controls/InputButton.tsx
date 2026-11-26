@@ -9,7 +9,7 @@ import type { IState } from "../types/IState";
 import { getSafe } from "../util/storeHelper";
 import { ComponentEx, connect, translate } from "./ComponentEx";
 import Icon from "./Icon";
-import ToolbarIcon from "./ToolbarIcon";
+import ToolbarIcon from "./toolbar_icon/ToolbarIcon";
 import { Button } from "./TooltipControls";
 
 export interface IBaseProps {

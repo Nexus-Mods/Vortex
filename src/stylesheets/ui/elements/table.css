@@ -1,3 +1,11 @@
+/* A length, so it can transition: see the aside below. Its initial value is in px, as a
+   registered one must not depend on the font size. */
+@property --nxm-table-aside-width {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
 @layer components {
     /* One grid for the whole table; every row takes its tracks through subgrid, so the
        columns line up without measuring anything. The gutters are tracks of their own,
@@ -22,16 +30,23 @@
         );
         --nxm-table-row-tint: transparent;
         --nxm-table-footer-height: calc(var(--spacing) * 10 + 1px);
+        /* Room under the last row, inside the table. */
+        --nxm-table-end-padding: 0px;
 
         position: relative;
         isolation: isolate;
         display: grid;
         align-content: start;
         column-gap: var(--nxm-table-gap);
+        padding-bottom: var(--nxm-table-end-padding);
         min-width: 0;
         container-type: inline-size;
         overflow-y: clip;
         overflow-anchor: none;
+        /* At the speed an aside slides in, so the columns make room for it as it comes. */
+        transition-property: --nxm-table-aside-width;
+        transition-timing-function: var(--default-transition-timing-function);
+        transition-duration: var(--default-transition-duration);
     }
 
     .nxm-table-header,
@@ -74,7 +89,7 @@
 
     /* The width in view, stuck to its left edge, so it stays put while the columns scroll
        sideways under it. Padded by the gutter and gap, so its first tab lines up with the
-       first column; its last control sits by the gutter alone, under the page header's. */
+       first column; its last control lines up under the page header's, over an aside. */
     .nxm-table-toolbar {
         position: sticky;
         left: 0;
@@ -84,7 +99,7 @@
         justify-self: start;
         width: 100cqi;
         height: var(--nxm-table-toolbar-height);
-        padding-right: var(--nxm-table-gutter);
+        padding-right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
         padding-left: calc(var(--nxm-table-gutter-start) + var(--nxm-table-gap));
     }
 
@@ -97,9 +112,9 @@
         grid-row: 2;
     }
 
-    /* The width in view, stuck to its left edge like the toolbar, so its fade stays on the
-       right of what's in view, over the right gutter, while there are columns to scroll to.
-       Down to the scroller's foot, the table clipping it. */
+    /* The width in view, less an aside's, stuck to its left edge like the toolbar, so its fade
+       stays on the right of what's in view, over the right gutter, while there are columns to
+       scroll to. Down to the scroller's foot, the table clipping it. */
     .nxm-table-edge {
         position: sticky;
         left: 0;
@@ -107,7 +122,7 @@
         grid-column: 1 / -1;
         place-self: start;
         z-index: 2;
-        width: 100cqi;
+        width: calc(100cqi - var(--nxm-table-aside-width));
         height: 0;
         pointer-events: none;
 
@@ -127,10 +142,23 @@
     }
 
     /* Only while the page's scroller has further to go right. */
-    @container scroll-state(scrollable: right) {
-        .nxm-table-edge::after {
-            opacity: 1;
-        }
+    .nxm-table[data-scrollable-right] .nxm-table-edge::after {
+        opacity: 1;
+    }
+
+    /* A zero-size point pinned at the view's top right, spanning every column so it sticks as
+       far as they scroll, that an aside hangs from. */
+    .nxm-table-aside {
+        position: sticky;
+        top: 0;
+        right: 0;
+        z-index: 5;
+        grid-row: 1;
+        grid-column: 1 / -1;
+        place-self: start end;
+        width: 0;
+        height: 0;
+        pointer-events: none;
     }
 
     /* As tall as its controls, not stretched to the row, so the table can measure it as they
@@ -229,8 +257,8 @@
         scroll-margin-top: var(--nxm-table-head-height);
     }
 
-    .nxm-table[role="treegrid"] .nxm-table-row,
-    .nxm-table[role="treegrid"] .nxm-table-row * {
+    .nxm-table[data-grouped] .nxm-table-row,
+    .nxm-table[data-grouped] .nxm-table-row * {
         scroll-margin-top: calc(var(--nxm-table-head-height) + var(--nxm-table-group-row-height));
     }
 
@@ -352,7 +380,9 @@
     }
 
     /* A sortable column's header: its label, in line with the column's content, and an arrow
-       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox. */
+       once it's sorted. Its fill reaches into the gap before the column, or past the checkbox.
+       The grey of the headers that don't sort, brighter only for the column the rows are
+       sorted by. */
     .nxm-table-sort-button {
         display: flex;
         align-items: center;
@@ -362,12 +392,16 @@
         margin-left: calc(var(--spacing) * -2);
         padding-inline: calc(var(--spacing) * 2);
         border-radius: var(--radius-sm);
-        color: var(--color-translucent-moderate);
+        color: var(--color-translucent-subdued);
         white-space: nowrap;
         cursor: pointer;
         transition-property: color, background-color;
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
+
+        :is([aria-sort="ascending"], [aria-sort="descending"]) > & {
+            color: var(--color-translucent-moderate);
+        }
 
         &:hover,
         &:focus-visible {
@@ -481,13 +515,13 @@
         }
     }
 
-    /* Pinned at the right of what's in view, solid in its row's tint so the columns pass
-       under it, covering the gutter to its right and fading them out to its left. */
+    /* Pinned at the right of what's in view, left of an aside, solid in its row's tint so the
+       columns pass under it, covering the gutter to its right and fading them out to its left. */
     .nxm-table-cell[data-sticky="end"] {
         /* The last column's track, past any gap the table puts before it. */
         grid-column-end: -2;
         position: sticky;
-        right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap));
+        right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap) + var(--nxm-table-aside-width));
         z-index: 2;
         align-self: stretch;
         --nxm-table-sticky-bg:
@@ -533,9 +567,43 @@
         }
     }
 
-    /* The fade runs on through the head's padding and the gap above a group, unbroken. */
+    /* The fade runs on through the head's padding and the gap above a group, unbroken; its
+       shadow fades in over the top 3rem, the head's colour over the shadow alone. */
     .nxm-table-header .nxm-table-cell[data-sticky="end"]::before {
         bottom: calc(-1 * var(--nxm-table-head-padding));
+        background:
+            linear-gradient(to bottom, var(--color-surface-low), transparent 3rem) 0 0 /
+                var(--nxm-table-sticky-fade) 100% no-repeat,
+            linear-gradient(
+                to right,
+                transparent,
+                var(--color-scrim-300) var(--nxm-table-sticky-fade),
+                transparent var(--nxm-table-sticky-fade)
+            ),
+            var(--nxm-table-sticky-bg);
+    }
+
+    /* The sticky column's shadow run on through the room under the last row, in its track and
+       pinned with it, without any row's tint. Of no height itself, so the room stays the same. */
+    .nxm-table-end {
+        grid-column-end: -2;
+        position: sticky;
+        right: calc(var(--nxm-table-gutter) + var(--nxm-table-gap) + var(--nxm-table-aside-width));
+        z-index: 2;
+        height: var(--nxm-table-end-padding);
+        margin-bottom: calc(-1 * var(--nxm-table-end-padding));
+        pointer-events: none;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            right: calc(100% + var(--nxm-table-sticky-solid));
+            width: var(--nxm-table-sticky-fade);
+            background: linear-gradient(to right, transparent, var(--color-scrim-300));
+            mask-image: linear-gradient(to right, transparent, #000);
+            opacity: 0;
+        }
     }
 
     .nxm-table-group-row .nxm-table-cell[data-sticky="end"]::before {
@@ -553,15 +621,16 @@
             100% calc(100% - var(--nxm-table-group-row-gap) - 1px);
     }
 
-    /* The fade only while the page's scroller has further to go right. */
-    @container scroll-state(scrollable: right) {
-        .nxm-table-cell[data-sticky="end"]::before {
+    /* The fade only while the page's scroller has further to go right, as the table says. */
+    .nxm-table[data-scrollable-right] {
+        .nxm-table-cell[data-sticky="end"]::before,
+        .nxm-table-end::before {
             opacity: 1;
         }
 
         /* A row's pins sit clear of the shadow the column casts, on every row, so they don't
            move as a row is left. */
-        .nxm-table[data-sticky-reveal]
+        &[data-sticky-reveal]
             .nxm-table-row
             .nxm-toolbar-group
             > [data-toolbar-control]:has(+ :not([data-toolbar-control])) {
@@ -570,7 +639,7 @@
 
         /* A widened row keeps the shadow at the column's edge, under its pins, so it runs on
            unbroken down the column. */
-        .nxm-table[data-sticky-reveal]
+        &[data-sticky-reveal]
             .nxm-table-row:is(
                 :hover,
                 :has(:focus-visible),
@@ -607,7 +676,7 @@
     .nxm-table-empty-cell {
         position: sticky;
         left: 0;
-        width: 100cqi;
+        width: calc(100cqi - var(--nxm-table-aside-width));
         padding-block: calc(var(--spacing) * 12);
     }
 
@@ -629,7 +698,7 @@
     .nxm-table-footer-cell {
         position: sticky;
         left: 0;
-        width: 100cqi;
+        width: calc(100cqi - var(--nxm-table-aside-width));
         height: 100%;
     }
 
@@ -648,5 +717,10 @@
         border-bottom-right-radius: var(--radius-lg);
         border-bottom-left-radius: var(--radius-lg);
         background-color: var(--color-surface-mid);
+    }
+
+    /* Square where it meets an aside rather than the page's corner. */
+    .nxm-table[data-aside] .nxm-table-selection-bar {
+        border-bottom-right-radius: 0;
     }
 }

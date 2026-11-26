@@ -2900,6 +2900,7 @@ components:
         - game_scoped_id
         - is_primary
         - supports_mod_managers
+        - count
       properties:
         id:
           type: string
@@ -2915,6 +2916,12 @@ components:
           type: boolean
           description: Whether the author allows this file to be installed with a
             mod manager.
+        count:
+          type: integer
+          minimum: 1
+          description: The number of the mod's main file versions that have cleared
+            the security scan, including this one. `1` means the mod has no other
+            main file to choose from.
     ModStatus:
       type: string
       description: The effective visibility status of a mod.

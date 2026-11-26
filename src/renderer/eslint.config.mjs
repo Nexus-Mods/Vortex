@@ -107,6 +107,12 @@ export default defineConfig([
           message:
             "opn only backs the deprecated util.opn extension API. Use window.api.shell.openUrl or window.api.shell.openFile instead.",
         },
+        {
+          selector:
+            "ImportDeclaration[importKind!='type'][source.value='react-markdown'], ImportExpression[source.value='react-markdown'], CallExpression[callee.name='require'][arguments.0.value='react-markdown']",
+          message:
+            "Render markdown with Markdown (ui/components/prose/markdown). Older call sites styled by their own SCSS use ReactMarkdown from util/react_markdown, which keeps links safe.",
+        },
       ],
       "vortex/no-restricted-imports-warnings": [
         "warn",

@@ -176,8 +176,8 @@ function register(
   context: IExtensionContextExt,
   setPluginLight: (id: string, enable: boolean) => void,
 ) {
-  for (const { path: statePath, reducer } of REDUCER_BINDINGS) {
-    context.registerReducer(statePath, reducer);
+  for (const binding of REDUCER_BINDINGS) {
+    binding.register(context);
   }
 
   context.registerTableAttribute("gamebryo-plugins", genLockIndexAttribute(context.api));
@@ -259,6 +259,7 @@ function register(
       onRefreshPlugins: () => {
         void pluginSync.refresh();
       },
+      rescanPlugins: () => pluginSync.refresh(),
       onSetPluginGhost: makeSetPluginGhost(context.api),
       onSetPluginLight: setPluginLight,
     }),
@@ -1184,8 +1185,10 @@ function init(context: IExtensionContextExt) {
 
         loot = new LootInterface(context.api);
 
-        deployWatcher = startDeployWatcher(context.api, (profileId) =>
-          onDidDeploy(context.api, profileId),
+        deployWatcher = startDeployWatcher(
+          context.api,
+          (profileId) => onDidDeploy(context.api, profileId),
+          () => pluginSync.scheduleRefresh(),
         );
 
         // folded gamebryo-plugin-indexlock wiring; only attaches listeners, no ordering
@@ -1209,6 +1212,15 @@ function init(context: IExtensionContextExt) {
             }
           },
         );
+
+        // the Data folder watcher sees a removed mod's deployed plugins go, but not the staged
+        // ones of a mod that was never deployed, and its rescan waits for the removal to finish
+        context.api.onAsync("did-remove-mods", (gameId: string) => {
+          if (gameId === activeGameId(context.api.getState()) && gameSupported(gameId)) {
+            pluginSync.scheduleRefresh();
+          }
+          return Promise.resolve();
+        });
 
         context.api.events.on(
           "did-install-mod",

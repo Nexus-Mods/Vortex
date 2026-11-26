@@ -4,9 +4,17 @@ import numeral from "numeral";
 import React, { forwardRef, type KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import {
+  isModDetailsTab,
+  type ModDetailsTab,
+} from "@/extensions/browse_nexus/util/mod_details_tab/modDetailsTab";
+import { modStatusDisplay } from "@/extensions/mod_management/util/mod_status/modStatus";
 import { modQuery } from "@/extensions/nexus_integration/queries/mod/mod.query";
 import type { ModSummary } from "@/extensions/nexus_integration/queries/mod_search/modSearch.query";
-import { nexusModPageUrl } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
+import {
+  nexusModCommentsUrl,
+  nexusModPageUrl,
+} from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { Author } from "@/ui/components/author/Author";
 import { Button } from "@/ui/components/button/Button";
@@ -22,9 +30,10 @@ import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useBrowseWebsiteLink } from "../../../hooks/use_browse_website_link/useBrowseWebsiteLink.hook";
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
 import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
-import { modStatusDisplay } from "../../../util/mod_status/modStatus";
+import { ModCommentsComingSoon } from "./mod_comments_coming_soon/ModCommentsComingSoon";
 import { type IGalleryImage, ModGallery } from "./mod_gallery/ModGallery";
 import { ModInstallButton } from "./mod_install_button/ModInstallButton";
 import { ModMenu } from "./mod_menu/ModMenu";
@@ -50,10 +59,11 @@ interface IModDetailsProps {
 const OWNS_LEFT = 'input, textarea, select, [contenteditable="true"], [role="tablist"]';
 
 /**
- * The picked mod's details: gallery, stats, author, what the user has of it, pills and description. Shows the
- * search's result at once, and the tags and description once the mod's own query has them, with
- * 1-click install of its main file beside the mod page link. Counts opening the mod page, and
- * the gallery's picks and paging.
+ * The picked mod's details: gallery, stats, author, what the user has of it, pills and description,
+ * with a Comments tab that sends the user to the website for now. Shows the search's result at
+ * once, and the tags and description once the mod's own query has them, with 1-click install of
+ * its main file beside the mod page link. Counts switching tabs, opening the mod page and its
+ * comments, and the gallery's picks and paging.
  */
 export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
   ({ api, mod, gallery, onPick, onFocusList }, ref) => {
@@ -61,10 +71,11 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const details = useQuery(modQuery(api, mod.id));
     const tags = details.data?.tags ?? [];
     const hasFailed = details.isError && !details.data;
-    const [tab, setTab] = useState("details");
+    const [tab, setTab] = useState<ModDetailsTab>("details");
     const updated = useRelativeTime(Date.parse(mod.updated_at), t);
     const created = useRelativeTime(Date.parse(mod.created_at), t);
     const tracker = useBrowseModsTracker();
+    const websiteLink = useBrowseWebsiteLink();
     const domain = NexusGameDomain(mod.game.domain_name);
     const modPageUrl = nexusModPageUrl(domain, mod.game_scoped_id);
     const { installState, status } = useModStatus(mod);
@@ -113,15 +124,30 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
           tab={tab}
           tabListId="browse-mod-details-tabs"
           tabType="secondary"
-          onSetSelectedTab={setTab}
+          onSetSelectedTab={(next) => {
+            if (next === tab || !isModDetailsTab(next)) {
+              return;
+            }
+
+            setTab(next);
+            tracker.trackDetailsTabSelected({ mod_uid: mod.id, tab: next, previous_tab: tab });
+          }}
         >
           <div className="flex scrollbar-gutter-stable items-start gap-x-4 overflow-hidden px-6 pt-6 pb-3">
             <TabBar className="min-w-0 flex-1">
-              <TabButton name={t("Details")} panelId="details" />
+              <TabButton
+                data-testid="mod-details-tab-details"
+                name={t("Details")}
+                panelId="details"
+              />
 
               {/* <TabButton name={t("Files")} panelId="files" /> */}
 
-              {/* <TabButton name={t("Comments")} panelId="comments" /> */}
+              <TabButton
+                data-testid="mod-details-tab-comments"
+                name={t("Comments")}
+                panelId="comments"
+              />
             </TabBar>
 
             <div className="flex items-center gap-x-2">
@@ -134,7 +160,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   brand="neutral"
                   leftIcon="open_in_new"
                   onClick={() => {
-                    window.api.shell.openUrl(modPageUrl);
+                    window.api.shell.openUrl(websiteLink(modPageUrl));
                     tracker.trackModPageOpened({ mod_uid: mod.id });
                   }}
                 />
@@ -152,6 +178,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
 
           <div
             className="flex min-h-0 flex-1 scrollbar-gutter-stable flex-col overflow-y-auto scroll-fade px-6 pb-9 backdrop-dim-source scroll-fade-9 focus-visible:outline-none"
+            data-testid="mod-details-scroll-area"
             ref={ref}
             tabIndex={-1}
           >
@@ -249,6 +276,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                       className="text-neutral-strong"
                       externalImagePlaceholders={externalImagePlaceholders}
                       isFromAdultContent={mod.adult}
+                      isProse
                     />
                   )}
                 </div>
@@ -259,9 +287,12 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
               <div className={placeholderClass}>{t("The mod's files will go here")}</div>
             </TabPanel> */}
 
-            {/* <TabPanel id="comments">
-              <div className={placeholderClass}>{t("The mod's comments will go here")}</div>
-            </TabPanel> */}
+            <TabPanel id="comments">
+              <ModCommentsComingSoon
+                commentsUrl={nexusModCommentsUrl(domain, mod.game_scoped_id)}
+                modUid={mod.id}
+              />
+            </TabPanel>
           </div>
         </TabProvider>
       </div>

@@ -8,6 +8,7 @@ import {
   FeedbackModal,
   type FeedbackSentiment,
 } from "@/ui/components/feedback_modal/FeedbackModal";
+import { toastDuration } from "@/util/message";
 
 import { setHasGivenFeedback } from "../../actions/modBrowsing";
 import type { FeedbackSource, ISearchEventProps } from "../browse_mods_tracking/browseModsTracker";
@@ -15,9 +16,6 @@ import { useBrowseModsTracker } from "../browse_mods_tracking/BrowseModsTracking
 
 /** Whether mod browsing feedback has been given on this device. */
 const hasGivenFeedback = (state: IState) => state.persistent.modBrowsing.hasGivenFeedback;
-
-/** How long its toast shows: up to 5s is shown as a toast, longer goes to notifications. */
-const TOAST_MS = 3000;
 
 interface IOpenFeedback {
   /** Where it was opened from. */
@@ -59,11 +57,14 @@ export const useModBrowsingFeedback = (
     tracker.trackFeedbackGiven({ ...browsing, sentiment, source: opened.source, reasons });
 
     if (opened.source === "toolbar") {
+      const message = t("Thanks! This helps us improve.");
       api.sendNotification?.({
         id: "browse-mods-feedback-sent",
         type: "success",
-        message: t("Thanks! This helps us improve."),
-        displayMS: TOAST_MS,
+        message,
+        displayMS: toastDuration(message.length),
+        // Already translated, so the toast mustn't translate it again.
+        localize: { message: false },
       });
     }
 

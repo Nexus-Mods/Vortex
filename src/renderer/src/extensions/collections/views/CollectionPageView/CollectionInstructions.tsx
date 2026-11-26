@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Button } from "react-bootstrap";
-import ReactMarkdown from "react-markdown";
 
 import { WebLink } from "@/ui/components/prose/web_link/WebLink";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import type { IMod, IModRule } from "../../../../extensions/mod_management/types/IMod";
 import { findModByRef } from "../../../../extensions/mod_management/util/findModByRef";

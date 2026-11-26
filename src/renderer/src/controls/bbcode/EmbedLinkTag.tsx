@@ -17,9 +17,13 @@ const EMBEDS: Record<string, (content: string) => { href?: string; text: string 
   soundcloud: (url) => ({ href: webHref(url), text: url }),
 };
 
+/** The characters the parser escapes in a tag's text, as it writes them. */
+const ESCAPED: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"' };
+
 /**
- * An embed the site would play, such as `[youtube]id[/youtube]`, as a link to it instead, so
- * bbcode we don't write loads nothing. One that isn't a web page is left as text.
+ * An embed the site would play, such as `[twitter]handle[/twitter]` or `[soundcloud]`, as a link to
+ * it instead, so bbcode we don't write loads nothing. One that isn't a web page is left as text.
+ * `YoutubeTag` falls back to its `youtube` and `video` links for anything that isn't a video.
  */
 class EmbedLinkTag extends Tag {
   public toHTML(): string[] {
@@ -27,7 +31,7 @@ class EmbedLinkTag extends Tag {
   }
 
   public toReact() {
-    const content = this.renderer.strip(this.getContent(true)).trim();
+    const content = this.contentText();
 
     if (!content) {
       return [];
@@ -40,6 +44,14 @@ class EmbedLinkTag extends Tag {
     }
 
     return <a href={href}>{text}</a>;
+  }
+
+  /** The tag's text as written, which the parser hands over escaped. */
+  protected contentText() {
+    return this.renderer
+      .strip(this.getContent(true))
+      .replace(/&(?:amp|lt|gt|quot);/g, (escaped) => ESCAPED[escaped])
+      .trim();
   }
 }
 

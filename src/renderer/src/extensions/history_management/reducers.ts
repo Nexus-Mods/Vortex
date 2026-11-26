@@ -1,54 +1,54 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-import { addReducer } from "../../types/IExtensionContext";
-import { getSafe, pushSafe, setDefaultArray, setSafe } from "../../util/storeHelper";
-import * as actions from "./actions";
+import { actionsToReducerSpec } from "../../reducers/builder";
+import { addHistoryEvent, markHistoryReverted, setHistoryEvent, showHistory } from "./actions";
 import type { IHistoryEvent } from "./types";
 
 export interface IHistoryPersistent {
   historyStacks: { [key: string]: IHistoryEvent[] };
 }
 
-const persistentReducer: IReducerSpec<IHistoryPersistent> = {
-  reducers: {
-    ...addReducer(actions.addHistoryEvent, (state, payload) => {
-      const path = ["historyStacks", payload.stack];
-      const copy = getSafe(state, path, []).slice(payload.limit * -1 - 1);
-      copy.push(payload.event);
-      return setSafe(state, path, copy);
-    }),
-    ...addReducer(actions.setHistoryEvent, (state, payload) => {
-      const idx = state.historyStacks[payload.stack].findIndex(
-        (evt) => evt.id === payload.event.id,
-      );
-      const copy = setSafe(state, ["historyStacks", payload.stack, idx], payload.event);
-      return copy;
-    }),
-    ...addReducer(actions.markHistoryReverted, (state, payload) => {
-      const idx = state.historyStacks[payload.stack].findIndex(
-        (evt) => evt.id === payload.event.id,
-      );
-      const copy = setSafe(state, ["historyStacks", payload.stack, idx, "reverted"], true);
-      return copy;
-    }),
-  },
-  defaults: {
+const persistentActions = { addHistoryEvent, setHistoryEvent, markHistoryReverted };
+const sessionActions = { showHistory };
+
+const persistentReducer = actionsToReducerSpec<IHistoryPersistent, typeof persistentActions>(
+  {
     historyStacks: {},
   },
-};
+  persistentActions,
+  {
+    addHistoryEvent: (state, payload) => {
+      const { stack, event, limit } = payload;
+      const kept = (state.historyStacks?.[stack] ?? []).slice(limit * -1 - 1);
+      return { ...state, historyStacks: { ...state.historyStacks, [stack]: [...kept, event] } };
+    },
+    setHistoryEvent: (state, payload) => {
+      const { stack, event } = payload;
+      const events = state.historyStacks[stack].slice();
+      const idx = events.findIndex((evt) => evt.id === event.id);
+      events[idx] = event;
+      return { ...state, historyStacks: { ...state.historyStacks, [stack]: events } };
+    },
+    markHistoryReverted: (state, payload) => {
+      const { stack, event } = payload;
+      const events = state.historyStacks[stack].slice();
+      const idx = events.findIndex((evt) => evt.id === event.id);
+      events[idx] = { ...events[idx], reverted: true };
+      return { ...state, historyStacks: { ...state.historyStacks, [stack]: events } };
+    },
+  },
+);
 
 export interface IHistoryState {
   stackToShow: string;
 }
 
-const sessionReducer: IReducerSpec<IHistoryState> = {
-  reducers: {
-    ...addReducer(actions.showHistory, (state, payload) =>
-      setSafe(state, ["stackToShow"], payload),
-    ),
-  },
-  defaults: {
+const sessionReducer = actionsToReducerSpec<IHistoryState, typeof sessionActions>(
+  {
     stackToShow: undefined,
   },
-};
+  sessionActions,
+  {
+    showHistory: (state, payload) => ({ ...state, stackToShow: payload }),
+  },
+);
 
 export { persistentReducer, sessionReducer };

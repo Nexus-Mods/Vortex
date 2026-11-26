@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import { createAction } from "redux-act";
 
 export const setSource = createAction(
@@ -12,7 +13,7 @@ export const setTarget = createAction(
 
 export const setCreateTransfer = createAction(
   "SET_PROFILE_TRANSFER",
-  (gameId: string, source: string, target: string) => ({
+  (gameId: VortexGameId, source: string, target: string) => ({
     gameId,
     source,
     target,

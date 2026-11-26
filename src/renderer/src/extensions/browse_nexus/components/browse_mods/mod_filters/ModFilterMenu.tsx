@@ -1,12 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import { FilterReset } from "@/ui/components/filters/FilterReset";
 import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
 import { Typography } from "@/ui/components/typography/Typography";
 
 import type { IAdultContentAccess, IModFilter } from "../../../util/mod_filters/modFilter.types";
 import type { IModFilters } from "../../../util/mod_views/modViews";
-import { FilterReset } from "./FilterReset";
 
 interface IModFilterMenuProps extends IAdultContentAccess {
   /** The filter it's for. */

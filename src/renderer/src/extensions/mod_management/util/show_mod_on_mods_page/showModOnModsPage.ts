@@ -1,4 +1,4 @@
-import type { VortexModId } from "@vortex/shared";
+import { VortexModId } from "@vortex/shared";
 
 import type { IExtensionApi } from "@/types/IExtensionContext";
 import { sanitizeCSSId } from "@/util/util";
@@ -28,3 +28,10 @@ export const showModOnModsPage = (api: IExtensionApi, modId: VortexModId) => {
     api.highlightControl(`.${sanitizeCSSId(modId)}`, 5000);
   }, CLASSIC_TABLE_DELAY_MS);
 };
+
+/**
+ * Opens the Mods page on a download that isn't installed. Both tables list one as a mod of state
+ * `downloaded` whose id is the download's, so that's the mod id its row is shown by.
+ */
+export const showDownloadOnModsPage = (api: IExtensionApi, downloadId: string) =>
+  showModOnModsPage(api, VortexModId(downloadId));

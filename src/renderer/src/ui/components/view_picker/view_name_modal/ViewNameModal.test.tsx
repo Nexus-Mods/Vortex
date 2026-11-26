@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
+
 import { ViewNameModal } from "./ViewNameModal";
 
 const renderModal = (renaming?: string) => {
@@ -25,12 +27,14 @@ const renderModal = (renaming?: string) => {
 const nameField = () => screen.getByRole("textbox", { name: "Name view" });
 
 describe("ViewNameModal", () => {
-  it("asks for a name, in the page's words", () => {
+  it("asks for a name, in the page's words", async () => {
     renderModal();
 
     expect(screen.getByRole("dialog", { name: "Create a new view" })).toBeInTheDocument();
     expect(screen.getByText("Give your view a name.")).toBeInTheDocument();
     expect(nameField()).toHaveAttribute("placeholder", "e.g. Author view");
+
+    await settleTransitions();
   });
 
   it("can't create a view without a name", async () => {

@@ -184,6 +184,9 @@ export interface IMainPageOptions {
   /**
    * id for this page. If none is specified the page title is used. Use the id to avoid
    * name collisions if another extension is already using the same title.
+   *
+   * The spine saves the id as a game's last page. Changing it (or the title, with no id set)
+   * sends users to the game's first page once.
    */
   id?: string;
   /**
@@ -195,6 +198,10 @@ export interface IMainPageOptions {
    * in the format required by electron
    */
   hotkeyRaw?: string;
+  /**
+   * Whether the page shows in the menu. Must be right on the first render, or a remembered page
+   * is skipped at startup.
+   */
   visible?: () => boolean;
   group: "dashboard" | "global" | "per-game" | "support" | "hidden";
   isClassicOnly?: boolean;
@@ -210,6 +217,10 @@ export interface IMainPageOptions {
    * follows a change to it rather than being fixed when the page registered.
    */
   newLayout?: boolean | (() => boolean);
+  /**
+   * Menu position, lowest first. The first visible page is also where a game opens when nothing
+   * is remembered for it.
+   */
   priority?: number;
   props?: PropsCallback;
   badge?: ReduxProp<any>;
@@ -1008,7 +1019,65 @@ export interface IReducerSpec<T = { [key: string]: any }> {
   reducers: { [key: string]: (state: T, payload: any) => T };
   defaults: T;
   verifiers?: { [key: string]: IStateVerifier };
+  /**
+   * set by an {@link IPartialReducerSpec}; `registerReducer` only accepts partial defaults from a
+   * spec that has it
+   */
+  partial?: boolean;
 }
+
+/**
+ * A reducer for a slice it shares with other reducers registered at the same path. Their
+ * handlers and defaults are merged, so each supplies only the defaults for the fields it owns,
+ * while its handlers still receive and return the whole slice.
+ *
+ * @public
+ */
+export interface IPartialReducerSpec<T> {
+  /**
+   * marks the spec as owning only part of its slice. Without it, `defaults` has to cover the
+   * whole slice, so a reducer that owns its slice can't silently leave a field undefined.
+   */
+  partial: true;
+  reducers: { [key: string]: (state: T, payload: any) => T };
+  defaults: Partial<T>;
+  verifiers?: { [key: string]: IStateVerifier };
+}
+
+/**
+ * A path into the application state, e.g. `["settings", "interface"]`.
+ *
+ * @public
+ */
+export type StatePath = readonly [string, ...string[]];
+
+/**
+ * The type of the state at `P`, or `never` when `P` names a key `TState` does not declare.
+ * An extension makes its own slice known by augmenting the state interfaces with
+ * `declare module`.
+ *
+ * @public
+ */
+export type StateSlice<TState, P extends readonly string[]> = P extends readonly [
+  infer Head extends string,
+  ...infer Rest extends readonly string[],
+]
+  ? Head extends keyof TState
+    ? Rest extends readonly []
+      ? TState[Head]
+      : StateSlice<TState[Head], Rest>
+    : never
+  : TState;
+
+/**
+ * The spec `registerReducer` accepts at `P`: one typed for the slice there, owning either all
+ * of it or, as an {@link IPartialReducerSpec}, part of it.
+ *
+ * @public
+ */
+export type ReducerSpecFor<P extends StatePath> =
+  | IReducerSpec<StateSlice<IState, P>>
+  | IPartialReducerSpec<StateSlice<IState, P>>;
 
 export interface IModTypeOptions {
   // if set, the merge behavior specified here overrides the one specified for the game
@@ -1215,13 +1284,19 @@ export interface IExtensionContext {
    * @param {IReducerSpec} spec a IReducerSpec object that contains reducer functions and defaults
    *        for the newly introduced settings
    *
+   * The spec's type has to match the state at `path`. A path that the state interfaces don't
+   * declare resolves to `never` and fails to compile: declare your slice by augmenting them,
+   * e.g. from an extension
+   * `declare module "@nexusmods/vortex-api" { namespace types { interface ISettings { mine: IMine } } }`.
+   * A reducer that shares its slice with others at the same path uses {@link IPartialReducerSpec}.
+   *
    * @memberOf IExtensionContext
    * @note If you have registerReducer calls you should call them first thing in the init function.
    *       Usually if your init call fails your extension shouldn't load at all but in case that
    *       doesn't work, registering any functionality that depends on state that never got loaded
    *       would load to further bug reports that are a lot harder to investigate
    */
-  registerReducer: (path: string[], spec: IReducerSpec) => void;
+  registerReducer<const P extends StatePath>(path: P, spec: ReducerSpecFor<P>): void;
 
   /**
    * register a hive in the store to be persisted. A hive is a top-level branch in the state,

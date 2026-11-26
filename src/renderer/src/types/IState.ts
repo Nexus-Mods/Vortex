@@ -1,5 +1,5 @@
 import type { EndorsedStatus, ICollection, IRevision } from "@nexusmods/nexus-api";
-import type { NexusGameDomain, NexusGameId } from "@vortex/shared";
+import type { GameUid, NexusGameDomain, NexusGameId, VortexGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import type { DownloadCheckpoint } from "@vortex/shared/download";
 
@@ -83,6 +83,16 @@ export interface IUIBlocker {
   mayCancel: boolean;
 }
 
+/** A purge under way, and how far along it is. */
+export interface IPurgeProgress {
+  /** The game whose mods are being purged, which need not be the active one. */
+  gameId: VortexGameId;
+  /** 0-100. */
+  percent: number;
+  /** What the purge is doing, e.g. "Removing links". */
+  text: string;
+}
+
 export interface IProgressWithProfile {
   profile?: IProgressProfile;
 }
@@ -113,6 +123,8 @@ export interface ISession {
   progress: {
     [group: string]: { [id: string]: IProgress };
   } & IProgressWithProfile;
+  /** Purges under way, by an id each purge makes for itself. */
+  purges: { [purgeId: string]: IPurgeProgress };
   settingsPage: string;
   extLoadFailures: { [extId: string]: IExtensionLoadFailure[] };
   toolsRunning: { [exeId: string]: IRunningTool };
@@ -247,8 +259,12 @@ export interface ISettingsInterface {
     addToolsToTitleBar: boolean;
     order?: { [gameId: string]: string[] };
     pinned?: { [gameId: string]: { [toolId: string]: boolean } };
+    // keyed by game id, then tool id: whether the tool's executable was found
+    valid?: Record<VortexGameId, { [toolId: string]: boolean }>;
   };
   primaryTool?: { [gameId: string]: string };
+  /** The last page open on Home and in each game. The spine reopens it, also after a restart. */
+  lastPages?: { home?: string; games?: Record<VortexGameId, string> };
 }
 
 export interface ISettingsAutomation {
@@ -395,12 +411,29 @@ export interface IManualInstallerPreferences {
   dontAskAgain?: boolean;
 }
 
+/**
+ * One retirement the catalogue made: `retired` was merged into `current`. Entries are only ever
+ * appended, a wrong mapping is fixed by appending a correction.
+ */
+export interface IGameUidRetirement {
+  retired: GameUid;
+  current: GameUid;
+  /** when Vortex learned of the retirement, ms since epoch */
+  recordedAt: number;
+}
+
 export interface IStateGameMode {
   gameInfo: {
     [gameId: string]: {
       [key: string]: IGameInfoEntry;
     };
   };
+
+  /**
+   * Every uid retirement Vortex has learned of, oldest first. Append-only: stored uids are never
+   * rewritten, `currentGameUid` resolves them through this list.
+   */
+  gameUidHistory: IGameUidRetirement[];
 
   /** games managed without a game extension, keyed by numeric nexus game id
    * (immutable across domain renames; the entry also carries the domain) */
@@ -448,13 +481,29 @@ export interface IOverlaysState {
  * @export
  * @interface IState
  */
+/**
+ * confidential.account: per-service credentials. Each service's extension declares its own
+ * entry by augmenting this interface.
+ */
+// oxlint-disable-next-line typescript/no-empty-object-type -- filled in by augmentation
+export interface IConfidentialAccount {}
+
+/**
+ * A cached revision. The cache holds what the API returned for the query that fetched it, so
+ * any field may be missing, and the rating may lack `positive`.
+ */
+export type ICachedRevisionInfo = Partial<Omit<IRevision, "collection" | "rating">> & {
+  collection?: Partial<ICollection>;
+  rating?: Partial<IRevision["rating"]>;
+};
+
 // persistent state owned by the collections extension: the cached collection and
 // revision info fetched from the API
 export interface ICollectionsPersistentState {
-  // keyed by collection id
-  collections: Record<string, { timestamp: number; info: ICollection }>;
+  // keyed by collection id; the cache holds what the API returned, so any field may be missing
+  collections: Record<string, { timestamp: number; info: Partial<ICollection> }>;
   // keyed by revision id
-  revisions: Record<string, { timestamp: number; info: IRevision }>;
+  revisions: Record<string, { timestamp: number; info: ICachedRevisionInfo }>;
   // keyed by revision id; queued success votes awaiting submission
   pendingVotes: Record<string, { collectionSlug: string; revisionNumber: number; time: number }>;
 }
@@ -493,7 +542,7 @@ export interface IState {
   app: IApp;
   user: IUser;
   confidential: {
-    account: {};
+    account: IConfidentialAccount;
   };
   session: ISessionState;
   settings: ISettings;

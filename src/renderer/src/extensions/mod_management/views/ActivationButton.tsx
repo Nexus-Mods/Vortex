@@ -5,7 +5,7 @@ import type { ThunkDispatch } from "redux-thunk";
 import { addNotification } from "../../../actions/notifications";
 import { setSettingsPage } from "../../../actions/session";
 import { ComponentEx, connect, translate } from "../../../controls/ComponentEx";
-import ToolbarIcon from "../../../controls/ToolbarIcon";
+import ToolbarIcon from "../../../controls/toolbar_icon/ToolbarIcon";
 import type { INotificationAction } from "../../../types/INotification";
 import type { IState } from "../../../types/IState";
 import { UserCanceled } from "../../../util/CustomErrors";

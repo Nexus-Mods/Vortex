@@ -91,6 +91,7 @@ export const BrowseCollections = ({ api, search }: IBrowseCollectionsProps) => {
 
           <Typography appearance="moderate" brand="neutral-translucent" typographyType="body-sm">
             {t("collection:browse.resultsCount", {
+              count: totalCount,
               total: numeral(totalCount).format("0,0"),
             })}
           </Typography>

@@ -2,39 +2,41 @@ import { types, util } from "@nexusmods/vortex-api";
 import update from "immutability-helper";
 
 import * as actions from "../actions/session";
+import type { IStateSavegame } from "../types/IStateSavegame";
 
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer: types.IReducerSpec = {
-  reducers: {
-    [actions.setSavegames as any]: (state, payload) => {
-      const { savegames, truncated } = payload;
-      return util.setSafe(util.setSafe(state, ["saves"], savegames), ["savesTruncated"], truncated);
-    },
-    [actions.removeSavegame as any]: (state, payload) =>
-      util.deleteOrNop(state, ["saves", payload]),
-    [actions.setSavegameAttribute as any]: (state, payload) => {
-      const { id, attribute, value } = payload;
-      return update(state, {
-        saves: { [id]: { attributes: { [attribute]: { $set: value } } } },
-      });
-    },
-    [actions.updateSavegame as any]: (state, payload) => {
-      const { id, saveGame } = payload;
-      return util.setSafe(state, ["saves", id], saveGame);
-    },
-    [actions.showTransferDialog as any]: (state, payload) =>
-      util.setSafe(state, ["showDialog"], payload),
-    [actions.clearSavegames as any]: (state, payload) => update(state, { saves: { $set: {} } }),
-    [actions.setSavegamePath as any]: (state, payload) =>
-      util.setSafe(state, ["savegamePath"], payload),
-  },
-  defaults: {
+export const sessionReducer: types.IReducerSpec<IStateSavegame> = util.actionsToReducerSpec<
+  IStateSavegame,
+  typeof actions
+>(
+  {
     saves: {},
     savesTruncated: false,
     savegamePath: "",
     showDialog: false,
     selectedProfile: undefined,
   },
-};
+  actions,
+  {
+    setSavegames: (state, payload) => {
+      const { savegames, truncated } = payload;
+      return util.setSafe(util.setSafe(state, ["saves"], savegames), ["savesTruncated"], truncated);
+    },
+    removeSavegame: (state, payload) => util.deleteOrNop(state, ["saves", payload]),
+    setSavegameAttribute: (state, payload) => {
+      const { id, attribute, value } = payload;
+      return update(state, {
+        saves: { [id]: { attributes: { [attribute]: { $set: value } } } },
+      });
+    },
+    updateSavegame: (state, payload) => {
+      const { id, saveGame } = payload;
+      return util.setSafe(state, ["saves", id], saveGame);
+    },
+    showTransferDialog: (state, payload) => util.setSafe(state, ["showDialog"], payload),
+    clearSavegames: (state) => update(state, { saves: { $set: {} } }),
+    setSavegamePath: (state, payload) => util.setSafe(state, ["savegamePath"], payload),
+  },
+);

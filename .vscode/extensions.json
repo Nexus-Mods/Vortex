@@ -3,6 +3,7 @@
     "esbenp.prettier-vscode",
     "oxc.oxc-vscode",
     "mermaidchart.vscode-mermaid-chart",
-    "inlang.vs-code-extension"
+    "inlang.vs-code-extension",
+    "TypeScriptTeam.native-preview"
   ]
 }

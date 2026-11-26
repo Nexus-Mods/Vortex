@@ -169,9 +169,147 @@ describe("VisibilityProxy hiding", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  // Without a componentClass the proxy renders its content bare, so the node it observes is
-  // whatever the placeholder rendered. ConflictEditor (mod-dependency-manager) renders a <div>
-  // for both, which React keeps as the same node.
+  // A componentClass made inline is a new component on every render, and Fast Refresh remounts
+  // one in development: either way the row's element is replaced while the proxy stays mounted.
+  it("keeps showing a row whose componentClass replaces its element", () => {
+    const makeRow = () =>
+      React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>((props, ref) => (
+        <div ref={ref} {...props} />
+      ));
+    const onSetVisible = vi.fn();
+    function Entry(props: { componentClass: React.ElementType }) {
+      const [visible, setVisible] = React.useState(false);
+      return (
+        <VisibilityProxy
+          componentClass={props.componentClass}
+          container={null}
+          content={() => <span data-testid="content" />}
+          data-testid="row"
+          placeholder={() => <span data-testid="placeholder" />}
+          visible={visible}
+          setVisible={(value: boolean) => {
+            onSetVisible(value);
+            setVisible(value);
+          }}
+        />
+      );
+    }
+    const { getByTestId, queryByTestId, rerender } = render(<Entry componentClass={makeRow()} />);
+    report(getByTestId("row"), true);
+
+    rerender(<Entry componentClass={makeRow()} />);
+    report(getByTestId("row"), true);
+    act(() => vi.advanceTimersByTime(5000));
+
+    expect(onSetVisible.mock.calls).toEqual([[true]]);
+    expect(queryByTestId("content")).not.toBeNull();
+  });
+
+  // Fast Refresh does this in development: the componentClass remounts its element while the
+  // proxy's props, and so the proxy, stay as they were.
+  it("keeps showing a row whose componentClass replaces its element on its own", () => {
+    let replaceElement: () => void = () => undefined;
+    const SelfReplacing = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+      function SelfReplacing(props, ref) {
+        const [key, setKey] = React.useState(0);
+        replaceElement = () => setKey((value) => value + 1);
+        return <div key={key} ref={ref} {...props} />;
+      },
+    );
+    const onSetVisible = vi.fn();
+    function Entry() {
+      const [visible, setVisible] = React.useState(false);
+      return (
+        <VisibilityProxy
+          componentClass={SelfReplacing}
+          container={null}
+          content={() => <span data-testid="content" />}
+          data-testid="row"
+          placeholder={() => <span data-testid="placeholder" />}
+          visible={visible}
+          setVisible={(value: boolean) => {
+            onSetVisible(value);
+            setVisible(value);
+          }}
+        />
+      );
+    }
+    const { getByTestId, queryByTestId } = render(<Entry />);
+    const before = getByTestId("row");
+    report(before, true);
+
+    act(() => replaceElement());
+    const after = getByTestId("row");
+    expect(after).not.toBe(before);
+    expect(FakeIntersectionObserver.sInstances.some((obs) => obs.observes(before))).toBe(false);
+    report(after, true);
+    act(() => vi.advanceTimersByTime(5000));
+
+    expect(onSetVisible.mock.calls).toEqual([[true]]);
+    expect(queryByTestId("content")).not.toBeNull();
+  });
+
+  // A componentClass that doesn't pass its ref on is found with findDOMNode, which only runs when
+  // the proxy renders. One connected to the store, or one Fast Refresh remounts, can replace its
+  // element without that, and the observer then reports the detached one out of view for good.
+  it.each([
+    ["within a second of showing", 0],
+    ["over a second after showing", 2000],
+  ])(
+    "keeps showing a row whose class componentClass replaces its element on its own %s",
+    (_, wait) => {
+      let replaceElement: () => void = () => undefined;
+      class SelfReplacing extends React.Component<
+        React.HTMLAttributes<HTMLDivElement>,
+        { key: number }
+      > {
+        public state = { key: 0 };
+        public componentDidMount() {
+          replaceElement = () => this.setState(({ key }) => ({ key: key + 1 }));
+        }
+        public render() {
+          return <div key={this.state.key} {...this.props} />;
+        }
+      }
+      const onSetVisible = vi.fn();
+      function Entry() {
+        const [visible, setVisible] = React.useState(false);
+        return (
+          <VisibilityProxy
+            componentClass={SelfReplacing}
+            container={null}
+            content={() => <span data-testid="content" />}
+            data-testid="row"
+            placeholder={() => <span data-testid="placeholder" />}
+            visible={visible}
+            setVisible={(value: boolean) => {
+              onSetVisible(value);
+              setVisible(value);
+            }}
+          />
+        );
+      }
+      const { getByTestId, queryByTestId } = render(<Entry />);
+      const before = getByTestId("row");
+      report(before, true);
+      act(() => vi.advanceTimersByTime(wait));
+
+      act(() => replaceElement());
+      const after = getByTestId("row");
+      expect(after).not.toBe(before);
+      report(before, false);
+      act(() => vi.advanceTimersByTime(5000));
+
+      expect(onSetVisible.mock.calls).toEqual([[true]]);
+      expect(queryByTestId("content")).not.toBeNull();
+      // the new element is watched in the detached one's place
+      expect(FakeIntersectionObserver.sInstances.some((obs) => obs.observes(before))).toBe(false);
+      expect(FakeIntersectionObserver.sInstances.some((obs) => obs.observes(after))).toBe(true);
+    },
+  );
+
+  // Without a componentClass the proxy wraps its content in a <div> and observes that, so
+  // swapping the placeholder for content doesn't change the node it observes.
   describe("without a componentClass", () => {
     function renderEntry(placeholder: () => React.ReactNode, content: () => React.ReactNode) {
       const onSetVisible = vi.fn();
@@ -198,33 +336,32 @@ describe("VisibilityProxy hiding", () => {
         () => <div data-testid="entry" />,
         () => <div data-testid="entry">content</div>,
       );
-      const entry = getByTestId("entry");
+      const wrapper = getByTestId("entry").parentElement;
 
-      report(entry, true);
-      report(entry, false);
+      report(wrapper, true);
+      report(wrapper, false);
       act(() => vi.advanceTimersByTime(1000));
-      report(entry, true);
+      report(wrapper, true);
 
       expect(onSetVisible.mock.calls).toEqual([[true], [false], [true]]);
       expect(getByTestId("entry").textContent).toBe("content");
     });
 
-    // Showing the content removed the observed node, and the observer reports a removed node
-    // as out of view. Hiding on that would bring back a placeholder nothing observes, which
-    // would then never fill.
-    it("doesn't hide on a report for a node it has since replaced", () => {
+    it("hides and shows again when content and placeholder render different elements", () => {
       const { getByTestId, onSetVisible, queryByTestId } = renderEntry(
         () => <span data-testid="placeholder" />,
         () => <div data-testid="content" />,
       );
-      const placeholder = getByTestId("placeholder");
+      const wrapper = getByTestId("placeholder").parentElement;
 
-      report(placeholder, true);
-      expect(placeholder.isConnected).toBe(false);
-      report(placeholder, false);
-      act(() => vi.advanceTimersByTime(5000));
+      report(wrapper, true);
+      expect(queryByTestId("content")).not.toBeNull();
+      report(wrapper, false);
+      act(() => vi.advanceTimersByTime(1000));
+      expect(queryByTestId("placeholder")).not.toBeNull();
+      report(wrapper, true);
 
-      expect(onSetVisible.mock.calls).toEqual([[true]]);
+      expect(onSetVisible.mock.calls).toEqual([[true], [false], [true]]);
       expect(queryByTestId("content")).not.toBeNull();
     });
   });

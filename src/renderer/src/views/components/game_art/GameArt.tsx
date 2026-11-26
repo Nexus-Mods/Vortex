@@ -15,6 +15,7 @@ import { useSpineContext } from "../Spine/SpineContext";
  * The open game's hero art, faded into the window's bottom left, behind the whole layout. The
  * spine and menu sit straight on it; a page shows it only where its own background lets it
  * through. Nothing while the user has it turned off, outside a game, or for a game with no Nexus art.
+ * It's clipped to the layout, so the art past the window's edges can't make the layout scroll.
  */
 export const GameArt = () => {
   const { selection } = useSpineContext();
@@ -34,8 +35,10 @@ export const GameArt = () => {
   }
 
   return (
-    <div aria-hidden className="nxm-game-art">
-      <img alt="" className="nxm-game-art-image" src={heroImageURLForGameId(gameId)} />
+    <div aria-hidden className="nxm-game-art-clip">
+      <div className="nxm-game-art">
+        <img alt="" className="nxm-game-art-image" src={heroImageURLForGameId(gameId)} />
+      </div>
     </div>
   );
 };

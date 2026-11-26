@@ -24,8 +24,12 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
+import type { VortexGameId } from "./ids";
 import type { Level } from "./logging";
 import type { PersistedHive, PersistedState } from "./state";
+
+export type * from "./gameFolderCheck";
 
 // NOTE(erri120): You should use unique channel names to prevent overlap. You can prefix
 // channel names with an "area" like "example:" to somewhat categorize them and reduce the possibility of overlap.
@@ -224,6 +228,9 @@ export interface CallbackChannels {
   "example:ping": (ping: string) => Promise<{ pong: string }>;
 
   "download:resolve": () => Promise<WireResolvedResource>;
+
+  // Game folder check: main hands a finished check to the renderer, which sends it
+  "game-folder-check:submit": (result: GameFolderCheckResult) => Promise<void>;
 }
 
 export type MainCallbackChannels = {
@@ -301,6 +308,9 @@ export interface RendererChannels extends RendererCallbackChannels {
 
   // Feature flags: renderer updates context (e.g. userId after login)
   "flags:setContext": (context: FlagContext) => void;
+
+  // Game folder check: cancel the check for a game, queued or running; nothing is submitted
+  "game-folder-check:cancel": (gameId: VortexGameId) => void;
 }
 
 /** Type containing all known channels used by the main process to send messages to a renderer process */
@@ -383,6 +393,14 @@ export interface InvokeChannels {
 
   // Persistence: Get all hydration data at startup (called once during init)
   "persist:get-hydration": () => Promise<Partial<PersistedState>>;
+
+  // Game folder check: run a check. The result goes through the
+  // game-folder-check:submit callback; this resolves once that is done or the
+  // check was cancelled, and rejects if the check or the submit failed
+  "game-folder-check:start": (input: IGameFolderCheckInput) => Promise<void>;
+  // Game folder check, development builds only: run now, write a JSON report,
+  // show it in the file manager and resolve with its path
+  "game-folder-check:run-manual": (input: IGameFolderCheckInput) => Promise<string>;
 
   // Updater: the renderer polls this (pull, like downloads and uploads). With
   // `since`, the reply also lists every snapshot recorded after that sequence
@@ -532,38 +550,6 @@ export interface InvokeChannels {
    * `UploadError` carrying `cancellation`.
    */
   "upload:cancel": (uploadId: number) => Promise<void>;
-
-  // Adaptor host — renderer queries adaptor services through these
-  "adaptors:list": () => Promise<
-    Array<{
-      name: string;
-      pid: string;
-      provides: string[];
-      requires: string[];
-    }>
-  >;
-  "adaptors:call": (
-    adaptorName: string,
-    serviceUri: string,
-    method: string,
-    args: unknown[],
-  ) => Promise<Serializable>;
-  /**
-   * Builds a store-path snapshot for a newly discovered game. The
-   * renderer uses this instead of constructing path bases itself so the
-   * adaptor can be handed a fully-resolved {@link StorePathProvider}.
-   */
-  "adaptors:build-snapshot": (store: string, gamePath: string) => Promise<Serializable>;
-
-  /**
-   * Executes a declarative version detection strategy on the main
-   * process side (PE header read, text file parse, etc.).
-   */
-  "adaptors:detect-version": (source: {
-    type: string;
-    path: { value: string };
-    regex?: string;
-  }) => Promise<string>;
 
   "fs:copy": (
     source: QualifiedPathWire,

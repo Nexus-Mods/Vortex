@@ -55,8 +55,8 @@ Check is the model: `src/renderer/src/extensions/health_check/hooks/healthCheckT
 - Each method emits on the `analytics-track-mixpanel-event` bus. The analytics extension
   handles consent and queueing, so trackers don't check either.
 - Don't repeat super properties, and send IDs rather than names (see above).
-- Drop `undefined` values before emitting, so an optional property is left off rather than
-  sent as null.
+- Drop `undefined` values before emitting, so a property with no value is left off. Send `null`
+  only on purpose, where "none" is itself worth reporting.
 - When many events share scope, such as the issue a Health Check event belongs to, supply it
   from a React context
   (`src/renderer/src/extensions/health_check/hooks/HealthCheckTracking.context.tsx`) instead
@@ -66,3 +66,25 @@ Check is the model: `src/renderer/src/extensions/health_check/hooks/healthCheckT
 
 The tracker file is where an extension's events are documented: comment each method with
 anything about the event that isn't obvious from its properties.
+
+## Events at quit
+
+The bus and `trackEvent` hand events to mixpanel-browser's batch queue, which writes to
+localStorage behind a lock that waits on a timer. During `beforeunload` that timer never fires, so
+an event tracked there is lost: not sent late, not sent on the next launch. Anything sent at quit
+goes through `AnalyticsMixpanel.trackEventOnExit` instead. It sends by beacon, which the browser
+finishes after the window has gone, and drops the event rather than queueing it when analytics
+isn't running. A beacon gets no response, so a rejected one fails silently.
+
+`app_closed` is the one event sent this way, from the analytics extension's `beforeunload`
+handler. It only goes out when the window is closed normally (the close button, an in-app
+restart) with analytics running at that moment. A crash or a killed process sends nothing, but
+neither do these clean exits:
+
+- File > Close (shown with the native title bar) and the Quit buttons on error dialogs. They go
+  through `app.exit()` in main, which closes the window without running `beforeunload`.
+- Logging out or turning analytics off before quitting.
+
+So a missing `app_closed` doesn't by itself mean the session ended badly. `is_relaunch` is true when the close is an in-app restart
+through `relaunch()` in `src/renderer/src/util/commandLine.ts`; an auto-update install restarts
+from main and reports false.

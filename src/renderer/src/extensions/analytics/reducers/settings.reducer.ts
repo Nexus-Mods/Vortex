@@ -1,18 +1,30 @@
-import update from "immutability-helper";
+import { actionsToReducerSpec } from "@/reducers/builder";
 
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { setAnalytics } from "../actions/analytics.action";
+import * as actions from "../actions/analytics.action";
+
+/** settings.analytics: whether the user agreed to send analytics */
+export interface ISettingsAnalytics {
+  // undefined until the user has answered
+  enabled?: boolean;
+}
+
+declare module "@/types/IState" {
+  interface ISettings {
+    analytics: ISettingsAnalytics;
+  }
+}
 
 /**
- * reducer for changes to interface settings
+ * reducer for changes to analytics settings
  */
-const settingsReducer: IReducerSpec = {
-  reducers: {
-    [setAnalytics as any]: (state, payload) => update(state, { enabled: { $set: payload } }),
-  },
-  defaults: {
+const settingsReducer = actionsToReducerSpec<ISettingsAnalytics, typeof actions>(
+  {
     enabled: undefined, // TODO, set me to false
   },
-};
+  actions,
+  {
+    setAnalytics: (state, payload) => ({ ...state, enabled: payload }),
+  },
+);
 
 export default settingsReducer;

@@ -1,7 +1,7 @@
 import React from "react";
-import ReactMarkdown from "react-markdown";
 
 import { joinClasses } from "@/ui/utils/joinClasses";
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import type { IProseWithImagesProps } from "../Prose.types";
 import { ProseImage } from "../prose_image/ProseImage";

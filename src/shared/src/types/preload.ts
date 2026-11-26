@@ -18,6 +18,8 @@ import type {
   TraceCategoriesAndOptions,
 } from "./electron";
 import type { FeatureFlag } from "./flags";
+import type { IGameFolderCheckInput, GameFolderCheckResult } from "./gameFolderCheck";
+import type { VortexGameId } from "./ids";
 import type { FlagContext, FlagMetricsBucket } from "./ipc";
 import type {
   DiffOperation,
@@ -59,9 +61,6 @@ export interface Api {
 
   /** Extensions API - for requesting main process initialization */
   extensions: ExtensionsApi;
-
-  /** Adaptor host API - for querying adaptor services from renderer */
-  adaptors: AdaptorsApi;
 
   /** Updater API - for querying update status from main process */
   updater: UpdaterApi;
@@ -112,6 +111,9 @@ export interface Api {
 
   /** file hashing API (run on a main-process worker_thread) */
   hash: HashApi;
+
+  /** Steam game folder check (MOD-80), run in main */
+  gameFolderCheck: IGameFolderCheckApi;
 
   /** Diagnostic APIs */
   diag: Diag;
@@ -415,46 +417,6 @@ export interface ExtensionsApi {
   initializeAllMain(installType: string): void;
 }
 
-/** API for querying adaptor services from the main process */
-export interface AdaptorsApi {
-  /** Returns the list of loaded adaptors with their manifests. */
-  list(): Promise<
-    Array<{
-      name: string;
-      pid: string;
-      provides: string[];
-      requires: string[];
-    }>
-  >;
-  /**
-   * Synchronous version of `list` that also includes pre-fetched game info.
-   * Used by the adaptor bridge during extension init where only synchronous
-   * work is allowed (registerGame must be called before endRegistration).
-   */
-  listWithInfoSync(): Array<{
-    name: string;
-    pid: string;
-    provides: string[];
-    requires: string[];
-    gameInfo: unknown;
-  }>;
-  /** Calls a service method on a loaded adaptor. */
-  call(adaptorName: string, serviceUri: string, method: string, args: unknown[]): Promise<unknown>;
-  /**
-   * Builds a store-path snapshot for a discovered game. The returned
-   * value is a `StorePathSnapshot` from `@nexusmods/adaptor-api/stores/lib`
-   * (the renderer sees it as `unknown` to avoid dragging the adaptor-api
-   * types into the preload surface; the bridge casts locally).
-   */
-  buildSnapshot(store: string, gamePath: string): Promise<unknown>;
-  /**
-   * Executes a declarative version detection strategy on the main
-   * process side. The source describes what to read (PE header, text
-   * file, etc.) and where.
-   */
-  detectVersion(source: { type: string; path: { value: string }; regex?: string }): Promise<string>;
-}
-
 /** API for querying update status from main process */
 export interface UpdaterApi {
   /**
@@ -581,6 +543,30 @@ export interface BsdiffApi {
 export interface HashApi {
   /** Compute the hex digest of a file off the renderer thread. */
   compute(algorithm: HashAlgorithm, filePath: string): Promise<{ hash: string; numBytes: number }>;
+}
+
+export interface IGameFolderCheckApi {
+  /**
+   * Runs a check. The finished check arrives through the handler registered with
+   * `onSubmit`, so register it first. Resolves once that handler is done or the
+   * check was cancelled; rejects if the check or the handler failed.
+   */
+  start(input: IGameFolderCheckInput): Promise<void>;
+
+  /** Cancels the queued or running check for a game. Nothing is submitted for it. */
+  cancel(gameId: VortexGameId): void;
+
+  /**
+   * Registers the handler main calls with each finished check. A rejection tells
+   * main the result wasn't sent. Returns an unsubscribe function.
+   */
+  onSubmit(handler: (result: GameFolderCheckResult) => Promise<void>): () => void;
+
+  /**
+   * Development builds only: runs a check now, writes a JSON report, shows it in the
+   * file manager and resolves with its path. Sends nothing.
+   */
+  runManual(input: IGameFolderCheckInput): Promise<string>;
 }
 
 /** API for receiving feature flag updates pushed from the main process */

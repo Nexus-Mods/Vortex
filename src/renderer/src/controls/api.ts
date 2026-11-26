@@ -35,7 +35,7 @@ import OptionsFilter from "./table/OptionsFilter";
 import TableTextFilter from "./table/TextFilter";
 import Timer from "./Timer";
 import Toggle from "./Toggle";
-import ToolbarIcon from "./ToolbarIcon";
+import ToolbarIcon from "./toolbar_icon/ToolbarIcon";
 import ToolIcon from "./ToolIcon";
 import * as tooltip from "./TooltipControls";
 import TriStateCheckbox from "./TriStateCheckbox";

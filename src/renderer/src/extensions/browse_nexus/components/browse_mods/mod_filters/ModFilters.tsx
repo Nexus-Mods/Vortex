@@ -1,12 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { PopoverMenu } from "@/ui/components/popover/popover_menu/PopoverMenu";
-import { Typography } from "@/ui/components/typography/Typography";
+import { FilterMenu } from "@/ui/components/filters/filter_menu/FilterMenu";
 
 import { MOD_FILTERS } from "../../../util/mod_filters/modFilterList";
 import type { IModFilters } from "../../../util/mod_views/modViews";
-import { FilterReset } from "./FilterReset";
 import { ModFilterMenu } from "./ModFilterMenu";
 
 interface IModFiltersProps {
@@ -46,51 +44,34 @@ export const ModFilters = ({
   const changedCount = changedFilters.length;
 
   return (
-    <>
-      <PopoverMenu
-        actions={[
-          MOD_FILTERS.map((filter) => ({
-            label: filter.label(t),
-            icon: filter.icon,
-            panelRole: "menu",
-            panel: ({ close, dismiss }) => (
-              <ModFilterMenu
-                canSeeAdult={canSeeAdult}
-                filter={filter}
-                filters={filters}
-                isLoggedIn={isLoggedIn}
-                onChange={onChange}
-                onClose={close}
-                onReset={
-                  changedFilters.includes(filter.key) ? () => onResetFilter(filter.key) : undefined
-                }
-                onSelect={dismiss}
-              />
-            ),
-          })),
-        ]}
-        label={t("Filters")}
-        onSelect={onSelect}
-      />
-
-      <Typography
-        appearance="subdued"
-        className="mx-1 flex h-8 items-center px-1.5 italic"
-        typographyType="body-sm"
-      >
-        {t("More filters coming soon...")}
-      </Typography>
-
-      {!!changedCount && (
-        <FilterReset
-          label={
-            changedCount === 1
-              ? t("Reset 1 filter to default")
-              : t("Reset {{count}} filters to default", { count: changedCount })
-          }
-          onReset={onReset}
-        />
-      )}
-    </>
+    <FilterMenu
+      comingSoon={t("More filters coming soon...")}
+      items={MOD_FILTERS.map((filter) => ({
+        label: filter.label(t),
+        icon: filter.icon,
+        panel: ({ close, dismiss }) => (
+          <ModFilterMenu
+            canSeeAdult={canSeeAdult}
+            filter={filter}
+            filters={filters}
+            isLoggedIn={isLoggedIn}
+            onChange={onChange}
+            onClose={close}
+            onReset={
+              changedFilters.includes(filter.key) ? () => onResetFilter(filter.key) : undefined
+            }
+            onSelect={dismiss}
+          />
+        ),
+      }))}
+      label={t("Filters")}
+      resetLabel={
+        changedCount === 1
+          ? t("Reset 1 filter to default")
+          : t("Reset {{count}} filters to default", { count: changedCount })
+      }
+      onReset={changedCount ? onReset : undefined}
+      onSelect={onSelect}
+    />
   );
 };

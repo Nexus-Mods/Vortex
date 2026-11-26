@@ -5,12 +5,13 @@
  * page scroll, not the pane.
  */
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { Provider } from "react-redux";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { MainContext } from "../contexts/main_context/MainContext";
 import * as scrolling from "../smoothScroll";
+import type { IComponentContext } from "../types/IComponentContext";
 import SuperTable from "./Table";
 import HeaderCell from "./table/HeaderCell";
 
@@ -49,24 +50,26 @@ const listeners = new Map<string, (...args: any[]) => void>();
 const state = { settings: { interface: { usage: {} } }, persistent: {} };
 const store = { getState: () => state, subscribe: () => () => undefined, dispatch: vi.fn() };
 
-class LegacyContext extends React.Component<{ children: React.ReactNode }> {
-  public static childContextTypes = { api: PropTypes.object };
-  public getChildContext() {
-    return {
-      api: {
-        events: {
-          on: (event: string, listener: (...args: any[]) => void) => listeners.set(event, listener),
-          emit: vi.fn(),
-          removeAllListeners: vi.fn(),
-        },
-        getState: () => state,
-        store,
-      },
-    };
-  }
-  public render() {
-    return <Provider store={store as never}>{this.props.children}</Provider>;
-  }
+const appContext = {
+  api: {
+    events: {
+      on: (event: string, listener: (...args: any[]) => void) => listeners.set(event, listener),
+      emit: vi.fn(),
+      removeAllListeners: vi.fn(),
+    },
+    getState: () => state,
+    store,
+  },
+  menuLayer: undefined,
+  getModifiers: () => ({ alt: false, ctrl: false, shift: false }),
+} as unknown as IComponentContext;
+
+function AppContext(props: { children: React.ReactNode }) {
+  return (
+    <MainContext.Provider value={appContext}>
+      <Provider store={store as never}>{props.children}</Provider>
+    </MainContext.Provider>
+  );
 }
 
 const attributes = [
@@ -98,7 +101,7 @@ function renderTable(
   document.body.appendChild(page);
 
   const result = render(
-    <LegacyContext>
+    <AppContext>
       <Table
         ref={(instance: any) => {
           if (instance) tableInstance = instance;
@@ -122,7 +125,7 @@ function renderTable(
         onCollapseGroup={vi.fn()}
         onSetCollapsedGroups={vi.fn()}
       />
-    </LegacyContext>,
+    </AppContext>,
     { container: host },
   );
   const pane = host.querySelector(".table-main-pane");

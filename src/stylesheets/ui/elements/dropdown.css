@@ -53,6 +53,10 @@
         transition-timing-function: var(--default-transition-timing-function);
         transition-duration: var(--default-transition-duration);
 
+        &[aria-pressed="true"] {
+            color: var(--color-neutral-moderate);
+        }
+
         &:hover,
         &:focus-visible {
             outline: none;

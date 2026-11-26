@@ -1,54 +1,56 @@
-import type { ICategory } from "@nexusmods/nexus-api";
-
-import type { IReducerSpec } from "../../../types/IExtensionContext";
-import { deleteOrNop, setOrNop, setSafe } from "../../../util/storeHelper";
+import { actionsToReducerSpec } from "../../../reducers/builder";
 import * as actions from "../actions/category";
 import type { ICategoryState } from "../types/ICategoryDictionary";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
- * reducer for changes to ephemeral session state
+ * reducer for changes to the categories (persistent.categories, keyed by game id)
  */
-export const categoryReducer: IReducerSpec = {
-  reducers: {
-    [actions.loadCategories as any]: (
-      state: ICategoryState,
-      payload: { gameId: string; gameCategories: unknown[] },
-    ) => setOrNop(state, [payload.gameId], payload.gameCategories),
-    [actions.setCategory as any]: (
-      state,
-      payload: { gameId: string; id: string; category: ICategory },
-    ) => setSafe(state, [payload.gameId, payload.id], payload.category),
-    [actions.removeCategory as any]: (
-      state: ICategoryState,
-      payload: { gameId: string; id: string },
-    ) => deleteOrNop(state, [payload.gameId, payload.id]),
-    [actions.updateCategories as any]: (
-      state: ICategoryState,
-      payload: { gameId: string; gameCategories: unknown[] },
-    ) => setSafe(state, [payload.gameId], payload.gameCategories),
-    [actions.renameCategory as any]: (
-      state: ICategoryState,
-      payload: { gameId: string; categoryId: string; name: string },
-    ) => setOrNop(state, [payload.gameId, payload.categoryId, "name"], payload.name),
-    [actions.setCategoryOrder as any]: (
-      state: ICategoryState,
-      payload: { gameId: string; categoryIds: string[] },
-    ) => {
+export const categoryReducer = actionsToReducerSpec<ICategoryState, typeof actions>(
+  {},
+  actions,
+  {
+    loadCategories: (state, payload) => ({ ...state, [payload.gameId]: payload.gameCategories }),
+    setCategory: (state, payload) => ({
+      ...state,
+      [payload.gameId]: { ...state[payload.gameId], [payload.id]: payload.category },
+    }),
+    removeCategory: (state, payload) => {
+      const { gameId, id } = payload;
+      const categories = state[gameId];
+      if (categories === undefined || !Object.hasOwn(categories, id)) {
+        return state;
+      }
+      const { [id]: _, ...rest } = categories;
+      return { ...state, [gameId]: rest };
+    },
+    updateCategories: (state, payload) => ({
+      ...state,
+      [payload.gameId]: payload.gameCategories,
+    }),
+    renameCategory: (state, payload) => {
+      const { gameId, categoryId, name } = payload;
+      const category = state[gameId]?.[categoryId];
+      if (category === undefined) {
+        return state;
+      }
+      return { ...state, [gameId]: { ...state[gameId], [categoryId]: { ...category, name } } };
+    },
+    setCategoryOrder: (state, payload) => {
       const { gameId, categoryIds } = payload;
       let newState = state;
       categoryIds.forEach((id, idx) => {
         const oldOrder = state[gameId]?.[id]?.order;
         if (oldOrder !== undefined && oldOrder !== idx) {
-          newState = setSafe(newState, [gameId, id, "order"], idx);
+          newState = {
+            ...newState,
+            [gameId]: { ...newState[gameId], [id]: { ...newState[gameId][id], order: idx } },
+          };
         }
       });
       return newState;
     },
   },
-  defaults: {},
-  verifiers: {
+  {
     _: {
       // shouldn't be reported atm
       description: () => "Invalid set of categories",
@@ -70,4 +72,4 @@ export const categoryReducer: IReducerSpec = {
       },
     },
   },
-};
+);

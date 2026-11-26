@@ -13,12 +13,15 @@ interface IBBCodeProps extends IProseWithImagesProps {
   context?: IBBCodeContext;
   /** Shows placeholders for images from outside Nexus Mods, which are otherwise left out. */
   externalImagePlaceholders?: IExternalImagePlaceholderOptions;
+  /** Whether it's prose, where videos play and sizes apply; off where it sits in other UI. */
+  isProse?: boolean;
 }
 
 /**
  * Bbcode we don't write ourselves, such as a mod's description, in the app's prose styles. Images
  * show only if they're from Nexus Mods, others as placeholders where `externalImagePlaceholders`
- * asks, and links open only where `context` allows.
+ * asks, and links open only where `context` allows. Videos and sizes show only where `isProse`
+ * says it's prose.
  */
 export const BBCode = ({
   bbcode,
@@ -27,12 +30,18 @@ export const BBCode = ({
   className,
   isFromAdultContent,
   externalImagePlaceholders,
+  isProse,
 }: IBBCodeProps) => (
   <div
     className={joinClasses(["nxm-prose nxm-prose-bbcode", className], {
       "nxm-prose-sm": size === "sm",
     })}
   >
-    {renderSafeBBCode(bbcode, { ...context, isFromAdultContent, externalImagePlaceholders })}
+    {renderSafeBBCode(bbcode, {
+      ...context,
+      isFromAdultContent,
+      externalImagePlaceholders,
+      isProse: isProse ?? context?.isProse,
+    })}
   </div>
 );

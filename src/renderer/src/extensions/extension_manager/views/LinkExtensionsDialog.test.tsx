@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { settleTransitions } from "@/test-utils/transitions";
+
 import { type ILinkCandidate, LinkExtensionsDialog } from "./LinkExtensionsDialog";
 
 const candidates: ILinkCandidate[] = [
@@ -37,10 +39,12 @@ const renderDialog = () => {
 };
 
 describe("LinkExtensionsDialog", () => {
-  it("lists each extension with its replacement", () => {
+  it("lists each extension with its replacement", async () => {
     renderDialog();
     expect(screen.getByText("My weird custom extension v0.5")).toBeInTheDocument();
     expect(screen.getByText("Mount & Blade II: Bannerlord Support v2.0.0")).toBeInTheDocument();
+
+    await settleTransitions();
   });
 
   it("selects every extension by default", async () => {

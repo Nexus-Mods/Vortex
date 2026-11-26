@@ -96,6 +96,7 @@ import {
   isCollectionPhaseComplete,
   isCollectionPhaseSettledSuccessfully,
 } from "../../util/collectionInstallSessionSelectors";
+import { formatCollectionSource } from "../../util/collectionMembershipSelectors";
 import { resyncCollectionSessionRules } from "../../util/collectionSessionReconstruct";
 import type { CollectionInstallOutcome } from "../../util/collectionSessionWrite";
 import {
@@ -188,6 +189,7 @@ import type { IInstallationDetails, InstallFunc } from "./types/InstallFunc";
 import type { IReplaceChoice, ReplaceChoice } from "./types/IReplaceChoice";
 import type { ISupportedResult, ITestSupportedDetails, TestSupported } from "./types/TestSupported";
 import { calculateModSize } from "./util/calculate_mod_size/calculateModSize.util";
+import { isUsedByOtherCollection } from "./util/collection_membership/collectionMembership";
 import { getCSharpScriptAllowListForGame } from "./util/cSharpScriptAllowList";
 import gatherDependencies, {
   findDownloadByRef,
@@ -410,6 +412,25 @@ function findCollectionByDownload(
     return null;
   }
   return { collectionMod, matchingRule: matchingRule.rule, gameId };
+}
+
+/**
+ * The collection an install belongs to, as `slug@revision`, for telemetry. Empty when the install
+ * isn't a collection member or the collection never came from the site.
+ */
+function collectionOfInstall(
+  state: IState,
+  profile: IProfile | undefined,
+  sourceModId: string | undefined,
+): string {
+  if (profile?.gameId === undefined || sourceModId === undefined) {
+    return "";
+  }
+  const { collectionSlug, revisionNumber } =
+    state.persistent.mods[profile.gameId]?.[sourceModId]?.attributes ?? {};
+  return collectionSlug !== undefined && revisionNumber !== undefined
+    ? formatCollectionSource({ collectionSlug, revisionNumber })
+    : "";
 }
 
 /**
@@ -1373,6 +1394,7 @@ class InstallManager {
               "mod.archiveId": archiveId ?? "",
               "mod.numericModId": dlInfo?.modInfo?.nexus?.ids?.modId ?? "",
               "mod.fileId": dlInfo?.modInfo?.nexus?.ids?.fileId ?? "",
+              "mod.collection": collectionOfInstall(api.getState(), currentProfile, sourceModId),
               "mod.installerChoices":
                 fullInfo.choices != null ? JSON.stringify(fullInfo.choices) : "",
               "mod.hasPatches": fullInfo.patches != null,
@@ -5401,8 +5423,10 @@ class InstallManager {
         });
       }
 
-      // When installing as a dependency, check if the existing mod is enabled in a different profile.
-      // If so, create a variant so each profile can have its own version of the mod.
+      // When installing as a dependency, check whether the existing mod is still needed the way
+      // it is installed now: enabled in a different profile, or a member of another installed
+      // collection that asks for the install spec it has. If so, create a variant so the other
+      // profile or collection keeps its version of the mod instead of having it replaced.
       if (!choices && isDependency) {
         const activeSession = getCollectionActiveSession(api.getState());
         const targetProfileId = currentProfile?.id;
@@ -5415,8 +5439,17 @@ class InstallManager {
           profiles.some((prof) => getSafe(prof.modState, [modId, "enabled"], false)),
         );
 
-        if (isEnabledInOtherProfile && activeSession?.collectionId != null) {
-          // Create a variant so the other profile keeps its version
+        const usedByOtherCollection = isUsedByOtherCollection(
+          state.persistent.mods[gameId],
+          modIds,
+          activeSession?.collectionId,
+        );
+
+        if (
+          (isEnabledInOtherProfile || usedByOtherCollection) &&
+          activeSession?.collectionId != null
+        ) {
+          // Create a variant so the other profile or collection keeps its version
           const collectionMod =
             api.getState().persistent.mods?.[gameId]?.[activeSession.collectionId];
           const variantNum = installOptions.variantNumber?.toString() ?? "1";
@@ -5433,7 +5466,7 @@ class InstallManager {
             preserveChoices: true,
           });
         } else {
-          // No other profile uses this mod, safe to replace
+          // No other profile or collection uses this mod, safe to replace
           choices = Promise.resolve({
             action: "replace",
             remember: false,

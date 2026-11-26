@@ -20,7 +20,7 @@ import { ESPFile } from "../esp/ESPFile";
 import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { isNativePlugin, pluginFormat, supportsBlueprintPlugins } from "./gameSupport";
-import { selectPluginFiles } from "./isPlugin";
+import { selectPluginFiles, selectStagedPlugins } from "./isPlugin";
 import type PluginPersistor from "./PluginPersistor";
 import { withFileRetry } from "./PluginPersistor";
 import { SpanAttribute } from "./spanAttributes";
@@ -118,12 +118,23 @@ async function updatePluginListImpl(
       const modInstPath = path.join(installBasePath, mod.installationPath);
       try {
         const fileNames = await fs.readdirAsync(modInstPath);
-        const candidates = fileNames
-          .map((fileName) => activator?.getDeployedPath(fileName) ?? fileName)
-          .filter((fileName) => !overridden.has(fileName));
-        for (const fileName of await selectPluginFiles(modInstPath, candidates, gameId)) {
-          modIdByFileName[fileName] = mod.id;
-          addPlugin(modInstPath, fileName, mod.id, false);
+        const { staged, movedOut } = await selectStagedPlugins(
+          modInstPath,
+          fileNames,
+          gameId,
+          (fileName) => activator?.getDeployedPath(fileName) ?? fileName,
+        );
+        for (const fileName of staged) {
+          if (!overridden.has(fileName)) {
+            modIdByFileName[fileName] = mod.id;
+            addPlugin(modInstPath, fileName, mod.id, false);
+          }
+        }
+        // the file is in the game folder, or nowhere; staging has no copy to list
+        for (const fileName of movedOut) {
+          if (!overridden.has(fileName)) {
+            modIdByFileName[fileName] = mod.id;
+          }
         }
       } catch (err) {
         readErrors.push(mod.id);

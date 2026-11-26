@@ -47,6 +47,147 @@ Existing tests are mixed on this: you'll find `getByRole`, `getByTestId` and
 `getByText` in roughly equal measure. The rule above is where we're heading, not
 a description of every test in the tree.
 
+## React warnings
+
+A new or changed component test must run without React logging an `act()`
+warning ("An update to X inside a test was not wrapped in act(...)"). The
+renderer's test setup, `src/renderer/test-setup.mts`, enforces this: when React
+logs one, the test that logged it fails with
+`React updated X outside act()`.
+
+It also fails a test on a function or `React.memo` component that sets
+`defaultProps` (`X set defaultProps on a function or memo component`), which React 19 drops. In our
+code, use default parameter values instead. From a dependency, upgrade it. If the
+version that fixes it is ESM-only, the renderer can't `import` it while it
+compiles to CommonJS; load it the way
+`src/renderer/src/util/react_markdown/ReactMarkdown.tsx` loads
+react-markdown.
+
+The check is there because nothing else surfaces these warnings. Vitest's
+default reporter hides a test's console output, so a run that logs dozens of
+warnings still looks clean, and a passing CI log doesn't get read. The suite was
+cleared of them once, in September 2026, and they were back within two months.
+
+### Seeing them
+
+Run the file with its console output shown, from `src/renderer`:
+
+```sh
+pnpm exec vitest run <file> --reporter=verbose --silent=false
+```
+
+The warning's component stack says where the update came from. Short minified
+names (`Ie`, `pe`, `bt`) are Headless UI components, and the stack's first line
+names the file, e.g. `@headlessui/react/dist/components/transition/transition.js`.
+Most are `Transition`, from a dialog or popover opening or closing; the rest are
+usually a focus change in a `Checkbox`, `RadioGroup`, `Input` or `Popover`. The
+minified names change between Headless UI versions, so go by the file.
+
+### Causes and fixes
+
+Each warning is a state update that landed while nothing wrapped it in `act()`.
+The usual sources:
+
+- **Work the test didn't wait for.** A component that loads, reads or fetches
+  after its first render updates once that finishes, which can be after the test
+  has returned. Wait for what the user would see once it's done, with a
+  `findBy…` query or `waitFor`.
+- **Headless UI transitions.** Dialogs, popovers and menus run their enter and
+  leave over the next few frames. A test that opens or closes one and then
+  returns without awaiting anything ends with `await settleTransitions()`, from
+  `src/renderer/src/test-utils/transitions.ts`. Tests that already await
+  `userEvent` or a `findBy…` don't need it.
+- **Direct calls that update state.** `element.focus()`, a hook's callback
+  called from the test, or a timer or observer callback fired by hand. Wrap the
+  call in `act(() => …)`. Waiting for something nothing on screen reflects is a
+  last resort, since a fixed wait can be too short on a slow machine; when
+  there's no other way, wait inside `act()` so the update lands in it:
+  `await act(() => new Promise((resolve) => setTimeout(resolve, 20)))`.
+- **An update queued as a microtask.** Closing a Headless UI dialog with a
+  `rerender` queues its leave as a microtask, which runs as soon as the test's
+  synchronous code finishes. If the test then awaits something that isn't
+  testing-library's, that microtask lands outside `act()`. Re-render inside an
+  async `act()`: `await act(async () => { rerender(…); })`.
+
+### findDOMNode
+
+A test also fails when our own code calls `findDOMNode`, which React 19
+removes: `findDOMNode was called from X`, naming the caller. Put a ref on the
+element instead. Where the element belongs to a react-bootstrap 0.33 component,
+which doesn't pass refs on, hand it a `componentClass` made with `withDomRef`
+(`src/renderer/src/controls/with_dom_ref/withDomRef.ts`) and a `domRef` prop:
+`ToolbarIcon` and `ContextMenu` do this.
+
+The check catches the call, not React's warning. React logs that warning once
+per test file, and react-bootstrap and react-overlays still call `findDOMNode`
+themselves, so their warning would hide ours. Their calls don't fail a test.
+
+One call of ours is let through: `findDOMNodeUntilReact19` in
+`VisibilityProxy`, which finds the element of an extension's `componentClass`
+that doesn't pass its ref on. It goes when React 19 does. The names let through
+are listed in `allowedFindDOMNodeCallers` in the test setup.
+
+### Legacy context, nesting and refs
+
+A test also fails when React warns that our own code:
+
+- **reads or provides legacy context** (`contextTypes`, `childContextTypes`).
+  Read `MainContext` instead, with `static contextType = MainContext` in a class
+  or `useMainContext()` in a function component. `ComponentEx` already does. A
+  test that renders a `ComponentEx` without the app provides it with
+  `<MainContext.Provider value={…}>`. A `ComponentEx` subclass that declares
+  `contextTypes` of its own reads legacy context instead, so drop them.
+- **declares `contextTypes` on a class that also has `contextType`.** React
+  ignores the `contextTypes`; drop them.
+- **fails a context type check,** such as `ComponentExProvider` rendered
+  without the `api` it requires (`Failed child context type`). Render it inside
+  a `<MainContext.Provider>` that has an `api`.
+- **nests elements HTML doesn't allow** (`validateDOMNesting`), such as a `<p>`
+  inside a `<p>`. Render the outer element as a `<div>` (`Typography` takes
+  `as="div"`).
+- **gives a ref to a function component.** Wrap the component in
+  `forwardRef`, including a test's mock of one.
+
+The message names the component React blamed. Warnings about react-bootstrap's
+own components don't fail a test. Two components keep legacy context on purpose:
+`ComponentExProvider`, which hands `MainContext` on to community extensions that
+still read legacy context, and `FormFeedback`, which reads react-bootstrap's
+`FormGroup`. Tests standing in for such an extension name their component
+`LegacyContextExtension`, which is allowed too.
+
+`MainContext` lives in `src/renderer/src/contexts/main_context/MainContext.ts`.
+A component that React renders as a separate root, as react-bootstrap's
+`OverlayTrigger` does with its overlay, has no provider above it, so it reads
+the app-wide values `MainProvider` fills in. Use `MainContextOverlayTrigger`
+(`src/renderer/src/controls/main_context_overlay/`) in place of react-bootstrap's
+`OverlayTrigger`: it hands the overlay the trigger's own `MainContext`, so a
+popover in a dialog gets the dialog's menu layer. Our `OverlayTrigger` control
+and `TooltipControls` use it.
+
+### What the check can't see
+
+- `waitFor`, the `findBy…` queries and `userEvent` turn React's `act()` checks
+  off while they wait, so an update during one of them logs nothing. Waiting
+  until the work has finished, as `settleTransitions` does, is the fix. What
+  hides a problem is an update that happens to land during a wait for something
+  else: it warns again once the test stops awaiting there.
+- A test that silences `console.error` itself, with
+  `vi.spyOn(console, "error").mockImplementation(…)`, hides warnings while the
+  spy is in place. Restore it straight after the call that's expected to error.
+- An update that lands after testing-library's cleanup fails the next test in
+  the file, or the file's `afterAll` after its last test, rather than the test
+  that caused it.
+- Only these fail a test: `act()` and `defaultProps` warnings wherever they
+  come from, our own `findDOMNode` calls, and the legacy context, nesting and
+  ref warnings when our own code is to blame. The deprecation warnings still in
+  the log (`findDOMNode` and legacy context from react-bootstrap) come from
+  older code: class components in `src/renderer/src/controls/`, and old
+  dependencies such as `react-bootstrap` 0.33. Clearing them means changing
+  that code, not the tests.
+- The `findDOMNode` check only sees code that runs in a test. The renderer
+  still has calls outside the tested paths, such as `Dropdown`,
+  `ActionDropdown`, `OverlayTrigger` and `DraggableList`.
+
 ## Extension tests
 
 If an extension test imports `vortex-api`, add a local `vitest.config.ts` alias

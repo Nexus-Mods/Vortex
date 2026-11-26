@@ -1,22 +1,21 @@
-import type { IReducerSpec } from "../../types/IExtensionContext";
-import { merge, setSafe } from "../../util/storeHelper";
+import { actionsToReducerSpec } from "@/reducers/builder";
+import type { IBrowserState } from "@/types/IState";
+
 import * as actions from "./actions";
 
 /**
  * reducer for changes to ephemeral session state
  */
-export const sessionReducer: IReducerSpec = {
-  reducers: {
-    [actions.showURL as any]: (state, payload) => {
-      const { url, instructions, subscriber, skippable } = payload;
-      return merge(state, [], { url, instructions, subscriber, skippable });
-    },
-    [actions.closeBrowser as any]: (state, payload) => setSafe(state, ["url"], undefined),
-  },
-  defaults: {
+export const sessionReducer = actionsToReducerSpec<IBrowserState, typeof actions>(
+  {
     url: undefined,
     instructions: undefined,
     subscriber: undefined,
     skippable: undefined,
   },
-};
+  actions,
+  {
+    showURL: (state, payload) => ({ ...state, ...payload }),
+    closeBrowser: (state) => ({ ...state, url: undefined }),
+  },
+);
