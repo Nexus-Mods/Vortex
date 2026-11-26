@@ -40,6 +40,9 @@ const iconMap: Record<string, IIconSource> = {
   undo: "undo",
 };
 
+/** The icon the new UI draws for a legacy icon name, or `undefined` for one with none. */
+export const findIcon = (iconName: string): IIconSource | undefined => iconMap[iconName];
+
 /** The icon for a legacy icon name, or `fallbackIcon` for one with none. */
 export const getIcon = (iconName: string, fallbackIcon: IIconSource = "category"): IIconSource =>
   iconMap[iconName] ?? fallbackIcon;
