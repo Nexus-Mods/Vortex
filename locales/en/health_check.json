@@ -54,6 +54,13 @@
       "message": "Health Check found no issues in the checks it could run. Log in to also check for missing Nexus Mods requirements.",
       "action": "Log in to complete Health Check"
     },
+    "fomod_options": {
+      "change_options": "Change options",
+      "detail_one": "{{groupName}}: {{optionName}}",
+      "detail_many": "{{count}} options in {{modName}}",
+      "summary_one": "Available now that {{reason}} is active",
+      "summary_many": "Options that were unavailable when this mod was installed are available now"
+    },
     "external_mod_install": "External mod install",
     "install_one_click": "1-click install ({{count}})",
     "install_uninstalled": "Install (downloaded)",
@@ -106,6 +113,12 @@
       "installed": "Installed",
       "enabled": "Enabled",
       "disabled": "Disabled"
+    },
+    "fomod_options": {
+      "change_options": "Change options",
+      "description": "These options were unavailable when this mod was installed and are available now. Reopening the installer keeps everything else as you chose it.",
+      "option_reason": "{{groupName}} · available now that {{reason}} is active",
+      "collection_managed": "This mod is managed by a collection. Changing its options here would make your install differ from the collection, so make the change from the collection's own mod page if you want it."
     },
     "feedback_modal": {
       "title": "Thanks for letting us know",

@@ -1,5 +1,6 @@
 import type { HealthCheckId } from "../../types";
 import { fileRequirementsContent } from "./FileRequirementsContent";
+import { fomodOptionsContent } from "./FomodOptionsContent";
 import { modRequirementsContent } from "./ModRequirementsContent";
 import type { IHealthCheckContent } from "./types";
 
@@ -11,4 +12,5 @@ import type { IHealthCheckContent } from "./types";
 export const healthCheckContent: Partial<Record<HealthCheckId, IHealthCheckContent>> = {
   "check-nexus-mod-requirements": modRequirementsContent,
   "check-file-level-requirements": fileRequirementsContent,
+  "check-fomod-option-availability": fomodOptionsContent,
 };

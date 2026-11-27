@@ -16,6 +16,7 @@ import {
   FILE_REQUIREMENTS_CHECK_ID,
   FILE_REQUIREMENTS_FLAG,
 } from "./checks/fileRequirementsCheck";
+import { fomodOptionsHealthCheck } from "./checks/fomodOptionsCheck";
 import { modRequirementsHealthCheck } from "./checks/modRequirementsCheck";
 import { HealthCheckMenuBadge } from "./components/menu_badge/HealthCheckMenuBadge";
 import { HealthCheckRegistry } from "./core/HealthCheckRegistry";
@@ -85,7 +86,11 @@ function init(context: IExtensionContext): boolean {
     // Register the requirements health checks. Each check owns its full
     // descriptor (id, triggers, enablement gate, running-state + notification
     // wrapper) in its provider module, so registration here is trivial.
-    const checks: IHealthCheck[] = [modRequirementsHealthCheck, fileRequirementsHealthCheck];
+    const checks: IHealthCheck[] = [
+      modRequirementsHealthCheck,
+      fileRequirementsHealthCheck,
+      fomodOptionsHealthCheck,
+    ];
     for (const check of checks) {
       healthCheckApi.custom.register(check);
     }

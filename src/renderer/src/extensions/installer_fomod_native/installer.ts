@@ -4,12 +4,14 @@ import type { IExtensionApi, IInstallResult, IInstruction, InstructionType } fro
 import { UserCanceled } from "../../util/CustomErrors";
 import { getGame } from "../gamemode_management/util/getGame";
 import type { IChoices } from "../installer_fomod_shared/types/interface";
+import { OPTION_SNAPSHOT_ATTRIBUTE } from "../installer_fomod_shared/types/snapshot";
 import {
   getPluginPath,
   getStopPatterns,
   uniPatterns,
 } from "../installer_fomod_shared/utils/gameSupport";
 import { getChoicesFromState } from "../installer_fomod_shared/utils/helpers";
+import { readOptionSnapshot } from "../installer_fomod_shared/utils/normaliseSnapshot";
 import type { IInstallationDetails } from "../mod_management/types/InstallFunc";
 import { VortexModInstaller } from "./utils/VortexModInstaller";
 
@@ -92,6 +94,18 @@ export const install = async (
         options: choices ?? fomodChoices,
       },
     });
+
+    // The condition snapshot is what lets a later check tell that an option which was
+    // unusable here has since become usable. An installer that predates it returns
+    // nothing, which normalises to undefined and records no attribute at all.
+    const snapshot = readOptionSnapshot(result);
+    if (snapshot !== undefined) {
+      transformedResult.instructions.push({
+        type: "attribute",
+        key: OPTION_SNAPSHOT_ATTRIBUTE,
+        value: snapshot,
+      });
+    }
     modInstaller.dispose();
     return transformedResult;
   };

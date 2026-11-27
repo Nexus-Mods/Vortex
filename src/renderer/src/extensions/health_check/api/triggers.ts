@@ -125,6 +125,31 @@ export function setupAutomaticTriggers(api: IExtensionApi, healthCheckApi: IHeal
       },
     );
 
+    // A FOMOD option's availability turns on which plugins are present and active, so the
+    // plugin list is the trigger that matters for the installer-options check - installing
+    // Mod B only matters if it brings the plugin Mod A's option was waiting for. There is no
+    // api event for this, so both slices are watched directly.
+    //
+    // Both are needed because they move independently: enabling or disabling a plugin
+    // dispatches setPluginEnabled, which writes loadOrder only, and pluginList is written by
+    // setPluginList on install and deploy. Watching one alone misses the common case - the
+    // user enabling the very plugin the option was waiting for.
+    //
+    // It gets its own debouncer and trigger so a plugin move runs this one local check
+    // rather than the two Nexus-backed ones as well, which is what ModsChanged would do.
+    const pluginsChangedDebouncer = new Debouncer(
+      () => triggerHealthChecks(api, healthCheckApi, HealthCheckTrigger.PluginsChanged),
+      500,
+    );
+
+    const schedulePluginCheck = () => {
+      log("debug", "Plugin state changed, scheduling debounced health check");
+      pluginsChangedDebouncer.schedule();
+    };
+
+    api.onStateChange?.(["session", "plugins", "pluginList"], schedulePluginCheck);
+    api.onStateChange?.(["loadOrder"], schedulePluginCheck);
+
     // Run health checks after collection post-processing finishes,
     // matching the pattern used by gamebryo-plugin-management for LOOT.
     api.events.on("collection-postprocess-complete", () => {

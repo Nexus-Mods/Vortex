@@ -23,6 +23,10 @@ import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
 import { isLoggedIn, shouldShowPremiumAd } from "../../nexus_integration/selectors";
+import {
+  FOMOD_OPTIONS_CHECK_ID,
+  type IFomodOptionsCheckMetadata,
+} from "../checks/fomodOptionsCheck";
 import { AuthorNotesModal } from "../components/author_notes_modal/AuthorNotesModal";
 import { IssueSection } from "../components/issue_section/IssueSection";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
@@ -31,6 +35,7 @@ import { createHealthCheckTracker } from "../hooks/healthCheckTracker";
 import { HealthCheckTrackingProvider, IssueProvider } from "../hooks/HealthCheckTracking.context";
 import {
   fileRequirementsCheckResult,
+  healthCheckResult,
   hiddenFileRequirements,
   hiddenModRequirements,
   isAnyHealthCheckRunning,
@@ -140,6 +145,9 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   // subscription lives in LastUpdated.
   const fileResult = useSelector(fileRequirementsCheckResult);
   const modResult = useSelector(modRequirementsCheckResult);
+  const fomodResult = useSelector((state: IState) =>
+    healthCheckResult<IFomodOptionsCheckMetadata>(state, FOMOD_OPTIONS_CHECK_ID),
+  );
   const hiddenFile = useSelector(hiddenFileRequirements);
   const hiddenMod = useSelector(hiddenModRequirements);
   const showPremiumAd = useSelector(shouldShowPremiumAd);
@@ -158,12 +166,12 @@ const HealthCheckPage = ({ api, onRefresh, active, registerReset }: IHealthCheck
   const items = useMemo(
     () => selectListedEntries(api.getState()),
     // oxlint-disable-next-line react/exhaustive-deps
-    [api, fileResult, modResult, hiddenFile, hiddenMod],
+    [api, fileResult, modResult, fomodResult, hiddenFile, hiddenMod],
   );
   const installAllItems = useMemo(
     () => collectInstallAllItems(api.getState(), api),
     // oxlint-disable-next-line react/exhaustive-deps
-    [api, fileResult, modResult, hiddenFile, hiddenMod],
+    [api, fileResult, modResult, fomodResult, hiddenFile, hiddenMod],
   );
 
   const activeItems = useMemo(() => items.filter((item) => !item.hidden), [items]);

@@ -9,6 +9,10 @@ import { Page } from "@/views/components/Page/Page";
 import { PageHeader } from "@/views/components/Page/PageHeader";
 import { PageScroll } from "@/views/components/Page/PageScroll";
 
+import {
+  FOMOD_OPTIONS_CHECK_ID,
+  type IFomodOptionsCheckMetadata,
+} from "../checks/fomodOptionsCheck";
 import { PremiumBanner } from "../components/premium_banner/PremiumBanner";
 import {
   HealthCheckTrackingProvider,
@@ -17,6 +21,7 @@ import {
 } from "../hooks/HealthCheckTracking.context";
 import {
   fileRequirementsCheckResult,
+  healthCheckResult,
   hiddenFileRequirements,
   hiddenModRequirements,
   isHealthCheckRunning,
@@ -82,6 +87,9 @@ function HealthCheckDetailPage({
   // is mid-run) return to the listing. Mirrors HealthCheckPage's slice subscriptions.
   const fileResult = useSelector(fileRequirementsCheckResult);
   const modResult = useSelector(modRequirementsCheckResult);
+  const fomodResult = useSelector((state: IState) =>
+    healthCheckResult<IFomodOptionsCheckMetadata>(state, FOMOD_OPTIONS_CHECK_ID),
+  );
   const hiddenFile = useSelector(hiddenFileRequirements);
   const hiddenMod = useSelector(hiddenModRequirements);
   // Only the entry's own check can bring its requirements back, so waiting on the other one
@@ -91,7 +99,7 @@ function HealthCheckDetailPage({
   const liveEntry = useMemo(
     () => content.selectEntries(api.getState()).find((candidate) => candidate.id === entry.id),
     // oxlint-disable-next-line react/exhaustive-deps
-    [api, content, entry.id, fileResult, modResult, hiddenFile, hiddenMod],
+    [api, content, entry.id, fileResult, modResult, fomodResult, hiddenFile, hiddenMod],
   );
 
   useEffect(() => {

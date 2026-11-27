@@ -10,7 +10,10 @@ import type { ICustomCheckApi, ILegacyApi, IResultsApi } from "./api";
 /**
  * Known health check IDs
  */
-export type HealthCheckId = "check-nexus-mod-requirements" | "check-file-level-requirements";
+export type HealthCheckId =
+  | "check-nexus-mod-requirements"
+  | "check-file-level-requirements"
+  | "check-fomod-option-availability";
 
 /**
  * A subset of IModRequiring representing the mod that requires a missing mod.
