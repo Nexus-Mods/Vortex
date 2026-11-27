@@ -3,7 +3,6 @@ import * as React from "react";
 
 import * as tooltip from "../../../controls/TooltipControls";
 import { NAMESPACE } from "../statics";
-/* eslint-disable max-lines-per-function */
 import type { IPluginCombined } from "../types/IPlugins";
 
 type TranslationFunction = typeof I18next.t;

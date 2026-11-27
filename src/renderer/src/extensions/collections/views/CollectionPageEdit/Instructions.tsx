@@ -99,8 +99,8 @@ const instructions = (props: IInstructionProps) => {
   const [placeholder, setPlaceholder] = React.useState(
     // i18next's t() widens to a non-string union here, which makes useState infer a
     // lazy initializer (() => never); the cast is load-bearing. Keep the disable so
-    // `eslint --fix` doesn't strip it again.
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    // `oxlint --fix` doesn't strip it again.
+    // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
     t(INSTRUCTIONS_PLACEHOLDER) as string,
   );
   const [hasChanged, setHasChanged] = React.useState(false);

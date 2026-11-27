@@ -12,7 +12,7 @@ import { setPluginList } from "../actions/plugins";
 import type { IPlugins } from "../types/IPlugins";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
 import { gameSupported, isNativePlugin } from "./gameSupport";
-import { selectPluginFiles } from "./isPlugin";
+import { selectStagedPlugins } from "./isPlugin";
 import toPluginId from "./toPluginId";
 
 /**
@@ -54,10 +54,12 @@ export async function handleModInstalled(
       return;
     }
     const activator = getCurrentActivator(state, gameId, true);
-    const deployedNames = fileNames.map(
+    const { staged: pluginFileNames } = await selectStagedPlugins(
+      modInstPath,
+      fileNames,
+      gameId,
       (fileName) => activator?.getDeployedPath(fileName) ?? fileName,
     );
-    const pluginFileNames = await selectPluginFiles(modInstPath, deployedNames, gameId);
     if (pluginFileNames.length === 0) {
       return;
     }

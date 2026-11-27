@@ -1,10 +1,11 @@
 import type { VortexGameId } from "@vortex/shared";
-import { VortexError } from "@vortex/shared/errors";
 
 import { startActivity, stopActivity } from "@/actions/session";
 import type { IExtensionApi } from "@/types/IExtensionContext";
+import { batchDispatch } from "@/util/util";
 
 import { removeMods } from "../removeMods";
+import { reportRemovalFailure } from "../report_removal_failure/reportRemovalFailure";
 
 /**
  * The activity group each mod being uninstalled is listed in, by id, for its row to show it.
@@ -23,34 +24,25 @@ export const uninstallMods = async (
   gameId: VortexGameId,
   modIds: string[],
 ): Promise<boolean> => {
-  modIds.forEach((modId) => api.store?.dispatch(startActivity(UNINSTALLING_ACTIVITY, modId)));
+  // In one batch each way, so the rows work out whether they're busy once, not once per mod.
+  const listAsUninstalling = (action: typeof startActivity) => {
+    if (api.store !== undefined) {
+      batchDispatch(
+        api.store,
+        modIds.map((modId) => action(UNINSTALLING_ACTIVITY, modId)),
+      );
+    }
+  };
+
+  listAsUninstalling(startActivity);
 
   try {
     await removeMods(api, gameId, modIds);
     return true;
   } catch (err) {
-    const isVortexError = err instanceof VortexError;
-
-    if (isVortexError && err.data.kind === "user-canceled") {
-      return false;
-    }
-
-    if (isVortexError && err.data.kind === "process-canceled") {
-      api.sendNotification({
-        id: "cant-remove-mod",
-        type: "warning",
-        title: "Failed to uninstall mods",
-        message: err.message,
-      });
-      return false;
-    }
-
-    // A corrupt manifest says it isn't worth reporting, as the legacy table heeded.
-    api.showErrorNotification("Failed to uninstall mods", err, {
-      allowReport: (err as { allowReport?: boolean })?.allowReport !== false,
-    });
+    reportRemovalFailure(api, "Failed to uninstall mods", err);
     return false;
   } finally {
-    modIds.forEach((modId) => api.store?.dispatch(stopActivity(UNINSTALLING_ACTIVITY, modId)));
+    listAsUninstalling(stopActivity);
   }
 };

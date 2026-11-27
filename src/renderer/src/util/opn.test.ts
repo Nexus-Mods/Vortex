@@ -15,7 +15,7 @@ vi.mock("../logging", () => ({
 
 import type { IRegisteredExtension } from "../types/extensions";
 import { deprecatedApiGet } from "./deprecatedApiUsage";
-// eslint-disable-next-line no-restricted-imports -- tests the util.opn shim itself
+// oxlint-disable-next-line no-restricted-imports -- tests the util.opn shim itself
 import opn from "./opn";
 
 const openUrl = vi.fn();

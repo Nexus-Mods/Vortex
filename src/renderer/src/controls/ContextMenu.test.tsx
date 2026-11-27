@@ -1,36 +1,34 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import * as PropTypes from "prop-types";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import * as React from "react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MainContext } from "../contexts/main_context/MainContext";
+import type { IComponentContext } from "../types/IComponentContext";
+import type { IActionDefinitionEx } from "./ActionControl";
 import ContextMenu from "./ContextMenu";
 
-// ContextMenu extends ComponentEx which reads api/menuLayer/getModifiers from
-// the legacy context; provide the minimum via a legacy-context provider.
-class LegacyContextProvider extends React.Component<{
-  menuLayer: HTMLElement;
-  children: React.ReactNode;
-}> {
-  public static childContextTypes = {
-    api: PropTypes.object,
-    menuLayer: PropTypes.object,
-    getModifiers: PropTypes.func,
-  };
+// Icon loads its font set into an `#icon-sets` element the test document lacks; a submenu
+// item shows one.
+vi.mock("./Icon", () => ({ default: () => null }));
 
-  public getChildContext() {
-    return {
-      api: { events: { on: () => undefined, off: () => undefined } },
-      menuLayer: this.props.menuLayer,
-      getModifiers: () => ({}),
-    };
-  }
-
-  public render() {
-    return this.props.children;
-  }
+// ContextMenu extends ComponentEx, which reads api, menuLayer and getModifiers from
+// MainContext; provide the minimum.
+function ContextProvider(props: { menuLayer: HTMLElement; children: React.ReactNode }) {
+  const context = {
+    api: { events: { on: () => undefined, off: () => undefined } },
+    menuLayer: props.menuLayer,
+    getModifiers: () => ({ alt: false, ctrl: false, shift: false }),
+  } as unknown as IComponentContext;
+  return <MainContext.Provider value={context}>{props.children}</MainContext.Provider>;
 }
 
-function Harness(props: { menuLayer: HTMLElement }) {
+const testAction: IActionDefinitionEx = {
+  title: "Test Action",
+  action: () => undefined,
+  show: true,
+};
+
+function Harness(props: { menuLayer: HTMLElement; actions?: any[] }) {
   const [visible, setVisible] = React.useState(false);
   const [position, setPosition] = React.useState({ x: 0, y: 0 });
 
@@ -42,16 +40,16 @@ function Harness(props: { menuLayer: HTMLElement }) {
   const onHide = React.useCallback(() => setVisible(false), []);
 
   return (
-    <LegacyContextProvider menuLayer={props.menuLayer}>
+    <ContextProvider menuLayer={props.menuLayer}>
       <div data-testid="row" onContextMenu={onContext} />
       <ContextMenu
         visible={visible}
         onHide={onHide}
         position={position}
         instanceId="test-instance"
-        actions={[{ title: "Test Action", action: () => undefined, show: true } as any]}
+        actions={props.actions ?? [testAction]}
       />
-    </LegacyContextProvider>
+    </ContextProvider>
   );
 }
 
@@ -65,6 +63,7 @@ describe("ContextMenu", () => {
 
   afterEach(() => {
     menuLayer.remove();
+    vi.restoreAllMocks();
   });
 
   it("stays open after the right-click that opened it (React 17 delegation)", () => {
@@ -92,5 +91,22 @@ describe("ContextMenu", () => {
     await waitFor(() => {
       expect(menuLayer.textContent).not.toContain("Test Action");
     });
+  });
+
+  it("places a submenu by the item that opens it", async () => {
+    const measured = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect");
+    const more = {
+      title: "More",
+      show: true,
+      subMenus: [{ title: "Sub Action", action: () => undefined, show: true }],
+    };
+    render(<Harness menuLayer={menuLayer} actions={[more]} />);
+    fireEvent.contextMenu(screen.getByTestId("row"), { clientX: 10, clientY: 10 });
+    const [anchor] = within(menuLayer).getAllByRole("menuitem");
+
+    fireEvent.mouseEnter(anchor);
+
+    await waitFor(() => expect(within(menuLayer).getAllByRole("menuitem")).toHaveLength(2));
+    expect(measured.mock.contexts).toContain(anchor.closest("li"));
   });
 });

@@ -2,7 +2,7 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type { GameFolderCheckInput } from "@vortex/shared/ipc";
+import type { IGameFolderCheckInput } from "@vortex/shared/ipc";
 
 import {
   DEPOT_FLAG,
@@ -67,7 +67,7 @@ async function readManifest(
   return { manifest, createdAt };
 }
 
-export async function loadBaseline(input: GameFolderCheckInput): Promise<IBaseline> {
+export async function loadBaseline(input: IGameFolderCheckInput): Promise<IBaseline> {
   // Steam is mid-update: files may be half written
   if (input.targetBuildId !== 0 && input.targetBuildId !== input.buildId) {
     throw new NoBaseline("steam_updating");

@@ -6,13 +6,14 @@
  */
 import path from "node:path";
 
+import { FOLDER_TAG_NAME, FOLDER_TAG_NAME_HIDDEN, OLD_FOLDER_TAG_NAME } from "@vortex/shared";
 import type {
-  GameFolderFolderCount,
-  GameFolderReportedFile,
-  GameFolderCheckCounts,
-  GameFolderFileCount,
+  IGameFolderFolderCount,
+  IGameFolderReportedFile,
+  IGameFolderCheckCounts,
+  IGameFolderFileCount,
   GameFolderFileKind,
-  GameFolderFileReport,
+  IGameFolderFileReport,
 } from "@vortex/shared/ipc";
 
 import type { IBaseline } from "./baseline";
@@ -20,23 +21,19 @@ import type { IListing } from "./listing";
 import { DEPLOYMENT_MANIFEST } from "./listing";
 import { BACKUP_SUFFIX, type IVerification } from "./verify";
 
-// LinkingDeployment tags the folders it creates; dot-prefixed off Windows, the old name in early versions
-const FOLDER_MARKERS = new Set([
-  "__folder_managed_by_vortex",
-  ".__folder_managed_by_vortex",
-  "__delete_if_empty",
-]);
+// every spelling, whichever platform or Vortex version deployed the folder
+const FOLDER_MARKERS = new Set([FOLDER_TAG_NAME, FOLDER_TAG_NAME_HIDDEN, OLD_FOLDER_TAG_NAME]);
 // the walk reports whole seconds, deployment manifests milliseconds
 const DEPLOY_TIME_TOLERANCE_MS = 2000;
 
 export interface IReconciled {
-  counts: GameFolderCheckCounts;
-  files: GameFolderFileReport[];
+  counts: IGameFolderCheckCounts;
+  files: IGameFolderFileReport[];
 }
 
-const zero = (): GameFolderFileCount => ({ files: 0, bytes: 0 });
+const zero = (): IGameFolderFileCount => ({ files: 0, bytes: 0 });
 
-function emptyCounts(verification: IVerification, fullVerify: boolean): GameFolderCheckCounts {
+function emptyCounts(verification: IVerification, fullVerify: boolean): IGameFolderCheckCounts {
   return {
     steamFiles: {
       verified: zero(),
@@ -58,14 +55,14 @@ function emptyCounts(verification: IVerification, fullVerify: boolean): GameFold
   };
 }
 
-const add = (count: GameFolderFileCount, bytes: number): void => {
+const add = (count: IGameFolderFileCount, bytes: number): void => {
   count.files++;
   count.bytes += bytes;
 };
 
 type SteamFileKind = Exclude<GameFolderFileKind, "unknown" | "vortex">;
 
-const STEAM_COUNT: Record<SteamFileKind, keyof GameFolderCheckCounts["steamFiles"]> = {
+const STEAM_COUNT: Record<SteamFileKind, keyof IGameFolderCheckCounts["steamFiles"]> = {
   verified: "verified",
   size_matched: "sizeMatched",
   modified: "modified",
@@ -79,8 +76,8 @@ function reconcileSteamFiles(
   baseline: IBaseline,
   listing: IListing,
   verification: IVerification,
-  counts: GameFolderCheckCounts,
-  files: GameFolderFileReport[],
+  counts: IGameFolderCheckCounts,
+  files: IGameFolderFileReport[],
 ): void {
   for (const [key, file] of baseline.files) {
     const outcome = verification.outcomes.get(key) ?? { kind: "unchecked" as const };
@@ -100,7 +97,7 @@ function reconcileSteamFiles(
       kind = outcome.kind;
     }
 
-    const report: GameFolderFileReport = { relPath: file.name, kind, size };
+    const report: IGameFolderFileReport = { relPath: file.name, kind, size };
     if (kind === "modified" && outcome.kind === "modified") {
       size = report.size = outcome.diskSize;
       report.detectedBy = outcome.by;
@@ -144,13 +141,13 @@ function inVortexFolder(key: string, folders: ReadonlySet<string>): boolean {
 function reconcileOtherFiles(
   baseline: IBaseline,
   listing: IListing,
-  counts: GameFolderCheckCounts,
-  files: GameFolderFileReport[],
+  counts: IGameFolderCheckCounts,
+  files: IGameFolderFileReport[],
 ): void {
   const markedFolders = vortexFolders(listing);
   const addUnknown = (key: string, relPath: string, size: number): void => {
     add(counts.unknown, size);
-    const report: GameFolderFileReport = { relPath, kind: "unknown", size };
+    const report: IGameFolderFileReport = { relPath, kind: "unknown", size };
     if (inVortexFolder(key, markedFolders)) {
       add(counts.unknownInVortexFolder, size);
       report.inVortexFolder = true;
@@ -192,7 +189,7 @@ export function reconcile(
   fullVerify: boolean,
 ): IReconciled {
   const counts = emptyCounts(verification, fullVerify);
-  const files: GameFolderFileReport[] = [];
+  const files: IGameFolderFileReport[] = [];
   reconcileSteamFiles(baseline, listing, verification, counts, files);
   reconcileOtherFiles(baseline, listing, counts, files);
   return { counts, files };
@@ -213,17 +210,17 @@ function folderOf(relPath: string): string {
  * ones picked at random, with every unknown file totalled by folder.
  */
 export function reportedFiles(
-  files: readonly GameFolderFileReport[],
+  files: readonly IGameFolderFileReport[],
   maxUnknownPaths: number,
   random: () => number,
 ): {
-  files: GameFolderReportedFile[];
+  files: IGameFolderReportedFile[];
   unknownTruncated: boolean;
-  unknownByFolder: GameFolderFolderCount[];
+  unknownByFolder: IGameFolderFolderCount[];
 } {
-  const reported: GameFolderReportedFile[] = [];
-  const unknown: GameFolderFileReport[] = [];
-  const byFolder = new Map<string, GameFolderFolderCount>();
+  const reported: IGameFolderReportedFile[] = [];
+  const unknown: IGameFolderFileReport[] = [];
+  const byFolder = new Map<string, IGameFolderFolderCount>();
   for (const file of files) {
     if (file.kind === "modified") {
       reported.push({

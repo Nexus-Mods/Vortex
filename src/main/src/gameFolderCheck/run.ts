@@ -4,10 +4,10 @@ import path from "node:path";
 
 import { getErrorMessageOrDefault } from "@vortex/shared";
 import type {
-  GameFolderCheckInput,
+  IGameFolderCheckInput,
   GameFolderCheckOutcome,
   GameFolderCheckResult,
-  GameFolderFileReport,
+  IGameFolderFileReport,
 } from "@vortex/shared/ipc";
 
 import { log } from "../logging";
@@ -19,7 +19,7 @@ import { verifySteamFiles } from "./verify";
 export interface IRunOutput {
   result: GameFolderCheckResult;
   /** Every file with its classification; for the dev-build report only */
-  files: GameFolderFileReport[];
+  files: IGameFolderFileReport[];
 }
 
 const mtimeOf = (filePath: string): Promise<number | null> =>
@@ -29,7 +29,7 @@ const mtimeOf = (filePath: string): Promise<number | null> =>
   );
 
 /** `<library>/steamapps/appmanifest_<appid>.acf`, two levels up from `steamapps/common/<game>` */
-function acfPath(input: GameFolderCheckInput): string {
+function acfPath(input: IGameFolderCheckInput): string {
   return path.join(path.dirname(path.dirname(input.gamePath)), `appmanifest_${input.appId}.acf`);
 }
 
@@ -46,7 +46,7 @@ async function listOrNull(gamePath: string): Promise<IListing | null> {
 }
 
 export async function runGameFolderCheck(
-  input: GameFolderCheckInput,
+  input: IGameFolderCheckInput,
   signal: AbortSignal,
 ): Promise<IRunOutput> {
   const startedAt = Date.now();

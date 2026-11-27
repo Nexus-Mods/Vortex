@@ -16,7 +16,7 @@ runs:
       run: dpkg -s libatomic1 >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y libatomic1)
 
     - name: Install pnpm and Node.js
-      uses: pnpm/setup@v2.0.2
+      uses: pnpm/setup@v3.2.0
       with:
         cache: true
         install: false

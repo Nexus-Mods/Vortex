@@ -303,7 +303,6 @@ function parseToggle({ name, variant }: UnleashToggle): FeatureFlag | undefined 
     variant: parsedVariant,
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   return res as FeatureFlag;
 }
 

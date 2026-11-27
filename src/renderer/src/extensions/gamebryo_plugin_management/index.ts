@@ -32,7 +32,7 @@ import {
   profileById,
 } from "../profile_management/selectors";
 import { profilePath } from "../profile_management/util/manage";
-/* eslint-disable */
+/* oxlint-disable no-underscore-dangle, no-unused-vars, prefer-const, promise/always-return, typescript/consistent-return, typescript/consistent-type-imports, typescript/no-explicit-any, typescript/no-floating-promises, typescript/no-misused-promises, typescript/no-unnecessary-type-arguments, typescript/no-unnecessary-type-assertion, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, typescript/no-unsafe-type-assertion, typescript/restrict-plus-operands, unicorn/consistent-function-scoping */
 import { setPluginEnabled } from "./actions/loadOrder";
 import { clearNewPluginCounter, setPluginFilePath, setPluginList } from "./actions/plugins";
 import { clearUserlist, setGroup } from "./actions/userlist";
@@ -259,6 +259,7 @@ function register(
       onRefreshPlugins: () => {
         void pluginSync.refresh();
       },
+      rescanPlugins: () => pluginSync.refresh(),
       onSetPluginGhost: makeSetPluginGhost(context.api),
       onSetPluginLight: setPluginLight,
     }),
@@ -1184,8 +1185,10 @@ function init(context: IExtensionContextExt) {
 
         loot = new LootInterface(context.api);
 
-        deployWatcher = startDeployWatcher(context.api, (profileId) =>
-          onDidDeploy(context.api, profileId),
+        deployWatcher = startDeployWatcher(
+          context.api,
+          (profileId) => onDidDeploy(context.api, profileId),
+          () => pluginSync.scheduleRefresh(),
         );
 
         // folded gamebryo-plugin-indexlock wiring; only attaches listeners, no ordering
@@ -1209,6 +1212,15 @@ function init(context: IExtensionContextExt) {
             }
           },
         );
+
+        // the Data folder watcher sees a removed mod's deployed plugins go, but not the staged
+        // ones of a mod that was never deployed, and its rescan waits for the removal to finish
+        context.api.onAsync("did-remove-mods", (gameId: string) => {
+          if (gameId === activeGameId(context.api.getState()) && gameSupported(gameId)) {
+            pluginSync.scheduleRefresh();
+          }
+          return Promise.resolve();
+        });
 
         context.api.events.on(
           "did-install-mod",

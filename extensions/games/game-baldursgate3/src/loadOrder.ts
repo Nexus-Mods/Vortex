@@ -623,8 +623,9 @@ export async function exportToFile(api: types.IExtensionApi): Promise<boolean | 
 
   logDebug(`exportToFile ${selectedPath}`);
 
-  // if no path selected, then cancel probably pressed
-  if (selectedPath === undefined) return;
+  // if no path selected, then cancel probably pressed. Older Vortex versions
+  //  report a cancelled save dialog as an empty path rather than undefined.
+  if (!selectedPath) return;
 
   exportTo(api, selectedPath);
 }

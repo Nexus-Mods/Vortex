@@ -60,7 +60,6 @@ Workspace packages under `packages/`:
 - `tools/` - One-off utilities and build helpers
 - `assets/` - Static bundled assets
 - `locales/` - Translations
-- `eslint-rules/` - Custom ESLint rules
 - `flatpak/` - Flatpak manifest and build scripts
 - `etc/` - Generated dependency report
 

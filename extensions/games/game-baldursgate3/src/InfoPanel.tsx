@@ -1,5 +1,4 @@
 import { types, tooltip } from "@nexusmods/vortex-api";
-/* eslint-disable */
 import * as React from "react";
 import { Alert } from "react-bootstrap";
 import { useSelector } from "react-redux";

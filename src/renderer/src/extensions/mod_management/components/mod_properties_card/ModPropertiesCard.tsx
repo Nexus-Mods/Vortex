@@ -16,10 +16,11 @@ interface IModPropertiesCardProps {
 
 /**
  * The mod as Browse's mod card shows one, heading the Properties panel: its picture with its
- * status tag, its name and summary, its whole description a click away in a modal, then its
- * author and whether it's adult. Its picture blurs as the user has asked, if it's adult; a mod
- * without one shows the broken picture icon, as its row's thumbnail does. The description's images
- * from outside Nexus Mods show as placeholders opening its page, or not at all without one.
+ * status tag, its name and summary, its whole description a click away in a modal, which closes
+ * from its corner or the button under it, then its author and whether it's adult. Its picture
+ * blurs as the user has asked, if it's adult; a mod without one shows the broken picture icon, as
+ * its row's thumbnail does. The description's images from outside Nexus Mods show as placeholders
+ * opening its page, or not at all without one.
  */
 export const ModPropertiesCard = ({ card }: IModPropertiesCardProps) => {
   const { t } = useTranslation("mod_management");
@@ -81,8 +82,18 @@ export const ModPropertiesCard = ({ card }: IModPropertiesCardProps) => {
                     card.pageUrl ? { websiteUrl: card.pageUrl } : undefined
                   }
                   isFromAdultContent={card.isAdult}
-                  size="sm"
+                  isProse
                 />
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <Button
+                  brand="neutral"
+                  data-testid="mod-properties-description-close"
+                  onClick={() => setShowDescription(false)}
+                >
+                  {t("modsTable::properties::closeDescription")}
+                </Button>
               </div>
             </Modal>
           </>

@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* oxlint-disable no-unused-vars, typescript/no-explicit-any, typescript/no-unnecessary-type-assertion, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-return, unicorn/no-array-sort */
 import * as React from "react";
 import { ListGroup } from "react-bootstrap";
 import {

@@ -603,6 +603,9 @@ function manageGameDiscovered(api: IExtensionApi, gameId: VortexGameId) {
         }),
       );
       api.store.dispatch(setNextProfile(profileId));
+      // A game just added opens on Browse once the switch above lands, in place of any
+      // page left over from managing it before.
+      api.events.emit("open-game", gameId, { page: "Browse" });
       emitGameManaged(api, gameId);
       queueGameFolderCheck(api, VortexGameId(gameId));
     })
@@ -1188,7 +1191,11 @@ function init(context: IExtensionContext): boolean {
     addDescriptionFeature();
 
     context.api.events.on("activate-game", (gameId: string) => {
-      activateGame(store, gameId);
+      activateGame(store, gameId).catch((err) => {
+        if (!(err instanceof UserCanceled)) {
+          context.api.showErrorNotification("Failed to activate game", err);
+        }
+      });
     });
 
     // promise used to ensure a new profile switch can't be started before the last one

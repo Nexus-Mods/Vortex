@@ -14,7 +14,7 @@ import type { IDiscoveryResult } from "../../gamemode_management/types/IDiscover
 import { modPathsForGame } from "../../mod_management/selectors";
 import { lastActiveProfileForGame } from "../../profile_management/selectors";
 import type { IStateWithGamebryo } from "../types/IStateWithGamebryo";
-/* eslint-disable */
+/* oxlint-disable no-shadow, no-useless-escape, promise/always-return, typescript/consistent-type-imports, typescript/no-unnecessary-type-arguments, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access */
 import { PluginFormat } from "../util/PluginPersistor";
 import { patternMatchNativePlugins } from "./patternMatchNativePlugins";
 

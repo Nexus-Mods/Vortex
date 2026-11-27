@@ -1,4 +1,3 @@
-/* eslint-disable */
 const { getFileVersion, getFileVersionLocalized } = require("exe-version");
 const path = require("path");
 const { actions, selectors, util } = require("@nexusmods/vortex-api");

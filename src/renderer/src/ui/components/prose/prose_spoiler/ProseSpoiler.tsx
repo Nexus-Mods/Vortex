@@ -23,7 +23,7 @@ export const ProseSpoiler = ({ label, children }: IProseSpoilerProps) => {
         aria-controls={contentId}
         aria-expanded={isOpen}
         brand="neutral"
-        className="inline-flex"
+        className="nxm-prose-embed inline-flex"
         leftIcon={isOpen ? "keyboard_arrow_up" : "keyboard_arrow_down"}
         onClick={() => setIsOpen(!isOpen)}
       >

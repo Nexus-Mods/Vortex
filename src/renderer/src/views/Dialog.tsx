@@ -10,8 +10,9 @@ import {
   Radio,
 } from "react-bootstrap";
 import { useTranslation } from "react-i18next";
-import ReactMarkdown from "react-markdown";
 import { useDispatch, useSelector } from "react-redux";
+
+import { ReactMarkdown } from "@/util/react_markdown/ReactMarkdown";
 
 import type { ILink } from "../actions";
 import { triggerDialogLink } from "../actions";
@@ -612,7 +613,6 @@ export const Dialog: React.FC<React.PropsWithChildren<unknown>> = () => {
           control: (
             <div
               className="dialog-content-html"
-              // eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
               dangerouslySetInnerHTML={{ __html: content.htmlText }}
               key="dialog-content-html-text"
             />

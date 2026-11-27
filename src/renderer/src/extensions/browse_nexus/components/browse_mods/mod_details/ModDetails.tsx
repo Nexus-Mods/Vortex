@@ -30,6 +30,7 @@ import { hasModifierKey } from "@/ui/utils/hasModifierKey";
 import { useRelativeTime } from "@/util/useRelativeTime";
 
 import { useBrowseModsTracker } from "../../../hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useBrowseWebsiteLink } from "../../../hooks/use_browse_website_link/useBrowseWebsiteLink.hook";
 import { useDescriptionImagePlaceholders } from "../../../hooks/use_description_image_placeholders/useDescriptionImagePlaceholders.hook";
 import { useModStatus } from "../../../hooks/use_mod_status/useModStatus.hook";
 import { ModCommentsComingSoon } from "./mod_comments_coming_soon/ModCommentsComingSoon";
@@ -74,6 +75,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
     const updated = useRelativeTime(Date.parse(mod.updated_at), t);
     const created = useRelativeTime(Date.parse(mod.created_at), t);
     const tracker = useBrowseModsTracker();
+    const websiteLink = useBrowseWebsiteLink();
     const domain = NexusGameDomain(mod.game.domain_name);
     const modPageUrl = nexusModPageUrl(domain, mod.game_scoped_id);
     const { installState, status } = useModStatus(mod);
@@ -158,7 +160,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                   brand="neutral"
                   leftIcon="open_in_new"
                   onClick={() => {
-                    window.api.shell.openUrl(modPageUrl);
+                    window.api.shell.openUrl(websiteLink(modPageUrl));
                     tracker.trackModPageOpened({ mod_uid: mod.id });
                   }}
                 />
@@ -274,6 +276,7 @@ export const ModDetails = forwardRef<HTMLDivElement, IModDetailsProps>(
                       className="text-neutral-strong"
                       externalImagePlaceholders={externalImagePlaceholders}
                       isFromAdultContent={mod.adult}
+                      isProse
                     />
                   )}
                 </div>

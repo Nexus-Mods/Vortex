@@ -23,8 +23,12 @@
       "{projectRoot}/src/**/*.{ts,tsx,js,jsx}"
     ],
     "stylesheets": ["{projectRoot}/**/*.{scss,css}"],
-    "eslint": ["{projectRoot}/eslint.config.mjs", "{workspaceRoot}/eslint.config.base.mjs"],
-    "oxlint": ["{workspaceRoot}/oxlint.base.config.json", "{projectRoot}/.oxlintrc.json"],
+    "oxlint": [
+      "{workspaceRoot}/oxlint.base.config.json",
+      "{workspaceRoot}/oxlint.strict.config.json",
+      "{projectRoot}/.oxlintrc.json",
+      "{projectRoot}/.oxlintrc.strict.json"
+    ],
     "vortex-api": [
       "{workspaceRoot}/scripts/extensions-rolldown.mjs",
       { "dependentTasksOutputFiles": "packages/vortex-api/lib/api.d.ts" }
@@ -55,7 +59,7 @@
     "lint*": {
       "dependsOn": ["^build"],
       "cache": true,
-      "inputs": ["default", "typescript", "eslint", "oxlint"],
+      "inputs": ["default", "typescript", "oxlint"],
       "outputs": ["{projectRoot}/.lint-results.json"]
     }
   }

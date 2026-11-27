@@ -1,4 +1,3 @@
-/* eslint-disable */
 const Big = require("big.js");
 const Promise = require("bluebird");
 const { parseStringPromise } = require("xml2js");

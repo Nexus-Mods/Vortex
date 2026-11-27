@@ -61,14 +61,15 @@ export const DetailView = ({ entry, api, onBack }: IDetailViewProps) => {
 
   // detail_viewed fires once per detail open; entry-prop changes as the check re-runs
   // shouldn't re-fire it, so the mount-only effect is intentional.
+  // oxlint-disable react/exhaustive-deps -- mount-only tracking is intentional
   useEffect(() => {
     trackDetailViewed({
       issue_type: issueType,
       resolution_type: resolutionType,
       required_mod_count: 1,
     });
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, []);
+  // oxlint-enable react/exhaustive-deps
 
   const handleInstall = () => {
     trackOneClickInstallClicked({

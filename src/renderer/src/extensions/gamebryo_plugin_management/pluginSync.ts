@@ -11,6 +11,7 @@ import Debouncer from "../../util/Debouncer";
 import { clearErrorContext } from "../../util/errorHandling";
 import { currentGameDiscovery } from "../gamemode_management/selectors";
 import { getGame } from "../gamemode_management/util/getGame";
+import { isMovingModFiles } from "../mod_management/util/modActivity";
 import { activeGameId, activeProfile } from "../profile_management/selectors";
 import { setPluginOrder } from "./actions/loadOrder";
 import type { IStateWithGamebryo } from "./types/IStateWithGamebryo";
@@ -49,6 +50,11 @@ export interface IPluginSync {
   stop: () => Promise<void>;
   /** Rescans the active profile's plugins and waits for their details. */
   refresh: () => Promise<void>;
+  /**
+   * Rescans once the Data folder has been quiet for a moment and no deployment, purge or mod
+   * removal is moving plugin files.
+   */
+  scheduleRefresh: () => void;
 }
 
 /**
@@ -81,8 +87,14 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
     });
   };
 
-  // rescans once the Data folder has settled
-  const refreshDebouncer = new Debouncer(refresh, deps.refreshDelayMs ?? REFRESH_DELAY_MS);
+  // rescans once the Data folder has settled and nothing is moving plugin files anymore
+  const refreshDebouncer: Debouncer = new Debouncer(() => {
+    if (isMovingModFiles(api.getState().session.base.activity?.["mods"])) {
+      refreshDebouncer.schedule();
+      return Promise.resolve();
+    }
+    return refresh();
+  }, deps.refreshDelayMs ?? REFRESH_DELAY_MS);
 
   const stop = (): Promise<void> => {
     if (watcher !== undefined) {
@@ -172,5 +184,5 @@ export function makePluginSync(api: IExtensionApi, deps: IPluginSyncDeps): IPlug
     }
   };
 
-  return { start, stop, refresh };
+  return { start, stop, refresh, scheduleRefresh: () => refreshDebouncer.schedule() };
 }

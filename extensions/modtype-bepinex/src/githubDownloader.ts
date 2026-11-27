@@ -1,5 +1,4 @@
 import { IncomingHttpHeaders, IncomingMessage } from "http";
-/* eslint-disable */
 import * as https from "https";
 import * as url from "url";
 

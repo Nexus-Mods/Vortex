@@ -11,8 +11,8 @@ import type { ILog, ISession } from "../types/ISession";
 const lineRE = /^(\S+) \[([A-Z]*)\] \[([A-Z]*)\] (.*)\r?/;
 // Legacy format: timestamp [LEVEL] message
 const lineRE_Legacy = /^(\S+) \[([A-Z]*)\] (.*)\r?/;
-// ANSI color code regex (constructed to avoid ESLint error)
-// eslint-disable-next-line no-control-regex
+// ANSI color code regex
+// oxlint-disable-next-line no-control-regex
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 
 function parseLine(line: string, idx: number): ILog {

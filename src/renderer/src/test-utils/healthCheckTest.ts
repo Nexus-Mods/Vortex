@@ -18,7 +18,6 @@ export const test = harnessTest.extend<IHealthCheckFixtures>({
   makeHealthCheck: async ({ task: _task }, use) => {
     const built: IHealthCheckHarness[] = [];
     // `use` is the vitest fixture callback, not React's use() hook.
-    // eslint-disable-next-line @eslint-react/rules-of-hooks
     await use((opts) => {
       const harness = makeHealthCheckHarness(HealthCheckRegistry, opts);
       built.push(harness);

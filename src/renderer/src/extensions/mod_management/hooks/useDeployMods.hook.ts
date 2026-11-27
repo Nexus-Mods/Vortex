@@ -8,7 +8,7 @@ import { UserCanceled } from "@/util/CustomErrors";
 import onceCB from "@/util/onceCB";
 import * as selectors from "@/util/selectors";
 
-import { purged } from "../selectors";
+import { purged, purgeForGame } from "../selectors";
 import { getAllActivators } from "../util/deploymentMethods";
 import { NoDeployment } from "../util/exceptions";
 
@@ -67,6 +67,13 @@ export const useDeployMods = (): {
   deployProgress: number | undefined;
   /** What the deploy is doing, e.g. the mod it's on; undefined when idle. */
   deployStep: string | undefined;
+  /**
+   * The active game's mods are being purged, whether the user asked for it or Vortex started it.
+   * A purge of another game, e.g. the one being switched away from, doesn't count.
+   */
+  isPurging: boolean;
+  /** 0-100 while purging; undefined otherwise. */
+  purgeProgress: number | undefined;
   /** Deploys the active profile's mods, or warns when there's no deployment method. */
   deploy: () => void;
 } => {
@@ -87,6 +94,8 @@ export const useDeployMods = (): {
   );
   const step = useSelector((state: IState) => state.session.base.progress?.mods?.deployment?.text);
   const gameId = useSelector(selectors.activeGameId);
+  const purge = useSelector((state: IState) => purgeForGame(state, gameId));
+  const isPurging = purge !== undefined;
   const profileId = useSelector((state: IState) =>
     selectors.lastActiveProfileForGame(state, gameId),
   );
@@ -134,6 +143,8 @@ export const useDeployMods = (): {
     isDeploying,
     deployProgress: isDeploying ? (percent ?? 0) : undefined,
     deployStep: isDeploying ? step || undefined : undefined,
+    isPurging,
+    purgeProgress: purge?.percent,
     deploy: activator !== undefined ? deploy : noMethod,
   };
 };

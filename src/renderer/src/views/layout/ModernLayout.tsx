@@ -11,6 +11,7 @@ import { DialogLayer } from "./DialogLayer";
 import { LayoutContainer } from "./LayoutContainer";
 import { Menu } from "./menu/Menu";
 import { ProfileSwitcher } from "./ProfileSwitcher";
+import { PurgeNotifications } from "./purge_notifications/PurgeNotifications";
 import { ToastContainer } from "./ToastContainer";
 import { UIBlocker } from "./UIBlocker";
 
@@ -21,6 +22,8 @@ export const ModernLayout: FC<React.PropsWithChildren<unknown>> = () => {
 
   return (
     <SpineProvider>
+      <PurgeNotifications />
+
       <LayoutContainer className="relative isolate flex h-full overflow-hidden bg-surface-base">
         <GameArt />
 

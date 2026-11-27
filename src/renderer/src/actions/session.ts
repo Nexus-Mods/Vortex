@@ -1,3 +1,4 @@
+import type { VortexGameId } from "@vortex/shared";
 import type { IParameters } from "@vortex/shared/cli";
 import { createAction } from "redux-act";
 
@@ -45,6 +46,25 @@ export const setProgress = createAction(
     text,
     percent,
   }),
+);
+
+/** Records how far along a purge is, from its first progress update. */
+export const setPurgeProgress = createAction(
+  "SET_PURGE_PROGRESS",
+  (purgeId: string, gameId: VortexGameId, text: string, percent: number) => ({
+    purgeId,
+    gameId,
+    text,
+    percent,
+  }),
+  uiOnlyMeta,
+);
+
+/** Forgets a purge once it has finished, or never got to run. */
+export const clearPurgeProgress = createAction(
+  "CLEAR_PURGE_PROGRESS",
+  (purgeId: string) => ({ purgeId }),
+  uiOnlyMeta,
 );
 
 export const setToolRunning = createAction(

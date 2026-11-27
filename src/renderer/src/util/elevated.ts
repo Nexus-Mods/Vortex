@@ -17,7 +17,8 @@ export interface IElevatedIpc {
   end(): void;
 }
 
-/* eslint-disable -- elevatedMain is serialized as text into a temp file and executed
+/* oxlint-disable no-shadow, prefer-const, typescript/no-base-to-string, typescript/no-explicit-any, typescript/no-unnecessary-type-assertion, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-type-assertion --
+   elevatedMain is serialized as text into a temp file and executed
    in a separate elevated Node process. All require() calls must use
    __non_webpack_require__ so webpack doesn't transform them into
    __webpack_require__ with internal module IDs. Similarly, imported bindings
@@ -108,7 +109,7 @@ function elevatedMain(
       }
     });
 }
-/* eslint-enable */
+/* oxlint-enable no-shadow, prefer-const, typescript/no-base-to-string, typescript/no-explicit-any, typescript/no-unnecessary-type-assertion, typescript/no-unsafe-argument, typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access, typescript/no-unsafe-type-assertion */
 
 /**
  * run a function as an elevated process (windows only!).

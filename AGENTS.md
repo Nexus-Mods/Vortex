@@ -99,5 +99,6 @@ Read the doc for the area you're touching rather than the whole tree.
 - Collections, phased install: `docs/mod-management/collections.md`
 - Installers, release pipeline: `docs/packaging/windows.md`
 - The auto-updater: `docs/updater.md`
+- Lint configs, warn lists, disable comments: `docs/linting.md`
 - Writing documentation: `docs/writing-documentation.md`
 - Code style: `CODESTYLE.md`

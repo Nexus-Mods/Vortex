@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* oxlint-disable typescript/consistent-type-imports */
 import path from "path";
 
 import memoizeOne from "memoize-one";

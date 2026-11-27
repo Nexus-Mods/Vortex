@@ -9,6 +9,7 @@ import { downloadAndInstallNexusFile } from "@/extensions/nexus_integration/util
 import {
   nexusFilePageUrl,
   nexusModPageUrl,
+  withVortexSource,
 } from "@/extensions/nexus_integration/util/nexus_urls/nexusUrls";
 import { decodeUID } from "@/extensions/nexus_integration/util/UIDs";
 import { setModsEnabled } from "@/extensions/profile_management/actions/profiles";
@@ -237,7 +238,9 @@ export function openModPage(_api: IExtensionApi, ref: INexusFileRef): void {
     log("warn", "cannot open mod page: unresolved mod id or game", { fileUID: ref.fileUID });
     return;
   }
-  window.api.shell.openUrl(nexusModPageUrl(mod.domain, mod.modId));
+  window.api.shell.openUrl(
+    withVortexSource({ url: nexusModPageUrl(mod.domain, mod.modId), feature: "health_check" }),
+  );
 }
 
 /** Open the file's page on the Nexus website (the specific file, not the mod). */
@@ -248,7 +251,12 @@ export function openFilePage(_api: IExtensionApi, ref: INexusFileRef): void {
     log("warn", "cannot open file page: unresolved mod or file id", { fileUID: ref.fileUID });
     return;
   }
-  window.api.shell.openUrl(nexusFilePageUrl(mod.domain, mod.modId, file.id));
+  window.api.shell.openUrl(
+    withVortexSource({
+      url: nexusFilePageUrl(mod.domain, mod.modId, file.id),
+      feature: "health_check",
+    }),
+  );
 }
 
 /**

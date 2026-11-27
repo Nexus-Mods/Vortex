@@ -3,7 +3,6 @@ import * as path from "path";
 import { log, types, util } from "@nexusmods/vortex-api";
 import turbowalk from "turbowalk";
 
-/* eslint-disable */
 import { ConflictSuggestion, IConflict } from "../types/IConflict";
 import { IModLookupInfo } from "../types/IModLookupInfo";
 import isBlacklisted from "./blacklist";

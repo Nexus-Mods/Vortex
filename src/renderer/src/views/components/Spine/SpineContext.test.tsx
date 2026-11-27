@@ -2,18 +2,22 @@ import { act, render, screen } from "@testing-library/react";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { ISettingsInterface } from "@/types/IState";
+
 /** A fake store: the spine reads these through the mocked selectors below. */
 const store = vi.hoisted(() => ({
   state: {} as {
     mainPage: string;
     activeGameId: string | undefined;
     activeProfileId: string | undefined;
+    nextProfileId?: string;
     lastActiveProfiles: Record<string, string>;
-    settings: { interface: object };
+    settings: { interface: ISettingsInterface };
     session: { base: object };
   },
   dispatch: vi.fn(),
   emit: vi.fn(),
+  on: vi.fn<(event: string, listener: (...args: unknown[]) => void) => void>(),
 }));
 
 vi.mock("react-redux", () => ({
@@ -26,7 +30,9 @@ vi.mock("../../../util/selectors", () => ({
   activeProfileId: (s: typeof store.state) => s.activeProfileId,
   lastActiveProfiles: (s: typeof store.state) => s.lastActiveProfiles,
   mainPage: (s: typeof store.state) => s.mainPage,
-  profileById: (_s: unknown, id: string) => ({ id }),
+  nextProfileId: (s: typeof store.state) => s.nextProfileId,
+  // Profiles here are named after their game: "stardew-profile".
+  profileById: (_s: unknown, id: string) => ({ id, gameId: id.replace(/-profile$/, "") }),
 }));
 
 const pages = vi.hoisted(() =>
@@ -35,6 +41,7 @@ const pages = vi.hoisted(() =>
     ["Games", "global"],
     ["application_settings", "global"],
     ["Mods", "per-game"],
+    ["Browse", "per-game"],
     ["health", "per-game"],
     ["Downloads", "global"],
     ["collection-view", "hidden"],
@@ -44,19 +51,29 @@ const pages = vi.hoisted(() =>
 vi.mock("../../../contexts", () => ({
   useMainContext: () => ({
     api: {
-      events: { emit: store.emit, on: vi.fn(), once: vi.fn(), removeListener: vi.fn() },
+      events: { emit: store.emit, on: store.on, once: vi.fn(), removeListener: vi.fn() },
       getState: () => store.state,
     },
   }),
   usePagesContext: () => ({ mainPages: pages }),
 }));
 
+import { VortexGameId } from "@vortex/shared";
+
 import { setOpenMainPage } from "../../../actions/session";
 import { setNextProfile } from "../../../extensions/profile_management/actions/settings";
+import { setLastPage } from "../../../extensions/settings_interface/actions/interface";
+import interfaceReducer from "../../../extensions/settings_interface/reducers/interface";
 import { defaultState as sessionDefaultState } from "../../../reducers/session";
 import { SpineProvider, useSpineContext } from "./SpineContext";
 
 let spine: ReturnType<typeof useSpineContext>;
+
+/** Pages the spine opened, without its setLastPage dispatches. */
+const navigations = () =>
+  store.dispatch.mock.calls
+    .map(([action]: [{ type: string }]) => action)
+    .filter((action) => action.type === setOpenMainPage.getType());
 
 const Probe = () => {
   spine = useSpineContext();
@@ -87,7 +104,7 @@ const renderSpine = () => {
     store.state.activeProfileId = `${gameId}-profile`;
     update();
   };
-  return { navigate, activate };
+  return { navigate, activate, update };
 };
 
 describe("SpineProvider", () => {
@@ -97,11 +114,20 @@ describe("SpineProvider", () => {
       activeGameId: "skyrim",
       activeProfileId: "skyrim-profile",
       lastActiveProfiles: { skyrim: "skyrim-profile", stardew: "stardew-profile" },
-      settings: { interface: {} },
+      settings: { interface: {} as ISettingsInterface },
       session: { base: {} },
     };
-    store.dispatch = vi.fn();
+    // Apply setLastPage through the real reducer.
+    store.dispatch = vi.fn((action: { type: string; payload: never }) => {
+      if (action.type === setLastPage.getType()) {
+        store.state.settings.interface = interfaceReducer.reducers[action.type](
+          store.state.settings.interface,
+          action.payload,
+        );
+      }
+    });
     store.emit = vi.fn();
+    store.on = vi.fn();
   });
 
   it("starts in the active game whatever is open, then opens one of its pages", () => {
@@ -121,7 +147,7 @@ describe("SpineProvider", () => {
 
     expect(sessionDefaultState.mainPage).toBe("Games");
     expect(screen.getByTestId("selection")).toHaveTextContent("home");
-    expect(store.dispatch).not.toHaveBeenCalled();
+    expect(navigations()).toEqual([]);
   });
 
   it("selects Home when a global page is opened by any route, game or not", () => {
@@ -130,7 +156,7 @@ describe("SpineProvider", () => {
     navigate("application_settings");
 
     expect(screen.getByTestId("selection")).toHaveTextContent("home");
-    expect(store.dispatch).not.toHaveBeenCalled();
+    expect(navigations()).toEqual([]);
   });
 
   it("keeps the selection for a hidden page, and doesn't navigate away from it", () => {
@@ -140,7 +166,7 @@ describe("SpineProvider", () => {
     navigate("collection-view");
 
     expect(screen.getByTestId("selection")).toHaveTextContent("home");
-    expect(store.dispatch).not.toHaveBeenCalled();
+    expect(navigations()).toEqual([]);
   });
 
   it("leaves Downloads when Home is picked", () => {
@@ -156,7 +182,7 @@ describe("SpineProvider", () => {
     const { navigate, activate } = renderSpine();
     navigate("Dashboard");
 
-    act(() => spine.selectGame("stardew"));
+    act(() => spine.selectGame(VortexGameId("stardew")));
     // Switches the profile, but stays Home until that lands.
     expect(store.dispatch).toHaveBeenCalledWith(setNextProfile("stardew-profile"));
     expect(store.dispatch).not.toHaveBeenCalledWith(setOpenMainPage("Mods", false));
@@ -175,9 +201,134 @@ describe("SpineProvider", () => {
     activate("skyrim");
     navigate("Mods");
 
-    act(() => spine.selectGame("stardew"));
+    act(() => spine.selectGame(VortexGameId("stardew")));
     activate("stardew");
 
-    expect(store.dispatch).toHaveBeenLastCalledWith(setOpenMainPage("health", false));
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("health", false));
+  });
+
+  // What the Games page's Open asks for. It has to be the spine's own pick, so the two
+  // can't come to open a game differently.
+  it("opens a game asked for by event the way a pick in the spine does", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("stardew")]: "health" } };
+    const { navigate, activate } = renderSpine();
+    navigate("Games");
+
+    // The listener of the latest render, as an emit would reach it.
+    const openGame = store.on.mock.calls.findLast(([event]) => event === "open-game")?.[1];
+    act(() => openGame?.(VortexGameId("stardew")));
+
+    expect(store.dispatch).toHaveBeenCalledWith(setNextProfile("stardew-profile"));
+    expect(navigations()).toEqual([]);
+
+    activate("stardew");
+
+    expect(navigations()).toEqual([setOpenMainPage("health", false)]);
+  });
+
+  // Adding a game starts the switch to its new profile, then asks for the game. The
+  // profile was never active, so going on to activate it would raise the profile picker.
+  it("opens a game that was just added on the page asked for, and doesn't ask for a profile", () => {
+    // Left behind by managing the game before.
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("terraria")]: "health" } };
+    const { navigate, activate } = renderSpine();
+    navigate("Games");
+    store.state.nextProfileId = "terraria-profile";
+
+    const openGame = store.on.mock.calls.findLast(([event]) => event === "open-game")?.[1];
+    act(() => openGame?.(VortexGameId("terraria"), { page: "Browse" }));
+
+    expect(store.emit).not.toHaveBeenCalledWith("activate-game", expect.anything());
+    expect(store.dispatch).not.toHaveBeenCalledWith(setNextProfile(expect.anything()));
+
+    activate("terraria");
+
+    expect(navigations()).toEqual([setOpenMainPage("Browse", false)]);
+
+    navigate("Browse");
+
+    // Remembered in place of the page left behind, so the next pick in the spine agrees.
+    expect(store.state.settings.interface.lastPages?.games?.[VortexGameId("terraria")]).toBe(
+      "Browse",
+    );
+  });
+
+  it("remembers the page open in a game and on Home", () => {
+    const { navigate } = renderSpine();
+
+    navigate("health");
+    navigate("application_settings");
+
+    expect(store.dispatch).toHaveBeenCalledWith(
+      setLastPage({ pageId: "health", gameId: VortexGameId("skyrim") }),
+    );
+    expect(store.dispatch).toHaveBeenCalledWith(setLastPage({ pageId: "application_settings" }));
+  });
+
+  it("reopens the active game's remembered page after a restart", () => {
+    store.state.mainPage = sessionDefaultState.mainPage;
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "health" } };
+    renderSpine();
+
+    expect(navigations()).toEqual([setOpenMainPage("health", false)]);
+  });
+
+  it("opens the game's first page when its remembered page can no longer be shown", () => {
+    store.state.mainPage = sessionDefaultState.mainPage;
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "removed" } };
+    renderSpine();
+
+    expect(navigations()).toEqual([setOpenMainPage("Mods", false)]);
+  });
+
+  it("returns a picked game to its remembered page from an earlier session", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("stardew")]: "health" } };
+    const { activate } = renderSpine();
+
+    act(() => spine.selectGame(VortexGameId("stardew")));
+    activate("stardew");
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("health", false));
+  });
+
+  // Fails if the spine subscribes to lastPages: each save would re-run the effect and leave the
+  // hidden page.
+  it("doesn't leave a hidden page when the remembered pages are saved", () => {
+    const { navigate, update } = renderSpine();
+    navigate("collection-view");
+
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "health" } };
+    update();
+
+    expect(navigations()).toEqual([]);
+  });
+
+  it("opens a picked game's first page when its remembered page can no longer be shown", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("stardew")]: "removed" } };
+    const { activate } = renderSpine();
+
+    act(() => spine.selectGame(VortexGameId("stardew")));
+    activate("stardew");
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("Mods", false));
+  });
+
+  it("opens the active game's first page from Home when its remembered page is gone", () => {
+    store.state.settings.interface.lastPages = { games: { [VortexGameId("skyrim")]: "removed" } };
+    const { navigate } = renderSpine();
+    navigate("Dashboard");
+
+    act(() => spine.selectGame(VortexGameId("skyrim")));
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("Mods", false));
+  });
+
+  it("opens Home's first page when its remembered page is gone", () => {
+    store.state.settings.interface.lastPages = { home: "removed" };
+    renderSpine();
+
+    act(() => spine.selectHome());
+
+    expect(navigations().at(-1)).toEqual(setOpenMainPage("Dashboard", false));
   });
 });

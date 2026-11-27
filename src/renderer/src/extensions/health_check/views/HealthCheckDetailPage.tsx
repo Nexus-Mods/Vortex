@@ -98,7 +98,7 @@ function HealthCheckDetailPage({
 
   const liveEntry = useMemo(
     () => content.selectEntries(api.getState()).find((candidate) => candidate.id === entry.id),
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
     [api, content, entry.id, fileResult, modResult, fomodResult, hiddenFile, hiddenMod],
   );
 

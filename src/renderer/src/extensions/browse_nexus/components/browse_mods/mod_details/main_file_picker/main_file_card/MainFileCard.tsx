@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { useBrowseModsTracker } from "@/extensions/browse_nexus/hooks/browse_mods_tracking/BrowseModsTracking.context";
+import { useBrowseWebsiteLink } from "@/extensions/browse_nexus/hooks/use_browse_website_link/useBrowseWebsiteLink.hook";
 import { useModInstallState } from "@/extensions/browse_nexus/hooks/use_mod_install_state/useModInstallState.hook";
 import { fileUidOf } from "@/extensions/browse_nexus/util/file_uid/fileUid";
 import {
@@ -63,6 +64,7 @@ interface IMainFileCardProps {
 export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) => {
   const { t } = useTranslation();
   const tracker = useBrowseModsTracker();
+  const websiteLink = useBrowseWebsiteLink();
   const gameId = useSelector(activeGameId);
   const shouldInstall = !!useSelector(installsWhenDownloaded);
   const nameId = useId();
@@ -210,7 +212,9 @@ export const MainFileCard = ({ api, mod, file, onLeave }: IMainFileCardProps) =>
           rightIcon="open_in_new"
           typographyType="body-sm"
           onClick={() =>
-            window.api.shell.openUrl(nexusFilePageUrl(domain, mod.game_scoped_id, file.file_id))
+            window.api.shell.openUrl(
+              websiteLink(nexusFilePageUrl(domain, mod.game_scoped_id, file.file_id)),
+            )
           }
         >
           {t("View more details")}

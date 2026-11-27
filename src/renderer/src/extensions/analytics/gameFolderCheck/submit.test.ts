@@ -1,4 +1,4 @@
-import { V3ApiError, type TelemetryEventEntry } from "@vortex/nexus-api-v3";
+import { V3ApiError, type ITelemetryEventEntry } from "@vortex/nexus-api-v3";
 import { NexusGameId, VortexGameId } from "@vortex/shared";
 import type { GameFolderCheckResult } from "@vortex/shared/ipc";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -80,7 +80,7 @@ function checked(unknownFiles: number): GameFolderCheckResult {
 }
 
 describe("submitGameFolderCheck", () => {
-  const telemetryEvents = vi.fn<(events: TelemetryEventEntry[]) => Promise<unknown>>();
+  const telemetryEvents = vi.fn<(events: ITelemetryEventEntry[]) => Promise<unknown>>();
   const dispatch = vi.fn();
   const api = { getState: () => ({}), store: { dispatch } } as unknown as IExtensionApi;
   const markers = () => dispatch.mock.calls.map(([action]) => action.payload.marker);

@@ -4,11 +4,12 @@
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import * as PropTypes from "prop-types";
 import * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MainContext } from "../../../contexts/main_context/MainContext";
 import type { IActionDefinition } from "../../../types/IActionDefinition";
+import type { IComponentContext } from "../../../types/IComponentContext";
 import type { IGameStored } from "../types/IGameStored";
 
 const { bars, emit } = vi.hoisted(() => ({
@@ -36,7 +37,11 @@ vi.mock("@/ui/components/popover/Popover", () => ({
     <>{children({ open: true })}</>
   ),
 }));
-vi.mock("@/ui/components/popover/PopoverButton", () => ({ PopoverButton: () => null }));
+// Tooltip hands its trigger a ref, as headless-ui's PopoverButton takes one.
+vi.mock("@/ui/components/popover/PopoverButton", async () => {
+  const { forwardRef } = await import("react");
+  return { PopoverButton: forwardRef(() => null) };
+});
 vi.mock("@/ui/components/popover/PopoverPanel", () => ({
   PopoverPanel: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -50,19 +55,12 @@ vi.mock("@/extensions/analytics/mixpanel/numericGameId", () => ({
 
 import GameRow from "./GameRow";
 
-/** GameRow reads the api off the legacy context, as every ComponentEx does. */
-class LegacyContext extends React.Component<{ children: React.ReactNode }> {
-  public static childContextTypes = { api: PropTypes.object };
-
-  public getChildContext() {
-    // The popover puts its IconBar under a redux Provider, which wants a whole store.
-    const store = { dispatch: vi.fn(), getState: () => ({}), subscribe: () => () => undefined };
-    return { api: { events: { emit }, store } };
-  }
-
-  public render() {
-    return this.props.children;
-  }
+/** GameRow reads the api off MainContext, as every ComponentEx does. */
+function AppContext(props: { children: React.ReactNode }) {
+  // The popover puts its IconBar under a redux Provider, which wants a whole store.
+  const store = { dispatch: vi.fn(), getState: () => ({}), subscribe: () => () => undefined };
+  const context = { api: { events: { emit }, store } } as unknown as IComponentContext;
+  return <MainContext.Provider value={context}>{props.children}</MainContext.Provider>;
 }
 
 const skyrim: IGameStored = {
@@ -75,7 +73,7 @@ const skyrim: IGameStored = {
 
 const renderRow = (props: Partial<React.ComponentProps<typeof GameRow>> = {}) =>
   render(
-    <LegacyContext>
+    <AppContext>
       <GameRow
         active={false}
         game={skyrim}
@@ -87,7 +85,7 @@ const renderRow = (props: Partial<React.ComponentProps<typeof GameRow>> = {}) =>
         onRefreshGameInfo={vi.fn()}
         {...props}
       />
-    </LegacyContext>,
+    </AppContext>,
   );
 
 const tracked = () =>
